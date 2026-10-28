@@ -1,20 +1,26 @@
 import { expect, test } from '@playwright/test';
+import { goOffline } from './helpers';
 
 test('Startseite lädt nach dem ersten Besuch auch offline', async ({ page, context }) => {
   await page.goto('./');
   await expect(page.getByRole('heading', { name: 'Fitnesstracker' })).toBeVisible();
 
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-  });
-  // Seite muss vom Service Worker kontrolliert sein, bevor offline geschaltet wird
-  if (!(await page.evaluate(() => !!navigator.serviceWorker.controller))) {
-    await page.reload();
-  }
-
-  await context.setOffline(true);
+  await goOffline(page, context);
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Fitnesstracker' })).toBeVisible();
+});
+
+test('Bottom-Navigation funktioniert offline', async ({ page, context }) => {
+  await page.goto('./');
+  await goOffline(page, context);
+  await page.reload();
+
+  const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
+  for (const label of ['Training', 'Alltag', 'Statistik', 'Einstellungen', 'Dashboard']) {
+    await nav.getByRole('link', { name: label }).click();
+    const heading = label === 'Dashboard' ? 'Fitnesstracker' : label;
+    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+  }
 });
 
 test('Manifest ist installierbar konfiguriert', async ({ request }) => {

@@ -6,7 +6,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 ## Übersicht
 
 - [x] Schritt 0 – Projekt-Setup (lokal)
-- [ ] Schritt 1 – Lokale Datenbank, App-Shell & Datensicherung
+- [x] Schritt 1 – Lokale Datenbank, App-Shell & Datensicherung
 - [ ] Schritt 2 – Mitgelieferte Datenbanken (Übungen & Nährwerte)
 - [ ] Schritt 2b – *optional:* früher Testpush & Handytest
 - [ ] Schritt 3 – Übungsverwaltung
@@ -75,8 +75,23 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 
 **Notizen:**
 - Gebaut:
+  - `src/db/`: `database.ts` (Dexie 4, `AppDatabase` v1, Tabelle `settings`), `types.ts` (`BaseEntity`, `Settings`, Zeitstempel als ISO-Strings), `repository.ts` (`create`, `update`, `softDelete`, `listActive`, `nowIso`), `settings.ts` (`ensureSettings`, `getSettings`, `updateSettings`), `backup.ts` (Export aller Tabellen, Zod-Schema, `parseBackup(Text)`, `restoreBackup`, Dateiname), `testUtils.ts` (`resetDatabase`).
+  - `src/domain/`: `units.ts` (kg↔lb, m↔km/mi), `format.ts` (deutsche Dezimalzahlen, Parsen mit Komma, Bytes, „vor X Tagen“), `backupReminder.ts` (Banner-Logik ab 7 Tagen).
+  - `src/components/`: `Layout` (Banner, Outlet, Bottom-Navigation), `BottomNav`, `Page`/`Card`/`PlaceholderPage`, `Stepper` (±-Buttons + Direkteingabe mit Komma), `SegmentedControl`, `UpdatePrompt` (`useRegisterSW`, „Neue Version verfügbar – Neu laden“), `icons`.
+  - Routen: `/` Dashboard, `/training`, `/daily`, `/stats`, `/settings`; unbekannte Routen → Dashboard.
+  - Einstellungen: Name, Körpergewicht (Stepper, intern kg), kg/lb, km/mi, Theme System/Hell/Dunkel, Datensicherung, Speicherstatus (`persisted()`, `estimate()`). `navigator.storage.persist()` beim Start in `main.tsx`.
+  - Backup-Export per Web Share API (Datei), Fallback Download; Abbrechen des Teilen-Dialogs zählt nicht als Backup. Import: Datei wählen → Zod-Prüfung → Vorschau (Datum, Anzahl je Tabelle) → „Ersetzt alle Daten“ → Importieren.
+  - E2E `e2e/backup.spec.ts` (kompletter Ablauf offline + ungültige Datei), `e2e/offline.spec.ts` um Navigation offline erweitert, Helfer `e2e/helpers.ts` (`goOffline`).
 - Abweichungen:
+  - Einstellungen haben die feste ID `app-settings` statt einer UUID (genau ein Datensatz pro Gerät, verhindert Doppelanlage bei parallelem Start).
+  - Theme wird zusätzlich in `localStorage` (`theme`) gespiegelt, weil das Script in `index.html` vor dem Rendern nicht asynchron auf IndexedDB zugreifen kann.
+  - Ohne bisheriges Backup zählt der Banner ab Anlage der Einstellungen („Noch kein Backup erstellt“).
+  - Nach einem Import wird `lastBackupAt` auf den Export-Zeitpunkt der Sicherung gesetzt (die Daten entsprechen genau diesem Stand).
+  - `UpdatePrompt` wird in `main.tsx` neben `<App />` gerendert, damit `App` ohne das virtuelle PWA-Modul testbar bleibt.
 - Offene Punkte:
+  - Backups mit älterer `dbVersion` werden derzeit 1:1 importiert. Sobald es Version 2 gibt, braucht `restoreBackup` eine Migration der Backup-Daten (oder Import in eine DB mit alter Version und Dexie-Upgrade). Neue Tabellen im Zod-Schema `backupSchema` und in `TABLE_LABELS` ergänzen.
+  - Playwright nutzt `reuseExistingServer`: Läuft noch ein alter `npm run preview` auf Port 4173, wird gegen den alten Build getestet → vorher beenden.
+  - Teilen-Dialog (Web Share mit Datei) nur auf echten Geräten prüfbar (E2E testet den Download-Fallback).
 
 ### Schritt 2 – Mitgelieferte Datenbanken (Übungen & Nährwerte)
 **Ziel:** Übungs- und Lebensmitteldaten sind im Download enthalten und offline durchsuchbar.

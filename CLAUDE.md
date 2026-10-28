@@ -79,7 +79,15 @@ e2e/           Playwright-Tests
 
 **Werkzeuge (für Claude):** Node.js und git liegen portabel in `%LOCALAPPDATA%\Programs\nodejs` und `%LOCALAPPDATA%\Programs\MinGit\cmd`. Falls nicht im PATH, in PowerShell zuerst: `$env:Path = "$env:LOCALAPPDATA\Programs\nodejs;$env:LOCALAPPDATA\Programs\MinGit\cmd;$env:Path"`. `npm install` ist auf diesem Laufwerk sehr langsam → mit langem Timeout oder im Hintergrund ausführen.
 
-**Wichtige Dateien:** `vite.config.ts` (PWA-Manifest, Workbox, `BASE_PATH`, Vitest-Konfig), `playwright.config.ts`, `src/main.tsx` (SW-Registrierung), `src/App.tsx` (Routen), `src/index.css` (Tailwind, Dark-Mode-Variante).
+**Wichtige Dateien:** `vite.config.ts` (PWA-Manifest, Workbox, `BASE_PATH`, Vitest-Konfig), `playwright.config.ts`, `src/main.tsx` (Speicher-Persistenz, `UpdatePrompt`), `src/App.tsx` (Routen), `src/index.css` (Tailwind, Dark-Mode-Variante).
+
+**Datenbank & Konventionen:**
+- `src/db/database.ts`: Dexie-Schema (`AppDatabase`, Singleton `db`). Neue Tabelle = neue `version(n)`, Tabelle in `src/db/backup.ts` (`backupSchema` + `TABLE_LABELS`) ergänzen.
+- `src/db/repository.ts`: `create`/`update`/`softDelete`/`listActive` für alle Tabellen verwenden (setzen `id`, Zeitstempel, `deletedAt`).
+- Einstellungen: `useSettings()` (`src/features/settings/useSettings.ts`) zum Lesen, `updateSettings()` zum Schreiben.
+- Gemeinsame UI: `Page`/`Card` (`src/components/Page.tsx`), `Stepper`, `SegmentedControl`; neue Bereiche als Route unter `Layout` in `src/App.tsx`.
+- Tests mit DB: `beforeEach(resetDatabase)` aus `src/db/testUtils.ts`. E2E offline: `goOffline()` aus `e2e/helpers.ts`.
+- Vor `npm run test:e2e` keinen alten `npm run preview` auf Port 4173 laufen lassen (wird sonst wiederverwendet).
 
 ## Hinweise
 

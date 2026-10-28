@@ -1,11 +1,25 @@
+import { Card } from '../../components/Page';
+import { useSettings } from '../settings/useSettings';
+
 export function HomePage() {
+  const settings = useSettings();
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-      <img src="./favicon.svg" alt="" className="h-20 w-20" />
-      <h1 className="text-3xl font-bold">Fitnesstracker</h1>
-      <p className="text-slate-600 dark:text-slate-400">
-        Dein Offline-Tracker für Training, Alltag und Ernährung. Hier entsteht bald dein Dashboard.
-      </p>
-    </main>
+    <div className="mx-auto max-w-md px-4 pt-[calc(1.5rem+env(safe-area-inset-top))]">
+      <div className="mb-4 flex items-center gap-3">
+        <img src="./favicon.svg" alt="" className="h-12 w-12" />
+        <div>
+          <h1 className="text-2xl font-bold">Fitnesstracker</h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            {settings?.name ? `Hallo, ${settings.name}!` : 'Hallo!'}
+          </p>
+        </div>
+      </div>
+      <Card>
+        <p className="text-slate-600 dark:text-slate-400">
+          Hier entsteht dein Dashboard mit Training, Alltag und Fortschritt.
+        </p>
+      </Card>
+    </div>
   );
 }
