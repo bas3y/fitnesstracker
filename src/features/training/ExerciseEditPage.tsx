@@ -43,8 +43,16 @@ export function ExerciseEditPage() {
     );
   }
 
-  const { name, aliases, category, primaryMuscles, secondaryMuscles, equipment, isUnilateral } =
-    exercise;
+  const {
+    name,
+    aliases,
+    category,
+    primaryMuscles,
+    secondaryMuscles,
+    equipment,
+    isUnilateral,
+    isTimed,
+  } = exercise;
   return (
     <Page title="Übung bearbeiten" backTo={detailPath}>
       <ExerciseForm
@@ -56,6 +64,7 @@ export function ExerciseEditPage() {
           secondaryMuscles,
           equipment,
           isUnilateral,
+          isTimed,
         }}
         submitLabel="Speichern"
         onSubmit={async (input) => {

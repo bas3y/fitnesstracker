@@ -12,6 +12,7 @@ export const exerciseFieldsSchema = z.object({
   secondaryMuscles: z.array(z.enum(MUSCLE_GROUPS)),
   equipment: z.enum(EQUIPMENT),
   isUnilateral: z.boolean(),
+  isTimed: z.boolean(),
 });
 
 export const foodFieldsSchema = z.object({
@@ -54,7 +55,25 @@ export const EMPTY_EXERCISE_INPUT: ExerciseInput = {
   secondaryMuscles: [],
   equipment: 'other',
   isUnilateral: false,
+  isTimed: false,
 };
+
+/** Werte eines Satzes (intern kg/Sekunden); `null` = nicht angegeben */
+export const setValuesSchema = z.object({
+  weight: z.number().min(-500).max(1000).nullable(),
+  reps: z.number().int().min(0).max(1000).nullable(),
+  durationSeconds: z
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 3600)
+    .nullable(),
+  rpe: z.number().min(1).max(10).multipleOf(0.5).nullable(),
+  rir: z.number().int().min(0).max(10).nullable(),
+  isWarmup: z.boolean(),
+});
+
+export type SetValues = z.infer<typeof setValuesSchema>;
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 

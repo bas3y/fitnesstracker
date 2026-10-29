@@ -21,6 +21,7 @@ const input: ExerciseInput = {
   secondaryMuscles: ['hamstrings'],
   equipment: 'machine',
   isUnilateral: false,
+  isTimed: false,
 };
 
 async function seedBench() {
@@ -36,6 +37,7 @@ async function seedBench() {
           secondaryMuscles: [],
           equipment: 'barbell',
           isUnilateral: false,
+          isTimed: false,
         },
       ],
       foods: [],

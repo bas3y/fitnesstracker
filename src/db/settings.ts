@@ -5,6 +5,15 @@ import type { Settings } from './types';
 // Feste ID statt UUID: Es gibt genau einen Einstellungs-Datensatz pro Gerät
 export const SETTINGS_ID = 'app-settings';
 
+export const REST_TIMER_DEFAULTS: Pick<
+  Settings,
+  'restTimerSeconds' | 'restTimerSound' | 'restTimerVibrate'
+> = {
+  restTimerSeconds: 90,
+  restTimerSound: true,
+  restTimerVibrate: true,
+};
+
 export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   name: '',
   weightUnit: 'kg',
@@ -13,6 +22,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   theme: 'system',
   lastBackupAt: null,
   seedVersion: 0,
+  ...REST_TIMER_DEFAULTS,
 };
 
 export function getSettings(): Promise<Settings | undefined> {

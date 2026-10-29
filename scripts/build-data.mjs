@@ -122,15 +122,18 @@ function buildExercises(source) {
     let equipment = opts.equipment ?? EQUIPMENT[src?.equipment ?? ''];
     if (src?.id.startsWith('Smith')) equipment = 'smith';
     if (src?.id.startsWith('Trap_Bar')) equipment = 'trapBar';
+    const category = opts.category ?? CATEGORIES[src?.category ?? ''];
     const exercise = {
       key,
       name,
       aliases,
-      category: opts.category ?? CATEGORIES[src?.category ?? ''],
+      category,
       primaryMuscles: opts.primary ?? mapMuscles(src?.primaryMuscles ?? []),
       secondaryMuscles: opts.secondary ?? mapMuscles(src?.secondaryMuscles ?? []),
       equipment,
       isUnilateral: opts.u === true,
+      // Ausdauer und Beweglichkeit werden immer mit Dauer erfasst, Kraftübungen nur Halteübungen
+      isTimed: opts.t === true || category !== 'strength',
     };
     if (!exercise.category || !exercise.equipment || exercise.primaryMuscles.length === 0) {
       throw new Error(`Übung ${key} unvollständig`);

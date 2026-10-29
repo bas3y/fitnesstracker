@@ -4,6 +4,8 @@ import { ensureSettings } from '../db/settings';
 import { getBackupReminder } from '../domain/backupReminder';
 import { useApplyTheme } from '../features/settings/theme';
 import { useSettings } from '../features/settings/useSettings';
+import { ActiveWorkoutBanner } from '../features/training/ActiveWorkoutBanner';
+import { RestTimerAlarm } from '../features/training/RestTimer';
 import { BottomNav } from './BottomNav';
 
 export function Layout() {
@@ -30,6 +32,8 @@ export function Layout() {
           – jetzt sichern
         </Link>
       )}
+      <ActiveWorkoutBanner first={!reminder} />
+      <RestTimerAlarm />
       <main>
         <Outlet />
       </main>

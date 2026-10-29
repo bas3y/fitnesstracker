@@ -39,6 +39,7 @@ export function SettingsPage() {
               />
             </div>
           </Card>
+          <TrainingCard settings={settings} />
           <Card title="Darstellung">
             <SegmentedControl
               label="Theme"
@@ -57,6 +58,47 @@ export function SettingsPage() {
       )}
       <LinkRow to="/settings/about" label="Über & Lizenzen" hint="Datenquellen und Software" />
     </Page>
+  );
+}
+
+function TrainingCard({ settings }: { settings: Settings }) {
+  const checkbox = 'h-5 w-5 accent-emerald-600';
+  return (
+    <Card title="Training">
+      <div className="flex flex-col gap-2">
+        <Stepper
+          label="Pausenzeit nach einem Satz"
+          value={settings.restTimerSeconds}
+          unit="s"
+          step={15}
+          max={900}
+          decimals={0}
+          onChange={(value) => value !== null && void updateSettings({ restTimerSeconds: value })}
+        />
+        <p className="text-sm text-slate-500 dark:text-slate-400">0 s = kein Pausen-Timer</p>
+        <label className="flex min-h-11 items-center gap-3">
+          <input
+            type="checkbox"
+            className={checkbox}
+            checked={settings.restTimerSound}
+            onChange={(event) => void updateSettings({ restTimerSound: event.target.checked })}
+          />
+          Ton am Ende der Pause
+        </label>
+        <label className="flex min-h-11 items-center gap-3">
+          <input
+            type="checkbox"
+            className={checkbox}
+            checked={settings.restTimerVibrate}
+            onChange={(event) => void updateSettings({ restTimerVibrate: event.target.checked })}
+          />
+          Vibration (nicht auf dem iPhone)
+        </label>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Signale kommen nur, solange die App geöffnet ist.
+        </p>
+      </div>
+    </Card>
   );
 }
 

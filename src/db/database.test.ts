@@ -50,7 +50,33 @@ describe('AppDatabase-Migration', () => {
       hiddenAt: null,
       notes: '',
     });
-    expect(v3.verno).toBe(3);
     await v3.delete();
+  });
+
+  it('Version 4 ergänzt Workout-Tabellen, Pausen-Einstellungen und isTimed', async () => {
+    const name = 'migration-test-v4';
+    const v3 = new Dexie(name);
+    v3.version(1).stores({ settings: 'id, updatedAt' });
+    v3.version(2).stores({
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+    });
+    v3.version(3).stores({ exercises: 'id, builtinKey, source, category, updatedAt' });
+    await v3.table('settings').add({ id: 'app-settings', name: 'Alt', seedVersion: 2 });
+    await v3.table('exercises').add({ id: 'e1', source: 'user', name: 'Plank', notes: 'x' });
+    v3.close();
+
+    const v4 = new AppDatabase(name);
+    expect(await v4.settings.get('app-settings')).toMatchObject({
+      name: 'Alt',
+      restTimerSeconds: 90,
+      restTimerSound: true,
+      restTimerVibrate: true,
+    });
+    expect(await v4.exercises.get('e1')).toMatchObject({ name: 'Plank', isTimed: false });
+    expect(await v4.workouts.count()).toBe(0);
+    expect(await v4.sets.count()).toBe(0);
+    expect(v4.verno).toBe(4);
+    await v4.delete();
   });
 });

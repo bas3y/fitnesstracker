@@ -57,6 +57,7 @@ function ExerciseDetail({ exercise }: { exercise: Exercise }) {
           <Detail label="Hauptmuskeln">{muscleList(exercise.primaryMuscles)}</Detail>
           <Detail label="Hilfsmuskeln">{muscleList(exercise.secondaryMuscles)}</Detail>
           <Detail label="Ausführung">{exercise.isUnilateral ? 'Einseitig' : 'Beidseitig'}</Detail>
+          <Detail label="Erfassung">{exercise.isTimed ? 'Dauer' : 'Wiederholungen'}</Detail>
           {exercise.aliases.length > 0 && (
             <Detail label="Auch bekannt als">{exercise.aliases.join(', ')}</Detail>
           )}

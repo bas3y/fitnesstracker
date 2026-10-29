@@ -6,7 +6,7 @@ import { ensureSettings, SETTINGS_ID } from './settings';
 import type { BaseEntity, DataSource, Exercise, Timestamp } from './types';
 
 /** Bei jeder Änderung an `src/data/*.json` erhöhen, damit Geräte die neuen Daten übernehmen */
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 export interface SeedData {
   exercises: BuiltinExercise[];

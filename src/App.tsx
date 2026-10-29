@@ -10,6 +10,10 @@ import { ExerciseDetailPage } from './features/training/ExerciseDetailPage';
 import { ExerciseCreatePage, ExerciseEditPage } from './features/training/ExerciseEditPage';
 import { ExerciseListPage } from './features/training/ExerciseListPage';
 import { TrainingPage } from './features/training/TrainingPage';
+import { WorkoutDetailPage } from './features/training/WorkoutDetailPage';
+import { WorkoutEditPage } from './features/training/WorkoutEditPage';
+import { WorkoutHistoryPage } from './features/training/WorkoutHistoryPage';
+import { WorkoutPage } from './features/training/WorkoutPage';
 
 export function App() {
   return (
@@ -22,6 +26,10 @@ export function App() {
           <Route path="training/exercises/new" element={<ExerciseCreatePage />} />
           <Route path="training/exercises/:id" element={<ExerciseDetailPage />} />
           <Route path="training/exercises/:id/edit" element={<ExerciseEditPage />} />
+          <Route path="training/workout" element={<WorkoutPage />} />
+          <Route path="training/history" element={<WorkoutHistoryPage />} />
+          <Route path="training/history/:id" element={<WorkoutDetailPage />} />
+          <Route path="training/history/:id/edit" element={<WorkoutEditPage />} />
           <Route path="daily" element={<DailyPage />} />
           <Route path="daily/foods" element={<FoodSearchPage />} />
           <Route path="stats" element={<StatsPage />} />

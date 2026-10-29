@@ -12,6 +12,14 @@ import { applySeed, SEED_VERSION } from './seed';
 import { getSettings, updateSettings } from './settings';
 import { resetDatabase } from './testUtils';
 import type { Exercise } from './types';
+import {
+  addWorkoutExercise,
+  completeSet,
+  finishWorkout,
+  loadWorkoutDetail,
+  startWorkout,
+  updateSet,
+} from './workouts';
 
 beforeEach(resetDatabase);
 
@@ -37,7 +45,14 @@ describe('parseBackup', () => {
     const result = parseBackup(await validBackup());
     expect(result.ok).toBe(true);
     if (result.ok)
-      expect(countRows(result.backup)).toEqual({ settings: 1, exercises: 0, foods: 0 });
+      expect(countRows(result.backup)).toEqual({
+        settings: 1,
+        exercises: 0,
+        foods: 0,
+        workouts: 0,
+        workoutExercises: 0,
+        sets: 0,
+      });
   });
 
   it('lehnt fremde Dateien ab', () => {
@@ -93,6 +108,7 @@ describe('restoreBackup', () => {
       secondaryMuscles: [],
       equipment: 'other',
       isUnilateral: false,
+      isTimed: false,
       source: 'user',
       builtinKey: null,
       isFavorite: true,
@@ -154,6 +170,67 @@ describe('Sicherungen aus DB-Version 2', () => {
       hiddenAt: null,
       notes: '',
     });
+  });
+});
+
+describe('Workouts im Backup', () => {
+  it('sichert und stellt Workouts, Übungen und Sätze wieder her', async () => {
+    await applySeed(
+      {
+        exercises: [
+          {
+            key: 'bench',
+            name: 'Bankdrücken',
+            aliases: [],
+            category: 'strength',
+            primaryMuscles: ['chest'],
+            secondaryMuscles: [],
+            equipment: 'barbell',
+            isUnilateral: false,
+            isTimed: false,
+          },
+        ],
+        foods: [],
+      },
+      SEED_VERSION,
+    );
+    const exercise = (await db.exercises.toArray())[0]!;
+    const workout = await startWorkout();
+    const item = await addWorkoutExercise(workout.id, exercise.id);
+    const [set] = await db.sets.toArray();
+    await updateSet(set!.id, { weight: 80, reps: 8, rpe: 8 });
+    await completeSet(set!.id, 90);
+    await finishWorkout(workout.id, 'Notiz');
+
+    const result = parseBackup(JSON.parse(JSON.stringify(await createBackup())));
+    if (!result.ok) throw new Error(result.error);
+    expect(countRows(result.backup)).toMatchObject({ workouts: 1, workoutExercises: 1, sets: 1 });
+
+    await resetDatabase();
+    await restoreBackup(result.backup);
+    const detail = await loadWorkoutDetail(workout.id);
+    expect(detail?.workout.notes).toBe('Notiz');
+    expect(detail?.items[0]?.workoutExercise.id).toBe(item.id);
+    expect(detail?.items[0]?.sets[0]).toMatchObject({ weight: 80, reps: 8, rpe: 8 });
+  });
+
+  it('importiert Sicherungen aus DB-Version 3 (ohne Workouts und Pausen-Einstellungen)', async () => {
+    const data = await validBackup();
+    data.dbVersion = 3;
+    for (const key of ['restTimerSeconds', 'restTimerSound', 'restTimerVibrate']) {
+      delete data.tables.settings[0][key];
+    }
+    delete data.tables.workouts;
+    delete data.tables.workoutExercises;
+    delete data.tables.sets;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.settings[0]).toMatchObject({
+      restTimerSeconds: 90,
+      restTimerSound: true,
+      restTimerVibrate: true,
+    });
+    expect(result.backup.tables.workouts).toEqual([]);
   });
 });
 

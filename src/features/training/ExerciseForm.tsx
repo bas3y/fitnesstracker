@@ -116,6 +116,18 @@ export function ExerciseForm({ initial, submitLabel, onSubmit, onCancel }: Exerc
             />
             Einseitig (pro Arm/Bein)
           </label>
+          <div>
+            <p className="mb-1 text-sm font-medium">Erfassung</p>
+            <SegmentedControl
+              label="Erfassung"
+              options={[
+                { value: 'reps', label: 'Wiederholungen' },
+                { value: 'time', label: 'Dauer' },
+              ]}
+              value={input.isTimed ? 'time' : 'reps'}
+              onChange={(value) => set({ isTimed: value === 'time' })}
+            />
+          </div>
         </div>
       </Card>
 

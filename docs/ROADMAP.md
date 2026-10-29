@@ -10,7 +10,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 2 – Mitgelieferte Datenbanken (Übungen & Nährwerte)
 - [x] Schritt 2b – *optional:* früher Testpush & Handytest
 - [x] Schritt 3 – Übungsverwaltung
-- [ ] Schritt 4 – Workout loggen
+- [x] Schritt 4 – Workout loggen
 - [ ] Schritt 5 – Berechnungen & PRs
 - [ ] Schritt 6 – Trainingspläne
 - [ ] Schritt 7 – Statistiken & Graphen (Kraft)
@@ -195,8 +195,26 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 
 **Notizen:**
 - Gebaut:
+  - Dexie v4: Tabellen `workouts` (`startedAt`, `endedAt` = `null` solange es läuft, `notes`, `restEndsAt`), `workoutExercises` (`workoutId`, `exerciseId`, `order`), `sets` (`workoutId`, `workoutExerciseId`, `order`, `weight` in kg, `reps`, `durationSeconds`, `rpe`, `rir`, `isWarmup`, `restSeconds`, `completedAt`). Einstellungen `restTimerSeconds` (Standard 90), `restTimerSound`, `restTimerVibrate`. Backup-Schema mit Defaults → Sicherungen aus v1–v3 bleiben importierbar.
+  - Neues Übungsfeld **`isTimed`** (Dauer statt Wiederholungen): in den Daten per Option `t` (Plank, Seitstütz, L-Sitz, Hollow Hold, Handstand, Front Lever, Dead Hang, Farmer’s Walk, Stomach Vacuum) sowie automatisch für alle Ausdauer- und Beweglichkeitsübungen. Seed-Version 3. Im Formular für eigene Übungen umschaltbar („Erfassung“), auf der Detailseite angezeigt.
+  - `src/db/workouts.ts`: `startWorkout` (gibt ein laufendes zurück, höchstens eins), `addWorkoutExercise` (legt direkt einen ersten Satz an), `moveWorkoutExercise`, `removeWorkoutExercise`, `addSet` (vorbefüllt), `updateSet` (Zod `setValuesSchema`), `completeSet`/`uncompleteSet`, `deleteSet`, `adjustRest`/`setRestEndsAt`, `finishWorkout`, `deleteWorkout` (auch zum Verwerfen), `updateWorkoutInfo`, `getLastPerformance`, `loadWorkoutDetail`, `listWorkoutHistory`. Alles mit Soft-Delete (kaskadierend).
+  - `src/domain/workout.ts`: `suggestSetValues` (voriger Satz → passender Arbeitssatz vom letzten Mal → leer bzw. 0 kg Zusatzgewicht), `formatSetSummary`, `formatWeight`, `formatClock`, `formatWorkoutDuration`, `restRemainingSeconds`, `workoutDurationSeconds`, `moveItem` sowie Datums-/Uhrzeit-Helfer.
+  - UI in `src/features/training/`: `WorkoutPage` (`/training/workout`, laufendes Workout, Beenden mit Notiz oder Verwerfen), `WorkoutEditor` + `WorkoutExerciseCard` (für live und nachträgliches Bearbeiten; Sätze als Zeilen mit Haken, ein Satz aufgeklappt mit Steppern: Gewicht ±2,5 kg/±5 lb bzw. „Zusatzgewicht“ mit negativen Werten, Wdh. ±1 bzw. Dauer ±5 s, Aufwärmsatz, RPE/RIR, Löschen; „Letztes Mal“ pro Übung), `RestTimerBar` (über der Bottom-Navigation, −15/+15/Überspringen), `RestTimerAlarm` (im Layout, Ton per Web Audio + Vibration, auch auf anderen Seiten), `ActiveWorkoutBanner` (alle Seiten außer Workout: „Workout läuft · Dauer · Pause – fortsetzen“), `WorkoutHistoryPage`/`WorkoutDetailPage`/`WorkoutEditPage` (`/training/history[/:id[/edit]]`), Trainingsseite mit Start/Fortsetzen. Einstellungen: Karte „Training“ (Pausenzeit, Ton, Vibration).
+  - Tests: Domain (`workout.test.ts`), DB-Funktionen (`workouts.test.ts`), Migration v3→v4, Backup mit Workouts und aus v3. E2E `e2e/workout.spec.ts` (offline: Workout mit Langhantel-, Körpergewichts- und Halteübung, Picker, Timer, Reihenfolge, Neuladen, Banner, Beenden, Historie, Nachbearbeiten, „Letztes Mal“ + Vorbefüllung, Verwerfen, Löschen) – damit ist auch der E2E-Test für den `ExercisePicker` aus Schritt 3 nachgeholt.
 - Abweichungen:
+  - Beim Beenden werden nicht abgehakte Sätze und Übungen ohne abgehakten Satz verworfen (Soft-Delete). Ohne abgehakten Satz kann man das Workout nur verwerfen.
+  - Reihenfolge per ↑/↓-Buttons statt Drag & Drop (zuverlässiger per Touch).
+  - Dauer eines Workouts = `endedAt − startedAt`; nachträglich über Datum, Beginn und Dauer (Minuten) änderbar. Alle Änderungen beim Bearbeiten werden sofort gespeichert („Fertig“ führt nur zurück).
+  - Neue Sätze in einem bereits beendeten Workout gelten direkt als abgehakt (`completedAt = endedAt`).
+  - `restSeconds` am Satz = Pausenzeit, mit der der Timer nach diesem Satz gestartet wurde (nicht die tatsächlich gemachte Pause). Der Timer selbst steht als `restEndsAt` am Workout.
+  - Seitstütz ist jetzt auch `isUnilateral` (pro Seite).
+  - Halteübungen haben weiterhin ein (optionales) Gewichtsfeld, z. B. für Plank mit Scheibe.
 - Offene Punkte:
+  - Ton/Vibration nur bei geöffneter App; auf dem iPhone gibt es keine Vibration, und der Ton funktioniert erst nach einer Nutzeraktion (wird beim Abhaken „freigeschaltet“). Auf echten Geräten prüfen.
+  - Pausenzeit ist global; Schritt 6 kann pro Plan-Übung eine eigene Pausenzeit mitgeben (`completeSet(id, restSeconds)` nimmt sie schon entgegen).
+  - Schritt 5: PR-Toast beim Abhaken in `WorkoutExerciseCard` (`onComplete`) einhängen; Volumen/1RM für Körpergewichtsübungen mit Körpergewicht + Zusatzgewicht rechnen (Halteübungen gesondert, Dauer).
+  - Ausdauerübungen im Krafttraining erfassen nur Dauer (+ optional Gewicht); Distanz folgt mit Schritt 13.
+  - Hauptbundle liegt knapp über 500 kB (Vite-Warnung). Bei Bedarf Routen per `React.lazy` aufteilen (z. B. in Schritt 7 wegen Recharts).
 
 ### Schritt 5 – Berechnungen & PRs
 - `src/domain/strength.ts`: Volumen (ohne Aufwärmsätze), geschätztes 1RM (Epley, Brzycki), beste Sätze

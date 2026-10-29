@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Exercise, Food, Settings } from './types';
+import type { Exercise, Food, Settings, Workout, WorkoutExercise, WorkoutSet } from './types';
 
 export const DB_NAME = 'fitnesstracker';
 
@@ -8,6 +8,9 @@ export class AppDatabase extends Dexie {
   settings!: Table<Settings, string>;
   exercises!: Table<Exercise, string>;
   foods!: Table<Food, string>;
+  workouts!: Table<Workout, string>;
+  workoutExercises!: Table<WorkoutExercise, string>;
+  sets!: Table<WorkoutSet, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -41,6 +44,29 @@ export class AppDatabase extends Dexie {
             exercise.notes ??= '';
           }),
       );
+    // Mitgelieferte Halteübungen bekommen `isTimed: true` über Seed-Version 3
+    this.version(4)
+      .stores({
+        workouts: 'id, startedAt, updatedAt',
+        workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+        sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.restTimerSeconds ??= 90;
+            settings.restTimerSound ??= true;
+            settings.restTimerVibrate ??= true;
+          });
+        await tx
+          .table<Exercise, string>('exercises')
+          .toCollection()
+          .modify((exercise) => {
+            exercise.isTimed ??= false;
+          });
+      });
   }
 }
 

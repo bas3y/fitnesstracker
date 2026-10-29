@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { db } from './database';
 import { nowIso } from './repository';
-import { exerciseFieldsSchema, foodFieldsSchema } from './schemas';
+import { exerciseFieldsSchema, foodFieldsSchema, setValuesSchema } from './schemas';
 import { ensureSeeded } from './seed';
-import { SETTINGS_ID } from './settings';
+import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
 
 export const BACKUP_APP = 'fitnesstracker';
 export const BACKUP_VERSION = 1;
@@ -26,6 +26,10 @@ const settingsSchema = baseEntitySchema.extend({
   lastBackupAt: timestamp.nullable(),
   // Fehlt in Sicherungen vor DB-Version 2 → mitgelieferte Daten werden nach dem Import eingespielt
   seedVersion: z.number().int().nonnegative().default(0),
+  // Seit DB-Version 4
+  restTimerSeconds: z.number().int().nonnegative().default(REST_TIMER_DEFAULTS.restTimerSeconds),
+  restTimerSound: z.boolean().default(REST_TIMER_DEFAULTS.restTimerSound),
+  restTimerVibrate: z.boolean().default(REST_TIMER_DEFAULTS.restTimerVibrate),
 });
 
 const catalogEntryFields = {
@@ -41,8 +45,29 @@ const exerciseSchema = baseEntitySchema
     isFavorite: z.boolean().default(false),
     hiddenAt: timestamp.nullable().default(null),
     notes: z.string().default(''),
+    // Seit DB-Version 4 (mitgelieferte Halteübungen korrigiert der Seed nach dem Import)
+    isTimed: z.boolean().default(false),
   });
 const foodSchema = baseEntitySchema.extend(foodFieldsSchema.shape).extend(catalogEntryFields);
+
+const workoutSchema = baseEntitySchema.extend({
+  startedAt: timestamp,
+  endedAt: timestamp.nullable(),
+  notes: z.string(),
+  restEndsAt: timestamp.nullable(),
+});
+const workoutExerciseSchema = baseEntitySchema.extend({
+  workoutId: z.string().min(1),
+  exerciseId: z.string().min(1),
+  order: z.number(),
+});
+const setSchema = baseEntitySchema.extend(setValuesSchema.shape).extend({
+  workoutId: z.string().min(1),
+  workoutExerciseId: z.string().min(1),
+  order: z.number(),
+  restSeconds: z.number().int().nonnegative().nullable(),
+  completedAt: timestamp.nullable(),
+});
 
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
@@ -58,6 +83,9 @@ export const backupSchema = z.object({
     settings: z.array(settingsSchema).default([]),
     exercises: z.array(exerciseSchema).default([]),
     foods: z.array(foodSchema).default([]),
+    workouts: z.array(workoutSchema).default([]),
+    workoutExercises: z.array(workoutExerciseSchema).default([]),
+    sets: z.array(setSchema).default([]),
   }),
 });
 
@@ -68,6 +96,9 @@ export const TABLE_LABELS: Record<TableName, string> = {
   settings: 'Einstellungen',
   exercises: 'Übungen',
   foods: 'Lebensmittel',
+  workouts: 'Workouts',
+  workoutExercises: 'Übungen in Workouts',
+  sets: 'Sätze',
 };
 
 export async function createBackup(): Promise<Backup> {

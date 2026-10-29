@@ -24,6 +24,7 @@ const bench: BuiltinExercise = {
   secondaryMuscles: ['triceps', 'shoulders'],
   equipment: 'barbell',
   isUnilateral: false,
+  isTimed: false,
 };
 const squat: BuiltinExercise = {
   ...bench,

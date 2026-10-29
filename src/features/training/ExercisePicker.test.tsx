@@ -15,6 +15,7 @@ const base: Omit<BuiltinExercise, 'key' | 'name'> = {
   secondaryMuscles: [],
   equipment: 'barbell',
   isUnilateral: false,
+  isTimed: false,
 };
 
 beforeEach(async () => {

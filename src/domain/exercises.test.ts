@@ -23,6 +23,7 @@ function exercise(overrides: Partial<Exercise>): Exercise {
     secondaryMuscles: ['triceps'],
     equipment: 'barbell',
     isUnilateral: false,
+    isTimed: false,
     isFavorite: false,
     hiddenAt: null,
     notes: '',

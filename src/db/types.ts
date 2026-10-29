@@ -22,6 +22,10 @@ export interface Settings extends BaseEntity {
   lastBackupAt: Timestamp | null;
   /** Stand der mitgelieferten Daten (`0` = noch nicht eingespielt) */
   seedVersion: number;
+  /** Standard-Pausenzeit nach einem abgehakten Satz */
+  restTimerSeconds: number;
+  restTimerSound: boolean;
+  restTimerVibrate: boolean;
 }
 
 /** `builtin` = aus `src/data/`, wird per Seed aktualisiert; `user` = selbst angelegt, nie überschrieben */
@@ -81,11 +85,46 @@ export interface Exercise extends BaseEntity {
   secondaryMuscles: MuscleGroup[];
   equipment: Equipment;
   isUnilateral: boolean;
+  /** Dauer statt Wiederholungen erfassen (Halteübungen, Ausdauer, Dehnen) */
+  isTimed: boolean;
   // Nutzerangaben – werden vom Seed nie überschrieben
   isFavorite: boolean;
   /** Vom Nutzer ausgeblendet (getrennt von `deletedAt`, das der Seed für entfernte Einträge setzt) */
   hiddenAt: Timestamp | null;
   notes: string;
+}
+
+export interface Workout extends BaseEntity {
+  startedAt: Timestamp;
+  /** `null` = läuft noch (höchstens ein laufendes Workout) */
+  endedAt: Timestamp | null;
+  notes: string;
+  /** Ende des laufenden Pausen-Timers; über den Zeitstempel läuft er auch nach Neustart weiter */
+  restEndsAt: Timestamp | null;
+}
+
+export interface WorkoutExercise extends BaseEntity {
+  workoutId: string;
+  exerciseId: string;
+  order: number;
+}
+
+export interface WorkoutSet extends BaseEntity {
+  workoutId: string;
+  workoutExerciseId: string;
+  order: number;
+  /** kg; bei Körpergewichtsübungen Zusatzgewicht (negativ = Unterstützung) */
+  weight: number | null;
+  reps: number | null;
+  /** Halteübungen statt Wiederholungen */
+  durationSeconds: number | null;
+  rpe: number | null;
+  rir: number | null;
+  isWarmup: boolean;
+  /** Pausenzeit, mit der der Timer nach diesem Satz gestartet wurde */
+  restSeconds: number | null;
+  /** `null` = noch nicht abgehakt */
+  completedAt: Timestamp | null;
 }
 
 export const FOOD_CATEGORIES = [

@@ -1,10 +1,13 @@
 // Auswahl und deutsche Übersetzung der Übungen aus free-exercise-db (Unlicense / Public Domain).
 // Format: [key, freeExerciseDbId | null, Name, Aliase, Optionen?]
-// Optionen: u = einseitig, category / equipment / primary / secondary überschreiben die Quelle.
+// Optionen: u = einseitig, t = Dauer statt Wiederholungen (Halteübungen; Ausdauer/Beweglichkeit immer),
+// category / equipment / primary / secondary überschreiben die Quelle.
 // Einträge ohne Quell-ID (null) brauchen category, equipment und primary.
 
 /** Körpergewichtsübung: Gewicht eines Satzes = Zusatzgewicht (Weste, Gürtel, Kurzhantel zwischen den Füßen) */
 const BW = { equipment: 'bodyweight' };
+/** Halteübung mit Körpergewicht: Dauer statt Wiederholungen */
+const HOLD = { ...BW, t: true };
 
 /** @type {Array<[string, string | null, string, string[], Record<string, unknown>?]>} */
 export const EXERCISES = [
@@ -93,7 +96,7 @@ export const EXERCISES = [
     null,
     'Hängen an der Stange (Dead Hang)',
     ['Dead Hang', 'Passives Hängen'],
-    { ...BW, category: 'strength', primary: ['forearms'], secondary: ['lats', 'shoulders'] },
+    { ...HOLD, category: 'strength', primary: ['forearms'], secondary: ['lats', 'shoulders'] },
   ],
   ['band-assisted-pull-up', 'Band_Assisted_Pull-Up', 'Klimmzüge mit Band (unterstützt)', ['Assisted Pull-ups']],
   ['muscle-up', 'Muscle_Up', 'Muscle-up', ['Muscle Up'], BW],
@@ -102,7 +105,7 @@ export const EXERCISES = [
     null,
     'Front Lever',
     ['Frontlever', 'Tuck Front Lever'],
-    { ...BW, category: 'strength', primary: ['lats'], secondary: ['abs', 'upperBack', 'shoulders'] },
+    { ...HOLD, category: 'strength', primary: ['lats'], secondary: ['abs', 'upperBack', 'shoulders'] },
   ],
   ['lat-pulldown', 'Wide-Grip_Lat_Pulldown', 'Latziehen breit', ['Latzug', 'Lat Pulldown', 'Latziehen']],
   ['close-grip-lat-pulldown', 'Close-Grip_Front_Lat_Pulldown', 'Latziehen eng', ['Close Grip Lat Pulldown']],
@@ -167,7 +170,7 @@ export const EXERCISES = [
     null,
     'Handstand (halten)',
     ['Handstand', 'Wall Handstand', 'Handstand an der Wand'],
-    { ...BW, category: 'strength', primary: ['shoulders'], secondary: ['triceps', 'traps', 'abs'] },
+    { ...HOLD, category: 'strength', primary: ['shoulders'], secondary: ['triceps', 'traps', 'abs'] },
   ],
 
   // Bizeps
@@ -217,7 +220,7 @@ export const EXERCISES = [
   ['dumbbell-wrist-curl', 'Seated_Dumbbell_Palms-Up_Wrist_Curl', 'Handgelenkcurls (Kurzhantel)', ['Dumbbell Wrist Curl']],
   ['wrist-roller', 'Wrist_Roller', 'Wrist Roller', ['Unterarmroller']],
   ['plate-pinch', 'Plate_Pinch', 'Scheiben-Pinch', ['Plate Pinch', 'Griffkraft']],
-  ['farmers-walk', 'Farmers_Walk', 'Farmer’s Walk', ['Bauernlauf', 'Farmers Walk', 'Farmer Carry']],
+  ['farmers-walk', 'Farmers_Walk', 'Farmer’s Walk', ['Bauernlauf', 'Farmers Walk', 'Farmer Carry'], { t: true }],
 
   // Beine
   ['barbell-squat', 'Barbell_Squat', 'Kniebeugen (Langhantel)', ['Kniebeuge', 'Squat', 'Back Squat', 'Kniebeugen']],
@@ -319,14 +322,14 @@ export const EXERCISES = [
     null,
     'L-Sitz',
     ['L-Sit', 'L Sit'],
-    { ...BW, category: 'strength', primary: ['abs'], secondary: ['quads', 'triceps', 'shoulders'] },
+    { ...HOLD, category: 'strength', primary: ['abs'], secondary: ['quads', 'triceps', 'shoulders'] },
   ],
   [
     'hollow-hold',
     null,
     'Hollow Body Hold',
     ['Hollow Hold', 'Schiffchen'],
-    { ...BW, category: 'strength', primary: ['abs'], secondary: ['quads'] },
+    { ...HOLD, category: 'strength', primary: ['abs'], secondary: ['quads'] },
   ],
   [
     'dragon-flag',
@@ -336,8 +339,8 @@ export const EXERCISES = [
     { ...BW, category: 'strength', primary: ['abs'], secondary: ['lats', 'lowerBack'] },
   ],
   ['lying-leg-raise', 'Flat_Bench_Lying_Leg_Raise', 'Beinheben liegend', ['Lying Leg Raise', 'Beinheben']],
-  ['plank', 'Plank', 'Unterarmstütz (Plank)', ['Plank', 'Planke', 'Brett'], BW],
-  ['side-plank', 'Side_Bridge', 'Seitstütz', ['Side Plank', 'Seitlicher Unterarmstütz'], BW],
+  ['plank', 'Plank', 'Unterarmstütz (Plank)', ['Plank', 'Planke', 'Brett'], HOLD],
+  ['side-plank', 'Side_Bridge', 'Seitstütz', ['Side Plank', 'Seitlicher Unterarmstütz'], { ...HOLD, u: true }],
   ['ab-wheel', 'Ab_Roller', 'Bauchroller (Ab Wheel)', ['Ab Wheel', 'Ab Roller', 'Bauchrad']],
   ['barbell-rollout', 'Barbell_Ab_Rollout_-_On_Knees', 'Rollout mit Langhantel', ['Barbell Rollout']],
   ['russian-twist', 'Russian_Twist', 'Russian Twists', ['Russian Twist', 'Russischer Twist']],
@@ -348,7 +351,7 @@ export const EXERCISES = [
   ['flutter-kicks', 'Flutter_Kicks', 'Flutter Kicks', ['Beinschere', 'Scissor Kicks']],
   ['dumbbell-side-bend', 'Dumbbell_Side_Bend', 'Seitbeugen (Kurzhantel)', ['Side Bend']],
   ['toes-to-bar', 'Hanging_Pike', 'Toes to Bar', ['Hanging Pike', 'T2B'], BW],
-  ['stomach-vacuum', 'Stomach_Vacuum', 'Stomach Vacuum', ['Bauchvakuum']],
+  ['stomach-vacuum', 'Stomach_Vacuum', 'Stomach Vacuum', ['Bauchvakuum'], { t: true }],
 
   // Ganzkörper, Kettlebell, Olympisch, Plyometrie, Strongman
   ['kettlebell-swing', 'One-Arm_Kettlebell_Swings', 'Kettlebell Swings (einarmig)', ['One Arm Kettlebell Swing'], { u: true }],
