@@ -7,7 +7,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 
 - [x] Schritt 0 – Projekt-Setup (lokal)
 - [x] Schritt 1 – Lokale Datenbank, App-Shell & Datensicherung
-- [ ] Schritt 2 – Mitgelieferte Datenbanken (Übungen & Nährwerte)
+- [x] Schritt 2 – Mitgelieferte Datenbanken (Übungen & Nährwerte)
 - [ ] Schritt 2b – *optional:* früher Testpush & Handytest
 - [ ] Schritt 3 – Übungsverwaltung
 - [ ] Schritt 4 – Workout loggen
@@ -107,8 +107,25 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 
 **Notizen:**
 - Gebaut:
+  - `npm run data` (`scripts/build-data.mjs`): lädt free-exercise-db und USDA SR Legacy (ZIP, ohne Zusatzpakete entpackt) nach `scripts/.cache/` (gitignored) und erzeugt `src/data/exercises.json` (294 Übungen, ~70 KB) und `src/data/foods.json` (670 Lebensmittel, ~160 KB), ein Eintrag pro Zeile. Auswahl, deutsche Namen, Aliase, Kategorien und Portionen stehen in `scripts/data/exercises.mapping.mjs` und `scripts/data/foods.mapping.mjs`. Das Script bricht ab, wenn eine Quell-ID fehlt, und meldet unplausible Brennwerte.
+  - Dexie v2: Tabellen `exercises` und `foods` (`source`, `builtinKey`, Index auf `builtinKey`, `source`, `category`), `Settings.seedVersion` (Upgrade setzt 0). Typen und Enums (Muskelgruppen, Equipment, Kategorien) in `src/db/types.ts`, Zod-Schemas in `src/db/schemas.ts`.
+  - Seed (`src/db/seed.ts`): `SEED_VERSION`, `ensureSeeded()` beim Start in `main.tsx` und nach jedem Backup-Import. JSONs per dynamischem Import (eigene, precachte Chunks, nur bei neuer Seed-Version geladen). `applySeed` legt neue builtin-Einträge an, aktualisiert geänderte (zusätzliche Felder bleiben erhalten), blendet entfernte per `deletedAt` aus, fasst `user`-Einträge nie an.
+  - Backup: neue Tabellen im Schema, `seedVersion` mit Default 0 → Sicherungen aus DB-Version 1 werden importiert und danach automatisch mit den mitgelieferten Daten ergänzt.
+  - `src/domain/search.ts` (Normalisierung ä/ae→a, ß→ss, Akzente, Satzzeichen; Ranking: exakt > Anfang > Wortanfang, Name vor Alias), `src/domain/nutrientCheck.ts` (Brennwert-Plausibilität, USDA→EU-Kohlenhydrate), `src/domain/labels.ts` (deutsche Bezeichnungen).
+  - UI: `CatalogSearch`, `SearchInput`, `LinkRow`, `Page` mit `backTo`. Seiten `/training/exercises`, `/daily/foods`, `/settings/about` („Über & Lizenzen“).
+  - Tests: Suche, Plausibilität, Seed (inkl. „eigene Einträge bleiben unverändert“), Dexie-Migration v1→v2, Backup alt/neu, Datenqualität der JSONs (Zod, eindeutige Schlüssel, Größe < 2 MB, Brennwerte, Suchbegriffe). E2E `e2e/catalog.spec.ts` (offline suchen, Lizenzseite).
 - Abweichungen:
+  - Mehr Daten als geplant: 294 statt 150–250 Übungen (inkl. Ausdauer, Dehnen, Faszienrolle), 670 Lebensmittel.
+  - Kohlenhydrate werden nach EU-Konvention **ohne Ballaststoffe** gespeichert (USDA zählt sie mit); Plausibilität daher `4·P + 4·KH + 9·F + 2·Ballaststoffe + 7·Alkohol`. Zusätzliches Feld `alcohol`. Ausnahmen mit korrektem, aber abweichendem USDA-Brennwert: Hafer-/Weizenkleie, Kakaopulver, Backpulver.
+  - 15 in Deutschland übliche Lebensmittel fehlen bei USDA (Magerquark, Skyr, Harzer, Haferdrink, Leberkäse, Döner …) und sind mit Durchschnittswerten gängiger Handelsprodukte ergänzt (`MANUAL_FOODS`, `sourceRef: 'manual'`). Open Food Facts wurde nicht verwendet.
+  - Feld `sourceRef` (z. B. `usda:171688`) an Lebensmitteln zur Nachvollziehbarkeit.
+  - `seedVersion` liegt in den Einstellungen (nicht in eigener Tabelle), damit sie mit Backups zusammenpasst.
+  - Equipment ergänzt um `smith` (Multipresse) und `trapBar`; Muskel „middle back“ heißt `upperBack` („Oberer Rücken“).
 - Offene Punkte:
+  - **Bei jeder Änderung an `src/data/*.json` `SEED_VERSION` in `src/db/seed.ts` erhöhen**, sonst bekommen bestehende Geräte die Änderung nicht.
+  - Ein builtin-Eintrag, der aus dem Seed entfernt und später wieder aufgenommen wird, bleibt ausgeblendet (`deletedAt` wird beim Update nicht zurückgesetzt). Für Schritt 3: „Ausblenden“ besser als eigenes Feld (z. B. `hiddenAt`) statt `deletedAt`, damit Seed-Entfernung und Nutzer-Ausblenden unterscheidbar sind.
+  - Übungsanleitungen (englisch in free-exercise-db) wurden nicht übernommen; bei Bedarf in Schritt 3 übersetzen.
+  - Namen/Portionen der Lebensmittel stichprobenartig im Browser prüfen (`/#/daily/foods`); Korrekturen in `scripts/data/foods.mapping.mjs`, dann `npm run data` + `SEED_VERSION` erhöhen.
 
 ### Schritt 2b – *optional:* früher Testpush & Handytest
 **Ziel:** Früh prüfen, ob Installation, Offline-Start und Speicher auf echten Geräten (v. a. iPhone/Safari) funktionieren, bevor viele Features darauf aufbauen. Kann übersprungen werden.

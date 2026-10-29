@@ -6,3 +6,7 @@ playwright-report
 test-results
 package-lock.json
 *.md
+# Datentabellen: ein Eintrag pro Zeile
+src/data/*.json
+scripts/data/
+scripts/.cache/

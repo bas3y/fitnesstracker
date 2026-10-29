@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { db } from './database';
 import { nowIso } from './repository';
+import { exerciseFieldsSchema, foodFieldsSchema } from './schemas';
+import { ensureSeeded } from './seed';
 import { SETTINGS_ID } from './settings';
 
 export const BACKUP_APP = 'fitnesstracker';
@@ -22,7 +24,19 @@ const settingsSchema = baseEntitySchema.extend({
   bodyWeightKg: z.number().positive().nullable(),
   theme: z.enum(['system', 'light', 'dark']),
   lastBackupAt: timestamp.nullable(),
+  // Fehlt in Sicherungen vor DB-Version 2 → mitgelieferte Daten werden nach dem Import eingespielt
+  seedVersion: z.number().int().nonnegative().default(0),
 });
+
+const catalogEntryFields = {
+  source: z.enum(['builtin', 'user']),
+  builtinKey: z.string().nullable(),
+};
+
+const exerciseSchema = baseEntitySchema
+  .extend(exerciseFieldsSchema.shape)
+  .extend(catalogEntryFields);
+const foodSchema = baseEntitySchema.extend(foodFieldsSchema.shape).extend(catalogEntryFields);
 
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
@@ -36,6 +50,8 @@ export const backupSchema = z.object({
   exportedAt: timestamp,
   tables: z.object({
     settings: z.array(settingsSchema).default([]),
+    exercises: z.array(exerciseSchema).default([]),
+    foods: z.array(foodSchema).default([]),
   }),
 });
 
@@ -44,6 +60,8 @@ export type TableName = keyof Backup['tables'];
 
 export const TABLE_LABELS: Record<TableName, string> = {
   settings: 'Einstellungen',
+  exercises: 'Übungen',
+  foods: 'Lebensmittel',
 };
 
 export async function createBackup(): Promise<Backup> {
@@ -97,7 +115,7 @@ export function countRows(backup: Backup): Record<TableName, number> {
   return counts;
 }
 
-/** Ersetzt **alle** Daten durch den Inhalt der Sicherung */
+/** Ersetzt **alle** Daten durch den Inhalt der Sicherung und bringt mitgelieferte Daten auf den aktuellen Stand */
 export async function restoreBackup(backup: Backup): Promise<void> {
   await db.transaction('rw', db.tables, async () => {
     await Promise.all(db.tables.map((table) => table.clear()));
@@ -110,6 +128,7 @@ export async function restoreBackup(backup: Backup): Promise<void> {
       await db.settings.update(SETTINGS_ID, { lastBackupAt: backup.exportedAt });
     }
   });
+  await ensureSeeded();
 }
 
 export function backupFileName(date: Date): string {

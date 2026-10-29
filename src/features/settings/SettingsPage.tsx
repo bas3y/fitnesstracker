@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Page } from '../../components/Page';
+import { Card, LinkRow, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Stepper } from '../../components/Stepper';
 import { updateSettings } from '../../db/settings';
@@ -55,6 +55,7 @@ export function SettingsPage() {
           <StorageSection />
         </>
       )}
+      <LinkRow to="/settings/about" label="Über & Lizenzen" hint="Datenquellen und Software" />
     </Page>
   );
 }

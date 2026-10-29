@@ -7,8 +7,11 @@ import {
   restoreBackup,
 } from './backup';
 import { db } from './database';
+import { create } from './repository';
+import { applySeed, SEED_VERSION } from './seed';
 import { getSettings, updateSettings } from './settings';
 import { resetDatabase } from './testUtils';
+import type { Exercise } from './types';
 
 beforeEach(resetDatabase);
 
@@ -33,7 +36,8 @@ describe('parseBackup', () => {
   it('akzeptiert eine exportierte Sicherung', async () => {
     const result = parseBackup(await validBackup());
     expect(result.ok).toBe(true);
-    if (result.ok) expect(countRows(result.backup)).toEqual({ settings: 1 });
+    if (result.ok)
+      expect(countRows(result.backup)).toEqual({ settings: 1, exercises: 0, foods: 0 });
   });
 
   it('lehnt fremde Dateien ab', () => {
@@ -77,6 +81,45 @@ describe('restoreBackup', () => {
     expect(settings?.bodyWeightKg).toBe(80);
     expect(settings?.lastBackupAt).toBe(result.backup.exportedAt);
     expect(await db.settings.count()).toBe(1);
+  });
+
+  it('übernimmt Übungen und Lebensmittel aus der Sicherung', async () => {
+    await applySeed({ exercises: [], foods: [] }, SEED_VERSION);
+    const own = await create<Exercise>(db.exercises, {
+      name: 'Meine Übung',
+      aliases: [],
+      category: 'strength',
+      primaryMuscles: ['chest'],
+      secondaryMuscles: [],
+      equipment: 'other',
+      isUnilateral: false,
+      source: 'user',
+      builtinKey: null,
+    });
+    const result = parseBackup(JSON.parse(JSON.stringify(await createBackup())));
+    if (!result.ok) throw new Error(result.error);
+
+    await resetDatabase();
+    await restoreBackup(result.backup);
+
+    expect(await db.exercises.toArray()).toEqual([own]);
+  });
+
+  it('spielt bei Sicherungen vor DB-Version 2 die mitgelieferten Daten ein', async () => {
+    const oldBackup = await validBackup();
+    oldBackup.dbVersion = 1;
+    delete oldBackup.tables.settings[0].seedVersion;
+    delete oldBackup.tables.exercises;
+    delete oldBackup.tables.foods;
+    const result = parseBackup(oldBackup);
+    if (!result.ok) throw new Error(result.error);
+
+    await restoreBackup(result.backup);
+
+    expect((await getSettings())?.name).toBe('Alex');
+    expect((await getSettings())?.seedVersion).toBe(SEED_VERSION);
+    expect(await db.exercises.where('builtinKey').equals('barbell-bench-press').count()).toBe(1);
+    expect(await db.foods.where('builtinKey').equals('oats').count()).toBe(1);
   });
 });
 

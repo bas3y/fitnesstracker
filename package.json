@@ -13,7 +13,8 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "tsc -b --noEmit",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "data": "node --max-old-space-size=4096 scripts/build-data.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.7",

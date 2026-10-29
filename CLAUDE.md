@@ -76,6 +76,7 @@ e2e/           Playwright-Tests
 - `npm run test:e2e` – Playwright (`e2e/`, baut selbst und startet Preview; Projekte `android` und `iphone`)
 - `npm run lint` (ESLint + Prettier-Check) / `npm run format` / `npm run typecheck`
 - `npm run icons` – PWA-Icons aus `public/favicon.svg` neu erzeugen
+- `npm run data` – `src/data/exercises.json` + `foods.json` aus Quelldaten neu erzeugen (Download nach `scripts/.cache/`, Auswahl/Übersetzung in `scripts/data/*.mapping.mjs`). Danach **`SEED_VERSION` in `src/db/seed.ts` erhöhen**.
 
 **Werkzeuge (für Claude):** Node.js und git liegen portabel in `%LOCALAPPDATA%\Programs\nodejs` und `%LOCALAPPDATA%\Programs\MinGit\cmd`. Falls nicht im PATH, in PowerShell zuerst: `$env:Path = "$env:LOCALAPPDATA\Programs\nodejs;$env:LOCALAPPDATA\Programs\MinGit\cmd;$env:Path"`. `npm install` ist auf diesem Laufwerk sehr langsam → mit langem Timeout oder im Hintergrund ausführen.
 
@@ -85,7 +86,9 @@ e2e/           Playwright-Tests
 - `src/db/database.ts`: Dexie-Schema (`AppDatabase`, Singleton `db`). Neue Tabelle = neue `version(n)`, Tabelle in `src/db/backup.ts` (`backupSchema` + `TABLE_LABELS`) ergänzen.
 - `src/db/repository.ts`: `create`/`update`/`softDelete`/`listActive` für alle Tabellen verwenden (setzen `id`, Zeitstempel, `deletedAt`).
 - Einstellungen: `useSettings()` (`src/features/settings/useSettings.ts`) zum Lesen, `updateSettings()` zum Schreiben.
-- Gemeinsame UI: `Page`/`Card` (`src/components/Page.tsx`), `Stepper`, `SegmentedControl`; neue Bereiche als Route unter `Layout` in `src/App.tsx`.
+- Mitgelieferte Daten: Tabellen `exercises`/`foods` (`source: 'builtin' | 'user'`, `builtinKey`), Seed über `ensureSeeded()` (`src/db/seed.ts`, läuft beim Start und nach Backup-Import). Typen/Enums in `src/db/types.ts`, Zod-Schemas in `src/db/schemas.ts`, deutsche Bezeichnungen in `src/domain/labels.ts`. Lebensmittel: Nährwerte pro 100 g, Kohlenhydrate **ohne** Ballaststoffe (EU).
+- Suche: `createSearch(items)` aus `src/domain/search.ts` (normalisiert Umlaute/ß, Aliase); UI-Baustein `CatalogSearch`.
+- Gemeinsame UI: `Page` (optional `backTo` für Unterseiten)/`Card`/`LinkRow` (`src/components/Page.tsx`), `Stepper`, `SegmentedControl`, `SearchInput`; neue Bereiche als Route unter `Layout` in `src/App.tsx`.
 - Tests mit DB: `beforeEach(resetDatabase)` aus `src/db/testUtils.ts`. E2E offline: `goOffline()` aus `e2e/helpers.ts`.
 - Vor `npm run test:e2e` keinen alten `npm run preview` auf Port 4173 laufen lassen (wird sonst wiederverwendet).
 

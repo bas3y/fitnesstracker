@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   bodyWeightKg: null,
   theme: 'system',
   lastBackupAt: null,
+  seedVersion: 0,
 };
 
 export function getSettings(): Promise<Settings | undefined> {

@@ -1,8 +1,26 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 
-export function Page({ title, children }: { title: string; children: ReactNode }) {
+export function Page({
+  title,
+  backTo,
+  children,
+}: {
+  title: string;
+  /** Unterseiten: Ziel des Zurück-Links */
+  backTo?: string;
+  children: ReactNode;
+}) {
   return (
     <div className="mx-auto max-w-md px-4 pt-[calc(1.5rem+env(safe-area-inset-top))]">
+      {backTo && (
+        <Link
+          to={backTo}
+          className="-ml-2 mb-1 inline-flex min-h-11 items-center px-2 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+        >
+          ‹ Zurück
+        </Link>
+      )}
       <h1 className="mb-4 text-2xl font-bold">{title}</h1>
       {children}
     </div>
@@ -18,12 +36,39 @@ export function Card({ title, children }: { title?: string; children: ReactNode 
   );
 }
 
-export function PlaceholderPage({ title, text }: { title: string; text: string }) {
+export function PlaceholderPage({
+  title,
+  text,
+  children,
+}: {
+  title: string;
+  text: string;
+  children?: ReactNode;
+}) {
   return (
     <Page title={title}>
       <Card>
         <p className="text-slate-600 dark:text-slate-400">{text}</p>
       </Card>
+      {children}
     </Page>
+  );
+}
+
+/** Große, tippbare Zeile mit Pfeil – für Verweise auf Unterseiten */
+export function LinkRow({ to, label, hint }: { to: string; label: string; hint?: string }) {
+  return (
+    <Link
+      to={to}
+      className="mb-2 flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700"
+    >
+      <span>
+        <span className="block font-medium">{label}</span>
+        {hint && <span className="block text-sm text-slate-500 dark:text-slate-400">{hint}</span>}
+      </span>
+      <span aria-hidden="true" className="text-xl text-slate-400">
+        ›
+      </span>
+    </Link>
   );
 }
