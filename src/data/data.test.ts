@@ -26,6 +26,21 @@ describe('mitgelieferte Daten', () => {
     expect(duplicates(exercises.map((e) => e.name))).toEqual([]);
   });
 
+  it('führen Calisthenics-Grundübungen als Körpergewichtsübungen (Zusatzgewicht = Satzgewicht)', () => {
+    const keys = [
+      'pull-up',
+      'chin-up',
+      'triceps-dips',
+      'chest-dips',
+      'push-up',
+      'sit-up',
+      'muscle-up',
+    ];
+    for (const key of keys) {
+      expect(exercises.find((e) => e.key === key)?.equipment, key).toBe('bodyweight');
+    }
+  });
+
   it('sind zusammen kleiner als 2 MB', () => {
     const bytes = new Blob([exercisesRaw, foodsRaw]).size;
     expect(bytes).toBeLessThan(2 * 1024 * 1024);
@@ -51,6 +66,9 @@ describe('mitgelieferte Daten', () => {
     expect(searchExercises('bankdrucken')[0]?.key).toBe('barbell-bench-press');
     expect(searchExercises('Kreuzheben')[0]?.key).toBe('barbell-deadlift');
     expect(searchExercises('klimmzug')[0]?.key).toBe('pull-up');
+    expect(searchExercises('dips')[0]?.key).toBe('triceps-dips');
+    expect(searchExercises('weighted pull ups')[0]?.key).toBe('pull-up');
+    expect(searchExercises('l sitz')[0]?.key).toBe('l-sit');
     expect(searchFoods('Haferflocken')[0]?.key).toBe('oats');
     expect(searchFoods('magerquark')[0]?.key).toBe('quark-lowfat');
     expect(searchFoods('hahnchenbrust').map((f) => f.key)).toContain('chicken-breast');

@@ -115,7 +115,8 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
   - UI: `CatalogSearch`, `SearchInput`, `LinkRow`, `Page` mit `backTo`. Seiten `/training/exercises`, `/daily/foods`, `/settings/about` („Über & Lizenzen“).
   - Tests: Suche, Plausibilität, Seed (inkl. „eigene Einträge bleiben unverändert“), Dexie-Migration v1→v2, Backup alt/neu, Datenqualität der JSONs (Zod, eindeutige Schlüssel, Größe < 2 MB, Brennwerte, Suchbegriffe). E2E `e2e/catalog.spec.ts` (offline suchen, Lizenzseite).
 - Abweichungen:
-  - Mehr Daten als geplant: 294 statt 150–250 Übungen (inkl. Ausdauer, Dehnen, Faszienrolle), 670 Lebensmittel.
+  - Mehr Daten als geplant: 313 statt 150–250 Übungen (inkl. Ausdauer, Dehnen, Faszienrolle), 670 Lebensmittel.
+  - Nachtrag (Seed-Version 2): Calisthenics-Grundübungen ergänzt (u. a. Archer-/Einarmige/Negative Klimmzüge, Ring-Dips, Dips an der geraden Stange, Pike-/Archer-/Einarmige Liegestütze, L-Sitz, Hollow Hold, Dragon Flag, Front Lever, Handstand, Knieheben hängend, V-ups, Shrimp Squats, Dead Hang). Alle Körpergewichtsübungen haben `equipment: 'bodyweight'`. Separate „mit Zusatzgewicht“-Einträge wurden entfernt (nur Aliase), damit Verlauf und PRs nicht auf zwei Übungen verteilt werden.
   - Kohlenhydrate werden nach EU-Konvention **ohne Ballaststoffe** gespeichert (USDA zählt sie mit); Plausibilität daher `4·P + 4·KH + 9·F + 2·Ballaststoffe + 7·Alkohol`. Zusätzliches Feld `alcohol`. Ausnahmen mit korrektem, aber abweichendem USDA-Brennwert: Hafer-/Weizenkleie, Kakaopulver, Backpulver.
   - 15 in Deutschland übliche Lebensmittel fehlen bei USDA (Magerquark, Skyr, Harzer, Haferdrink, Leberkäse, Döner …) und sind mit Durchschnittswerten gängiger Handelsprodukte ergänzt (`MANUAL_FOODS`, `sourceRef: 'manual'`). Open Food Facts wurde nicht verwendet.
   - Feld `sourceRef` (z. B. `usda:171688`) an Lebensmitteln zur Nachvollziehbarkeit.
@@ -158,6 +159,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - Dexie-Version mit `workouts`, `workoutExercises`, `sets` (`weight`, `reps`, `rpe?`, `rir?`, `isWarmup`, `restSeconds?`, `completedAt`)
 - Workout starten (leer), Übungen per `ExercisePicker` hinzufügen, Reihenfolge ändern
 - Sätze erfassen mit Steppern (Gewicht ±2,5 kg, Wdh. ±1), Satz abhaken, Aufwärmsatz markieren, optional RPE/RIR
+- Körpergewichtsübungen (`equipment: 'bodyweight'`, z. B. Klimmzüge, Dips): Gewichtsfeld als „Zusatzgewicht“ beschriften (Standard 0 kg, negativ = Unterstützung durch Band/Maschine); Halteübungen (Plank, L-Sitz, Handstand) brauchen eine Dauer statt Wiederholungen
 - „Letztes Mal“-Anzeige pro Übung
 - Rest-Timer nach abgehaktem Satz (Standardzeit einstellbar, Vibration/Ton, läuft über Zeitstempel weiter, auch wenn App kurz im Hintergrund war)
 - Laufendes Workout wird sofort gespeichert und nach App-Neustart fortgesetzt
@@ -172,6 +174,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 
 ### Schritt 5 – Berechnungen & PRs
 - `src/domain/strength.ts`: Volumen (ohne Aufwärmsätze), geschätztes 1RM (Epley, Brzycki), beste Sätze
+- Körpergewichtsübungen: Volumen und 1RM mit Körpergewicht (Einstellungen) + Zusatzgewicht rechnen; PR „max. Zusatzgewicht“
 - PR-Erkennung: max. Gewicht, max. 1RM, max. Volumen (Satz/Einheit), max. Wdh. bei Gewicht
 - PR-Toast beim Abhaken eines Satzes, PR-Markierung in der Historie
 - Progressive-Overload-Vorschlag: z. B. Zielwdh. erreicht → +2,5 kg, sonst gleiches Gewicht / +1 Wdh.
