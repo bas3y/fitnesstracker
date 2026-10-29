@@ -263,6 +263,9 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - `meals` / `mealEntries` (Lebensmittel aus `foods` + Menge in g oder Portion), Mahlzeiten-Typen (Frühstück, Mittag, Abend, Snack)
 - Tagesübersicht: Kalorien, Protein (Fokus), optional KH/Fett
 - Eigene Lebensmittel anlegen, Rezepte (Zutatenliste → Nährwerte pro Portion), Lieblingsmahlzeiten mit einem Tipp erneut eintragen
+- Rezepte/selbst gekochte Gerichte speichern und wie ein Lebensmittel auswählbar machen (z. B. Gesamtgewicht nach dem Kochen erfassen → Nährwerte pro 100 g bzw. pro Portion)
+- Schnellauswahl beim Eintragen: Favoriten (Stern an Lebensmitteln und Rezepten), „Zuletzt verwendet“, „Häufig verwendet“
+- Favoriten/Ausblenden als eigene Felder (nicht `deletedAt`), damit der Seed sie nicht überschreibt (vgl. Notizen Schritt 2)
 - Tagesziele unterschiedlich für Trainings- und Ruhetage (Trainingstag = Workout an dem Tag)
 - Nährwertberechnung in `src/domain/nutrition.ts` mit Tests
 
