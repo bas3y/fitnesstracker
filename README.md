@@ -3,7 +3,25 @@
 Offline-Fitness- und Lifestyle-Tracker als Progressive Web App (PWA) für Android und iPhone.
 Nach dem ersten Laden läuft die App komplett ohne Internet, alle Daten bleiben auf dem Gerät.
 
-Die Installationsanleitung fürs Handy folgt mit der Veröffentlichung (Schritt 20 der [Roadmap](docs/ROADMAP.md)).
+## Installation aufs Handy
+
+Die App wird über GitHub Pages ausgeliefert (Adresse: `https://<benutzername>.github.io/<repo-name>/`).
+Einmal mit Internet öffnen und installieren, danach funktioniert sie im Flugmodus.
+
+- **Android (Chrome):** Adresse öffnen → Menü ⋮ → „App installieren“ (bzw. „Zum Startbildschirm hinzufügen“).
+- **iPhone (Safari):** Adresse in **Safari** öffnen → Teilen-Symbol → „Zum Home-Bildschirm“. Nur die
+  installierte App vom Home-Bildschirm aus nutzen, nicht den Safari-Tab (eigener Speicher).
+
+**Wichtig:** Alle Daten liegen nur auf dem Gerät. Regelmäßig unter Einstellungen → Datensicherung ein
+Backup exportieren (iOS kann Daten von Web-Apps nach längerer Nichtnutzung löschen).
+
+Updates: Bei geöffneter App mit Internet erscheint „Neue Version verfügbar – Neu laden“.
+
+## Veröffentlichung
+
+Jeder Push auf `main` startet `.github/workflows/deploy.yml` (Lint, Typecheck, Unit-Tests, Build mit
+`BASE_PATH=/<repo-name>/`, Deploy auf GitHub Pages). In den Repo-Einstellungen muss unter
+Settings → Pages als Source „GitHub Actions“ gewählt sein.
 
 ## Voraussetzungen
 
