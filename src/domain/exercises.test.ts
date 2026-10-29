@@ -1,0 +1,115 @@
+import type { Exercise } from '../db/types';
+import {
+  countDetailFilters,
+  EMPTY_EXERCISE_FILTER,
+  findDuplicateName,
+  matchesExerciseFilter,
+  sortExercises,
+  type ExerciseFilter,
+} from './exercises';
+
+function exercise(overrides: Partial<Exercise>): Exercise {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    deletedAt: null,
+    source: 'builtin',
+    builtinKey: 'x',
+    name: 'Übung',
+    aliases: [],
+    category: 'strength',
+    primaryMuscles: ['chest'],
+    secondaryMuscles: ['triceps'],
+    equipment: 'barbell',
+    isUnilateral: false,
+    isFavorite: false,
+    hiddenAt: null,
+    notes: '',
+    ...overrides,
+  };
+}
+
+const filter = (changes: Partial<ExerciseFilter>) => ({ ...EMPTY_EXERCISE_FILTER, ...changes });
+
+describe('matchesExerciseFilter', () => {
+  it('ohne Filter: alle aktiven, nicht ausgeblendeten Übungen', () => {
+    expect(matchesExerciseFilter(exercise({}), EMPTY_EXERCISE_FILTER)).toBe(true);
+    expect(
+      matchesExerciseFilter(
+        exercise({ deletedAt: '2026-01-02T00:00:00.000Z' }),
+        EMPTY_EXERCISE_FILTER,
+      ),
+    ).toBe(false);
+    const hidden = exercise({ hiddenAt: '2026-01-02T00:00:00.000Z' });
+    expect(matchesExerciseFilter(hidden, EMPTY_EXERCISE_FILTER)).toBe(false);
+    expect(matchesExerciseFilter(hidden, filter({ includeHidden: true }))).toBe(true);
+  });
+
+  it('Muskelgruppe trifft Haupt- und Hilfsmuskeln', () => {
+    const bench = exercise({});
+    expect(matchesExerciseFilter(bench, filter({ muscle: 'chest' }))).toBe(true);
+    expect(matchesExerciseFilter(bench, filter({ muscle: 'triceps' }))).toBe(true);
+    expect(matchesExerciseFilter(bench, filter({ muscle: 'quads' }))).toBe(false);
+  });
+
+  it('kombiniert Equipment, Kategorie, Favoriten und Eigene', () => {
+    const own = exercise({
+      source: 'user',
+      builtinKey: null,
+      isFavorite: true,
+      equipment: 'cable',
+    });
+    expect(
+      matchesExerciseFilter(
+        own,
+        filter({ equipment: 'cable', category: 'strength', favoritesOnly: true, ownOnly: true }),
+      ),
+    ).toBe(true);
+    expect(matchesExerciseFilter(own, filter({ equipment: 'barbell' }))).toBe(false);
+    expect(matchesExerciseFilter(own, filter({ category: 'cardio' }))).toBe(false);
+    expect(matchesExerciseFilter(exercise({}), filter({ favoritesOnly: true }))).toBe(false);
+    expect(matchesExerciseFilter(exercise({}), filter({ ownOnly: true }))).toBe(false);
+  });
+});
+
+describe('countDetailFilters', () => {
+  it('zählt Muskel, Equipment, Kategorie und Ausgeblendete', () => {
+    expect(countDetailFilters(EMPTY_EXERCISE_FILTER)).toBe(0);
+    expect(countDetailFilters(filter({ favoritesOnly: true, ownOnly: true }))).toBe(0);
+    expect(
+      countDetailFilters(
+        filter({ muscle: 'abs', equipment: 'cable', category: 'strength', includeHidden: true }),
+      ),
+    ).toBe(4);
+  });
+});
+
+describe('sortExercises', () => {
+  it('Favoriten zuerst, dann deutsch alphabetisch', () => {
+    const sorted = sortExercises([
+      exercise({ name: 'Zug' }),
+      exercise({ name: 'Ätzend' }),
+      exercise({ name: 'beugen' }),
+      exercise({ name: 'Rudern', isFavorite: true }),
+    ]);
+    expect(sorted.map((e) => e.name)).toEqual(['Rudern', 'Ätzend', 'beugen', 'Zug']);
+  });
+});
+
+describe('findDuplicateName', () => {
+  const list = [
+    exercise({ id: 'a', name: 'Bankdrücken (Langhantel)' }),
+    exercise({ id: 'b', name: 'Alt', deletedAt: '2026-01-02T00:00:00.000Z' }),
+  ];
+
+  it('erkennt gleiche Namen unabhängig von Schreibweise', () => {
+    expect(findDuplicateName('bankdruecken  (LANGHANTEL)', list)?.id).toBe('a');
+    expect(findDuplicateName('Bankdrücken', list)).toBeUndefined();
+  });
+
+  it('ignoriert gelöschte Übungen und die bearbeitete Übung selbst', () => {
+    expect(findDuplicateName('Alt', list)).toBeUndefined();
+    expect(findDuplicateName('Bankdrücken (Langhantel)', list, 'a')).toBeUndefined();
+  });
+});

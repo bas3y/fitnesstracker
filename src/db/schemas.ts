@@ -29,6 +29,33 @@ export const foodFieldsSchema = z.object({
   sourceRef: z.string().nullable(),
 });
 
+/** Formular „Eigene Übung“: Kraftübungen brauchen mind. eine Hauptmuskelgruppe (für Statistiken) */
+export const exerciseInputSchema = exerciseFieldsSchema
+  .extend({
+    name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(80, 'Höchstens 80 Zeichen'),
+    aliases: z.array(z.string().trim()).transform((list) => list.filter(Boolean)),
+  })
+  .refine((input) => input.category !== 'strength' || input.primaryMuscles.length > 0, {
+    path: ['primaryMuscles'],
+    message: 'Mindestens eine Hauptmuskelgruppe wählen',
+  })
+  .refine(
+    (input) => input.primaryMuscles.every((muscle) => !input.secondaryMuscles.includes(muscle)),
+    { path: ['secondaryMuscles'], message: 'Muskel ist bereits Hauptmuskel' },
+  );
+
+export type ExerciseInput = z.input<typeof exerciseInputSchema>;
+
+export const EMPTY_EXERCISE_INPUT: ExerciseInput = {
+  name: '',
+  aliases: [],
+  category: 'strength',
+  primaryMuscles: [],
+  secondaryMuscles: [],
+  equipment: 'other',
+  isUnilateral: false,
+};
+
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 
 export const builtinExerciseSchema = exerciseFieldsSchema.extend({ key: builtinKey });

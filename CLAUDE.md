@@ -88,7 +88,9 @@ e2e/           Playwright-Tests
 - Einstellungen: `useSettings()` (`src/features/settings/useSettings.ts`) zum Lesen, `updateSettings()` zum Schreiben.
 - Mitgelieferte Daten: Tabellen `exercises`/`foods` (`source: 'builtin' | 'user'`, `builtinKey`), Seed über `ensureSeeded()` (`src/db/seed.ts`, läuft beim Start und nach Backup-Import). Typen/Enums in `src/db/types.ts`, Zod-Schemas in `src/db/schemas.ts`, deutsche Bezeichnungen in `src/domain/labels.ts`. Lebensmittel: Nährwerte pro 100 g, Kohlenhydrate **ohne** Ballaststoffe (EU).
 - Suche: `createSearch(items)` aus `src/domain/search.ts` (normalisiert Umlaute/ß, Aliase); UI-Baustein `CatalogSearch`.
-- Gemeinsame UI: `Page` (optional `backTo` für Unterseiten)/`Card`/`LinkRow` (`src/components/Page.tsx`), `Stepper`, `SegmentedControl`, `SearchInput`; neue Bereiche als Route unter `Layout` in `src/App.tsx`.
+- Übungen: Nutzerfelder `isFavorite`, `hiddenAt` (Ausblenden – **nicht** `deletedAt`, das setzt bei builtin nur der Seed), `notes`. Schreiben über `src/db/exercises.ts` (`createUserExercise`, `updateUserExercise`, `deleteUserExercise`, `setExerciseFavorite/Hidden/Notes`). Filter/Sortierung in `src/domain/exercises.ts`.
+- **Übung auswählen** (Workout, Pläne): `<ExercisePicker onSelect onClose />` aus `src/features/training/ExercisePicker.tsx` (nur rendern, solange offen). Liste/Suche/Filter: `ExerciseBrowser`; Daten: `useActiveExercises()`/`useExercise(id)`.
+- Gemeinsame UI: `Page` (optional `backTo` für Unterseiten)/`Card`/`LinkRow` (`src/components/Page.tsx`), `Stepper`, `SegmentedControl`, `SearchInput`, `Chip`, `Select`, Button-/Eingabe-Klassen in `src/components/buttons.ts`; neue Bereiche als Route unter `Layout` in `src/App.tsx`.
 - Tests mit DB: `beforeEach(resetDatabase)` aus `src/db/testUtils.ts`. E2E offline: `goOffline()` aus `e2e/helpers.ts`.
 - Vor `npm run test:e2e` keinen alten `npm run preview` auf Port 4173 laufen lassen (wird sonst wiederverwendet).
 

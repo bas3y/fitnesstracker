@@ -95,6 +95,9 @@ describe('restoreBackup', () => {
       isUnilateral: false,
       source: 'user',
       builtinKey: null,
+      isFavorite: true,
+      hiddenAt: null,
+      notes: 'Sitz 3',
     });
     const result = parseBackup(JSON.parse(JSON.stringify(await createBackup())));
     if (!result.ok) throw new Error(result.error);
@@ -120,6 +123,37 @@ describe('restoreBackup', () => {
     expect((await getSettings())?.seedVersion).toBe(SEED_VERSION);
     expect(await db.exercises.where('builtinKey').equals('barbell-bench-press').count()).toBe(1);
     expect(await db.foods.where('builtinKey').equals('oats').count()).toBe(1);
+  });
+});
+
+describe('Sicherungen aus DB-Version 2', () => {
+  it('ergänzt Favorit, Ausblenden und Notiz an Übungen', async () => {
+    const data = await validBackup();
+    data.dbVersion = 2;
+    data.tables.exercises = [
+      {
+        id: 'e1',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        deletedAt: null,
+        source: 'user',
+        builtinKey: null,
+        name: 'Alte Übung',
+        aliases: [],
+        category: 'strength',
+        primaryMuscles: ['chest'],
+        secondaryMuscles: [],
+        equipment: 'machine',
+        isUnilateral: false,
+      },
+    ];
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.exercises[0]).toMatchObject({
+      isFavorite: false,
+      hiddenAt: null,
+      notes: '',
+    });
   });
 });
 

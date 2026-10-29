@@ -9,7 +9,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 1 – Lokale Datenbank, App-Shell & Datensicherung
 - [x] Schritt 2 – Mitgelieferte Datenbanken (Übungen & Nährwerte)
 - [x] Schritt 2b – *optional:* früher Testpush & Handytest
-- [ ] Schritt 3 – Übungsverwaltung
+- [x] Schritt 3 – Übungsverwaltung
 - [ ] Schritt 4 – Workout loggen
 - [ ] Schritt 5 – Berechnungen & PRs
 - [ ] Schritt 6 – Trainingspläne
@@ -161,8 +161,25 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 
 **Notizen:**
 - Gebaut:
+  - Dexie v3: Übungen haben die Nutzerfelder `isFavorite`, `hiddenAt` (Ausblenden, getrennt von `deletedAt`) und `notes` (Upgrade setzt Standardwerte). Der Seed (`EXERCISE_USER_DEFAULTS`) fasst diese Felder nie an. Backup-Schema mit Defaults, daher bleiben Sicherungen aus v1/v2 importierbar.
+  - `src/db/exercises.ts`: `createUserExercise`/`updateUserExercise` (Zod `exerciseInputSchema` + Duplikat-Check auf den Namen, auch gegen mitgelieferte Übungen), `deleteUserExercise` (Soft-Delete, nur eigene), `setExerciseFavorite`, `setExerciseHidden`, `setExerciseNotes`.
+  - `src/domain/exercises.ts`: `matchesExerciseFilter` (Muskelfilter trifft Haupt- und Hilfsmuskeln), `sortExercises` (Favoriten zuerst, deutsche Sortierung), `findDuplicateName`, `ExerciseBrowserState`.
+  - UI in `src/features/training/`: `ExerciseBrowser` (Suche, Chips „Favoriten“/„Eigene“, ausklappbare Filter für Muskelgruppe, Equipment, Kategorie und optional ausgeblendete Übungen), `ExerciseListPage` (Stern pro Zeile; Suche und Filter bleiben beim Wechsel zur Detailseite erhalten), `ExerciseDetailPage` (Details, eigene Notiz, Favorit; builtin: aus- und einblenden; eigene: bearbeiten und löschen mit Bestätigung), `ExerciseEditPage` (anlegen/bearbeiten), `ExerciseForm` (Name, Kategorie, Equipment, einseitig, Haupt-/Hilfsmuskeln als Chips, weitere Namen), `useActiveExercises`/`useExercise`.
+  - **`ExercisePicker`** (`src/features/training/ExercisePicker.tsx`): Vollbild-Dialog mit `onSelect(exercise)`/`onClose`, ohne ausgeblendete Übungen, Favoriten oben, Escape schließt. „+ Eigene Übung anlegen“ übernimmt den Suchbegriff als Namen, legt die Übung an und wählt sie direkt aus.
+  - Gemeinsame UI: `Chip`, `Select`, `buttons.ts` (Button- und Eingabe-Klassen), `StarIcon`.
+  - Routen: `/training/exercises`, `/training/exercises/new`, `/training/exercises/:id`, `/training/exercises/:id/edit`.
+  - Tests: Domain-Filter und Sortierung, DB-Funktionen, Migration v2→v3, Seed (Nutzerfelder bleiben, wieder aufgenommene Einträge kommen zurück), Backup aus v2, `ExercisePicker` (RTL: Auswahl, Filter, eigene Übung anlegen und danach auswählen, Duplikat, Escape). E2E `e2e/exercises.spec.ts`: offline anlegen, bearbeiten, Notiz, Favorit, Filter „Eigene“, builtin aus- und einblenden, Neuladen, Löschen.
 - Abweichungen:
+  - Der `ExercisePicker` ist per Komponententest (Vitest/RTL) abgedeckt, nicht per Playwright, weil es noch keine Seite gibt, die ihn verwendet (erst Schritt 4). Den E2E-Test für den Picker in Schritt 4 im Workout-Ablauf ergänzen.
+  - Seed holt builtin-Einträge, die aus den Daten entfernt und später wieder aufgenommen wurden, jetzt zurück (`deletedAt` → `null`). Nutzer blenden über `hiddenAt` aus, `deletedAt` an builtin-Einträgen setzt nur noch der Seed. Damit ist der offene Punkt aus Schritt 2 erledigt.
+  - Mitgelieferte Übungen sind nicht bearbeitbar, aber jede Übung (auch builtin) kann eine eigene Notiz haben (z. B. Sitzeinstellung).
+  - Für Kraftübungen ist mindestens eine Hauptmuskelgruppe Pflicht (für die Muskelgruppen-Statistik in Schritt 7).
+  - Übungsanleitungen wurden nicht übersetzt/übernommen (nicht nötig für die Verwaltung).
+  - Prettier hat `endOfLine: "auto"` bekommen: Mit `core.autocrlf=true` liegen die Dateien im Arbeitsverzeichnis mit CRLF vor, `prettier --check` schlug sonst bei unveränderten Dateien fehl. Im Repo bleiben die Dateien LF.
 - Offene Punkte:
+  - Schritt 4/6: `ExercisePicker` wählt eine Übung pro Öffnen. Falls im Plan-Editor das Hinzufügen mehrerer Übungen auf einmal gewünscht ist, eine Mehrfachauswahl ergänzen. Bereits hinzugefügte Übungen werden noch nicht markiert.
+  - Schritt 7: Auf der Detailseite Verlauf und PRs der Übung ergänzen.
+  - „Mitgelieferte Übung als eigene kopieren“ (um sie anzupassen) wäre eine mögliche Erweiterung.
 
 ### Schritt 4 – Workout loggen
 - Dexie-Version mit `workouts`, `workoutExercises`, `sets` (`weight`, `reps`, `rpe?`, `rir?`, `isWarmup`, `restSeconds?`, `completedAt`)

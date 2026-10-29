@@ -35,7 +35,13 @@ const catalogEntryFields = {
 
 const exerciseSchema = baseEntitySchema
   .extend(exerciseFieldsSchema.shape)
-  .extend(catalogEntryFields);
+  .extend(catalogEntryFields)
+  .extend({
+    // Seit DB-Version 3; Defaults halten ältere Sicherungen importierbar
+    isFavorite: z.boolean().default(false),
+    hiddenAt: timestamp.nullable().default(null),
+    notes: z.string().default(''),
+  });
 const foodSchema = baseEntitySchema.extend(foodFieldsSchema.shape).extend(catalogEntryFields);
 
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar

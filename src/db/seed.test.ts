@@ -1,7 +1,14 @@
 import { db } from './database';
-import { create, softDelete } from './repository';
+import { setExerciseFavorite, setExerciseHidden, setExerciseNotes } from './exercises';
+import { create } from './repository';
 import type { BuiltinExercise, BuiltinFood } from './schemas';
-import { applySeed, ensureSeeded, SEED_VERSION, type SeedData } from './seed';
+import {
+  applySeed,
+  ensureSeeded,
+  EXERCISE_USER_DEFAULTS,
+  SEED_VERSION,
+  type SeedData,
+} from './seed';
 import { getSettings } from './settings';
 import { resetDatabase } from './testUtils';
 import type { Exercise } from './types';
@@ -56,7 +63,13 @@ describe('applySeed', () => {
     expect(await db.foods.count()).toBe(1);
     const entry = await builtin('barbell-bench-press');
     const { key, ...fields } = bench;
-    expect(entry).toMatchObject({ ...fields, source: 'builtin', builtinKey: key, deletedAt: null });
+    expect(entry).toMatchObject({
+      ...fields,
+      ...EXERCISE_USER_DEFAULTS,
+      source: 'builtin',
+      builtinKey: key,
+      deletedAt: null,
+    });
     expect(entry).not.toHaveProperty('key');
     expect(entry?.id).toMatch(/^[0-9a-f-]{36}$/);
     expect((await getSettings())?.seedVersion).toBe(1);
@@ -73,6 +86,7 @@ describe('applySeed', () => {
     const before = await builtin('barbell-bench-press');
     const own = await create<Exercise>(db.exercises, {
       ...bench,
+      ...EXERCISE_USER_DEFAULTS,
       name: 'Mein Bankdrücken',
       source: 'user',
       builtinKey: null,
@@ -89,11 +103,13 @@ describe('applySeed', () => {
     expect((await getSettings())?.seedVersion).toBe(2);
   });
 
-  it('lässt unveränderte Einträge unangetastet und behält zusätzliche Felder', async () => {
+  it('lässt unveränderte Einträge unangetastet und behält Nutzerfelder', async () => {
     await applySeed(seed([bench, squat]), 1);
     const squatBefore = await builtin('barbell-squat');
     const benchBefore = await builtin('barbell-bench-press');
-    await db.exercises.update(benchBefore!.id, { isFavorite: true } as Partial<Exercise>);
+    await setExerciseFavorite(benchBefore!.id, true);
+    await setExerciseHidden(benchBefore!.id, true);
+    await setExerciseNotes(benchBefore!.id, 'Griff 81 cm');
 
     await applySeed(seed([{ ...bench, aliases: ['Bench'] }, squat]), 2);
 
@@ -101,6 +117,9 @@ describe('applySeed', () => {
     expect(await builtin('barbell-bench-press')).toMatchObject({
       aliases: ['Bench'],
       isFavorite: true,
+      hiddenAt: expect.any(String),
+      notes: 'Griff 81 cm',
+      deletedAt: null,
     });
   });
 
@@ -113,13 +132,16 @@ describe('applySeed', () => {
     expect(await db.exercises.count()).toBe(2);
   });
 
-  it('lässt vom Nutzer gelöschte builtin-Einträge gelöscht', async () => {
-    await applySeed(seed([bench]), 1);
-    const entry = await builtin('barbell-bench-press');
-    await softDelete(db.exercises, entry!.id);
+  it('holt wieder aufgenommene builtin-Einträge zurück (gleiche ID)', async () => {
+    await applySeed(seed([bench, squat]), 1);
+    const squatBefore = await builtin('barbell-squat');
+    await applySeed(seed([bench]), 2);
+    await applySeed(seed([bench, squat]), 3);
 
-    await applySeed(seed([{ ...bench, name: 'Neu' }]), 2);
-    expect((await builtin('barbell-bench-press'))?.deletedAt).not.toBeNull();
+    const squatAfter = await builtin('barbell-squat');
+    expect(squatAfter?.id).toBe(squatBefore?.id);
+    expect(squatAfter?.deletedAt).toBeNull();
+    expect(await db.exercises.count()).toBe(2);
   });
 });
 

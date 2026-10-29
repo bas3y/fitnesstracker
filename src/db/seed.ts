@@ -3,7 +3,7 @@ import { db } from './database';
 import { nowIso } from './repository';
 import type { BuiltinExercise, BuiltinFood } from './schemas';
 import { ensureSettings, SETTINGS_ID } from './settings';
-import type { BaseEntity, DataSource, Timestamp } from './types';
+import type { BaseEntity, DataSource, Exercise, Timestamp } from './types';
 
 /** Bei jeder Änderung an `src/data/*.json` erhöhen, damit Geräte die neuen Daten übernehmen */
 export const SEED_VERSION = 2;
@@ -48,18 +48,26 @@ export async function applySeed(data: SeedData, version: number): Promise<void> 
     const settings = await ensureSettings();
     if (settings.seedVersion >= version) return;
     const now = nowIso();
-    await syncBuiltins(db.exercises, data.exercises, now);
-    await syncBuiltins(db.foods, data.foods, now);
+    await syncBuiltins(db.exercises, data.exercises, now, EXERCISE_USER_DEFAULTS);
+    await syncBuiltins(db.foods, data.foods, now, {});
     await db.settings.update(SETTINGS_ID, { seedVersion: version, updatedAt: now });
   });
 }
 
 type CatalogEntity = BaseEntity & { source: DataSource; builtinKey: string | null };
 
+/** Startwerte der Nutzerfelder für neu angelegte builtin-Übungen */
+export const EXERCISE_USER_DEFAULTS: Pick<Exercise, 'isFavorite' | 'hiddenAt' | 'notes'> = {
+  isFavorite: false,
+  hiddenAt: null,
+  notes: '',
+};
+
 async function syncBuiltins<T extends CatalogEntity>(
   table: Table<T, string>,
   items: Array<{ key: string }>,
   now: Timestamp,
+  userDefaults: Partial<T>,
 ): Promise<void> {
   const builtins = await table.where('source').equals('builtin').toArray();
   const remaining = new Map(builtins.map((entity) => [entity.builtinKey, entity]));
@@ -70,6 +78,7 @@ async function syncBuiltins<T extends CatalogEntity>(
     remaining.delete(key);
     if (!current) {
       changes.push({
+        ...userDefaults,
         ...fields,
         id: crypto.randomUUID(),
         createdAt: now,
@@ -84,8 +93,11 @@ async function syncBuiltins<T extends CatalogEntity>(
     const changed = Object.entries(fields).some(
       ([field, value]) => JSON.stringify(record[field]) !== JSON.stringify(value),
     );
-    // Zusätzliche Felder am Datensatz (z. B. spätere Favoriten-Markierung) bleiben erhalten
-    if (changed) changes.push({ ...current, ...fields, updatedAt: now });
+    // Nutzerfelder (Favorit, Ausblenden, Notiz) bleiben erhalten. `deletedAt` setzt nur der Seed
+    // selbst (Nutzer blenden über `hiddenAt` aus) → wieder aufgenommene Einträge zurückholen.
+    if (changed || current.deletedAt !== null) {
+      changes.push({ ...current, ...fields, deletedAt: null, updatedAt: now });
+    }
   }
 
   // Nicht mehr mitgelieferte Einträge nur ausblenden – sie können bereits verwendet worden sein

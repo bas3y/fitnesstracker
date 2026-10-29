@@ -8,22 +8,25 @@ test('Übungen und Lebensmittel sind offline durchsuchbar', async ({ page, conte
   await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Training').click();
   await page.getByRole('link', { name: /Übungen/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Übungen' })).toBeVisible();
-  await expect(page.getByText(/\d+ Übungen offline verfügbar/)).toBeVisible();
+  await expect(page.getByText(/^\d{3} Übungen$/)).toBeVisible();
 
   const exerciseSearch = page.getByRole('searchbox', { name: 'Übung suchen' });
-  const results = page.getByRole('list', { name: 'Suchergebnisse' });
+  const exerciseList = page.getByRole('list', { name: 'Übungsliste' });
   for (const query of ['Bankdrücken', 'bankdrucken']) {
     await exerciseSearch.fill(query);
-    await expect(results.getByRole('listitem').first()).toContainText('Bankdrücken (Langhantel)');
+    await expect(exerciseList.getByRole('listitem').first()).toContainText(
+      'Bankdrücken (Langhantel)',
+    );
   }
   await exerciseSearch.fill('xyzxyz');
-  await expect(page.getByText('Keine Treffer für „xyzxyz“.')).toBeVisible();
+  await expect(page.getByText('Keine passenden Übungen.')).toBeVisible();
+  await exerciseSearch.fill('');
 
   await page.goto('./#/daily');
   await page.getByRole('link', { name: /Lebensmittel/ }).click();
   const foodSearch = page.getByRole('searchbox', { name: 'Lebensmittel suchen' });
   await foodSearch.fill('Haferflocken');
-  const oats = results.getByRole('listitem').first();
+  const oats = page.getByRole('list', { name: 'Suchergebnisse' }).getByRole('listitem').first();
   await expect(oats).toContainText('Haferflocken');
   await expect(oats).toContainText(/\d+ kcal/);
 });

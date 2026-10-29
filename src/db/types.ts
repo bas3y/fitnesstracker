@@ -81,6 +81,11 @@ export interface Exercise extends BaseEntity {
   secondaryMuscles: MuscleGroup[];
   equipment: Equipment;
   isUnilateral: boolean;
+  // Nutzerangaben – werden vom Seed nie überschrieben
+  isFavorite: boolean;
+  /** Vom Nutzer ausgeblendet (getrennt von `deletedAt`, das der Seed für entfernte Einträge setzt) */
+  hiddenAt: Timestamp | null;
+  notes: string;
 }
 
 export const FOOD_CATEGORIES = [

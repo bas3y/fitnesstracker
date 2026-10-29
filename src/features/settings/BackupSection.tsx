@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { primaryButton, secondaryButton } from '../../components/buttons';
 import { Card } from '../../components/Page';
 import {
   backupToFile,
@@ -18,11 +19,6 @@ import { formatDaysAgo } from '../../domain/format';
 import { shareOrDownload } from './shareOrDownload';
 
 type Status = { kind: 'success' | 'error'; text: string } | null;
-
-const primaryButton =
-  'min-h-11 w-full rounded-xl bg-emerald-600 px-4 font-semibold text-white active:bg-emerald-700 disabled:opacity-50';
-const secondaryButton =
-  'flex min-h-11 w-full cursor-pointer items-center justify-center rounded-xl border border-slate-300 px-4 font-semibold dark:border-slate-600';
 
 export function BackupSection({ settings }: { settings: Settings }) {
   const fileInput = useRef<HTMLInputElement>(null);

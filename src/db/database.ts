@@ -27,6 +27,20 @@ export class AppDatabase extends Dexie {
             settings.seedVersion ??= 0;
           }),
       );
+    this.version(3)
+      .stores({
+        exercises: 'id, builtinKey, source, category, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Exercise, string>('exercises')
+          .toCollection()
+          .modify((exercise) => {
+            exercise.isFavorite ??= false;
+            exercise.hiddenAt ??= null;
+            exercise.notes ??= '';
+          }),
+      );
   }
 }
 

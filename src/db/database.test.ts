@@ -23,7 +23,34 @@ describe('AppDatabase-Migration', () => {
       seedVersion: 0,
     });
     expect(await v2.exercises.count()).toBe(0);
-    expect(v2.verno).toBe(2);
     await v2.delete();
+  });
+
+  it('Version 3 ergänzt Favorit, Ausblenden und Notiz an bestehenden Übungen', async () => {
+    const name = 'migration-test-v3';
+    const v2 = new Dexie(name);
+    v2.version(1).stores({ settings: 'id, updatedAt' });
+    v2.version(2).stores({
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+    });
+    await v2.table('exercises').add({
+      id: 'e1',
+      source: 'user',
+      builtinKey: null,
+      name: 'Meine Übung',
+      deletedAt: null,
+    });
+    v2.close();
+
+    const v3 = new AppDatabase(name);
+    expect(await v3.exercises.get('e1')).toMatchObject({
+      name: 'Meine Übung',
+      isFavorite: false,
+      hiddenAt: null,
+      notes: '',
+    });
+    expect(v3.verno).toBe(3);
+    await v3.delete();
   });
 });
