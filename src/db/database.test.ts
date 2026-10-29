@@ -97,7 +97,31 @@ describe('AppDatabase-Migration', () => {
     const v5 = new AppDatabase(name);
     expect(await v5.exercises.get('e1')).toMatchObject({ loadType: 'weight' });
     expect(await v5.sets.get('s1')).toMatchObject({ weight: 100, level: null });
-    expect(v5.verno).toBe(5);
     await v5.delete();
+  });
+
+  it('Version 6 ergänzt die Exzentrik an Sätzen', async () => {
+    const name = 'migration-test-v6';
+    const v5 = new Dexie(name);
+    v5.version(5).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+    });
+    await v5.table('sets').add({ id: 's1', workoutId: 'w1', weight: 100, level: null, reps: 10 });
+    v5.close();
+
+    const v6 = new AppDatabase(name);
+    expect(await v6.sets.get('s1')).toMatchObject({
+      weight: 100,
+      reps: 10,
+      eccentricWeight: null,
+      eccentricLevel: null,
+    });
+    expect(v6.verno).toBe(6);
+    await v6.delete();
   });
 });

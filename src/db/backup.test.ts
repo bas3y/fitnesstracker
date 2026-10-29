@@ -258,7 +258,12 @@ describe('Workouts im Backup', () => {
     ];
     const result = parseBackup(data);
     if (!result.ok) throw new Error(result.error);
-    expect(result.backup.tables.sets[0]).toMatchObject({ weight: 80, level: null });
+    expect(result.backup.tables.sets[0]).toMatchObject({
+      weight: 80,
+      level: null,
+      eccentricWeight: null,
+      eccentricLevel: null,
+    });
   });
 });
 

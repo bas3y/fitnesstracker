@@ -12,9 +12,12 @@ import {
   workoutDurationSeconds,
 } from './workout';
 
+const noEccentric = { eccentricWeight: null, eccentricLevel: null };
+
 const set = (weight: number | null, reps: number | null, isWarmup = false) => ({
   weight,
   level: null,
+  ...noEccentric,
   reps,
   durationSeconds: null,
   isWarmup,
@@ -63,17 +66,17 @@ describe('suggestSetValues', () => {
         index: 1,
         isBodyweight: false,
       }),
-    ).toEqual({ weight: 80, reps: 8, level: null, durationSeconds: null });
+    ).toEqual({ weight: 80, reps: 8, level: null, durationSeconds: null, ...noEccentric });
   });
 
   it('nimmt sonst den passenden Arbeitssatz vom letzten Mal (ohne Aufwärmsätze)', () => {
     const lastTime = [set(40, 10, true), set(80, 8), set(82.5, 6)];
     expect(
       suggestSetValues({ previous: undefined, lastTime, index: 0, isBodyweight: false }),
-    ).toEqual({ weight: 80, reps: 8, level: null, durationSeconds: null });
+    ).toEqual({ weight: 80, reps: 8, level: null, durationSeconds: null, ...noEccentric });
     expect(
       suggestSetValues({ previous: undefined, lastTime, index: 5, isBodyweight: false }),
-    ).toEqual({ weight: 82.5, reps: 6, level: null, durationSeconds: null });
+    ).toEqual({ weight: 82.5, reps: 6, level: null, durationSeconds: null, ...noEccentric });
   });
 
   it('springt nach einem Aufwärmsatz auf den Arbeitssatz vom letzten Mal', () => {
@@ -84,7 +87,18 @@ describe('suggestSetValues', () => {
         index: 0,
         isBodyweight: false,
       }),
-    ).toEqual({ weight: 80, reps: 8, level: null, durationSeconds: null });
+    ).toEqual({ weight: 80, reps: 8, level: null, durationSeconds: null, ...noEccentric });
+  });
+
+  it('übernimmt die Exzentrik wie das Gewicht', () => {
+    expect(
+      suggestSetValues({
+        previous: undefined,
+        lastTime: [{ ...set(80, 8), eccentricWeight: 100 }],
+        index: 0,
+        isBodyweight: false,
+      }),
+    ).toMatchObject({ weight: 80, eccentricWeight: 100 });
   });
 
   it('übernimmt auch die Stufe', () => {
@@ -95,22 +109,22 @@ describe('suggestSetValues', () => {
         index: 1,
         isBodyweight: false,
       }),
-    ).toEqual({ weight: null, level: 6, reps: 12, durationSeconds: null });
+    ).toEqual({ weight: null, level: 6, reps: 12, durationSeconds: null, ...noEccentric });
   });
 
   it('startet leer bzw. mit 0 kg Zusatzgewicht bei Körpergewichtsübungen', () => {
     expect(
       suggestSetValues({ previous: undefined, lastTime: [], index: 0, isBodyweight: false }),
-    ).toEqual({ weight: null, reps: null, level: null, durationSeconds: null });
+    ).toEqual({ weight: null, reps: null, level: null, durationSeconds: null, ...noEccentric });
     expect(
       suggestSetValues({ previous: undefined, lastTime: [], index: 0, isBodyweight: true }),
-    ).toEqual({ weight: 0, reps: null, level: null, durationSeconds: null });
+    ).toEqual({ weight: 0, reps: null, level: null, durationSeconds: null, ...noEccentric });
   });
 });
 
 describe('formatWeight / formatSetSummary', () => {
   const kg = { unit: 'kg' as const, isTimed: false, isBodyweight: false };
-  const extras = { level: null, durationSeconds: null, rpe: null, rir: null };
+  const extras = { level: null, ...noEccentric, durationSeconds: null, rpe: null, rir: null };
 
   it('formatiert Gewichte mit Einheit und Vorzeichen', () => {
     expect(formatWeight(82.5, 'kg')).toBe('82,5 kg');
@@ -135,6 +149,19 @@ describe('formatWeight / formatSetSummary', () => {
     );
     expect(formatSetSummary({ ...extras, weight: null, level: 7.5, reps: 10 }, kg)).toBe(
       'Stufe 7,5 × 10',
+    );
+  });
+
+  it('zeigt die Exzentrik hinter dem Gewicht bzw. der Stufe', () => {
+    expect(formatSetSummary({ ...extras, weight: 80, eccentricWeight: 100, reps: 8 }, kg)).toBe(
+      '80 kg (neg. 100 kg) × 8',
+    );
+    expect(
+      formatSetSummary({ ...extras, weight: null, level: 7, eccentricLevel: 9, reps: 10 }, kg),
+    ).toBe('Stufe 7 (neg. 9) × 10');
+    // Ohne Gewicht keine Exzentrik-Anzeige
+    expect(formatSetSummary({ ...extras, weight: null, eccentricWeight: 100, reps: 8 }, kg)).toBe(
+      '8 Wdh.',
     );
   });
 

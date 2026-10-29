@@ -11,7 +11,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 2b – *optional:* früher Testpush & Handytest
 - [x] Schritt 3 – Übungsverwaltung
 - [x] Schritt 4 – Workout loggen
-- [ ] Schritt 5 – Berechnungen & PRs
+- [x] Schritt 5 – Berechnungen & PRs
 - [ ] Schritt 6 – Trainingspläne
 - [ ] Schritt 7 – Statistiken & Graphen (Kraft)
 - [ ] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
@@ -232,8 +232,23 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 
 **Notizen:**
 - Gebaut:
+  - `src/domain/strength.ts`: 1RM nach Epley (Standard) und Brzycki (`estimateOneRepMax`, nur 1–12 Wdh.), `effectiveLoadKg` (Gewicht bzw. Körpergewicht + Zusatzgewicht, Stufen → `null`), `setVolumeKg`/`sessionVolumeKg` (ohne Aufwärmsätze, Halteübungen und Stufen), `setOneRepMax`, `bestSet`, PR-Erkennung `detectRecords` (beim Abhaken) und `sessionRecords`/`annotateSessions` (Historie), `formatRecord`, Overload-Vorschlag `suggestProgression`.
+  - Rekordarten: Gewicht (bei Körpergewicht „Zusatzgewicht“, nur > 0), geschätztes 1RM, Volumen (Satz), Volumen (Einheit), Wdh. bei gleichem oder höherem Gewicht, Dauer bei gleicher oder höherer Last (Halteübungen), Stufe und Wdh. bei Stufe (getrennt von kg), Exzentrik-Gewicht/-Stufe.
+  - `src/db/records.ts`: `loadExerciseSessions` (abgehakte Sätze je Workout, chronologisch, auch das laufende), `getSetRecords` (Toast), `getWorkoutRecords` (Satz-ID → Rekorde), `countWorkoutRecords` (Historie). Hooks `useWorkoutRecords`, `useWorkoutRecordCounts`.
+  - UI: **PR-Toast** beim Abhaken (`ToastHost` im Layout, `showToast` aus `src/components/toastStore.ts`, 5 s bzw. Antippen schließt), Pokal an Rekord-Sätzen im laufenden Workout, auf der Detailseite (plus Liste „Rekorde“ je Übung) und „🏆 n Rekorde“ in der Verlaufsliste. **Vorschlag** unter „Letztes Mal“ (z. B. „60 kg × 11 (+1 Wdh.)“) mit „Übernehmen“ → `applyToOpenSets` (offene Arbeitssätze).
+  - **Zusatz Exzentrik** (aus dem Ideen-Parkplatz): Dexie v6, Sätze haben `eccentricWeight` (kg) bzw. `eccentricLevel` (bei Stufe); Backup-Defaults. Chip „Exzentrik“ im Satz-Editor (nicht bei Halte- und Körpergewichtsübungen) mit Stepper „Negativ-Gewicht“/„Negativ-Stufe“; Ausschalten löscht den Wert. Wird wie das Gewicht in neue Sätze übernommen (damit pro Übung „gemerkt“), Wechsel Gewicht/Stufe leert die jeweils andere Exzentrik. Anzeige „80 kg (neg. 100 kg) × 8“. Volumen/1RM rechnen mit dem positiven Gewicht, Exzentrik nur als eigener Rekord.
+  - Tests: `strength.test.ts` (Formeln, Volumen, alle Rekordarten, Markierung, Vorschlag), `records.test.ts`, Exzentrik/`applyToOpenSets` in `workouts.test.ts`, Migration v5→v6, Backup aus v4. E2E `e2e/records.spec.ts` (offline: Vorschlag übernehmen, PR-Toast, Exzentrik, Rekorde in Detail und Verlauf). E2E-Helfer `addExercise`, `fillStepper`, `skipRest` liegen jetzt in `e2e/helpers.ts`.
 - Abweichungen:
+  - **Kein Rekord beim ersten Training** einer Übung (bzw. ohne früheren vergleichbaren Wert), sonst gäbe es bei jeder neuen Übung einen Toast. Ein Wdh.-Rekord braucht einen früheren Satz mit mindestens gleichem Gewicht (schwerer als je zuvor = Gewichtsrekord).
+  - Toast: Vergleich mit früheren Einheiten **und** den vorher abgehakten Sätzen der laufenden Einheit (Satz 3 schwerer als Satz 2 → erneut Toast). In der Historie wird je Rekordart nur der beste Satz markiert; „Volumen (Einheit)“ hängt am Satz, mit dem der alte Bestwert überschritten wurde.
+  - Körpergewichtsübungen rechnen mit **100 % des aktuellen Körpergewichts** aus den Einstellungen (auch für alte Workouts). Ohne Körpergewicht in den Einstellungen gibt es dort nur Wdh.-/Zusatzgewicht-Rekorde.
+  - Overload ohne Plan mit Zielbereich **8–12 Wdh.** (`DEFAULT_REP_RANGE`): alle Sätze mit der höchsten Last ≥ 12 → +2,5 kg (lb: +5 lb, Stufe +1) und 8 Wdh., sonst gleiche Last und +1 Wdh. vom schwächsten Satz; Halteübungen +5 s. Der Vorschlag wird nur angezeigt/übernommen, die Vorbefüllung neuer Sätze bleibt „wie letztes Mal“.
+  - Rekorde werden bei jeder Anzeige aus allen Sätzen berechnet (nicht gespeichert). Für lokale Datenmengen schnell genug; bei Bedarf später zwischenspeichern.
 - Offene Punkte:
+  - Schritt 6: `suggestProgression(..., { range })` mit dem Zielbereich der Plan-Übung aufrufen und beim Start aus dem Plan direkt vorbefüllen.
+  - Schritt 7: Rekordliste und Verläufe (1RM, Volumen, Exzentrik) pro Übung auf der Detailseite; `annotateSessions`/`loadExerciseSessions` wiederverwenden.
+  - Schritt 9: Körpergewicht zum Datum des Workouts verwenden (sobald es einen Gewichtsverlauf gibt) statt des aktuellen Werts. Ggf. Anteil des Körpergewichts je Übung (Liegestütze ≈ 65 %).
+  - PR-Toast auf echten Geräten ansehen (oben eingeblendet, verdeckt kurz die Kopfzeile).
 
 ### Schritt 6 – Trainingspläne
 - Dexie-Version mit `plans`, `planDays`, `planExercises` (Zielsätze, Zielwdh.-Bereich, Pausenzeit)
@@ -432,5 +447,5 @@ Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.
 
 ## Ideen-Parkplatz
 Ideen, die während der Umsetzung entstehen und keinem Schritt zugeordnet sind:
-- **Exzentrik (Negativ mit mehr Gewicht)** (Nutzerwunsch, geklärt): Manche Maschinen geben in der negativen Phase mehr Gewicht als in der positiven. Umsetzungsidee: optionaler Wert pro Satz „Negativ“ (`eccentricWeight` in kg bzw. `eccentricLevel` bei Stufe), im Satz-Editor hinter einem Chip „Exzentrik“ wie RPE/RIR; wird wie das normale Gewicht in neue Sätze übernommen und an der Übung gemerkt. Anzeige z. B. „80 kg (neg. 100 kg) × 8“. Volumen/1RM/PRs (Schritt 5/7) rechnen mit dem positiven Gewicht, Exzentrik-Gewicht nur als eigener Verlauf/PR. Dexie-Version + Backup-Defaults nötig. Passt als kleiner Zusatz zu Schritt 5 oder 6. Sonstige Geräteeinstellungen (Sitz, Polster) bleiben in der Übungsnotiz.
+- ~~**Exzentrik (Negativ mit mehr Gewicht)**~~ – umgesetzt in Schritt 5 (siehe Notizen dort). Ursprüngliche Idee: Manche Maschinen geben in der negativen Phase mehr Gewicht als in der positiven. Umsetzungsidee: optionaler Wert pro Satz „Negativ“ (`eccentricWeight` in kg bzw. `eccentricLevel` bei Stufe), im Satz-Editor hinter einem Chip „Exzentrik“ wie RPE/RIR; wird wie das normale Gewicht in neue Sätze übernommen und an der Übung gemerkt. Anzeige z. B. „80 kg (neg. 100 kg) × 8“. Volumen/1RM/PRs (Schritt 5/7) rechnen mit dem positiven Gewicht, Exzentrik-Gewicht nur als eigener Verlauf/PR. Dexie-Version + Backup-Defaults nötig. Passt als kleiner Zusatz zu Schritt 5 oder 6. Sonstige Geräteeinstellungen (Sitz, Polster) bleiben in der Übungsnotiz.
 - **Haptisches Feedback auf dem iPhone** (Nutzerwunsch, beim Feinschliff des Designs): iOS-Safari kann nicht vibrieren (`navigator.vibrate` fehlt). Ab iOS 18 gibt es einen Trick über einen versteckten `<input type="checkbox" switch>`, der beim Antippen ein haptisches Tick auslöst – **nur direkt bei einem Tipp** (z. B. Satz abhaken, Stepper), nicht automatisch am Ende der Pause. Eine **Mitteilung** am Pausenende wäre auf dem iPhone nur per Web-Push möglich (installierte PWA + Server), weil iOS die App im Hintergrund anhält → erst mit Server (Phase 6). Bis dahin: Ton + gut sichtbare Pausenleiste bei geöffneter App.

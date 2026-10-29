@@ -67,6 +67,9 @@ const workoutExerciseSchema = baseEntitySchema.extend({
 const setSchema = baseEntitySchema.extend(setValuesSchema.shape).extend({
   // Seit DB-Version 5
   level: setValuesSchema.shape.level.default(null),
+  // Seit DB-Version 6
+  eccentricWeight: setValuesSchema.shape.eccentricWeight.default(null),
+  eccentricLevel: setValuesSchema.shape.eccentricLevel.default(null),
   workoutId: z.string().min(1),
   workoutExerciseId: z.string().min(1),
   order: z.number(),

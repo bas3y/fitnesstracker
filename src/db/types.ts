@@ -131,6 +131,9 @@ export interface WorkoutSet extends BaseEntity {
   weight: number | null;
   /** Stufe an der Maschine statt Gewicht (dann `weight = null`) */
   level: number | null;
+  /** Gewicht (kg) bzw. Stufe in der negativen Phase, falls die Maschine dort mehr gibt */
+  eccentricWeight: number | null;
+  eccentricLevel: number | null;
   reps: number | null;
   /** Halteübungen statt Wiederholungen */
   durationSeconds: number | null;

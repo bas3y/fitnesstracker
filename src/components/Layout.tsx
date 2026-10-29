@@ -7,6 +7,7 @@ import { useSettings } from '../features/settings/useSettings';
 import { ActiveWorkoutBanner } from '../features/training/ActiveWorkoutBanner';
 import { RestTimerAlarm } from '../features/training/RestTimer';
 import { BottomNav } from './BottomNav';
+import { ToastHost } from './Toast';
 
 export function Layout() {
   const settings = useSettings();
@@ -34,6 +35,7 @@ export function Layout() {
       )}
       <ActiveWorkoutBanner first={!reminder} />
       <RestTimerAlarm />
+      <ToastHost />
       <main>
         <Outlet />
       </main>

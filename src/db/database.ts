@@ -84,6 +84,18 @@ export class AppDatabase extends Dexie {
             set.level ??= null;
           });
       });
+    // Exzentrik (Negativ mit mehr Gewicht)
+    this.version(6)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<WorkoutSet, string>('sets')
+          .toCollection()
+          .modify((set) => {
+            set.eccentricWeight ??= null;
+            set.eccentricLevel ??= null;
+          }),
+      );
   }
 }
 

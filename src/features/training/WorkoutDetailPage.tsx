@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { dangerButton, secondaryButton } from '../../components/buttons';
+import { TrophyIcon } from '../../components/icons';
 import { Card, Page } from '../../components/Page';
 import { deleteWorkout, type WorkoutDetail } from '../../db/workouts';
+import { formatRecord } from '../../domain/strength';
 import {
   formatSetSummary,
   formatTime,
@@ -12,7 +14,7 @@ import {
 } from '../../domain/workout';
 import { useSettings } from '../settings/useSettings';
 import { HISTORY_PATH, WORKOUT_PATH } from './paths';
-import { useWorkoutDetail } from './useWorkouts';
+import { useWorkoutDetail, useWorkoutRecords } from './useWorkouts';
 
 export function WorkoutDetailPage() {
   const { id } = useParams();
@@ -43,6 +45,7 @@ export function WorkoutNotFound() {
 function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
   const { workout, items } = detail;
   const unit = useSettings()?.weightUnit ?? 'kg';
+  const records = useWorkoutRecords(workout.id);
 
   return (
     <Page title={formatWorkoutDate(workout.startedAt)} backTo={HISTORY_PATH}>
@@ -62,18 +65,45 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
           isBodyweight: exercise?.equipment === 'bodyweight',
         };
         let working = 0;
+        const exerciseRecords = sets.flatMap((set) => records?.get(set.id) ?? []);
         return (
           <Card key={workoutExercise.id} title={exercise?.name ?? 'Unbekannte Übung'}>
             <ol className="flex flex-col gap-1">
               {sets.map((set) => (
-                <li key={set.id} className="flex gap-3 tabular-nums">
+                <li key={set.id} className="flex items-center gap-3 tabular-nums">
                   <span className="w-6 shrink-0 text-slate-500 dark:text-slate-400">
                     {set.isWarmup ? 'A' : ++working}
                   </span>
                   <span>{formatSetSummary(set, format)}</span>
+                  {records?.has(set.id) && (
+                    <TrophyIcon
+                      role="img"
+                      aria-hidden={false}
+                      aria-label="Rekord"
+                      className="h-5 w-5 text-amber-500"
+                    />
+                  )}
                 </li>
               ))}
             </ol>
+            {exerciseRecords.length > 0 && (
+              <ul
+                aria-label={`Rekorde ${exercise?.name ?? ''}`.trim()}
+                className="mt-3 flex flex-col gap-1 rounded-xl bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/40 dark:text-amber-100"
+              >
+                {exerciseRecords.map((record) => {
+                  const { label, value } = formatRecord(record, format);
+                  return (
+                    <li key={`${record.type}-${record.load}`} className="flex gap-2">
+                      <TrophyIcon className="h-4 w-4 shrink-0 translate-y-0.5 text-amber-500" />
+                      <span>
+                        {label}: <span className="font-semibold">{value}</span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </Card>
         );
       })}

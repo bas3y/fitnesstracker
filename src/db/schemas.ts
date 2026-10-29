@@ -62,6 +62,8 @@ export const EMPTY_EXERCISE_INPUT: ExerciseInput = {
 export const setValuesSchema = z.object({
   weight: z.number().min(-500).max(1000).nullable(),
   level: z.number().min(0).max(100).nullable(),
+  eccentricWeight: z.number().min(0).max(1000).nullable(),
+  eccentricLevel: z.number().min(0).max(100).nullable(),
   reps: z.number().int().min(0).max(1000).nullable(),
   durationSeconds: z
     .number()

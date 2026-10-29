@@ -178,7 +178,13 @@ export function setWorkoutExerciseLoadType(
       .filter((set) => isActive(set) && set.completedAt === null)
       .toArray();
     for (const set of open) {
-      await update(db.sets, set.id, loadType === 'level' ? { weight: null } : { level: null });
+      await update(
+        db.sets,
+        set.id,
+        loadType === 'level'
+          ? { weight: null, eccentricWeight: null }
+          : { level: null, eccentricLevel: null },
+      );
     }
   });
 }
@@ -216,6 +222,8 @@ export function addSet(workoutExerciseId: string): Promise<WorkoutSet> {
         ...values,
         weight: byLevel ? null : values.weight,
         level: byLevel ? values.level : null,
+        eccentricWeight: byLevel ? null : values.eccentricWeight,
+        eccentricLevel: byLevel ? values.eccentricLevel : null,
         workoutId: workout.id,
         workoutExerciseId,
         order: (previous?.order ?? -1) + 1,
@@ -234,6 +242,22 @@ export async function updateSet(id: string, changes: Partial<SetValues>): Promis
   await db.transaction('rw', db.sets, async () => {
     await getSet(id);
     await update(db.sets, id, fields);
+  });
+}
+
+/** Übernimmt Werte (z. B. den Overload-Vorschlag) in alle offenen Arbeitssätze der Übung */
+export function applyToOpenSets(
+  workoutExerciseId: string,
+  changes: Partial<SetValues>,
+): Promise<void> {
+  const fields = setValuesSchema.partial().parse(changes);
+  return db.transaction('rw', db.sets, async () => {
+    const open = await db.sets
+      .where('workoutExerciseId')
+      .equals(workoutExerciseId)
+      .filter((set) => isActive(set) && set.completedAt === null && !set.isWarmup)
+      .toArray();
+    for (const set of open) await update(db.sets, set.id, fields);
   });
 }
 

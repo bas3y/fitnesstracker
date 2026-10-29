@@ -7,6 +7,7 @@ import {
   addSet,
   addWorkoutExercise,
   adjustRest,
+  applyToOpenSets,
   completeSet,
   deleteWorkout,
   finishWorkout,
@@ -143,6 +144,37 @@ describe('Übungen und Sätze', () => {
     const next = await startWorkout();
     const nextItem = await addWorkoutExercise(next.id, squat.id);
     expect((await setsOf(nextItem.id))[0]).toMatchObject({ weight: null, reps: 10 });
+  });
+
+  it('übernimmt die Exzentrik in neue Sätze und leert sie beim Wechsel auf Stufe', async () => {
+    const workout = await startWorkout();
+    const item = await addWorkoutExercise(workout.id, squat.id);
+    const [first] = await setsOf(item.id);
+    await updateSet(first!.id, { weight: 80, eccentricWeight: 100, reps: 8 });
+    const second = await addSet(item.id);
+    expect(second).toMatchObject({ weight: 80, eccentricWeight: 100, eccentricLevel: null });
+
+    await setWorkoutExerciseLoadType(item.id, 'level');
+    expect(await db.sets.get(second.id)).toMatchObject({ weight: null, eccentricWeight: null });
+    await updateSet(second.id, { level: 7, eccentricLevel: 9 });
+    expect(await addSet(item.id)).toMatchObject({ level: 7, eccentricLevel: 9 });
+    await expect(updateSet(second.id, { eccentricWeight: -5 })).rejects.toThrow();
+  });
+
+  it('übernimmt Werte (Vorschlag) in alle offenen Arbeitssätze', async () => {
+    const workout = await startWorkout();
+    const item = await addWorkoutExercise(workout.id, bench.id);
+    const [done] = await setsOf(item.id);
+    await updateSet(done!.id, { weight: 60, reps: 10 });
+    await completeSet(done!.id, 0);
+    const warmup = await addSet(item.id);
+    await updateSet(warmup.id, { isWarmup: true });
+    const open = await addSet(item.id);
+
+    await applyToOpenSets(item.id, { weight: 82.5, reps: 8 });
+    expect(await db.sets.get(done!.id)).toMatchObject({ weight: 60, reps: 10 });
+    expect(await db.sets.get(warmup.id)).toMatchObject({ weight: 60, reps: 10 });
+    expect(await db.sets.get(open.id)).toMatchObject({ weight: 82.5, reps: 8 });
   });
 
   it('validiert Satzwerte', async () => {

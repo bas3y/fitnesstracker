@@ -30,7 +30,11 @@ export function restRemainingSeconds(restEndsAt: string | null, now: Date): numb
   return Math.max(0, Math.ceil((Date.parse(restEndsAt) - now.getTime()) / 1000));
 }
 
-type SetFields = Pick<WorkoutSet, 'weight' | 'level' | 'reps' | 'durationSeconds' | 'isWarmup'>;
+type LoadFields = Pick<
+  WorkoutSet,
+  'weight' | 'level' | 'eccentricWeight' | 'eccentricLevel' | 'reps' | 'durationSeconds'
+>;
+type SetFields = LoadFields & Pick<WorkoutSet, 'isWarmup'>;
 
 /**
  * Startwerte für einen neuen Satz: Werte des vorigen Satzes dieser Übung im Workout,
@@ -47,17 +51,24 @@ export function suggestSetValues({
   /** Position des neuen Satzes unter den Arbeitssätzen dieser Übung */
   index: number;
   isBodyweight: boolean;
-}): Pick<WorkoutSet, 'weight' | 'level' | 'reps' | 'durationSeconds'> {
+}): LoadFields {
   const lastWorking = lastTime.filter((set) => !set.isWarmup);
   const source =
     previous && !previous.isWarmup
       ? previous
       : (lastWorking[index] ?? lastWorking.at(-1) ?? previous);
   if (!source) {
-    return { weight: isBodyweight ? 0 : null, level: null, reps: null, durationSeconds: null };
+    return {
+      weight: isBodyweight ? 0 : null,
+      level: null,
+      eccentricWeight: null,
+      eccentricLevel: null,
+      reps: null,
+      durationSeconds: null,
+    };
   }
-  const { weight, level, reps, durationSeconds } = source;
-  return { weight, level, reps, durationSeconds };
+  const { weight, level, eccentricWeight, eccentricLevel, reps, durationSeconds } = source;
+  return { weight, level, eccentricWeight, eccentricLevel, reps, durationSeconds };
 }
 
 export function formatWeight(kg: number, unit: WeightUnit, signed = false): string {
@@ -67,18 +78,26 @@ export function formatWeight(kg: number, unit: WeightUnit, signed = false): stri
   return signed && value > 0 ? `+${text}` : text;
 }
 
-/** Kurzform eines Satzes, z. B. `80 kg × 8`, `Stufe 7 × 10`, `+10 kg × 5`, `0:45`, `+5 kg · 0:30` */
+/**
+ * Kurzform eines Satzes, z. B. `80 kg × 8`, `Stufe 7 × 10`, `+10 kg × 5`, `0:45`, `+5 kg · 0:30`,
+ * mit Exzentrik `80 kg (neg. 100 kg) × 8`
+ */
 export function formatSetSummary(
-  set: Pick<WorkoutSet, 'weight' | 'level' | 'reps' | 'durationSeconds' | 'rpe' | 'rir'>,
+  set: LoadFields & Pick<WorkoutSet, 'rpe' | 'rir'>,
   { unit, isTimed, isBodyweight }: { unit: WeightUnit; isTimed: boolean; isBodyweight: boolean },
 ): string {
   const hasWeight = set.weight !== null && !(isBodyweight && set.weight === 0);
-  const weight =
+  const eccentric =
+    set.level !== null
+      ? set.eccentricLevel !== null && ` (neg. ${formatDecimal(set.eccentricLevel, 1)})`
+      : set.eccentricWeight !== null && ` (neg. ${formatWeight(set.eccentricWeight, unit)})`;
+  const load =
     set.level !== null
       ? `Stufe ${formatDecimal(set.level, 1)}`
       : hasWeight
         ? formatWeight(set.weight!, unit, isBodyweight)
         : null;
+  const weight = load && eccentric ? load + eccentric : load;
   let text: string;
   if (isTimed) {
     const duration = set.durationSeconds === null ? '–' : formatClock(set.durationSeconds);

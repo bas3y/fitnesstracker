@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
+import { countWorkoutRecords, getWorkoutRecords } from '../../db/records';
 import {
   getActiveWorkout,
   getLastPerformance,
@@ -23,6 +24,16 @@ export function useLastPerformance(exerciseId: string, workoutId: string) {
 
 export function useWorkoutHistory() {
   return useLiveQuery(listWorkoutHistory, []);
+}
+
+/** Rekorde je Satz-ID; `undefined` = lädt */
+export function useWorkoutRecords(workoutId: string) {
+  return useLiveQuery(() => getWorkoutRecords(workoutId), [workoutId]);
+}
+
+/** Anzahl Rekorde je Workout-ID */
+export function useWorkoutRecordCounts() {
+  return useLiveQuery(countWorkoutRecords, []);
 }
 
 /** Aktuelle Zeit, solange `active` jede Sekunde (bzw. `intervalMs`) aktualisiert */

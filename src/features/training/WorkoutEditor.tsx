@@ -5,6 +5,7 @@ import { addWorkoutExercise, type WorkoutDetail } from '../../db/workouts';
 import { useSettings } from '../settings/useSettings';
 import { ExerciseOrderList } from './ExerciseOrderList';
 import { ExercisePicker } from './ExercisePicker';
+import { useWorkoutRecords } from './useWorkouts';
 import { WorkoutExerciseCard, type WorkoutMode } from './WorkoutExerciseCard';
 
 /** Übungen und Sätze eines Workouts bearbeiten – für das laufende Workout und die Historie */
@@ -13,6 +14,7 @@ export function WorkoutEditor({ detail, mode }: { detail: WorkoutDetail; mode: W
   const [picking, setPicking] = useState(false);
   const [sorting, setSorting] = useState(false);
   const { workout, items } = detail;
+  const records = useWorkoutRecords(workout.id);
 
   if (sorting && items.length > 1) {
     return (
@@ -43,6 +45,7 @@ export function WorkoutEditor({ detail, mode }: { detail: WorkoutDetail; mode: W
           mode={mode}
           unit={settings?.weightUnit ?? 'kg'}
           restSeconds={settings?.restTimerSeconds ?? REST_TIMER_DEFAULTS.restTimerSeconds}
+          records={records}
         />
       ))}
       <button type="button" className={`${secondaryButton} mb-4`} onClick={() => setPicking(true)}>

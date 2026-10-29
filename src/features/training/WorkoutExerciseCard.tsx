@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { dangerButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
-import { CheckIcon } from '../../components/icons';
+import { CheckIcon, TrophyIcon } from '../../components/icons';
 import { Stepper } from '../../components/Stepper';
 import { SegmentedControl } from '../../components/SegmentedControl';
+import { showToast } from '../../components/toastStore';
+import { getSetRecords } from '../../db/records';
 import { LEVEL_EQUIPMENT, type LoadType, type WeightUnit, type WorkoutSet } from '../../db/types';
 import {
   addSet,
+  applyToOpenSets,
   completeSet,
   deleteSet,
   removeWorkoutExercise,
@@ -15,6 +18,7 @@ import {
   updateSet,
   type WorkoutItem,
 } from '../../db/workouts';
+import { formatRecord, suggestProgression, type PersonalRecord } from '../../domain/strength';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { formatSetSummary, formatWorkoutDate } from '../../domain/workout';
 import { primeAudio } from './restAlarm';
@@ -28,6 +32,8 @@ interface WorkoutExerciseCardProps {
   mode: WorkoutMode;
   unit: WeightUnit;
   restSeconds: number;
+  /** Rekorde je Satz-ID */
+  records: Map<string, PersonalRecord[]> | undefined;
 }
 
 interface SetFormat {
@@ -39,7 +45,13 @@ interface SetFormat {
   loadType: LoadType;
 }
 
-export function WorkoutExerciseCard({ item, mode, unit, restSeconds }: WorkoutExerciseCardProps) {
+export function WorkoutExerciseCard({
+  item,
+  mode,
+  unit,
+  restSeconds,
+  records,
+}: WorkoutExerciseCardProps) {
   const { workoutExercise, exercise, sets } = item;
   const name = exercise?.name ?? 'Unbekannte Übung';
   const format: SetFormat = {
@@ -77,7 +89,13 @@ export function WorkoutExerciseCard({ item, mode, unit, restSeconds }: WorkoutEx
       </div>
 
       {exercise && (
-        <LastTime exerciseId={exercise.id} workoutId={workoutExercise.workoutId} format={format} />
+        <LastTime
+          exerciseId={exercise.id}
+          workoutId={workoutExercise.workoutId}
+          workoutExerciseId={workoutExercise.id}
+          format={format}
+          mode={mode}
+        />
       )}
 
       {confirmRemove && (
@@ -110,12 +128,23 @@ export function WorkoutExerciseCard({ item, mode, unit, restSeconds }: WorkoutEx
             label={labels[setIndex]!}
             format={format}
             mode={mode}
+            isRecord={!!records?.has(set.id)}
             expanded={expandedId === set.id}
             onToggle={() => setExpanded(expandedId === set.id ? null : set.id)}
             onComplete={async () => {
               primeAudio();
               await completeSet(set.id, restSeconds);
               setExpanded('auto');
+              const found = await getSetRecords(set.id);
+              if (found.length > 0) {
+                showToast({
+                  title: `Neuer Rekord: ${name}`,
+                  lines: found.map((record) => {
+                    const { label, value } = formatRecord(record, format);
+                    return `${label}: ${value}`;
+                  }),
+                });
+              }
             }}
           />
         ))}
@@ -149,34 +178,89 @@ function setLabels(sets: WorkoutSet[]) {
 function LastTime({
   exerciseId,
   workoutId,
+  workoutExerciseId,
   format,
+  mode,
 }: {
   exerciseId: string;
   workoutId: string;
+  workoutExerciseId: string;
   format: SetFormat;
+  mode: WorkoutMode;
 }) {
   const last = useLastPerformance(exerciseId, workoutId);
   if (last === undefined) return null;
   const working = last?.sets.filter((set) => !set.isWarmup) ?? [];
+  const suggestion =
+    mode === 'live'
+      ? suggestProgression(working, {
+          isTimed: format.isTimed,
+          isBodyweight: format.isBodyweight,
+          weightStepKg: displayToKg(format.unit === 'kg' ? 2.5 : 5, format.unit),
+        })
+      : null;
   return (
-    <p className="text-sm text-slate-500 dark:text-slate-400">
-      {last && working.length > 0 ? (
-        <>
-          Letztes Mal ({formatWorkoutDate(last.workout.startedAt)}):{' '}
-          {working.map((set) => formatSetSummary(set, format)).join(' · ')}
-        </>
-      ) : (
-        'Letztes Mal: noch nicht trainiert'
+    <>
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        {last && working.length > 0 ? (
+          <>
+            Letztes Mal ({formatWorkoutDate(last.workout.startedAt)}):{' '}
+            {working.map((set) => formatSetSummary(set, format)).join(' · ')}
+          </>
+        ) : (
+          'Letztes Mal: noch nicht trainiert'
+        )}
+      </p>
+      {suggestion && (
+        <div className="mt-1 flex items-center gap-2 text-sm">
+          <p className="mr-auto text-emerald-800 dark:text-emerald-300">
+            Vorschlag:{' '}
+            <span className="font-semibold">
+              {formatSetSummary(
+                {
+                  ...suggestion,
+                  eccentricWeight: null,
+                  eccentricLevel: null,
+                  rpe: null,
+                  rir: null,
+                },
+                format,
+              )}
+            </span>{' '}
+            ({PROGRESSION_HINTS[suggestion.kind]})
+          </p>
+          <button
+            type="button"
+            aria-label="Vorschlag übernehmen"
+            className="min-h-11 shrink-0 px-2 font-medium text-emerald-700 dark:text-emerald-400"
+            onClick={() => {
+              const { weight, level, reps, durationSeconds } = suggestion;
+              void applyToOpenSets(
+                workoutExerciseId,
+                format.isTimed ? { weight, level, durationSeconds } : { weight, level, reps },
+              );
+            }}
+          >
+            Übernehmen
+          </button>
+        </div>
       )}
-    </p>
+    </>
   );
 }
+
+const PROGRESSION_HINTS = {
+  increaseLoad: 'mehr Last',
+  addReps: '+1 Wdh.',
+  addTime: 'etwas länger',
+} as const;
 
 function SetRow({
   set,
   label,
   format,
   mode,
+  isRecord,
   expanded,
   onToggle,
   onComplete,
@@ -185,6 +269,7 @@ function SetRow({
   label: { short: string; long: string };
   format: SetFormat;
   mode: WorkoutMode;
+  isRecord: boolean;
   expanded: boolean;
   onToggle: () => void;
   onComplete: () => Promise<void>;
@@ -202,7 +287,7 @@ function SetRow({
         <button
           type="button"
           aria-expanded={expanded}
-          aria-label={`${label.long}: ${formatSetSummary(set, format)}`}
+          aria-label={`${label.long}: ${formatSetSummary(set, format)}${isRecord ? ' (Rekord)' : ''}`}
           className="flex min-h-12 flex-1 items-center gap-3 px-3 text-left"
           onClick={onToggle}
         >
@@ -217,6 +302,7 @@ function SetRow({
             {label.short}
           </span>
           <span className="font-medium tabular-nums">{formatSetSummary(set, format)}</span>
+          {isRecord && <TrophyIcon className="h-5 w-5 shrink-0 text-amber-500" />}
         </button>
         {mode === 'live' && (
           <button
@@ -252,10 +338,15 @@ function SetEditor({
 }) {
   const { unit, isTimed, isBodyweight, canUseLevel } = format;
   const [showExtras, setShowExtras] = useState(set.rpe !== null || set.rir !== null);
-  const weight = set.weight === null ? null : roundTo(kgToDisplay(set.weight, unit), 2);
+  const hasEccentric = set.eccentricWeight !== null || set.eccentricLevel !== null;
+  const [showEccentric, setShowEccentric] = useState(hasEccentric);
+  const toDisplay = (kg: number | null) => (kg === null ? null : roundTo(kgToDisplay(kg, unit), 2));
+  const weight = toDisplay(set.weight);
   const save = (changes: Parameters<typeof updateSet>[1]) => void updateSet(set.id, changes);
   const byLevel =
     canUseLevel && (set.level !== null || (set.weight === null && format.loadType === 'level'));
+  const canUseEccentric = !isTimed && !isBodyweight;
+  const weightStep = unit === 'kg' ? 2.5 : 5;
 
   return (
     <div className="flex flex-col gap-3 border-t border-slate-200 p-3 dark:border-slate-700">
@@ -269,7 +360,11 @@ function SetEditor({
           value={byLevel ? 'level' : 'weight'}
           onChange={async (loadType) => {
             await setWorkoutExerciseLoadType(set.workoutExerciseId, loadType);
-            save(loadType === 'level' ? { weight: null } : { level: null });
+            save(
+              loadType === 'level'
+                ? { weight: null, eccentricWeight: null }
+                : { level: null, eccentricLevel: null },
+            );
           }}
         />
       )}
@@ -288,7 +383,7 @@ function SetEditor({
           label={isBodyweight ? 'Zusatzgewicht' : 'Gewicht'}
           value={weight}
           unit={unit}
-          step={unit === 'kg' ? 2.5 : 5}
+          step={weightStep}
           decimals={2}
           min={isBodyweight ? (unit === 'kg' ? -200 : -440) : 0}
           max={unit === 'kg' ? 1000 : 2200}
@@ -337,6 +432,20 @@ function SetEditor({
         >
           RPE/RIR
         </Chip>
+        {canUseEccentric && (
+          <Chip
+            pressed={showEccentric}
+            aria-expanded={showEccentric}
+            onClick={() => {
+              // Ausschalten entfernt den Wert, sonst stünde er weiter in der Satzanzeige
+              if (showEccentric && hasEccentric)
+                save({ eccentricWeight: null, eccentricLevel: null });
+              setShowEccentric(!showEccentric);
+            }}
+          >
+            Exzentrik
+          </Chip>
+        )}
         <button
           type="button"
           className="ml-auto min-h-11 px-2 text-sm font-medium text-red-700 dark:text-red-400"
@@ -345,6 +454,38 @@ function SetEditor({
           Satz löschen
         </button>
       </div>
+      {canUseEccentric && showEccentric && (
+        <div>
+          {byLevel ? (
+            <Stepper
+              label="Negativ-Stufe"
+              value={set.eccentricLevel}
+              step={1}
+              max={100}
+              startValue={(set.level ?? 5) + 1}
+              allowEmpty
+              onChange={(eccentricLevel) => save({ eccentricLevel })}
+            />
+          ) : (
+            <Stepper
+              label="Negativ-Gewicht"
+              value={toDisplay(set.eccentricWeight)}
+              unit={unit}
+              step={weightStep}
+              decimals={2}
+              max={unit === 'kg' ? 1000 : 2200}
+              startValue={(weight ?? 0) + weightStep}
+              allowEmpty
+              onChange={(value) =>
+                save({ eccentricWeight: value === null ? null : displayToKg(value, unit) })
+              }
+            />
+          )}
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Last in der negativen Phase, falls die Maschine dort mehr gibt
+          </p>
+        </div>
+      )}
       {showExtras && (
         <div className="grid grid-cols-1 gap-3">
           <Stepper
