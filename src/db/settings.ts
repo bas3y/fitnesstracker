@@ -9,7 +9,7 @@ export const REST_TIMER_DEFAULTS: Pick<
   Settings,
   'restTimerSeconds' | 'restTimerSound' | 'restTimerVibrate'
 > = {
-  restTimerSeconds: 90,
+  restTimerSeconds: 180,
   restTimerSound: true,
   restTimerVibrate: true,
 };

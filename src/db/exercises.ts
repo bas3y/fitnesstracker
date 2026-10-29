@@ -2,7 +2,8 @@ import { findDuplicateName } from '../domain/exercises';
 import { db } from './database';
 import { create, nowIso, softDelete, update } from './repository';
 import { exerciseInputSchema, type ExerciseInput } from './schemas';
-import type { Exercise } from './types';
+import { EXERCISE_USER_DEFAULTS } from './seed';
+import type { Exercise, LoadType } from './types';
 
 async function validate(input: ExerciseInput, exceptId?: string) {
   const fields = exerciseInputSchema.parse(input);
@@ -26,9 +27,7 @@ export function createUserExercise(input: ExerciseInput): Promise<Exercise> {
       ...(await validate(input)),
       source: 'user',
       builtinKey: null,
-      isFavorite: false,
-      hiddenAt: null,
-      notes: '',
+      ...EXERCISE_USER_DEFAULTS,
     }),
   );
 }
@@ -55,6 +54,10 @@ export function setExerciseFavorite(id: string, isFavorite: boolean): Promise<vo
 /** Ausblenden statt Löschen (v. a. für mitgelieferte Übungen) */
 export function setExerciseHidden(id: string, hidden: boolean): Promise<void> {
   return update(db.exercises, id, { hiddenAt: hidden ? nowIso() : null });
+}
+
+export function setExerciseLoadType(id: string, loadType: LoadType): Promise<void> {
+  return update(db.exercises, id, { loadType });
 }
 
 export function setExerciseNotes(id: string, notes: string): Promise<void> {

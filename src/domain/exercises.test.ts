@@ -27,6 +27,7 @@ function exercise(overrides: Partial<Exercise>): Exercise {
     isFavorite: false,
     hiddenAt: null,
     notes: '',
+    loadType: 'weight',
     ...overrides,
   };
 }

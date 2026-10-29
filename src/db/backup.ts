@@ -4,6 +4,7 @@ import { nowIso } from './repository';
 import { exerciseFieldsSchema, foodFieldsSchema, setValuesSchema } from './schemas';
 import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
+import { LOAD_TYPES } from './types';
 
 export const BACKUP_APP = 'fitnesstracker';
 export const BACKUP_VERSION = 1;
@@ -47,6 +48,8 @@ const exerciseSchema = baseEntitySchema
     notes: z.string().default(''),
     // Seit DB-Version 4 (mitgelieferte Halteübungen korrigiert der Seed nach dem Import)
     isTimed: z.boolean().default(false),
+    // Seit DB-Version 5
+    loadType: z.enum(LOAD_TYPES).default('weight'),
   });
 const foodSchema = baseEntitySchema.extend(foodFieldsSchema.shape).extend(catalogEntryFields);
 
@@ -62,6 +65,8 @@ const workoutExerciseSchema = baseEntitySchema.extend({
   order: z.number(),
 });
 const setSchema = baseEntitySchema.extend(setValuesSchema.shape).extend({
+  // Seit DB-Version 5
+  level: setValuesSchema.shape.level.default(null),
   workoutId: z.string().min(1),
   workoutExerciseId: z.string().min(1),
   order: z.number(),

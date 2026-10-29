@@ -14,8 +14,9 @@ import {
   getLastPerformance,
   listWorkoutHistory,
   loadWorkoutDetail,
-  moveWorkoutExercise,
   removeWorkoutExercise,
+  reorderWorkoutExercises,
+  setWorkoutExerciseLoadType,
   startWorkout,
   uncompleteSet,
   updateSet,
@@ -43,7 +44,7 @@ beforeEach(async () => {
       exercises: [
         { ...base, key: 'bench', name: 'Bankdrücken' },
         { ...base, key: 'pull-up', name: 'Klimmzüge', equipment: 'bodyweight' },
-        { ...base, key: 'squat', name: 'Kniebeugen' },
+        { ...base, key: 'squat', name: 'Kniebeugen', equipment: 'machine' },
       ],
       foods: [],
     },
@@ -96,11 +97,11 @@ describe('Übungen und Sätze', () => {
     const b = await addWorkoutExercise(workout.id, squat.id);
     expect(await setsOf(a.id)).toHaveLength(1);
 
-    await moveWorkoutExercise(b.id, -1);
+    await reorderWorkoutExercises(workout.id, [b.id, a.id]);
     let detail = await loadWorkoutDetail(workout.id);
     expect(detail?.items.map((i) => i.exercise?.name)).toEqual(['Kniebeugen', 'Bankdrücken']);
+    await expect(reorderWorkoutExercises(workout.id, [b.id])).rejects.toThrow();
 
-    await moveWorkoutExercise(b.id, -1); // bereits oben → unverändert
     await removeWorkoutExercise(b.id);
     detail = await loadWorkoutDetail(workout.id);
     expect(detail?.items.map((i) => i.exercise?.name)).toEqual(['Bankdrücken']);
@@ -119,6 +120,29 @@ describe('Übungen und Sätze', () => {
 
     const bodyweight = await addWorkoutExercise(workout.id, pullUp.id);
     expect((await setsOf(bodyweight.id))[0]?.weight).toBe(0);
+  });
+
+  it('schaltet zwischen Gewicht und Stufe um und merkt sich die Wahl an der Übung', async () => {
+    const workout = await startWorkout();
+    const item = await addWorkoutExercise(workout.id, squat.id);
+    const [first] = await setsOf(item.id);
+    await updateSet(first!.id, { weight: 50, reps: 10 });
+    await completeSet(first!.id, 0);
+    const open = await addSet(item.id);
+
+    await setWorkoutExerciseLoadType(item.id, 'level');
+    expect((await db.exercises.get(squat.id))?.loadType).toBe('level');
+    expect(await db.sets.get(first!.id)).toMatchObject({ weight: 50, level: null });
+    expect(await db.sets.get(open.id)).toMatchObject({ weight: null });
+
+    await updateSet(open.id, { level: 7 });
+    expect(await addSet(item.id)).toMatchObject({ weight: null, level: 7, reps: 10 });
+
+    // Nächstes Workout startet direkt mit Stufe
+    await finishWorkout(workout.id, '');
+    const next = await startWorkout();
+    const nextItem = await addWorkoutExercise(next.id, squat.id);
+    expect((await setsOf(nextItem.id))[0]).toMatchObject({ weight: null, reps: 10 });
   });
 
   it('validiert Satzwerte', async () => {

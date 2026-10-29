@@ -114,6 +114,7 @@ describe('restoreBackup', () => {
       isFavorite: true,
       hiddenAt: null,
       notes: 'Sitz 3',
+      loadType: 'level',
     });
     const result = parseBackup(JSON.parse(JSON.stringify(await createBackup())));
     if (!result.ok) throw new Error(result.error);
@@ -226,11 +227,38 @@ describe('Workouts im Backup', () => {
     const result = parseBackup(data);
     if (!result.ok) throw new Error(result.error);
     expect(result.backup.tables.settings[0]).toMatchObject({
-      restTimerSeconds: 90,
+      restTimerSeconds: 180,
       restTimerSound: true,
       restTimerVibrate: true,
     });
     expect(result.backup.tables.workouts).toEqual([]);
+  });
+
+  it('ergänzt bei Sicherungen aus DB-Version 4 loadType und level', async () => {
+    const data = await validBackup();
+    data.dbVersion = 4;
+    data.tables.sets = [
+      {
+        id: 's1',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        deletedAt: null,
+        workoutId: 'w1',
+        workoutExerciseId: 'we1',
+        order: 0,
+        weight: 80,
+        reps: 8,
+        durationSeconds: null,
+        rpe: null,
+        rir: null,
+        isWarmup: false,
+        restSeconds: 180,
+        completedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.sets[0]).toMatchObject({ weight: 80, level: null });
   });
 });
 

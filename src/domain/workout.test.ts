@@ -14,6 +14,7 @@ import {
 
 const set = (weight: number | null, reps: number | null, isWarmup = false) => ({
   weight,
+  level: null,
   reps,
   durationSeconds: null,
   isWarmup,
@@ -62,17 +63,17 @@ describe('suggestSetValues', () => {
         index: 1,
         isBodyweight: false,
       }),
-    ).toEqual({ weight: 80, reps: 8, durationSeconds: null });
+    ).toEqual({ weight: 80, reps: 8, level: null, durationSeconds: null });
   });
 
   it('nimmt sonst den passenden Arbeitssatz vom letzten Mal (ohne Aufwärmsätze)', () => {
     const lastTime = [set(40, 10, true), set(80, 8), set(82.5, 6)];
     expect(
       suggestSetValues({ previous: undefined, lastTime, index: 0, isBodyweight: false }),
-    ).toEqual({ weight: 80, reps: 8, durationSeconds: null });
+    ).toEqual({ weight: 80, reps: 8, level: null, durationSeconds: null });
     expect(
       suggestSetValues({ previous: undefined, lastTime, index: 5, isBodyweight: false }),
-    ).toEqual({ weight: 82.5, reps: 6, durationSeconds: null });
+    ).toEqual({ weight: 82.5, reps: 6, level: null, durationSeconds: null });
   });
 
   it('springt nach einem Aufwärmsatz auf den Arbeitssatz vom letzten Mal', () => {
@@ -83,22 +84,33 @@ describe('suggestSetValues', () => {
         index: 0,
         isBodyweight: false,
       }),
-    ).toEqual({ weight: 80, reps: 8, durationSeconds: null });
+    ).toEqual({ weight: 80, reps: 8, level: null, durationSeconds: null });
+  });
+
+  it('übernimmt auch die Stufe', () => {
+    expect(
+      suggestSetValues({
+        previous: { ...set(null, 12), level: 6 },
+        lastTime: [],
+        index: 1,
+        isBodyweight: false,
+      }),
+    ).toEqual({ weight: null, level: 6, reps: 12, durationSeconds: null });
   });
 
   it('startet leer bzw. mit 0 kg Zusatzgewicht bei Körpergewichtsübungen', () => {
     expect(
       suggestSetValues({ previous: undefined, lastTime: [], index: 0, isBodyweight: false }),
-    ).toEqual({ weight: null, reps: null, durationSeconds: null });
+    ).toEqual({ weight: null, reps: null, level: null, durationSeconds: null });
     expect(
       suggestSetValues({ previous: undefined, lastTime: [], index: 0, isBodyweight: true }),
-    ).toEqual({ weight: 0, reps: null, durationSeconds: null });
+    ).toEqual({ weight: 0, reps: null, level: null, durationSeconds: null });
   });
 });
 
 describe('formatWeight / formatSetSummary', () => {
   const kg = { unit: 'kg' as const, isTimed: false, isBodyweight: false };
-  const extras = { durationSeconds: null, rpe: null, rir: null };
+  const extras = { level: null, durationSeconds: null, rpe: null, rir: null };
 
   it('formatiert Gewichte mit Einheit und Vorzeichen', () => {
     expect(formatWeight(82.5, 'kg')).toBe('82,5 kg');
@@ -114,6 +126,15 @@ describe('formatWeight / formatSetSummary', () => {
     expect(formatSetSummary({ ...extras, weight: 80, reps: null }, kg)).toBe('80 kg × –');
     expect(formatSetSummary({ ...extras, weight: 80, reps: 8, rpe: 8.5, rir: 1 }, kg)).toBe(
       '80 kg × 8 (RPE 8,5, RIR 1)',
+    );
+  });
+
+  it('zeigt die Stufe statt des Gewichts', () => {
+    expect(formatSetSummary({ ...extras, weight: null, level: 7, reps: 10 }, kg)).toBe(
+      'Stufe 7 × 10',
+    );
+    expect(formatSetSummary({ ...extras, weight: null, level: 7.5, reps: 10 }, kg)).toBe(
+      'Stufe 7,5 × 10',
     );
   });
 

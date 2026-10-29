@@ -69,14 +69,35 @@ describe('AppDatabase-Migration', () => {
     const v4 = new AppDatabase(name);
     expect(await v4.settings.get('app-settings')).toMatchObject({
       name: 'Alt',
-      restTimerSeconds: 90,
+      restTimerSeconds: 180,
       restTimerSound: true,
       restTimerVibrate: true,
     });
     expect(await v4.exercises.get('e1')).toMatchObject({ name: 'Plank', isTimed: false });
     expect(await v4.workouts.count()).toBe(0);
     expect(await v4.sets.count()).toBe(0);
-    expect(v4.verno).toBe(4);
     await v4.delete();
+  });
+
+  it('Version 5 ergänzt loadType an Übungen und level an Sätzen', async () => {
+    const name = 'migration-test-v5';
+    const v4 = new Dexie(name);
+    v4.version(4).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+    });
+    await v4.table('exercises').add({ id: 'e1', name: 'Beinpresse' });
+    await v4.table('sets').add({ id: 's1', workoutId: 'w1', weight: 100, reps: 10 });
+    v4.close();
+
+    const v5 = new AppDatabase(name);
+    expect(await v5.exercises.get('e1')).toMatchObject({ loadType: 'weight' });
+    expect(await v5.sets.get('s1')).toMatchObject({ weight: 100, level: null });
+    expect(v5.verno).toBe(5);
+    await v5.delete();
   });
 });

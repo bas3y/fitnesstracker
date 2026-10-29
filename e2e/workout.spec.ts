@@ -47,7 +47,7 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
     'aria-pressed',
     'true',
   );
-  await expect(page.getByRole('timer', { name: 'Pause' })).toContainText(/1:(29|30)/);
+  await expect(page.getByRole('timer', { name: 'Pause' })).toContainText(/2:59|3:00/);
   await skipRest(page);
 
   // Zweiter Satz übernimmt die Werte, +2,5 kg, Aufwärmsatz davor
@@ -72,8 +72,37 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
   await plank.getByRole('button', { name: 'Satz abhaken' }).click();
   await skipRest(page);
 
-  // Reihenfolge ändern: Plank nach oben
-  await plank.getByRole('button', { name: 'Unterarmstütz (Plank) nach oben' }).click();
+  // Maschine ohne kg-Anzeige: Stufe statt Gewicht
+  const legPress = await addExercise(page, 'Beinpresse');
+  await legPress
+    .getByRole('group', { name: 'Belastung' })
+    .getByRole('button', { name: 'Stufe' })
+    .click();
+  await expect(legPress.getByLabel('Gewicht', { exact: true })).toHaveCount(0);
+  await fillStepper(legPress, 'Stufe', '7');
+  await fillStepper(legPress, 'Wiederholungen', '12');
+  await legPress.getByRole('button', { name: 'Satz abhaken' }).click();
+  await expect(legPress.getByRole('button', { name: 'Satz 1: Stufe 7 × 12' })).toBeVisible();
+  await skipRest(page);
+
+  // Reihenfolge ändern: Plank am Griff eine Position nach oben ziehen
+  await page.getByRole('button', { name: 'Reihenfolge ändern' }).click();
+  const handle = page.getByRole('button', { name: 'Unterarmstütz (Plank) verschieben' });
+  const box = (await handle.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (let step = 1; step <= 8; step++) {
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - step * 10);
+  }
+  await page.mouse.up();
+  const orderList = page.getByRole('list', { name: 'Reihenfolge der Übungen' });
+  await expect(orderList.getByRole('listitem')).toContainText([
+    'Bankdrücken (Langhantel)',
+    'Unterarmstütz (Plank)',
+    'Klimmzüge',
+    'Beinpresse',
+  ]);
+  await page.getByRole('button', { name: 'Fertig' }).click();
   const regions = page.getByRole('region');
   await expect(regions.nth(1)).toHaveAccessibleName('Unterarmstütz (Plank)');
   await expect(regions.nth(2)).toHaveAccessibleName('Klimmzüge');
@@ -92,7 +121,7 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
 
   // Beenden mit Notiz
   await page.getByRole('button', { name: 'Workout beenden' }).click();
-  await expect(page.getByText('4 Sätze abgehakt.')).toBeVisible();
+  await expect(page.getByText('5 Sätze abgehakt.')).toBeVisible();
   await page.getByLabel('Notiz (optional)').fill('Starker Tag');
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(page).toHaveURL(/#\/training\/history\/[\w-]+$/);
@@ -105,8 +134,10 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
   await expect(page.getByRole('heading', { level: 1, name: 'Verlauf' })).toBeVisible();
   const history = page.getByRole('list', { name: 'Workouts' });
   await expect(history.getByRole('listitem')).toHaveCount(1);
-  await expect(history).toContainText('Bankdrücken (Langhantel), Unterarmstütz (Plank), Klimmzüge');
-  await expect(history).toContainText('4 Sätze');
+  await expect(history).toContainText(
+    'Bankdrücken (Langhantel), Unterarmstütz (Plank), Klimmzüge, Beinpresse',
+  );
+  await expect(history).toContainText('5 Sätze');
 
   // Nachträglich bearbeiten: Satz hinzufügen, Notiz ändern
   await history.getByRole('link').first().click();

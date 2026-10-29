@@ -1,8 +1,8 @@
-import { moveItem, suggestSetValues } from '../domain/workout';
+import { suggestSetValues } from '../domain/workout';
 import { db } from './database';
 import { create, nowIso, softDelete, update } from './repository';
 import { setValuesSchema, type SetValues } from './schemas';
-import type { Exercise, Workout, WorkoutExercise, WorkoutSet } from './types';
+import type { Exercise, LoadType, Workout, WorkoutExercise, WorkoutSet } from './types';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
 const byOrder = (a: { order: number }, b: { order: number }) => a.order - b.order;
@@ -145,17 +145,40 @@ export function removeWorkoutExercise(id: string): Promise<void> {
   });
 }
 
-export function moveWorkoutExercise(id: string, direction: -1 | 1): Promise<void> {
+/** Neue Reihenfolge der Übungen (z. B. nach Ziehen), `ids` = alle Übungen des Workouts */
+export function reorderWorkoutExercises(workoutId: string, ids: string[]): Promise<void> {
   return db.transaction('rw', [db.workoutExercises, db.sets], async () => {
-    const item = await getWorkoutExercise(id);
-    const { items } = await activeChildren(item.workoutId);
-    const reordered = moveItem(
-      items,
-      items.findIndex((i) => i.id === id),
-      direction,
-    );
-    for (const [order, entry] of reordered.entries()) {
-      if (entry.order !== order) await update(db.workoutExercises, entry.id, { order });
+    const { items } = await activeChildren(workoutId);
+    const known = new Set(items.map((item) => item.id));
+    if (ids.length !== items.length || !ids.every((id) => known.has(id))) {
+      throw new Error('Reihenfolge passt nicht zum Workout');
+    }
+    for (const [order, id] of ids.entries()) {
+      if (items.find((item) => item.id === id)?.order !== order) {
+        await update(db.workoutExercises, id, { order });
+      }
+    }
+  });
+}
+
+/**
+ * Wechselt zwischen Gewicht und Stufe: merkt sich die Wahl an der Übung und leert bei
+ * offenen Sätzen den jeweils anderen Wert (abgehakte Sätze bleiben unverändert).
+ */
+export function setWorkoutExerciseLoadType(
+  workoutExerciseId: string,
+  loadType: LoadType,
+): Promise<void> {
+  return db.transaction('rw', [db.workoutExercises, db.sets, db.exercises], async () => {
+    const item = await getWorkoutExercise(workoutExerciseId);
+    await update(db.exercises, item.exerciseId, { loadType });
+    const open = await db.sets
+      .where('workoutExerciseId')
+      .equals(workoutExerciseId)
+      .filter((set) => isActive(set) && set.completedAt === null)
+      .toArray();
+    for (const set of open) {
+      await update(db.sets, set.id, loadType === 'level' ? { weight: null } : { level: null });
     }
   });
 }
@@ -187,8 +210,12 @@ export function addSet(workoutExerciseId: string): Promise<WorkoutSet> {
         index: sets.filter((set) => !set.isWarmup).length,
         isBodyweight: exercise?.equipment === 'bodyweight',
       });
+      // Gewicht oder Stufe – je nachdem, was zuletzt an der Übung gewählt wurde
+      const byLevel = exercise?.loadType === 'level';
       return create<WorkoutSet>(db.sets, {
         ...values,
+        weight: byLevel ? null : values.weight,
+        level: byLevel ? values.level : null,
         workoutId: workout.id,
         workoutExerciseId,
         order: (previous?.order ?? -1) + 1,

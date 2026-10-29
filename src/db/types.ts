@@ -92,7 +92,21 @@ export interface Exercise extends BaseEntity {
   /** Vom Nutzer ausgeblendet (getrennt von `deletedAt`, das der Seed für entfernte Einträge setzt) */
   hiddenAt: Timestamp | null;
   notes: string;
+  /** Belastung als Gewicht oder als Stufe (Maschinen ohne kg-Anzeige); zuletzt gewählte Variante */
+  loadType: LoadType;
 }
+
+export const LOAD_TYPES = ['weight', 'level'] as const;
+export type LoadType = (typeof LOAD_TYPES)[number];
+
+/** Geräte, bei denen „Stufe“ statt Gewicht angeboten wird */
+export const LEVEL_EQUIPMENT: readonly Equipment[] = [
+  'machine',
+  'cable',
+  'smith',
+  'bands',
+  'other',
+];
 
 export interface Workout extends BaseEntity {
   startedAt: Timestamp;
@@ -115,6 +129,8 @@ export interface WorkoutSet extends BaseEntity {
   order: number;
   /** kg; bei Körpergewichtsübungen Zusatzgewicht (negativ = Unterstützung) */
   weight: number | null;
+  /** Stufe an der Maschine statt Gewicht (dann `weight = null`) */
+  level: number | null;
   reps: number | null;
   /** Halteübungen statt Wiederholungen */
   durationSeconds: number | null;

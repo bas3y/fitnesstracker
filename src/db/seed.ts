@@ -57,10 +57,14 @@ export async function applySeed(data: SeedData, version: number): Promise<void> 
 type CatalogEntity = BaseEntity & { source: DataSource; builtinKey: string | null };
 
 /** Startwerte der Nutzerfelder für neu angelegte builtin-Übungen */
-export const EXERCISE_USER_DEFAULTS: Pick<Exercise, 'isFavorite' | 'hiddenAt' | 'notes'> = {
+export const EXERCISE_USER_DEFAULTS: Pick<
+  Exercise,
+  'isFavorite' | 'hiddenAt' | 'notes' | 'loadType'
+> = {
   isFavorite: false,
   hiddenAt: null,
   notes: '',
+  loadType: 'weight',
 };
 
 async function syncBuiltins<T extends CatalogEntity>(
