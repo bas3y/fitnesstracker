@@ -95,7 +95,8 @@ e2e/           Playwright-Tests
 ## Hinweise
 
 - Plattform des Nutzers: Windows, PowerShell.
-- **Lokale Entwicklung:** Bis Schritt 20 gibt es kein GitHub-Repo und keinen Push. Getestet wird am PC: Browser-DevTools (Handy-Ansicht, „Offline“), `npm run preview` für den Service Worker, Playwright mit Android- und iPhone-Viewport. Echte Handy-Installation erst nach Veröffentlichung (Ausnahme: Android per USB + Chrome-Portweiterleitung auf `localhost`).
+- **Veröffentlichung (seit Schritt 2b):** Repo `https://github.com/niklasbesarab/fitnesstracker` (Remote `origin`), App unter `https://niklasbesarab.github.io/fitnesstracker/`. Jeder Push auf `main` deployt per `.github/workflows/deploy.yml`. Trotzdem nur pushen, wenn der Nutzer es ausdrücklich will. Push aus Claudes Terminal: vorher `$env:GIT_TERMINAL_PROMPT='1'; $env:GCM_INTERACTIVE='always'`. Commit-E-Mail ist repo-lokal die GitHub-noreply-Adresse (nicht ändern).
+- **Lokale Entwicklung:** Bis auf den Testpush in 2b gibt es keine Pushes bis Schritt 20. Getestet wird am PC: Browser-DevTools (Handy-Ansicht, „Offline“), `npm run preview` für den Service Worker, Playwright mit Android- und iPhone-Viewport. Echte Handy-Installation erst nach Veröffentlichung (Ausnahme: Android per USB + Chrome-Portweiterleitung auf `localhost`).
 - Code so schreiben, dass die Veröffentlichung später nur Konfiguration ist: Vite-`base` über Umgebungsvariable (`BASE_PATH`, Standard `/`), keine absoluten Pfade.
 - iOS kann Daten von Web-Apps löschen → `navigator.storage.persist()` und Backup-Erinnerung sind wichtig.
 - Ohne Server keine Push-Benachrichtigungen; Erinnerungen nur bei geöffneter App.

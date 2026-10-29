@@ -8,7 +8,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 0 – Projekt-Setup (lokal)
 - [x] Schritt 1 – Lokale Datenbank, App-Shell & Datensicherung
 - [x] Schritt 2 – Mitgelieferte Datenbanken (Übungen & Nährwerte)
-- [ ] Schritt 2b – *optional:* früher Testpush & Handytest
+- [x] Schritt 2b – *optional:* früher Testpush & Handytest
 - [ ] Schritt 3 – Übungsverwaltung
 - [ ] Schritt 4 – Workout loggen
 - [ ] Schritt 5 – Berechnungen & PRs
@@ -136,8 +136,17 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 
 **Notizen:**
 - Gebaut / übersprungen:
-- Ergebnis Android:
-- Ergebnis iPhone:
+  - Öffentliches Repo https://github.com/niklasbesarab/fitnesstracker (Remote `origin`, Branch `main`), App unter https://niklasbesarab.github.io/fitnesstracker/.
+  - `.github/workflows/deploy.yml`: bei Push auf `main` (oder manuell) `npm ci` → lint → typecheck → Unit-Tests → Build mit `BASE_PATH=/<repo-name>/` (aus dem Repo-Namen) → Deploy per `actions/deploy-pages`. Pages-Source in den Repo-Einstellungen: „GitHub Actions“. E2E läuft nicht in der Action (nur lokal).
+  - README: Installationsanleitung Android/iPhone, Backup-Hinweis, Abschnitt Veröffentlichung.
+- Abweichungen:
+  - Commit-E-Mail für dieses Repo (lokale git-Config) ist die GitHub-noreply-Adresse; alle bisherigen Commits wurden vor dem ersten Push darauf umgeschrieben (lokale Sicherung `backup-before-email-rewrite`, nicht gepusht).
+  - `gh` CLI ist nicht installiert; Repo wurde im Browser angelegt. Push ging erst mit `$env:GIT_TERMINAL_PROMPT='1'; $env:GCM_INTERACTIVE='always'` (Git Credential Manager), Anmeldung ist jetzt gespeichert.
+  - Projekt liegt inzwischen auf Laufwerk **E:** → `safe.directory E:/Claude/Fitnesstraker` ergänzt.
+- Ergebnis Android: nicht getestet (in Schritt 20 nachholen).
+- Ergebnis iPhone: Installation über Safari → Home-Bildschirm, Offline-Start im Flugmodus, Suche, Einstellungen, Backup-Export/-Import ok, Speicher „dauerhaft“. Keine Probleme gefunden.
+- Offene Punkte:
+  - Ab jetzt wieder nur lokale Commits. Ein späterer Push auf `main` aktualisiert die App auf dem Handy automatisch (Update-Hinweis) – nur bewusst pushen, z. B. für weitere Handytests.
 
 ---
 
