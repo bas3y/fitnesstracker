@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { dangerButton, primaryButton, secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { SortableList } from '../../components/SortableList';
@@ -20,7 +21,6 @@ import { PLAN_SCHEDULES, type PlanDay, type PlanSchedule } from '../../db/types'
 import { formatWeekdays, PLAN_SCHEDULE_LABELS } from '../../domain/plans';
 import { useSettings } from '../settings/useSettings';
 import { PLANS_PATH } from '../training/paths';
-import { DeleteRowButton } from './DeleteRowButton';
 import { NameField } from './NameField';
 import { usePlanDetail } from './usePlans';
 

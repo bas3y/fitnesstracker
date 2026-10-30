@@ -1,21 +1,29 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { secondaryButton } from '../../components/buttons';
+import { primaryButton, secondaryButton } from '../../components/buttons';
 import { StarIcon } from '../../components/icons';
 import { createUserExercise } from '../../db/exercises';
 import { EMPTY_EXERCISE_INPUT } from '../../db/schemas';
 import type { Exercise } from '../../db/types';
 import { INITIAL_BROWSER_STATE, type ExerciseBrowserState } from '../../domain/exercises';
-import { ExerciseBrowser, ExerciseSummary } from './ExerciseBrowser';
+import { Badge, ExerciseBrowser, ExerciseSummary } from './ExerciseBrowser';
 import { ExerciseForm } from './ExerciseForm';
 import { useActiveExercises } from './useExercises';
 
-interface ExercisePickerProps {
+interface ExercisePickerBaseProps {
   title?: string;
   /** Wird über der Liste angezeigt, solange nicht gesucht wird (z. B. Alternativen) */
   suggestions?: Exercise[];
-  onSelect: (exercise: Exercise) => void;
+  /** Schon enthaltene Übungen: Sie werden markiert, bleiben aber wählbar */
+  addedIds?: ReadonlySet<string>;
   onClose: () => void;
 }
+
+type ExercisePickerProps = ExercisePickerBaseProps &
+  (
+    | { onSelect: (exercise: Exercise) => void; onSelectMany?: undefined }
+    /** Mehrfachauswahl: Antippen wählt aus, bestätigt wird unten; Reihenfolge wie angetippt */
+    | { onSelect?: undefined; onSelectMany: (exercises: Exercise[]) => void }
+  );
 
 /**
  * Vollbild-Auswahl einer Übung (Suche, Filter, Favoriten zuerst). Ausgeblendete Übungen fehlen.
@@ -25,33 +33,62 @@ interface ExercisePickerProps {
 export function ExercisePicker({
   title = 'Übung auswählen',
   suggestions = [],
+  addedIds,
   onSelect,
+  onSelectMany,
   onClose,
 }: ExercisePickerProps) {
   const exercises = useActiveExercises();
   const [state, setState] = useState<ExerciseBrowserState>(INITIAL_BROWSER_STATE);
   const [creating, setCreating] = useState(false);
+  const [selected, setSelected] = useState<Exercise[]>([]);
   const titleId = useId();
   const dialog = useRef<HTMLDivElement>(null);
 
-  const renderOption = (exercise: Exercise) => (
-    <button
-      type="button"
-      className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-slate-50 dark:active:bg-slate-700"
-      onClick={() => onSelect(exercise)}
-    >
-      <ExerciseSummary exercise={exercise} />
-      {exercise.isFavorite && (
-        <StarIcon
-          filled
-          aria-label="Favorit"
-          aria-hidden={false}
-          role="img"
-          className="ml-auto h-5 w-5 shrink-0 text-amber-500"
-        />
-      )}
-    </button>
-  );
+  const toggle = (exercise: Exercise) =>
+    setSelected((current) =>
+      current.some((item) => item.id === exercise.id)
+        ? current.filter((item) => item.id !== exercise.id)
+        : [...current, exercise],
+    );
+
+  const renderOption = (exercise: Exercise) => {
+    const position = selected.findIndex((item) => item.id === exercise.id);
+    return (
+      <button
+        type="button"
+        aria-pressed={onSelectMany ? position >= 0 : undefined}
+        className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-slate-50 dark:active:bg-slate-700"
+        onClick={() => (onSelect ? onSelect(exercise) : toggle(exercise))}
+      >
+        {onSelectMany && (
+          <span
+            aria-hidden="true"
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold ${
+              position >= 0
+                ? 'border-emerald-600 bg-emerald-600 text-white'
+                : 'border-slate-300 dark:border-slate-600'
+            }`}
+          >
+            {position >= 0 && position + 1}
+          </span>
+        )}
+        <ExerciseSummary exercise={exercise} />
+        <span className="ml-auto flex shrink-0 items-center gap-2">
+          {addedIds?.has(exercise.id) && <Badge>Im Training</Badge>}
+          {exercise.isFavorite && (
+            <StarIcon
+              filled
+              aria-label="Favorit"
+              aria-hidden={false}
+              role="img"
+              className="h-5 w-5 shrink-0 text-amber-500"
+            />
+          )}
+        </span>
+      </button>
+    );
+  };
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -94,7 +131,15 @@ export function ExercisePicker({
           <ExerciseForm
             initial={{ ...EMPTY_EXERCISE_INPUT, name: state.query.trim() }}
             submitLabel="Anlegen und auswählen"
-            onSubmit={async (input) => onSelect(await createUserExercise(input))}
+            onSubmit={async (input) => {
+              const created = await createUserExercise(input);
+              if (onSelect) {
+                onSelect(created);
+              } else {
+                setSelected((current) => [...current, created]);
+                setCreating(false);
+              }
+            }}
             onCancel={() => setCreating(false)}
           />
         ) : (
@@ -128,6 +173,16 @@ export function ExercisePicker({
           </>
         )}
       </div>
+
+      {onSelectMany && !creating && selected.length > 0 && (
+        <div className="sticky bottom-0 z-10 border-t border-slate-200 bg-slate-50/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+          <div className="mx-auto max-w-md px-4 py-3">
+            <button type="button" className={primaryButton} onClick={() => onSelectMany(selected)}>
+              {selected.length === 1 ? '1 Übung' : `${selected.length} Übungen`} hinzufügen
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

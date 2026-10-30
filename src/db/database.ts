@@ -150,6 +150,17 @@ export class AppDatabase extends Dexie {
           .table<Plan, string>('plans')
           .bulkPut(sorted.map((plan, order) => ({ ...plan, order })));
       });
+    // Planbare Aufwärmsätze
+    this.version(9)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<PlanExercise, string>('planExercises')
+          .toCollection()
+          .modify((item) => {
+            item.warmupSets ??= 0;
+          }),
+      );
   }
 }
 

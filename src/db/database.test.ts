@@ -186,7 +186,34 @@ describe('AppDatabase-Migration', () => {
     const v8 = new AppDatabase(name);
     expect(await v8.plans.get('a')).toMatchObject({ name: 'Erster', order: 0 });
     expect(await v8.plans.get('b')).toMatchObject({ name: 'Zweiter', order: 1 });
-    expect(v8.verno).toBe(8);
     await v8.delete();
+  });
+
+  it('Version 9 ergänzt Aufwärmsätze an Plan-Übungen und lässt die Ziele unverändert', async () => {
+    const name = 'migration-test-v9';
+    const v8 = new Dexie(name);
+    v8.version(8).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+    });
+    await v8.table('planExercises').add({ id: 'pe1', targetSets: 4, repMin: 6, repMax: 10 });
+    v8.close();
+
+    const v9 = new AppDatabase(name);
+    expect(await v9.planExercises.get('pe1')).toMatchObject({
+      targetSets: 4,
+      repMin: 6,
+      repMax: 10,
+      warmupSets: 0,
+    });
+    expect(v9.verno).toBe(9);
+    await v9.delete();
   });
 });

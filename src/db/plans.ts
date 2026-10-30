@@ -23,6 +23,7 @@ const PLAN_TABLES = [db.settings, db.plans, db.planDays, db.planExercises];
 
 export const DEFAULT_PLAN_EXERCISE: Omit<PlanExerciseValues, 'targetDurationSeconds'> = {
   targetSets: 3,
+  warmupSets: 0,
   repMin: 8,
   repMax: 12,
   restSeconds: null,
@@ -184,6 +185,7 @@ export function createPlanFromTemplate(key: string): Promise<Plan> {
           exerciseId: exercise.id,
           order: order++,
           targetSets: item.sets,
+          warmupSets: 0,
           repMin: item.reps[0],
           repMax: item.reps[1],
           targetDurationSeconds: exercise.isTimed ? (item.durationSeconds ?? null) : null,
@@ -208,17 +210,17 @@ export function duplicatePlan(id: string): Promise<Plan> {
       const { name, order, weekdays } = sourceDay;
       const day = await create<PlanDay>(db.planDays, { planId: plan.id, name, order, weekdays });
       for (const item of await activeDayExercises(sourceDay.id)) {
-        const { exerciseId, targetSets, repMin, repMax, targetDurationSeconds, restSeconds } = item;
         await create<PlanExercise>(db.planExercises, {
           planId: plan.id,
           planDayId: day.id,
-          exerciseId,
+          exerciseId: item.exerciseId,
           order: item.order,
-          targetSets,
-          repMin,
-          repMax,
-          targetDurationSeconds,
-          restSeconds,
+          targetSets: item.targetSets,
+          warmupSets: item.warmupSets,
+          repMin: item.repMin,
+          repMax: item.repMax,
+          targetDurationSeconds: item.targetDurationSeconds,
+          restSeconds: item.restSeconds,
         });
       }
     }
@@ -293,19 +295,38 @@ export function reorderPlanDays(planId: string, ids: string[]): Promise<void> {
   });
 }
 
-export function addPlanExercise(planDayId: string, exercise: Exercise): Promise<PlanExercise> {
+/** Hängt die Übungen in der angegebenen Reihenfolge ans Training an */
+export function addPlanExercises(
+  planDayId: string,
+  exercises: Exercise[],
+): Promise<PlanExercise[]> {
   return db.transaction('rw', [db.planDays, db.planExercises], async () => {
     const day = await getPlanDay(planDayId);
     const items = await activeDayExercises(planDayId);
-    return create<PlanExercise>(db.planExercises, {
-      ...DEFAULT_PLAN_EXERCISE,
-      planId: day.planId,
-      planDayId,
-      exerciseId: exercise.id,
-      order: (items.at(-1)?.order ?? -1) + 1,
-      targetDurationSeconds: exercise.isTimed ? DEFAULT_TARGET_DURATION_SECONDS : null,
-    });
+    let order = (items.at(-1)?.order ?? -1) + 1;
+    const created: PlanExercise[] = [];
+    for (const exercise of exercises) {
+      created.push(
+        await create<PlanExercise>(db.planExercises, {
+          ...DEFAULT_PLAN_EXERCISE,
+          planId: day.planId,
+          planDayId,
+          exerciseId: exercise.id,
+          order: order++,
+          targetDurationSeconds: exercise.isTimed ? DEFAULT_TARGET_DURATION_SECONDS : null,
+        }),
+      );
+    }
+    return created;
   });
+}
+
+export async function addPlanExercise(
+  planDayId: string,
+  exercise: Exercise,
+): Promise<PlanExercise> {
+  const [created] = await addPlanExercises(planDayId, [exercise]);
+  return created!;
 }
 
 export function updatePlanExercise(
@@ -315,9 +336,10 @@ export function updatePlanExercise(
   return db.transaction('rw', db.planExercises, async () => {
     const current = await db.planExercises.get(id);
     if (!current || !isActive(current)) throw new Error('Übung im Plan nicht gefunden');
-    const { targetSets, repMin, repMax, targetDurationSeconds, restSeconds } = current;
+    const { targetSets, warmupSets, repMin, repMax, targetDurationSeconds, restSeconds } = current;
     const values = planExerciseValuesSchema.parse({
       targetSets,
+      warmupSets,
       repMin,
       repMax,
       targetDurationSeconds,
@@ -426,7 +448,7 @@ export function startPlanWorkout(planDayId: string): Promise<Workout> {
           targetDurationSeconds,
           restSeconds,
         });
-        await addPlannedSets(item, planExercise.targetSets);
+        await addPlannedSets(item, planExercise.targetSets, planExercise.warmupSets);
       }
       return workout;
     },

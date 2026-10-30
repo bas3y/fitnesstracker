@@ -82,6 +82,7 @@ export type SetValues = z.infer<typeof setValuesSchema>;
 export const planExerciseValuesSchema = z
   .object({
     targetSets: z.number().int().min(1).max(20),
+    warmupSets: z.number().int().min(0).max(10),
     repMin: z.number().int().min(1).max(1000),
     repMax: z.number().int().min(1).max(1000),
     targetDurationSeconds: z

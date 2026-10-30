@@ -130,6 +130,63 @@ describe('ExercisePicker', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/bereits/);
   });
 
+  describe('Mehrfachauswahl', () => {
+    function renderMany(addedIds?: ReadonlySet<string>) {
+      const onSelectMany = vi.fn<(exercises: Exercise[]) => void>();
+      render(<ExercisePicker addedIds={addedIds} onSelectMany={onSelectMany} onClose={vi.fn()} />);
+      return onSelectMany;
+    }
+
+    it('sammelt Übungen über Suchen hinweg in Tipp-Reihenfolge', async () => {
+      const user = userEvent.setup();
+      const onSelectMany = renderMany();
+      await screen.findByRole('list', { name: 'Übungsliste' });
+      expect(screen.queryByRole('button', { name: /hinzufügen$/ })).not.toBeInTheDocument();
+
+      const row = screen.getByRole('button', { name: /Rudern/ });
+      await user.click(row);
+      expect(row).toHaveAttribute('aria-pressed', 'true');
+      await user.click(screen.getByRole('button', { name: /Bankdrücken/ }));
+      await user.click(screen.getByRole('button', { name: /Bankdrücken/ }));
+
+      await user.type(screen.getByRole('searchbox', { name: 'Übung suchen' }), 'kniebeuge');
+      await user.click(await screen.findByRole('button', { name: /Kniebeugen/ }));
+      await user.click(screen.getByRole('button', { name: '2 Übungen hinzufügen' }));
+
+      expect(onSelectMany).toHaveBeenCalledTimes(1);
+      expect(onSelectMany.mock.calls[0]![0].map((exercise) => exercise.builtinKey)).toEqual([
+        'row',
+        'squat',
+      ]);
+    });
+
+    it('markiert enthaltene Übungen, lässt sie aber wählbar', async () => {
+      const user = userEvent.setup();
+      const onSelectMany = renderMany(new Set([(await byKey('bench')).id]));
+      const bench = await screen.findByRole('button', { name: /Bankdrücken/ });
+      expect(bench).toHaveTextContent('Im Training');
+      expect(screen.getByRole('button', { name: /Rudern/ })).not.toHaveTextContent('Im Training');
+
+      await user.click(bench);
+      await user.click(screen.getByRole('button', { name: '1 Übung hinzufügen' }));
+      expect(onSelectMany).toHaveBeenCalledWith([expect.objectContaining({ builtinKey: 'bench' })]);
+    });
+
+    it('wählt eine neu angelegte Übung aus und bleibt offen', async () => {
+      const user = userEvent.setup();
+      const onSelectMany = renderMany();
+      await screen.findByRole('list', { name: 'Übungsliste' });
+      await user.type(screen.getByRole('searchbox', { name: 'Übung suchen' }), 'Hip Thrust');
+      await user.click(screen.getByRole('button', { name: '+ Eigene Übung anlegen' }));
+      const primary = screen.getByRole('group', { name: 'Hauptmuskeln' });
+      await user.click(within(primary).getByRole('button', { name: 'Gesäß' }));
+      await user.click(screen.getByRole('button', { name: 'Anlegen und auswählen' }));
+
+      await user.click(await screen.findByRole('button', { name: '1 Übung hinzufügen' }));
+      expect(onSelectMany).toHaveBeenCalledWith([expect.objectContaining({ name: 'Hip Thrust' })]);
+    });
+  });
+
   it('schließt mit Escape', async () => {
     const user = userEvent.setup();
     const { onClose } = renderPicker();

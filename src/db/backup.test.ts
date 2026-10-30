@@ -289,6 +289,19 @@ describe('Workouts im Backup', () => {
     expect((await loadPlanDetail(plan.id))?.days[0]?.items).toHaveLength(1);
   });
 
+  it('ergänzt bei Sicherungen aus DB-Version 8 die Aufwärmsätze', async () => {
+    const plan = await createPlan('Mein Plan');
+    const detail = await loadPlanDetail(plan.id);
+    await addPlanExercise(detail!.days[0]!.day.id, await createUserExercise(EXERCISE));
+    const data = JSON.parse(JSON.stringify(await createBackup()));
+    data.dbVersion = 8;
+    delete data.tables.planExercises[0].warmupSets;
+
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.planExercises[0]?.warmupSets).toBe(0);
+  });
+
   it('ergänzt bei Sicherungen aus DB-Version 6 die Planfelder', async () => {
     const data = await validBackup();
     const row = {

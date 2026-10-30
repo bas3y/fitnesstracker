@@ -142,6 +142,132 @@ test('Trainings und Pläne direkt in der Liste löschen (offline)', async ({ pag
   await expect(page.getByRole('link', { name: '+ Neuer Plan' })).toBeVisible();
 });
 
+test('Mehrfachauswahl, Aufwärmsätze und Trainingsname im Verlauf (offline)', async ({
+  page,
+  context,
+}) => {
+  await page.goto('./#/training/plans');
+  await goOffline(page, context);
+  await page.getByRole('link', { name: '+ Neuer Plan' }).click();
+  await page.getByRole('button', { name: /Leerer Plan/ }).click();
+  await page.getByRole('link', { name: /Training 1/ }).click();
+
+  // Zwei Übungen über zwei Suchen hinweg auswählen
+  const add = page.getByRole('button', { name: '+ Übungen hinzufügen' });
+  await add.click();
+  const dialog = page.getByRole('dialog', { name: 'Übungen hinzufügen' });
+  const search = dialog.getByRole('searchbox', { name: 'Übung suchen' });
+  await search.fill('Bankdrücken (Langhantel)');
+  await dialog.getByRole('button', { name: /^Bankdrücken \(Langhantel\)/ }).click();
+  await search.fill('Klimmzüge');
+  await dialog
+    .getByRole('button', { name: /^Klimmzüge/ })
+    .first()
+    .click();
+  await dialog.getByRole('button', { name: '2 Übungen hinzufügen' }).click();
+  await expect(dialog).toHaveCount(0);
+  const rows = page.getByRole('list', { name: 'Übungen im Training' }).getByRole('listitem');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText('Bankdrücken (Langhantel)');
+
+  // Beim nächsten Öffnen sind beide markiert
+  await add.click();
+  await search.fill('Bankdrücken (Langhantel)');
+  await expect(dialog.getByRole('button', { name: /^Bankdrücken \(Langhantel\)/ })).toContainText(
+    'Im Training',
+  );
+  await dialog.getByRole('button', { name: 'Schließen' }).click();
+
+  // Aufwärmsätze planen
+  await rows
+    .first()
+    .getByRole('button', { name: /^Bankdrücken.*8–12/ })
+    .click();
+  await fillStepper(rows.first(), 'Aufwärmsätze', '2');
+  await expect(rows.first()).toContainText('3 × 8–12 · 2 Aufwärmsätze');
+
+  // Sie stehen im Workout vor den Arbeitssätzen
+  await openTraining(page);
+  await page.getByRole('button', { name: 'Training 1 starten' }).click();
+  await confirmStart(page);
+  const bench = page.getByRole('region', { name: 'Bankdrücken (Langhantel)' });
+  const sets = bench.getByRole('list', { name: 'Sätze Bankdrücken (Langhantel)' });
+  await expect(sets.getByRole('listitem')).toHaveCount(5);
+  await fillStepper(bench, 'Gewicht', '40');
+  await bench.getByRole('button', { name: 'Satz abhaken' }).click();
+  await skipRest(page);
+
+  // Trainingsname in Detailseite und Verlauf
+  await page.getByRole('button', { name: 'Workout beenden' }).click();
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.getByText(/^Training 1 · \d\d:\d\d Uhr/)).toBeVisible();
+  await page.getByRole('link', { name: 'Zurück' }).click();
+  const history = page.getByRole('list', { name: 'Workouts' });
+  await expect(history.getByRole('listitem')).toContainText('Training 1');
+
+  // Löschen direkt in der Liste: Abbrechen lässt es stehen
+  await history.getByRole('button', { name: /^Workout vom .+ löschen$/ }).click();
+  const confirm = page.getByRole('alertdialog', { name: 'Workout löschen?' });
+  await confirm.getByRole('button', { name: 'Abbrechen' }).click();
+  await expect(history.getByRole('listitem')).toHaveCount(1);
+  await history.getByRole('button', { name: /^Workout vom .+ löschen$/ }).click();
+  await confirm.getByRole('button', { name: 'Löschen' }).click();
+  await expect(page.getByText('Noch keine Workouts beendet.')).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('Noch keine Workouts beendet.')).toBeVisible();
+});
+
+test('Ziehen per Touch scrollt am Bildschirmrand mit (offline)', async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 520 });
+  await page.goto('./#/training/plans');
+  await goOffline(page, context);
+  await page.getByRole('link', { name: '+ Neuer Plan' }).click();
+  await page.getByRole('button', { name: /Push\/Pull\/Legs/ }).click();
+  await page.getByRole('link', { name: /Push/ }).click();
+
+  const list = page.getByRole('list', { name: 'Übungen im Training' });
+  const rows = list.getByRole('listitem');
+  const name = 'Bankdrücken (Langhantel)';
+  await expect(rows.first()).toContainText(name);
+  const scrollY = () => page.evaluate(() => window.scrollY);
+
+  const maxScrollY = () =>
+    page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+
+  const from = (await list.getByRole('button', { name: `${name} verschieben` }).boundingBox())!;
+  const x = from.x + from.width / 2;
+  const cdp = await context.newCDPSession(page);
+  const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', y?: number) =>
+    cdp.send('Input.dispatchTouchEvent', {
+      type,
+      touchPoints: y === undefined ? [] : [{ x, y }],
+    });
+  const swipeTo = async (fromY: number, toY: number) => {
+    for (let step = 1; step <= 5; step++) {
+      await touch('touchMove', fromY + ((toY - fromY) * step) / 5);
+    }
+  };
+
+  const startY = from.y + from.height / 2;
+  await touch('touchStart', startY);
+
+  // Der Finger bleibt über der Navigation stehen, die Seite läuft trotzdem weiter
+  await swipeTo(startY, 440);
+  await expect.poll(scrollY).toBeGreaterThan(0);
+  await expect.poll(scrollY).toBe(await maxScrollY());
+
+  // Am oberen Rand zurück und wieder nach unten: Die Zeile bleibt am Finger
+  await swipeTo(440, 15);
+  await expect.poll(scrollY).toBe(0);
+  await swipeTo(15, 440);
+  await expect.poll(scrollY).toBe(await maxScrollY());
+  await touch('touchEnd');
+  await expect(rows.last()).toContainText(name);
+
+  await page.reload();
+  await expect(rows.last()).toContainText(name);
+});
+
 test('eigenen Plan anlegen, bearbeiten, duplizieren und löschen (offline)', async ({
   page,
   context,
@@ -172,10 +298,11 @@ test('eigenen Plan anlegen, bearbeiten, duplizieren und löschen (offline)', asy
   await weekdays.getByRole('button', { name: 'Do' }).click();
 
   // Übung mit eigenen Zielen
-  await page.getByRole('button', { name: '+ Übung hinzufügen' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Übung hinzufügen' });
+  await page.getByRole('button', { name: '+ Übungen hinzufügen' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Übungen hinzufügen' });
   await dialog.getByRole('searchbox', { name: 'Übung suchen' }).fill('Bankdrücken (Langhantel)');
   await dialog.getByRole('button', { name: /^Bankdrücken \(Langhantel\)/ }).click();
+  await dialog.getByRole('button', { name: '1 Übung hinzufügen' }).click();
   const row = page.getByRole('list', { name: 'Übungen im Training' }).getByRole('listitem');
   await fillStepper(row, 'Sätze', '5');
   await fillStepper(row, 'Wdh. bis', '6');

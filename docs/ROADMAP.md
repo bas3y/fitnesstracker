@@ -320,9 +320,22 @@ Hinweise:
 
 **Notizen:**
 - Gebaut:
+  - **Verlauf:** ✕ mit Rückfrage an jedem Workout in der Liste, `DeleteRowButton` liegt jetzt in `src/components/`. `WorkoutSummary.planDayName` wird in Verlaufsliste und Detailseite angezeigt.
+  - **Mehrfachauswahl:** `ExercisePicker` mit `onSelectMany` (statt `onSelect`): Antippen wählt aus, die Nummer zeigt die spätere Reihenfolge, die Auswahl bleibt über Suchen und Filter erhalten, unten „n Übungen hinzufügen“. `addedIds` markiert enthaltene Übungen mit „Im Training“. `addPlanExercises` legt alle in einer Transaktion an. Nur der Plan-Editor nutzt das; Workout und Ersetzen wählen weiter einzeln.
+  - **Aufwärmsätze planbar:** Dexie v9, `PlanExercise.warmupSets` (0–10, Standard 0, Backup-Default), Stepper im Plan-Editor, `plannedWarmupValues` in `src/domain/strength.ts`, `addPlannedSets(item, count, warmupCount)`. Vorlagen haben keine Aufwärmsätze.
+  - **Automatisches Scrollen:** `SortableList` scrollt bildweise, solange der Finger in der Randzone steht (`dragScrollDelta` in `src/domain/dragScroll.ts`: 72 px, bis 14 px pro Bild). Die Unterkante bestimmen feste Leisten mit `data-bottom-bar` (Navigation, Pausenleiste).
+  - Tests: `dragScroll.test.ts`, `plannedWarmupValues`, Plan- und Verlaufs-Tests, `ExercisePicker` (Mehrfachauswahl), Migration v8→v9, Backup aus v8. E2E in `e2e/plans.spec.ts`: Mehrfachauswahl → Aufwärmsätze → Trainingsname → ✕ sowie Ziehen mit Auto-Scroll per **echten Touch-Ereignissen** (Chrome DevTools Protocol), beide offline in beiden Viewports.
 - Abweichungen:
-- Ergebnis Handytest:
+  - **Zusätzlich behoben:** Beim Ziehen nach unten verschob React die gezogene Zeile im DOM. Dabei ging die Pointer-Capture verloren, Ereignisse kamen nur noch an, solange der Griff unter dem Zeiger lag. `SortableList` hält die DOM-Reihenfolge deshalb während des Ziehens fest und sortiert sichtbar per CSS `order`. Folge für Tests: `first()`/`last()` zeigen während des Ziehens die alte Reihenfolge, nach dem Ablegen die neue.
+  - Beim Ersetzen wandern offene Aufwärmsätze jetzt mit zur neuen Übung (in Schritt 6 entfielen sie). Sonst gingen geplante Aufwärmsätze beim Tausch verloren.
+  - Aufwärmsätze nehmen die Werte vom letzten Mal, bekommen aber keinen Overload-Vorschlag. Beim ersten Mal: Wdh. wie Untergrenze des Zielbereichs, Last leer. Die Last der Arbeitssätze wandert nicht in sie hinein.
+  - Bereits enthaltene Übungen bleiben wählbar (nur markiert), weil dieselbe Übung bewusst zweimal im Training stehen darf.
+  - Scrollen startet erst nach 8 px Bewegung, sonst liefe die Seite los, sobald man einen Griff am Rand nur antippt.
+  - Der Trainingsname wird live aus `planDays` gelesen: Umbenennen ändert ihn auch in alten Workouts, gelöschte Trainings behalten ihren letzten Namen.
+- Ergebnis Handytest: **steht noch aus** (Checkbox deshalb nicht abgehakt).
 - Offene Punkte:
+  - Nach einem Aufwärmsatz startet die volle Pausenzeit der Übung; eine kürzere Aufwärmpause wäre eine mögliche Erweiterung (Rückmeldung aus dem Handytest abwarten).
+  - Mehrfachauswahl gibt es nicht im laufenden Workout. Bei Bedarf dort `onSelectMany` anschließen.
 
 ### Schritt 7 – Statistiken & Graphen (Kraft)
 - Pro Übung: Verlauf max. Gewicht, geschätztes 1RM, Volumen (Recharts), PR-Liste

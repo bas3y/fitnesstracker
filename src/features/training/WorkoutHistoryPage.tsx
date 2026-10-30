@@ -1,6 +1,11 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { TrophyIcon } from '../../components/icons';
 import { Card, Page } from '../../components/Page';
+import type { Workout } from '../../db/types';
+import { deleteWorkout } from '../../db/workouts';
 import {
   formatTime,
   formatWorkoutDate,
@@ -13,6 +18,7 @@ import { useWorkoutHistory, useWorkoutRecordCounts } from './useWorkouts';
 export function WorkoutHistoryPage() {
   const history = useWorkoutHistory();
   const recordCounts = useWorkoutRecordCounts();
+  const [deleting, setDeleting] = useState<Workout | null>(null);
 
   return (
     <Page title="Verlauf" backTo={TRAINING_PATH}>
@@ -23,21 +29,26 @@ export function WorkoutHistoryPage() {
       )}
       {history && history.length > 0 && (
         <ul aria-label="Workouts" className="flex flex-col gap-2 pb-4">
-          {history.map(({ workout, exerciseNames, setCount }) => {
+          {history.map(({ workout, planDayName, exerciseNames, setCount }) => {
             const records = recordCounts?.get(workout.id) ?? 0;
+            const date = formatWorkoutDate(workout.startedAt);
+            const time = formatTime(workout.startedAt);
             return (
-              <li key={workout.id}>
+              <li
+                key={workout.id}
+                className="flex items-center rounded-2xl bg-white shadow-sm dark:bg-slate-800"
+              >
                 <Link
                   to={`${HISTORY_PATH}/${workout.id}`}
-                  className="block rounded-2xl bg-white px-4 py-3 shadow-sm active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700"
+                  className="block min-w-0 flex-1 rounded-2xl px-4 py-3 active:bg-slate-50 dark:active:bg-slate-700"
                 >
                   <span className="flex items-baseline justify-between gap-2">
-                    <span className="font-semibold">{formatWorkoutDate(workout.startedAt)}</span>
+                    <span className="font-semibold">{date}</span>
                     <span className="shrink-0 text-sm text-slate-500 dark:text-slate-400">
-                      {formatTime(workout.startedAt)} ·{' '}
-                      {formatWorkoutDuration(workoutDurationSeconds(workout, new Date()))}
+                      {time} · {formatWorkoutDuration(workoutDurationSeconds(workout, new Date()))}
                     </span>
                   </span>
+                  {planDayName && <span className="block font-medium">{planDayName}</span>}
                   <span className="block truncate text-sm text-slate-600 dark:text-slate-300">
                     {exerciseNames.join(', ') || 'Keine Übungen'}
                   </span>
@@ -51,10 +62,28 @@ export function WorkoutHistoryPage() {
                     )}
                   </span>
                 </Link>
+                <DeleteRowButton
+                  name={`Workout vom ${date}, ${time} Uhr`}
+                  onClick={() => setDeleting(workout)}
+                />
               </li>
             );
           })}
         </ul>
+      )}
+      {deleting && (
+        <ConfirmDialog
+          title="Workout löschen?"
+          confirmLabel="Löschen"
+          onCancel={() => setDeleting(null)}
+          onConfirm={async () => {
+            await deleteWorkout(deleting.id);
+            setDeleting(null);
+          }}
+        >
+          Das Workout vom {formatWorkoutDate(deleting.startedAt)}, {formatTime(deleting.startedAt)}{' '}
+          Uhr wird mit allen Sätzen gelöscht.
+        </ConfirmDialog>
       )}
     </Page>
   );

@@ -7,7 +7,7 @@ import { SortableList } from '../../components/SortableList';
 import { Stepper } from '../../components/Stepper';
 import { REST_TIMER_DEFAULTS } from '../../db/settings';
 import {
-  addPlanExercise,
+  addPlanExercises,
   removePlanDay,
   removePlanExercise,
   reorderPlanExercises,
@@ -130,7 +130,7 @@ function DayEditor({
         className={`${secondaryButton} mt-1 mb-6`}
         onClick={() => setPicking(true)}
       >
-        + Übung hinzufügen
+        + Übungen hinzufügen
       </button>
 
       {confirmDelete ? (
@@ -168,12 +168,14 @@ function DayEditor({
 
       {picking && (
         <ExercisePicker
-          title="Übung hinzufügen"
+          title="Übungen hinzufügen"
+          addedIds={new Set(items.map((item) => item.planExercise.exerciseId))}
           onClose={() => setPicking(false)}
-          onSelect={async (exercise) => {
+          onSelectMany={async (exercises) => {
             setPicking(false);
-            const created = await addPlanExercise(day.id, exercise);
-            setExpanded(created.id);
+            const created = await addPlanExercises(day.id, exercises);
+            // Eine einzelne Übung gleich zum Einstellen aufklappen
+            setExpanded(created.length === 1 ? created[0]!.id : null);
           }}
         />
       )}
@@ -196,11 +198,13 @@ function PlanExerciseRow({
   const settings = useSettings();
   const name = exercise?.name ?? 'Unbekannte Übung';
   const isTimed = exercise?.isTimed ?? false;
-  const { id, repMin, repMax, restSeconds, targetSets, targetDurationSeconds } = planExercise;
+  const { id, repMin, repMax, restSeconds, targetSets, warmupSets, targetDurationSeconds } =
+    planExercise;
   const save = (changes: Parameters<typeof updatePlanExercise>[1]) =>
     void updatePlanExercise(id, changes);
   const summary = [
     formatPlanTarget(planExercise, isTimed),
+    warmupSets > 0 && (warmupSets === 1 ? '1 Aufwärmsatz' : `${warmupSets} Aufwärmsätze`),
     restSeconds !== null && `Pause ${formatClock(restSeconds)}`,
   ]
     .filter(Boolean)
@@ -233,6 +237,15 @@ function PlanExerciseRow({
             max={20}
             decimals={0}
             onChange={(value) => value !== null && save({ targetSets: value })}
+          />
+          <Stepper
+            label="Aufwärmsätze"
+            value={warmupSets}
+            step={1}
+            min={0}
+            max={10}
+            decimals={0}
+            onChange={(value) => value !== null && save({ warmupSets: value })}
           />
           {isTimed ? (
             <Stepper

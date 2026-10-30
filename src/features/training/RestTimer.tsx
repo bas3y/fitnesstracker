@@ -53,6 +53,7 @@ export function RestTimerBar({ workout }: { workout: Workout }) {
     <div
       role="timer"
       aria-label="Pause"
+      data-bottom-bar
       className={`fixed inset-x-0 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom))] z-20 text-white ${
         done ? 'bg-amber-600' : 'bg-emerald-700'
       }`}

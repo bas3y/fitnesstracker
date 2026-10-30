@@ -1,4 +1,4 @@
-import { plannedSetValues, progressionWeightStepKg } from '../domain/strength';
+import { plannedSetValues, plannedWarmupValues, progressionWeightStepKg } from '../domain/strength';
 import { suggestSetValues } from '../domain/workout';
 import { db } from './database';
 import { create, nowIso, softDelete, update } from './repository';
@@ -107,23 +107,37 @@ const NO_TARGETS: WorkoutExerciseTargets = {
 };
 
 /**
- * Legt offene, vorbefüllte Sätze für eine Übung an (Overload-Vorschlag bzw. Planziel).
+ * Legt offene, vorbefüllte Sätze für eine Übung an (Overload-Vorschlag bzw. Planziel),
+ * Aufwärmsätze zuerst.
  * Tabellen im aufrufenden `rw`-Kontext: workouts, workoutExercises, sets, exercises, settings.
  */
-export async function addPlannedSets(item: WorkoutExercise, count: number): Promise<void> {
+export async function addPlannedSets(
+  item: WorkoutExercise,
+  count: number,
+  warmupCount = 0,
+): Promise<void> {
   const exercise = await db.exercises.get(item.exerciseId);
   const settings = await getSettings();
   const lastTime = await getLastPerformance(item.exerciseId, item.workoutId);
-  const values = plannedSetValues({
+  const shared = {
     lastSets: lastTime?.sets ?? [],
-    count,
     isTimed: exercise?.isTimed ?? false,
     isBodyweight: exercise?.equipment === 'bodyweight',
     range:
       item.repMin !== null && item.repMax !== null ? { min: item.repMin, max: item.repMax } : null,
     targetDurationSeconds: item.targetDurationSeconds,
-    weightStepKg: progressionWeightStepKg(settings?.weightUnit ?? 'kg'),
-  });
+  };
+  const values = [
+    ...plannedWarmupValues({ ...shared, count: warmupCount }).map((set) => ({
+      ...set,
+      isWarmup: true,
+    })),
+    ...plannedSetValues({
+      ...shared,
+      count,
+      weightStepKg: progressionWeightStepKg(settings?.weightUnit ?? 'kg'),
+    }).map((set) => ({ ...set, isWarmup: false })),
+  ];
   for (const [order, setValues] of values.entries()) {
     await create<WorkoutSet>(db.sets, {
       ...withLoadType(setValues, exercise),
@@ -132,7 +146,6 @@ export async function addPlannedSets(item: WorkoutExercise, count: number): Prom
       order,
       rpe: null,
       rir: null,
-      isWarmup: false,
       restSeconds: null,
       completedAt: null,
     });
@@ -246,8 +259,8 @@ export function replaceWorkoutExercise(id: string, exerciseId: string): Promise<
         targetDurationSeconds,
         restSeconds,
       });
-      const count = open.filter((set) => !set.isWarmup).length;
-      await addPlannedSets(replacement, Math.max(count, 1));
+      const warmups = open.filter((set) => set.isWarmup).length;
+      await addPlannedSets(replacement, Math.max(open.length - warmups, 1), warmups);
       return replacement;
     },
   );
@@ -496,6 +509,8 @@ export function updateWorkoutInfo(
 
 export interface WorkoutSummary {
   workout: Workout;
+  /** Name des Trainings, falls aus einem Plan gestartet */
+  planDayName: string | null;
   exerciseNames: string[];
   setCount: number;
 }
@@ -512,8 +527,14 @@ export async function listWorkoutHistory(): Promise<WorkoutSummary[]> {
   ]);
   const exercises = await db.exercises.bulkGet([...new Set(items.map((i) => i.exerciseId))]);
   const names = new Map(exercises.filter((e) => !!e).map((e) => [e.id, e.name]));
+  // Auch gelöschte Trainings laden, damit alte Workouts ihren Namen behalten
+  const planDays = await db.planDays.bulkGet([
+    ...new Set(workouts.flatMap((w) => w.planDayId ?? [])),
+  ]);
+  const dayNames = new Map(planDays.filter((d) => !!d).map((d) => [d.id, d.name]));
   return workouts.map((workout) => ({
     workout,
+    planDayName: dayNames.get(workout.planDayId ?? '') ?? null,
     exerciseNames: items
       .filter((i) => i.workoutId === workout.id)
       .sort(byOrder)

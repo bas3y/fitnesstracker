@@ -43,13 +43,14 @@ export function WorkoutNotFound() {
 }
 
 function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
-  const { workout, items } = detail;
+  const { workout, planDayName, items } = detail;
   const unit = useSettings()?.weightUnit ?? 'kg';
   const records = useWorkoutRecords(workout.id);
 
   return (
     <Page title={formatWorkoutDate(workout.startedAt)} backTo={HISTORY_PATH}>
       <p className="-mt-3 mb-4 text-sm text-slate-500 dark:text-slate-400">
+        {planDayName && `${planDayName} · `}
         {formatTime(workout.startedAt)} Uhr · Dauer{' '}
         {formatWorkoutDuration(workoutDurationSeconds(workout, new Date()))}
       </p>

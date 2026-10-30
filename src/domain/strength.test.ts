@@ -8,6 +8,7 @@ import {
   estimateOneRepMax,
   formatRecord,
   plannedSetValues,
+  plannedWarmupValues,
   progressionWeightStepKg,
   sessionRecords,
   sessionVolumeKg,
@@ -43,6 +44,51 @@ const bodyweight: ExerciseKind = { isTimed: false, isBodyweight: true, bodyWeigh
 const timed: ExerciseKind = { isTimed: true, isBodyweight: true, bodyWeightKg: 80 };
 
 const types = (records: PersonalRecord[]) => records.map((r) => r.type);
+
+describe('plannedWarmupValues (geplante Aufwärmsätze)', () => {
+  const plan = {
+    count: 2,
+    isTimed: false,
+    isBodyweight: false,
+    range: { min: 6, max: 10 },
+    targetDurationSeconds: null,
+  };
+
+  it('nutzt beim ersten Mal das Planziel ohne Last', () => {
+    const values = plannedWarmupValues({ ...plan, lastSets: [set(100, 5)] });
+    expect(values).toHaveLength(2);
+    expect(values[0]).toMatchObject({ weight: null, reps: 6, durationSeconds: null });
+  });
+
+  it('übernimmt die Aufwärmsätze vom letzten Mal der Reihe nach', () => {
+    const values = plannedWarmupValues({
+      ...plan,
+      lastSets: [set(40, 8, { isWarmup: true }), level(3, 6, { isWarmup: true }), set(100, 5)],
+    });
+    expect(values[0]).toMatchObject({ weight: 40, level: null, reps: 8 });
+    expect(values[1]).toMatchObject({ weight: null, level: 3, reps: 6 });
+  });
+
+  it('füllt zusätzlich geplante Sätze mit dem Planziel', () => {
+    const values = plannedWarmupValues({ ...plan, lastSets: [set(40, 8, { isWarmup: true })] });
+    expect(values[1]).toMatchObject({ weight: null, reps: 6 });
+  });
+
+  it('beachtet Körpergewichts- und Halteübungen', () => {
+    expect(
+      plannedWarmupValues({ ...plan, count: 1, isBodyweight: true, lastSets: [] })[0],
+    ).toMatchObject({ weight: 0, reps: 6 });
+    expect(
+      plannedWarmupValues({
+        ...plan,
+        count: 1,
+        isTimed: true,
+        targetDurationSeconds: 45,
+        lastSets: [],
+      })[0],
+    ).toMatchObject({ reps: null, durationSeconds: 45 });
+  });
+});
 
 describe('plannedSetValues (Vorbefüllung aus dem Plan)', () => {
   const plan = {

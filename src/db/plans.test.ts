@@ -3,6 +3,7 @@ import { db } from './database';
 import {
   addPlanDay,
   addPlanExercise,
+  addPlanExercises,
   createPlan,
   createPlanFromTemplate,
   deletePlan,
@@ -28,6 +29,7 @@ import type { Exercise } from './types';
 import {
   completeSet,
   finishWorkout,
+  listWorkoutHistory,
   loadWorkoutDetail,
   replaceWorkoutExercise,
   skipWorkoutExercise,
@@ -142,12 +144,27 @@ describe('Pläne verwalten', () => {
     expect(detail?.days[0]?.items.map((i) => i.exercise?.name)).toEqual(['Plank', 'Bankdrücken']);
   });
 
+  it('hängt mehrere Übungen in der gewählten Reihenfolge an', async () => {
+    const { plan, day } = await planWithDay();
+    await addPlanExercise(day.id, bench);
+    const created = await addPlanExercises(day.id, [plank, press]);
+    expect(created.map((item) => item.order)).toEqual([1, 2]);
+    expect(created[0]?.targetDurationSeconds).toBe(30);
+    expect(created[1]?.targetDurationSeconds).toBeNull();
+    const detail = await loadPlanDetail(plan.id);
+    expect(detail?.days[0]?.items.map((i) => i.exercise?.name)).toEqual([
+      'Bankdrücken',
+      'Plank',
+      'Kurzhanteldrücken',
+    ]);
+  });
+
   it('kopiert beim Duplizieren alles mit neuen IDs und ändert den aktiven Plan nicht', async () => {
     const { plan, day } = await planWithDay();
     await updatePlan(plan.id, { schedule: 'weekdays' });
     await updatePlanDay(day.id, { weekdays: [2] });
     const item = await addPlanExercise(day.id, bench);
-    await updatePlanExercise(item.id, { targetSets: 5, restSeconds: 120 });
+    await updatePlanExercise(item.id, { targetSets: 5, warmupSets: 2, restSeconds: 120 });
 
     const copy = await duplicatePlan(plan.id);
     const detail = await loadPlanDetail(copy.id);
@@ -157,6 +174,7 @@ describe('Pläne verwalten', () => {
     expect(detail?.days[0]?.items[0]?.planExercise).toMatchObject({
       exerciseId: bench.id,
       targetSets: 5,
+      warmupSets: 2,
       restSeconds: 120,
     });
     expect((await getSettings())?.activePlanId).toBe(plan.id);
@@ -290,6 +308,57 @@ describe('Workout aus Plan starten', () => {
     expect(after?.items[0]?.sets.map((set) => set.weight)).toEqual([50, 45, 50]);
   });
 
+  it('legt geplante Aufwärmsätze vor die Arbeitssätze', async () => {
+    const { day } = await planWithDay();
+    const item = await addPlanExercise(day.id, bench);
+    await updatePlanExercise(item.id, { targetSets: 2, warmupSets: 2, repMin: 6, repMax: 10 });
+    await expect(updatePlanExercise(item.id, { warmupSets: 11 })).rejects.toThrow();
+
+    const detail = await loadWorkoutDetail((await startPlanWorkout(day.id)).id);
+    const sets = detail!.items[0]!.sets;
+    expect(sets.map((set) => set.isWarmup)).toEqual([true, true, false, false]);
+    expect(sets.map((set) => set.order)).toEqual([0, 1, 2, 3]);
+    expect(sets[0]).toMatchObject({ weight: null, reps: 6, completedAt: null });
+
+    // Last der Arbeitssätze landet nicht in offenen Aufwärmsätzen
+    await updateSet(sets[2]!.id, { weight: 60 });
+    await completeSet(sets[2]!.id, 0);
+    const after = await loadWorkoutDetail(detail!.workout.id);
+    expect(after?.items[0]?.sets.map((set) => set.weight)).toEqual([null, null, 60, 60]);
+  });
+
+  it('befüllt Aufwärmsätze wie letztes Mal, Arbeitssätze mit dem Overload-Vorschlag', async () => {
+    const { day } = await planWithDay();
+    const item = await addPlanExercise(day.id, bench);
+    await updatePlanExercise(item.id, { targetSets: 1, warmupSets: 1, repMin: 6, repMax: 10 });
+    const first = await loadWorkoutDetail((await startPlanWorkout(day.id)).id);
+    const [warmup, working] = first!.items[0]!.sets;
+    await updateSet(warmup!.id, { weight: 40, reps: 5 });
+    await updateSet(working!.id, { weight: 60, reps: 10 });
+    await completeSet(warmup!.id, 0);
+    await completeSet(working!.id, 0);
+    await finishWorkout(first!.workout.id, '');
+
+    const next = await loadWorkoutDetail((await startPlanWorkout(day.id)).id);
+    expect(next?.items[0]?.sets[0]).toMatchObject({ isWarmup: true, weight: 40, reps: 5 });
+    expect(next?.items[0]?.sets[1]).toMatchObject({ isWarmup: false, weight: 62.5, reps: 6 });
+  });
+
+  it('zeigt den Trainingsnamen im Verlauf, auch wenn das Training gelöscht ist', async () => {
+    const { day } = await planWithDay();
+    await addPlanExercise(day.id, bench);
+    const workout = await trainDay(day.id, { weight: 60, reps: 8 });
+    const free = await startWorkout();
+    await finishWorkout(free.id, '');
+    await removePlanDay(day.id);
+
+    const names = new Map(
+      (await listWorkoutHistory()).map((item) => [item.workout.id, item.planDayName]),
+    );
+    expect(names.get(workout.id)).toBe('Training 1');
+    expect(names.get(free.id)).toBeNull();
+  });
+
   it('bleibt von späteren Planänderungen unberührt', async () => {
     const { day } = await planWithDay();
     const item = await addPlanExercise(day.id, bench);
@@ -419,6 +488,20 @@ describe('Übung im laufenden Workout tauschen', () => {
     ]);
     expect(after?.items[0]?.sets).toHaveLength(1);
     expect(after?.items[1]?.sets).toHaveLength(2);
+  });
+
+  it('übernimmt offene Aufwärmsätze, abgehakte bleiben bei der alten Übung', async () => {
+    const { day } = await planWithDay();
+    const item = await addPlanExercise(day.id, bench);
+    await updatePlanExercise(item.id, { targetSets: 2, warmupSets: 2 });
+    const detail = await loadWorkoutDetail((await startPlanWorkout(day.id)).id);
+    const own = detail!.items[0]!;
+    await completeSet(own.sets[0]!.id, 0);
+    await replaceWorkoutExercise(own.workoutExercise.id, press.id);
+
+    const after = await loadWorkoutDetail(detail!.workout.id);
+    expect(after?.items[0]?.sets).toHaveLength(1);
+    expect(after?.items[1]?.sets.map((set) => set.isWarmup)).toEqual([true, false, false]);
   });
 
   it('nimmt für die neue Übung den Verlauf dieser Übung', async () => {

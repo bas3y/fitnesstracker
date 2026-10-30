@@ -106,6 +106,8 @@ const planDaySchema = baseEntitySchema.extend({
   weekdays: weekdaysSchema,
 });
 const planExerciseSchema = baseEntitySchema.extend(planExerciseValuesSchema.shape).extend({
+  // Seit DB-Version 9
+  warmupSets: planExerciseValuesSchema.shape.warmupSets.default(0),
   planId: z.string().min(1),
   planDayId: z.string().min(1),
   exerciseId: z.string().min(1),

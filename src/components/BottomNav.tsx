@@ -20,6 +20,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Hauptnavigation"
+      data-bottom-bar
       className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/95"
     >
       <ul className="mx-auto flex max-w-md">

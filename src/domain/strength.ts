@@ -527,3 +527,36 @@ export function plannedSetValues({
     };
   });
 }
+
+/**
+ * Startwerte geplanter Aufwärmsätze: der passende Aufwärmsatz vom letzten Mal, sonst das Planziel
+ * ohne Last. Der Overload-Vorschlag gilt nur für Arbeitssätze.
+ */
+export function plannedWarmupValues({
+  lastSets,
+  count,
+  isTimed,
+  isBodyweight,
+  range,
+  targetDurationSeconds,
+}: {
+  lastSets: StrengthSet[];
+  count: number;
+  isTimed: boolean;
+  isBodyweight: boolean;
+  range: RepRange | null;
+  targetDurationSeconds: number | null;
+}) {
+  const lastWarmups = lastSets.filter((set) => set.isWarmup);
+  return Array.from({ length: count }, (_, index) => {
+    const last = lastWarmups[index];
+    return {
+      weight: last ? last.weight : isBodyweight ? 0 : null,
+      level: last?.level ?? null,
+      eccentricWeight: last?.eccentricWeight ?? null,
+      eccentricLevel: last?.eccentricLevel ?? null,
+      reps: last ? last.reps : isTimed ? null : (range?.min ?? null),
+      durationSeconds: last ? last.durationSeconds : isTimed ? targetDurationSeconds : null,
+    };
+  });
+}

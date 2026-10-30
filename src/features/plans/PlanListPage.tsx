@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { primaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { LinkRow, Page } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
 import { deletePlan, reorderPlans } from '../../db/plans';
@@ -9,7 +10,6 @@ import type { Plan } from '../../db/types';
 import { PLAN_SCHEDULE_LABELS } from '../../domain/plans';
 import { useSettings } from '../settings/useSettings';
 import { PLANS_PATH, TRAINING_PATH } from '../training/paths';
-import { DeleteRowButton } from './DeleteRowButton';
 import { usePlans } from './usePlans';
 
 export function PlanListPage() {

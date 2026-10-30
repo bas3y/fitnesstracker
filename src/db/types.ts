@@ -181,6 +181,8 @@ export interface PlanExercise extends BaseEntity {
   exerciseId: string;
   order: number;
   targetSets: number;
+  /** Aufwärmsätze vor den Arbeitssätzen (zählen nicht zu `targetSets`) */
+  warmupSets: number;
   repMin: number;
   repMax: number;
   /** Nur Halteübungen */

@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -6,7 +7,20 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react';
+import { dragScrollDelta } from '../domain/dragScroll';
 import { moveItem } from '../domain/workout';
+
+/** So weit muss der Zeiger wandern, bevor gescrollt wird – ein Griff kann am Rand liegen */
+const SCROLL_THRESHOLD_PX = 8;
+
+/** Unterkante des sichtbaren Bereichs ohne feste Leisten (`data-bottom-bar`) */
+function visibleBottom(): number {
+  const bars = document.querySelectorAll('[data-bottom-bar]');
+  return Math.min(
+    window.innerHeight,
+    ...Array.from(bars, (bar) => bar.getBoundingClientRect().top),
+  );
+}
 
 export interface SortableItem {
   id: string;
@@ -23,6 +37,7 @@ export interface SortableRowProps {
 
 interface Drag {
   id: string;
+  startY: number;
   pointerY: number;
   /** Abstand Zeilenmitte–Zeiger; erst nach dem Zusammenklappen messbar */
   offset: number | null;
@@ -34,7 +49,7 @@ interface Drag {
  * Liste, deren Zeilen sich direkt am Griff ziehen lassen (Pfeiltasten am Griff gehen auch).
  * `renderItem` baut den Griff in die Zeile ein. Die gezogene Zeile bewegt sich um die Strecke des
  * Zeigers (kein Sprung, wenn die Liste beim Ziehen zusammenklappt). Positionen kommen aus dem DOM –
- * Zeilen dürfen also unterschiedlich hoch sein.
+ * Zeilen dürfen also unterschiedlich hoch sein. Am Bildschirmrand scrollt die Seite mit.
  */
 export function SortableList<T extends SortableItem>({
   label,
@@ -55,7 +70,6 @@ export function SortableList<T extends SortableItem>({
   const saving = useRef(false);
   const list = useRef<HTMLUListElement>(null);
   const order = localOrder ?? items.map((item) => item.id);
-  const byId = new Map(items.map((item) => [item.id, item]));
 
   const rowOf = (id: string) => list.current?.querySelector<HTMLElement>(`[data-sort-id="${id}"]`);
   const middleOf = (row: HTMLElement) =>
@@ -72,8 +86,43 @@ export function SortableList<T extends SortableItem>({
     row.style.transform = `translateY(${current.pointerY + current.offset - middleOf(row)}px)`;
   };
 
+  const swapAtPointer = () => {
+    const current = drag.current;
+    if (!current) return;
+    const middle = current.pointerY + (current.offset ?? 0);
+    const index = current.order.indexOf(current.id);
+    const next = rowOf(current.order[index + 1] ?? '');
+    const previous = rowOf(current.order[index - 1] ?? '');
+    const direction =
+      next && middle > middleOf(next) ? 1 : previous && middle < middleOf(previous) ? -1 : 0;
+    if (direction) {
+      current.order = moveItem(current.order, index, direction);
+      setLocalOrder(current.order);
+    }
+  };
+
   // Auch nach dem Zusammenklappen und nach jedem Tausch, weil sich dann das Layout ändert
   useLayoutEffect(followPointer, [draggingId, localOrder]);
+
+  // Läuft bildweise weiter, weil ein ruhender Finger am Rand keine Zeigerereignisse auslöst
+  useEffect(() => {
+    if (draggingId === null) return;
+    const scroll = () => {
+      const current = drag.current;
+      if (current && Math.abs(current.pointerY - current.startY) >= SCROLL_THRESHOLD_PX) {
+        const delta = dragScrollDelta(current.pointerY, 0, visibleBottom());
+        if (delta !== 0) {
+          window.scrollBy(0, delta);
+          followPointer();
+          swapAtPointer();
+        }
+      }
+      frame = requestAnimationFrame(scroll);
+    };
+    let frame = requestAnimationFrame(scroll);
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- arbeitet nur mit Refs
+  }, [draggingId]);
 
   // Nach dem Aufklappen die abgelegte Zeile wieder in den sichtbaren Bereich holen
   useLayoutEffect(() => {
@@ -94,7 +143,7 @@ export function SortableList<T extends SortableItem>({
   const onPointerDown = (event: PointerEvent<HTMLButtonElement>, id: string) => {
     if (saving.current) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    drag.current = { id, pointerY: event.clientY, offset: null, order };
+    drag.current = { id, startY: event.clientY, pointerY: event.clientY, offset: null, order };
     setDroppedId(null);
     setLocalOrder(order);
     setDraggingId(id);
@@ -105,16 +154,7 @@ export function SortableList<T extends SortableItem>({
     if (!current) return;
     current.pointerY = event.clientY;
     followPointer();
-    const middle = event.clientY + (current.offset ?? 0);
-    const index = current.order.indexOf(current.id);
-    const next = rowOf(current.order[index + 1] ?? '');
-    const previous = rowOf(current.order[index - 1] ?? '');
-    const direction =
-      next && middle > middleOf(next) ? 1 : previous && middle < middleOf(previous) ? -1 : 0;
-    if (direction) {
-      current.order = moveItem(current.order, index, direction);
-      setLocalOrder(current.order);
-    }
+    swapAtPointer();
   };
 
   const onPointerUp = () => {
@@ -139,10 +179,10 @@ export function SortableList<T extends SortableItem>({
   };
 
   return (
-    <ul ref={list} aria-label={label} className="relative">
-      {order.map((id) => {
-        const item = byId.get(id);
-        if (!item) return null;
+    // Reihenfolge per CSS: Würde die gezogene Zeile im DOM wandern, ginge die Pointer-Capture verloren
+    <ul ref={list} aria-label={label} className="relative flex flex-col">
+      {items.map((item) => {
+        const { id } = item;
         const handle =
           items.length > 1 ? (
             <button
@@ -162,6 +202,7 @@ export function SortableList<T extends SortableItem>({
           <li
             key={id}
             data-sort-id={id}
+            style={{ order: order.indexOf(id) }}
             className={draggingId === id ? 'relative z-10 rounded-2xl shadow-lg' : undefined}
           >
             {renderItem(item, { handle, compact: draggingId !== null })}
