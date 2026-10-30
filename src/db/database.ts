@@ -1,5 +1,15 @@
 import Dexie, { type Table } from 'dexie';
-import type { Exercise, Food, Settings, Workout, WorkoutExercise, WorkoutSet } from './types';
+import type {
+  Exercise,
+  Food,
+  Plan,
+  PlanDay,
+  PlanExercise,
+  Settings,
+  Workout,
+  WorkoutExercise,
+  WorkoutSet,
+} from './types';
 
 export const DB_NAME = 'fitnesstracker';
 
@@ -11,6 +21,9 @@ export class AppDatabase extends Dexie {
   workouts!: Table<Workout, string>;
   workoutExercises!: Table<WorkoutExercise, string>;
   sets!: Table<WorkoutSet, string>;
+  plans!: Table<Plan, string>;
+  planDays!: Table<PlanDay, string>;
+  planExercises!: Table<PlanExercise, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -96,6 +109,37 @@ export class AppDatabase extends Dexie {
             set.eccentricLevel ??= null;
           }),
       );
+    // Trainingspläne
+    this.version(7)
+      .stores({
+        plans: 'id, updatedAt',
+        planDays: 'id, planId, updatedAt',
+        planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.activePlanId ??= null;
+          });
+        await tx
+          .table<Workout, string>('workouts')
+          .toCollection()
+          .modify((workout) => {
+            workout.planId ??= null;
+            workout.planDayId ??= null;
+          });
+        await tx
+          .table<WorkoutExercise, string>('workoutExercises')
+          .toCollection()
+          .modify((item) => {
+            item.repMin ??= null;
+            item.repMax ??= null;
+            item.targetDurationSeconds ??= null;
+            item.restSeconds ??= null;
+          });
+      });
   }
 }
 

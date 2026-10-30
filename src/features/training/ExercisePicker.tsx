@@ -11,6 +11,8 @@ import { useActiveExercises } from './useExercises';
 
 interface ExercisePickerProps {
   title?: string;
+  /** Wird über der Liste angezeigt, solange nicht gesucht wird (z. B. Alternativen) */
+  suggestions?: Exercise[];
   onSelect: (exercise: Exercise) => void;
   onClose: () => void;
 }
@@ -22,6 +24,7 @@ interface ExercisePickerProps {
  */
 export function ExercisePicker({
   title = 'Übung auswählen',
+  suggestions = [],
   onSelect,
   onClose,
 }: ExercisePickerProps) {
@@ -30,6 +33,25 @@ export function ExercisePicker({
   const [creating, setCreating] = useState(false);
   const titleId = useId();
   const dialog = useRef<HTMLDivElement>(null);
+
+  const renderOption = (exercise: Exercise) => (
+    <button
+      type="button"
+      className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-slate-50 dark:active:bg-slate-700"
+      onClick={() => onSelect(exercise)}
+    >
+      <ExerciseSummary exercise={exercise} />
+      {exercise.isFavorite && (
+        <StarIcon
+          filled
+          aria-label="Favorit"
+          aria-hidden={false}
+          role="img"
+          className="ml-auto h-5 w-5 shrink-0 text-amber-500"
+        />
+      )}
+    </button>
+  );
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -84,28 +106,24 @@ export function ExercisePicker({
             >
               + Eigene Übung anlegen
             </button>
+            {suggestions.length > 0 && state.query.trim() === '' && (
+              <>
+                <h3 className="mb-2 font-semibold">Vorschläge</h3>
+                <ul
+                  aria-label="Vorschläge"
+                  className="mb-4 divide-y divide-slate-200 overflow-hidden rounded-2xl bg-white shadow-sm dark:divide-slate-700 dark:bg-slate-800"
+                >
+                  {suggestions.map((exercise) => (
+                    <li key={exercise.id}>{renderOption(exercise)}</li>
+                  ))}
+                </ul>
+              </>
+            )}
             <ExerciseBrowser
               exercises={exercises}
               state={state}
               onStateChange={setState}
-              renderItem={(exercise) => (
-                <button
-                  type="button"
-                  className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-slate-50 dark:active:bg-slate-700"
-                  onClick={() => onSelect(exercise)}
-                >
-                  <ExerciseSummary exercise={exercise} />
-                  {exercise.isFavorite && (
-                    <StarIcon
-                      filled
-                      aria-label="Favorit"
-                      aria-hidden={false}
-                      role="img"
-                      className="ml-auto h-5 w-5 shrink-0 text-amber-500"
-                    />
-                  )}
-                </button>
-              )}
+              renderItem={renderOption}
             />
           </>
         )}

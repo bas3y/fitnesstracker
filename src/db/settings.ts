@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   theme: 'system',
   lastBackupAt: null,
   seedVersion: 0,
+  activePlanId: null,
   ...REST_TIMER_DEFAULTS,
 };
 

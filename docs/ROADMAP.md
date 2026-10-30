@@ -12,7 +12,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 3 – Übungsverwaltung
 - [x] Schritt 4 – Workout loggen
 - [x] Schritt 5 – Berechnungen & PRs
-- [ ] Schritt 6 – Trainingspläne
+- [x] Schritt 6 – Trainingspläne
 - [ ] Schritt 7 – Statistiken & Graphen (Kraft)
 - [ ] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
 - [ ] Schritt 9 – Tägliches Tracking
@@ -264,8 +264,29 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 
 **Notizen:**
 - Gebaut:
+  - Dexie v7: Tabellen `plans` (`name`, `schedule: 'rotation' | 'weekdays'`), `planDays` (`name`, `order`, `weekdays` wie `Date.getDay()`), `planExercises` (`targetSets`, `repMin`, `repMax`, `targetDurationSeconds`, `restSeconds`). `Settings.activePlanId`, `Workout.planId`/`planDayId`, `WorkoutExercise.repMin`/`repMax`/`targetDurationSeconds`/`restSeconds`. Backup-Defaults, Sicherungen aus v1–v6 bleiben importierbar.
+  - `src/db/plans.ts`: Pläne/Trainings/Plan-Übungen anlegen, ändern, sortieren, löschen (Soft-Delete kaskadiert), `duplicatePlan`, `createPlanFromTemplate`, `setActivePlan`, `loadActivePlanSuggestion`, `startPlanWorkout`. `src/db/workouts.ts`: `addPlannedSets`, `replaceWorkoutExercise`, `skipWorkoutExercise`.
+  - `src/domain/plans.ts`: `suggestPlanDay`, Formatierung (Ziel, Wochentage). `src/domain/strength.ts`: `plannedSetValues`, `progressionWeightStepKg`. `src/domain/exercises.ts`: `suggestAlternatives`.
+  - Vorlagen in `src/data/planTemplates.ts` (Push/Pull/Legs, 5×5, Ganzkörper 3×/Woche, Oberkörper/Unterkörper), Verweise auf `builtinKey` per Datentest geprüft.
+  - UI in `src/features/plans/`: `PlanListPage` (`/training/plans`), `PlanDetailPage` (`/training/plans/:id`: Name, Rotation/Wochentage, aktiv wählen, Trainings sortieren, duplizieren, löschen), `PlanDayPage` (`/training/plans/:id/days/:dayId`: Name, Wochentage, Übungen mit Sätzen, Wdh.-Bereich bzw. Zieldauer, Pause), `PlanSuggestionCard` auf der Trainingsseite (Vorschlag starten, anderes Training wählen, freies Training).
+  - Laufendes Workout: Titel = Name des Trainings, Zielzeile an der Karte („Ziel: 6–10 Wdh. · Pause 3:00“), Pausenzeit der Plan-Übung gilt beim Abhaken, Overload-Vorschlag nutzt den Plan-Zielbereich, „Ersetzen“ (`ExercisePicker` mit neuer Prop `suggestions`) und „Überspringen“ an jeder Übung mit offenen Sätzen.
+  - `SortableList` (`src/components/`) aus `ExerciseOrderList` herausgelöst, damit Trainings und Plan-Übungen dasselbe Ziehen nutzen.
+  - Tests: `src/domain/plans.test.ts`, `src/db/plans.test.ts`, `plannedSetValues`, `suggestAlternatives`, Vorlagen-Datentest, Migration v6→v7, Backup mit Plänen und aus v6. E2E `e2e/plans.spec.ts` (offline in beiden Viewports: Vorlage → Vorschlag → vorbefüllte Sätze, Ersetzen, Überspringen, Plan-Pause, Neuladen, Rotation, anderes und freies Training, eigener Plan bis Löschen).
 - Abweichungen:
+  - Vorlagen liegen nicht in der DB und laufen nicht über den Seed: Sie werden beim Auswählen als normaler, frei änderbarer Plan kopiert. Fehlt eine Übung, entfällt sie aus der Kopie.
+  - Der erste angelegte Plan wird automatisch aktiv. Duplikate nicht.
+  - Zielwerte und Pause werden beim Start **ins Workout kopiert**: Spätere Planänderungen berühren ein laufendes oder altes Workout nicht. Der Plan-Tag wird nur für den Vorschlag und den Titel gemerkt.
+  - Vorschlag: Rotation = Training nach dem zuletzt beendeten dieses Plans; freie und verworfene Workouts zählen nicht. Wochenplan = heute geplantes, heute noch nicht absolviertes Training, sonst das nächste in der Reihenfolge (Nachholen). Wochenplan ohne gesetzte Wochentage verhält sich wie Rotation. Trainings ohne Übungen werden nicht vorgeschlagen, sind aber über „Anderes Training wählen“ startbar.
+  - Vorbefüllung beim ersten Mal: Wdh. = Untergrenze des Zielbereichs, Gewicht leer. **Zusatz:** `completeSet` überträgt die Last des abgehakten Satzes in leere Folgesätze, sonst müsste man sie beim ersten Training in jedem Satz eintragen.
+  - Ersetzen ändert nur das Workout, nicht den Plan. Offene Sätze wandern zur neuen Übung (Anzahl und Ziele bleiben), abgehakte bleiben bei der alten; die neue steht dann direkt dahinter. Aufwärmsätze zählen dabei nicht mit.
+  - Überspringen hat keine Rückfrage, weil nur offene Sätze entfallen; ohne abgehakten Satz verschwindet die Übung aus dem Workout.
+  - Alternativen: gleiche Kategorie und mindestens ein gemeinsamer Hauptmuskel; exakt gleiche Hauptmuskeln zuerst, bei Gleichstand Favoriten und anderes Equipment. Übungen, die schon im Workout sind, werden nicht vorgeschlagen.
 - Offene Punkte:
+  - Mehrfachauswahl im `ExercisePicker` (Hinweis aus Schritt 3) wurde nicht ergänzt: Jede Übung wird einzeln hinzugefügt, danach ist ihr Ziel direkt aufgeklappt.
+  - Aufwärmsätze sind nicht planbar.
+  - Der Vorschlag wird nur auf der Trainingsseite angezeigt. Schritt 8: `loadActivePlanSuggestion()`/`useActivePlanSuggestion()` für das Dashboard wiederverwenden.
+  - Verlauf und Detailseite zeigen den Trainingsnamen noch nicht (`WorkoutDetail.planDayName` gibt es schon, `WorkoutSummary` noch nicht).
+  - Trainingsblöcke (Schritt 18) können auf `plans` aufsetzen.
 
 ### Schritt 7 – Statistiken & Graphen (Kraft)
 - Pro Übung: Verlauf max. Gewicht, geschätztes 1RM, Volumen (Recharts), PR-Liste

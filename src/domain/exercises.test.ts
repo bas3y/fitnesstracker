@@ -5,6 +5,7 @@ import {
   findDuplicateName,
   matchesExerciseFilter,
   sortExercises,
+  suggestAlternatives,
   type ExerciseFilter,
 } from './exercises';
 
@@ -33,6 +34,51 @@ function exercise(overrides: Partial<Exercise>): Exercise {
 }
 
 const filter = (changes: Partial<ExerciseFilter>) => ({ ...EMPTY_EXERCISE_FILTER, ...changes });
+
+describe('suggestAlternatives', () => {
+  const bench = exercise({ name: 'Bankdrücken' });
+  const names = (list: Exercise[]) => list.map((item) => item.name);
+
+  it('verlangt gleichen Hauptmuskel und gleiche Kategorie', () => {
+    const list = [
+      bench,
+      exercise({ name: 'Brustpresse', equipment: 'machine' }),
+      exercise({ name: 'Rudern', primaryMuscles: ['lats'] }),
+      exercise({ name: 'Dehnen', category: 'mobility' }),
+    ];
+    expect(names(suggestAlternatives(bench, list))).toEqual(['Brustpresse']);
+  });
+
+  it('lässt Ausgeblendetes, Gelöschtes und Ausgeschlossenes weg', () => {
+    const excluded = exercise({ name: 'Schon im Workout' });
+    const list = [
+      exercise({ name: 'Ausgeblendet', hiddenAt: '2026-01-01T00:00:00.000Z' }),
+      exercise({ name: 'Gelöscht', deletedAt: '2026-01-01T00:00:00.000Z' }),
+      excluded,
+    ];
+    expect(suggestAlternatives(bench, list, { excludeIds: [excluded.id] })).toEqual([]);
+  });
+
+  it('bevorzugt gleiche Muskeln, dann Favoriten und anderes Equipment', () => {
+    const list = [
+      exercise({ name: 'A Gleiches Gerät', secondaryMuscles: [] }),
+      exercise({ name: 'B Teiltreffer', primaryMuscles: ['chest', 'shoulders'] }),
+      exercise({ name: 'C Anderes Gerät', equipment: 'cable', secondaryMuscles: [] }),
+      exercise({ name: 'D Volltreffer', equipment: 'dumbbell' }),
+    ];
+    expect(names(suggestAlternatives(bench, list))).toEqual([
+      'D Volltreffer',
+      'C Anderes Gerät',
+      'A Gleiches Gerät',
+      'B Teiltreffer',
+    ]);
+  });
+
+  it('begrenzt die Anzahl', () => {
+    const list = Array.from({ length: 10 }, (_, i) => exercise({ name: `Übung ${i}` }));
+    expect(suggestAlternatives(bench, list, { limit: 3 })).toHaveLength(3);
+  });
+});
 
 describe('matchesExerciseFilter', () => {
   it('ohne Filter: alle aktiven, nicht ausgeblendeten Übungen', () => {

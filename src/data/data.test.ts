@@ -6,6 +6,7 @@ import exercisesJson from './exercises.json';
 import exercisesRaw from './exercises.json?raw';
 import foodsJson from './foods.json';
 import foodsRaw from './foods.json?raw';
+import { PLAN_TEMPLATES } from './planTemplates';
 
 // Gleiche Liste wie ENERGY_CHECK_EXCEPTIONS in scripts/data/foods.mapping.mjs
 const ENERGY_CHECK_EXCEPTIONS = ['oat-bran', 'wheat-bran', 'cocoa-powder', 'baking-powder'];
@@ -72,5 +73,26 @@ describe('mitgelieferte Daten', () => {
     expect(searchFoods('Haferflocken')[0]?.key).toBe('oats');
     expect(searchFoods('magerquark')[0]?.key).toBe('quark-lowfat');
     expect(searchFoods('hahnchenbrust').map((f) => f.key)).toContain('chicken-breast');
+  });
+});
+
+describe('Plan-Vorlagen', () => {
+  it('verweisen nur auf vorhandene Übungen mit passenden Zielen', () => {
+    const byKey = new Map(exercises.map((exercise) => [exercise.key, exercise]));
+    expect(duplicates(PLAN_TEMPLATES.map((template) => template.key))).toEqual([]);
+    for (const template of PLAN_TEMPLATES) {
+      for (const day of template.days) {
+        expect(day.exercises.length, day.name).toBeGreaterThan(0);
+        for (const item of day.exercises) {
+          const exercise = byKey.get(item.key);
+          expect(exercise, item.key).toBeDefined();
+          expect(item.reps[0], item.key).toBeLessThanOrEqual(item.reps[1]);
+          if (exercise?.isTimed) expect(item.durationSeconds, item.key).toBeGreaterThan(0);
+        }
+        if (template.schedule === 'weekdays') {
+          expect(day.weekdays.length, day.name).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 });

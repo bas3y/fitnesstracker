@@ -3,6 +3,9 @@ import { Layout } from './components/Layout';
 import { HomePage } from './features/dashboard/HomePage';
 import { DailyPage } from './features/daily/DailyPage';
 import { FoodSearchPage } from './features/nutrition/FoodSearchPage';
+import { PlanDayPage } from './features/plans/PlanDayPage';
+import { PlanDetailPage } from './features/plans/PlanDetailPage';
+import { PlanListPage } from './features/plans/PlanListPage';
 import { AboutPage } from './features/settings/AboutPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { StatsPage } from './features/stats/StatsPage';
@@ -30,6 +33,9 @@ export function App() {
           <Route path="training/history" element={<WorkoutHistoryPage />} />
           <Route path="training/history/:id" element={<WorkoutDetailPage />} />
           <Route path="training/history/:id/edit" element={<WorkoutEditPage />} />
+          <Route path="training/plans" element={<PlanListPage />} />
+          <Route path="training/plans/:id" element={<PlanDetailPage />} />
+          <Route path="training/plans/:id/days/:dayId" element={<PlanDayPage />} />
           <Route path="daily" element={<DailyPage />} />
           <Route path="daily/foods" element={<FoodSearchPage />} />
           <Route path="stats" element={<StatsPage />} />

@@ -1,10 +1,16 @@
 import { z } from 'zod';
 import { db } from './database';
 import { nowIso } from './repository';
-import { exerciseFieldsSchema, foodFieldsSchema, setValuesSchema } from './schemas';
+import {
+  exerciseFieldsSchema,
+  foodFieldsSchema,
+  planExerciseValuesSchema,
+  setValuesSchema,
+  weekdaysSchema,
+} from './schemas';
 import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
-import { LOAD_TYPES } from './types';
+import { LOAD_TYPES, PLAN_SCHEDULES } from './types';
 
 export const BACKUP_APP = 'fitnesstracker';
 export const BACKUP_VERSION = 1;
@@ -31,6 +37,8 @@ const settingsSchema = baseEntitySchema.extend({
   restTimerSeconds: z.number().int().nonnegative().default(REST_TIMER_DEFAULTS.restTimerSeconds),
   restTimerSound: z.boolean().default(REST_TIMER_DEFAULTS.restTimerSound),
   restTimerVibrate: z.boolean().default(REST_TIMER_DEFAULTS.restTimerVibrate),
+  // Seit DB-Version 7
+  activePlanId: z.string().nullable().default(null),
 });
 
 const catalogEntryFields = {
@@ -58,11 +66,19 @@ const workoutSchema = baseEntitySchema.extend({
   endedAt: timestamp.nullable(),
   notes: z.string(),
   restEndsAt: timestamp.nullable(),
+  // Seit DB-Version 7
+  planId: z.string().nullable().default(null),
+  planDayId: z.string().nullable().default(null),
 });
 const workoutExerciseSchema = baseEntitySchema.extend({
   workoutId: z.string().min(1),
   exerciseId: z.string().min(1),
   order: z.number(),
+  // Seit DB-Version 7
+  repMin: z.number().int().nullable().default(null),
+  repMax: z.number().int().nullable().default(null),
+  targetDurationSeconds: z.number().int().nullable().default(null),
+  restSeconds: z.number().int().nonnegative().nullable().default(null),
 });
 const setSchema = baseEntitySchema.extend(setValuesSchema.shape).extend({
   // Seit DB-Version 5
@@ -75,6 +91,23 @@ const setSchema = baseEntitySchema.extend(setValuesSchema.shape).extend({
   order: z.number(),
   restSeconds: z.number().int().nonnegative().nullable(),
   completedAt: timestamp.nullable(),
+});
+
+const planSchema = baseEntitySchema.extend({
+  name: z.string().min(1),
+  schedule: z.enum(PLAN_SCHEDULES),
+});
+const planDaySchema = baseEntitySchema.extend({
+  planId: z.string().min(1),
+  name: z.string().min(1),
+  order: z.number(),
+  weekdays: weekdaysSchema,
+});
+const planExerciseSchema = baseEntitySchema.extend(planExerciseValuesSchema.shape).extend({
+  planId: z.string().min(1),
+  planDayId: z.string().min(1),
+  exerciseId: z.string().min(1),
+  order: z.number(),
 });
 
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
@@ -94,6 +127,9 @@ export const backupSchema = z.object({
     workouts: z.array(workoutSchema).default([]),
     workoutExercises: z.array(workoutExerciseSchema).default([]),
     sets: z.array(setSchema).default([]),
+    plans: z.array(planSchema).default([]),
+    planDays: z.array(planDaySchema).default([]),
+    planExercises: z.array(planExerciseSchema).default([]),
   }),
 });
 
@@ -107,6 +143,9 @@ export const TABLE_LABELS: Record<TableName, string> = {
   workouts: 'Workouts',
   workoutExercises: 'Übungen in Workouts',
   sets: 'Sätze',
+  plans: 'Trainingspläne',
+  planDays: 'Trainings in Plänen',
+  planExercises: 'Übungen in Plänen',
 };
 
 export async function createBackup(): Promise<Backup> {

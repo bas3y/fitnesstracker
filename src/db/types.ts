@@ -26,6 +26,8 @@ export interface Settings extends BaseEntity {
   restTimerSeconds: number;
   restTimerSound: boolean;
   restTimerVibrate: boolean;
+  /** Plan, aus dem das heutige Training vorgeschlagen wird */
+  activePlanId: string | null;
 }
 
 /** `builtin` = aus `src/data/`, wird per Seed aktualisiert; `user` = selbst angelegt, nie überschrieben */
@@ -115,12 +117,21 @@ export interface Workout extends BaseEntity {
   notes: string;
   /** Ende des laufenden Pausen-Timers; über den Zeitstempel läuft er auch nach Neustart weiter */
   restEndsAt: Timestamp | null;
+  /** Herkunft aus einem Trainingsplan; `null` = freies Training */
+  planId: string | null;
+  planDayId: string | null;
 }
 
 export interface WorkoutExercise extends BaseEntity {
   workoutId: string;
   exerciseId: string;
   order: number;
+  // Zielwerte aus dem Plan (Kopie, damit spätere Planänderungen das Workout nicht berühren)
+  repMin: number | null;
+  repMax: number | null;
+  targetDurationSeconds: number | null;
+  /** Pausenzeit dieser Übung; `null` = Standard aus den Einstellungen */
+  restSeconds: number | null;
 }
 
 export interface WorkoutSet extends BaseEntity {
@@ -144,6 +155,37 @@ export interface WorkoutSet extends BaseEntity {
   restSeconds: number | null;
   /** `null` = noch nicht abgehakt */
   completedAt: Timestamp | null;
+}
+
+export const PLAN_SCHEDULES = ['rotation', 'weekdays'] as const;
+/** `rotation` = Trainings der Reihe nach, `weekdays` = feste Wochentage */
+export type PlanSchedule = (typeof PLAN_SCHEDULES)[number];
+
+export interface Plan extends BaseEntity {
+  name: string;
+  schedule: PlanSchedule;
+}
+
+export interface PlanDay extends BaseEntity {
+  planId: string;
+  name: string;
+  order: number;
+  /** Wochentage wie `Date.getDay()` (0 = Sonntag); nur bei `schedule: 'weekdays'` wirksam */
+  weekdays: number[];
+}
+
+export interface PlanExercise extends BaseEntity {
+  planId: string;
+  planDayId: string;
+  exerciseId: string;
+  order: number;
+  targetSets: number;
+  repMin: number;
+  repMax: number;
+  /** Nur Halteübungen */
+  targetDurationSeconds: number | null;
+  /** `null` = Standard aus den Einstellungen */
+  restSeconds: number | null;
 }
 
 export const FOOD_CATEGORIES = [

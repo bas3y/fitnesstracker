@@ -121,7 +121,46 @@ describe('AppDatabase-Migration', () => {
       eccentricWeight: null,
       eccentricLevel: null,
     });
-    expect(v6.verno).toBe(6);
     await v6.delete();
+  });
+
+  it('Version 7 ergänzt Plantabellen und lässt bestehende Workouts unverändert frei', async () => {
+    const name = 'migration-test-v7';
+    const v6 = new Dexie(name);
+    v6.version(6).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+    });
+    await v6.table('settings').add({ id: 'app-settings', name: 'Alt' });
+    await v6.table('workouts').add({ id: 'w1', notes: 'Alt', startedAt: '2026-01-01' });
+    await v6.table('workoutExercises').add({ id: 'we1', workoutId: 'w1', exerciseId: 'e1' });
+    await v6.table('sets').add({ id: 's1', workoutId: 'w1', weight: 100 });
+    v6.close();
+
+    const v7 = new AppDatabase(name);
+    expect(await v7.settings.get('app-settings')).toMatchObject({
+      name: 'Alt',
+      activePlanId: null,
+    });
+    expect(await v7.workouts.get('w1')).toMatchObject({
+      notes: 'Alt',
+      planId: null,
+      planDayId: null,
+    });
+    expect(await v7.workoutExercises.get('we1')).toMatchObject({
+      exerciseId: 'e1',
+      repMin: null,
+      repMax: null,
+      targetDurationSeconds: null,
+      restSeconds: null,
+    });
+    expect(await v7.sets.get('s1')).toMatchObject({ weight: 100 });
+    expect(await v7.plans.count()).toBe(0);
+    expect(v7.verno).toBe(7);
+    await v7.delete();
   });
 });

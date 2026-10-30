@@ -1,7 +1,9 @@
+import { plannedSetValues, progressionWeightStepKg } from '../domain/strength';
 import { suggestSetValues } from '../domain/workout';
 import { db } from './database';
 import { create, nowIso, softDelete, update } from './repository';
 import { setValuesSchema, type SetValues } from './schemas';
+import { getSettings } from './settings';
 import type { Exercise, LoadType, Workout, WorkoutExercise, WorkoutSet } from './types';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
@@ -16,6 +18,8 @@ export interface WorkoutItem {
 
 export interface WorkoutDetail {
   workout: Workout;
+  /** Name des Trainings, falls aus einem Plan gestartet */
+  planDayName: string | null;
   items: WorkoutItem[];
 }
 
@@ -61,8 +65,10 @@ export async function loadWorkoutDetail(id: string): Promise<WorkoutDetail | nul
   const { items, sets } = await activeChildren(id);
   // Auch gelöschte Übungen laden, damit alte Workouts lesbar bleiben
   const exercises = await db.exercises.bulkGet(items.map((item) => item.exerciseId));
+  const planDay = workout.planDayId ? await db.planDays.get(workout.planDayId) : undefined;
   return {
     workout,
+    planDayName: planDay?.name ?? null,
     items: items.map((workoutExercise, index) => ({
       workoutExercise,
       exercise: exercises[index] ?? null,
@@ -81,9 +87,74 @@ export function startWorkout(): Promise<Workout> {
       endedAt: null,
       notes: '',
       restEndsAt: null,
+      planId: null,
+      planDayId: null,
     });
   });
 }
+
+/** Zielwerte einer Übung im Workout – bleiben beim Ersetzen der Übung erhalten */
+export type WorkoutExerciseTargets = Pick<
+  WorkoutExercise,
+  'repMin' | 'repMax' | 'targetDurationSeconds' | 'restSeconds'
+>;
+
+const NO_TARGETS: WorkoutExerciseTargets = {
+  repMin: null,
+  repMax: null,
+  targetDurationSeconds: null,
+  restSeconds: null,
+};
+
+/**
+ * Legt offene, vorbefüllte Sätze für eine Übung an (Overload-Vorschlag bzw. Planziel).
+ * Tabellen im aufrufenden `rw`-Kontext: workouts, workoutExercises, sets, exercises, settings.
+ */
+export async function addPlannedSets(item: WorkoutExercise, count: number): Promise<void> {
+  const exercise = await db.exercises.get(item.exerciseId);
+  const settings = await getSettings();
+  const lastTime = await getLastPerformance(item.exerciseId, item.workoutId);
+  const values = plannedSetValues({
+    lastSets: lastTime?.sets ?? [],
+    count,
+    isTimed: exercise?.isTimed ?? false,
+    isBodyweight: exercise?.equipment === 'bodyweight',
+    range:
+      item.repMin !== null && item.repMax !== null ? { min: item.repMin, max: item.repMax } : null,
+    targetDurationSeconds: item.targetDurationSeconds,
+    weightStepKg: progressionWeightStepKg(settings?.weightUnit ?? 'kg'),
+  });
+  for (const [order, setValues] of values.entries()) {
+    await create<WorkoutSet>(db.sets, {
+      ...withLoadType(setValues, exercise),
+      workoutId: item.workoutId,
+      workoutExerciseId: item.id,
+      order,
+      rpe: null,
+      rir: null,
+      isWarmup: false,
+      restSeconds: null,
+      completedAt: null,
+    });
+  }
+}
+
+/** Gewicht oder Stufe – je nachdem, was zuletzt an der Übung gewählt wurde */
+function withLoadType<T extends Pick<WorkoutSet, LoadField>>(
+  values: T,
+  exercise: Exercise | undefined,
+): T {
+  const byLevel = exercise?.loadType === 'level';
+  return {
+    ...values,
+    weight: byLevel ? null : values.weight,
+    level: byLevel ? values.level : null,
+    eccentricWeight: byLevel ? null : values.eccentricWeight,
+    eccentricLevel: byLevel ? values.eccentricLevel : null,
+  };
+}
+
+type LoadField = 'weight' | 'level' | 'eccentricWeight' | 'eccentricLevel';
 
 /** Abgeschlossene Sätze dieser Übung aus dem letzten beendeten Workout (vor `beforeWorkoutId`) */
 export async function getLastPerformance(
@@ -129,11 +200,68 @@ export function addWorkoutExercise(
         workoutId,
         exerciseId,
         order: (items.at(-1)?.order ?? -1) + 1,
+        ...NO_TARGETS,
       });
       await addSet(item.id);
       return item;
     },
   );
+}
+
+/**
+ * Ersetzt eine Übung im laufenden Workout (z. B. Gerät belegt). Offene Sätze wandern zur neuen
+ * Übung, Zielwerte bleiben. Abgehakte Sätze bleiben bei der alten Übung, die neue folgt direkt
+ * danach. Der Plan selbst ändert sich nicht.
+ */
+export function replaceWorkoutExercise(id: string, exerciseId: string): Promise<WorkoutExercise> {
+  return db.transaction(
+    'rw',
+    [db.workouts, db.workoutExercises, db.sets, db.exercises, db.settings],
+    async () => {
+      const item = await getWorkoutExercise(id);
+      if (item.exerciseId === exerciseId) return item;
+      const { items, sets } = await activeChildren(item.workoutId);
+      const own = sets.filter((set) => set.workoutExerciseId === id);
+      const open = own.filter((set) => set.completedAt === null);
+      const hasDone = open.length < own.length;
+
+      for (const set of open) await softDelete(db.sets, set.id);
+      if (hasDone) {
+        for (const other of items) {
+          if (other.order > item.order) {
+            await update(db.workoutExercises, other.id, { order: other.order + 1 });
+          }
+        }
+      } else {
+        await softDelete(db.workoutExercises, id);
+      }
+
+      const { repMin, repMax, targetDurationSeconds, restSeconds } = item;
+      const replacement = await create<WorkoutExercise>(db.workoutExercises, {
+        workoutId: item.workoutId,
+        exerciseId,
+        order: hasDone ? item.order + 1 : item.order,
+        repMin,
+        repMax,
+        targetDurationSeconds,
+        restSeconds,
+      });
+      const count = open.filter((set) => !set.isWarmup).length;
+      await addPlannedSets(replacement, Math.max(count, 1));
+      return replacement;
+    },
+  );
+}
+
+/** Übung überspringen: offene Sätze entfallen, ohne abgehakten Satz auch die Übung */
+export function skipWorkoutExercise(id: string): Promise<void> {
+  return db.transaction('rw', [db.workoutExercises, db.sets], async () => {
+    await getWorkoutExercise(id);
+    const sets = await db.sets.where('workoutExerciseId').equals(id).filter(isActive).toArray();
+    const open = sets.filter((set) => set.completedAt === null);
+    for (const set of open) await softDelete(db.sets, set.id);
+    if (open.length === sets.length) await softDelete(db.workoutExercises, id);
+  });
 }
 
 export function removeWorkoutExercise(id: string): Promise<void> {
@@ -216,14 +344,8 @@ export function addSet(workoutExerciseId: string): Promise<WorkoutSet> {
         index: sets.filter((set) => !set.isWarmup).length,
         isBodyweight: exercise?.equipment === 'bodyweight',
       });
-      // Gewicht oder Stufe – je nachdem, was zuletzt an der Übung gewählt wurde
-      const byLevel = exercise?.loadType === 'level';
       return create<WorkoutSet>(db.sets, {
-        ...values,
-        weight: byLevel ? null : values.weight,
-        level: byLevel ? values.level : null,
-        eccentricWeight: byLevel ? null : values.eccentricWeight,
-        eccentricLevel: byLevel ? values.eccentricLevel : null,
+        ...withLoadType(values, exercise),
         workoutId: workout.id,
         workoutExerciseId,
         order: (previous?.order ?? -1) + 1,
@@ -278,7 +400,30 @@ export function completeSet(id: string, restSeconds: number): Promise<void> {
         restEndsAt: new Date(now.getTime() + rest * 1000).toISOString(),
       });
     }
+    await carryLoadToEmptySets(set);
   });
+}
+
+/** Erstes Training nach Plan: Sätze ohne Last übernehmen sie vom gerade abgehakten Satz */
+async function carryLoadToEmptySets(set: WorkoutSet): Promise<void> {
+  if (set.isWarmup || (set.weight === null && set.level === null)) return;
+  const { weight, level, eccentricWeight, eccentricLevel } = set;
+  const empty = await db.sets
+    .where('workoutExerciseId')
+    .equals(set.workoutExerciseId)
+    .filter(
+      (other) =>
+        isActive(other) &&
+        other.completedAt === null &&
+        !other.isWarmup &&
+        other.order > set.order &&
+        other.weight === null &&
+        other.level === null,
+    )
+    .toArray();
+  for (const other of empty) {
+    await update(db.sets, other.id, { weight, level, eccentricWeight, eccentricLevel });
+  }
 }
 
 export function uncompleteSet(id: string): Promise<void> {

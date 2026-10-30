@@ -82,6 +82,59 @@ export function sortExercises<T extends Pick<Exercise, 'name' | 'isFavorite'>>(
   );
 }
 
+type AlternativeExercise = Pick<
+  Exercise,
+  | 'id'
+  | 'name'
+  | 'category'
+  | 'primaryMuscles'
+  | 'secondaryMuscles'
+  | 'equipment'
+  | 'isFavorite'
+  | 'hiddenAt'
+  | 'deletedAt'
+>;
+
+/**
+ * Alternativen zu einer Übung (z. B. wenn das Gerät belegt ist): gleiche Kategorie und mindestens
+ * ein gemeinsamer Hauptmuskel. Mehr gemeinsame Muskeln zuerst, bei Gleichstand Favoriten und
+ * anderes Equipment – das gleiche Gerät ist ja meist gerade nicht frei.
+ */
+export function suggestAlternatives<T extends AlternativeExercise>(
+  exercise: AlternativeExercise,
+  exercises: readonly T[],
+  { excludeIds = [], limit = 6 }: { excludeIds?: readonly string[]; limit?: number } = {},
+): T[] {
+  const overlap = (a: readonly MuscleGroup[], b: readonly MuscleGroup[]) =>
+    a.filter((muscle) => b.includes(muscle)).length;
+  const score = (other: T) => {
+    const primary = overlap(exercise.primaryMuscles, other.primaryMuscles);
+    if (primary === 0) return 0;
+    const sameTarget = other.primaryMuscles.length === exercise.primaryMuscles.length;
+    return (
+      primary * 4 +
+      (sameTarget && primary === exercise.primaryMuscles.length ? 2 : 0) +
+      overlap(exercise.secondaryMuscles, other.secondaryMuscles) +
+      (other.isFavorite ? 1 : 0) +
+      (other.equipment !== exercise.equipment ? 1 : 0)
+    );
+  };
+  return exercises
+    .filter(
+      (other) =>
+        other.id !== exercise.id &&
+        !excludeIds.includes(other.id) &&
+        other.category === exercise.category &&
+        other.deletedAt === null &&
+        other.hiddenAt === null,
+    )
+    .map((other) => ({ other, score: score(other) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score || collator.compare(a.other.name, b.other.name))
+    .slice(0, limit)
+    .map(({ other }) => other);
+}
+
 /** Findet eine aktive Übung mit gleichem Namen (ohne Groß-/Kleinschreibung, Umlaut-Schreibweise) */
 export function findDuplicateName<T extends Pick<Exercise, 'id' | 'name' | 'deletedAt'>>(
   name: string,

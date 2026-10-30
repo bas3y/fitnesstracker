@@ -1,7 +1,7 @@
 import type { WeightUnit, WorkoutSet } from '../db/types';
 import { formatDecimal } from './format';
-import { kgToDisplay, roundTo } from './units';
-import { formatClock, formatWeight } from './workout';
+import { displayToKg, kgToDisplay, roundTo } from './units';
+import { formatClock, formatWeight, suggestSetValues } from './workout';
 
 export type StrengthSet = Pick<
   WorkoutSet,
@@ -406,8 +406,13 @@ export interface RepRange {
   max: number;
 }
 
-/** Ohne Trainingsplan (Zielbereich kommt ab Schritt 6 aus dem Plan) */
+/** Ohne Trainingsplan */
 export const DEFAULT_REP_RANGE: RepRange = { min: 8, max: 12 };
+
+/** Gewichtssprung beim Overload-Vorschlag: 2,5 kg bzw. 5 lb */
+export function progressionWeightStepKg(unit: WeightUnit): number {
+  return displayToKg(unit === 'kg' ? 2.5 : 5, unit);
+}
 
 export type ProgressionKind = 'increaseLoad' | 'addReps' | 'addTime';
 
@@ -475,4 +480,50 @@ export function suggestProgression(
     };
   }
   return { kind: 'addReps', ...withLoad(top), reps: fewest + 1, durationSeconds: null };
+}
+
+/**
+ * Startwerte der Sätze eines geplanten Workouts: mit Vorgeschichte der Overload-Vorschlag
+ * (Exzentrik wie letztes Mal), beim ersten Mal das Planziel – die Last trägt man dann selbst ein.
+ */
+export function plannedSetValues({
+  lastSets,
+  count,
+  isTimed,
+  isBodyweight,
+  range,
+  targetDurationSeconds,
+  weightStepKg,
+}: {
+  lastSets: Array<StrengthSet & Pick<WorkoutSet, 'rpe' | 'rir'>>;
+  count: number;
+  isTimed: boolean;
+  isBodyweight: boolean;
+  range: RepRange | null;
+  targetDurationSeconds: number | null;
+  weightStepKg: number;
+}) {
+  const suggestion = suggestProgression(lastSets, {
+    isTimed,
+    isBodyweight,
+    range: range ?? DEFAULT_REP_RANGE,
+    weightStepKg,
+  });
+  return Array.from({ length: count }, (_, index) => {
+    const values = suggestSetValues({
+      previous: undefined,
+      lastTime: lastSets,
+      index,
+      isBodyweight,
+    });
+    if (suggestion) {
+      const { weight, level, reps, durationSeconds } = suggestion;
+      return { ...values, weight, level, reps, durationSeconds };
+    }
+    return {
+      ...values,
+      reps: isTimed ? null : (range?.min ?? null),
+      durationSeconds: isTimed ? targetDurationSeconds : null,
+    };
+  });
 }

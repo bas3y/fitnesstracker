@@ -78,6 +78,30 @@ export const setValuesSchema = z.object({
 
 export type SetValues = z.infer<typeof setValuesSchema>;
 
+/** Zielwerte einer Plan-Übung (intern Sekunden) */
+export const planExerciseValuesSchema = z
+  .object({
+    targetSets: z.number().int().min(1).max(20),
+    repMin: z.number().int().min(1).max(1000),
+    repMax: z.number().int().min(1).max(1000),
+    targetDurationSeconds: z
+      .number()
+      .int()
+      .min(0)
+      .max(24 * 3600)
+      .nullable(),
+    restSeconds: z.number().int().min(0).max(3600).nullable(),
+  })
+  .refine((values) => values.repMin <= values.repMax, {
+    path: ['repMax'],
+    message: 'Obergrenze muss mindestens so hoch wie die Untergrenze sein',
+  });
+
+export type PlanExerciseValues = z.infer<typeof planExerciseValuesSchema>;
+
+/** Wochentage wie `Date.getDay()` */
+export const weekdaysSchema = z.array(z.number().int().min(0).max(6));
+
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 
 export const builtinExerciseSchema = exerciseFieldsSchema.extend({ key: builtinKey });

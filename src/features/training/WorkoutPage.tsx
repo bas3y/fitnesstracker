@@ -51,7 +51,7 @@ function ActiveWorkout({ detail }: { detail: WorkoutDetail }) {
   const [finishing, setFinishing] = useState(false);
 
   return (
-    <Page title="Workout" backTo={TRAINING_PATH}>
+    <Page title={detail.planDayName ?? 'Workout'} backTo={TRAINING_PATH}>
       <p className="-mt-3 mb-4 text-sm text-slate-500 dark:text-slate-400">
         Gestartet {formatTime(workout.startedAt)} ·{' '}
         <span className="tabular-nums" aria-label="Dauer">

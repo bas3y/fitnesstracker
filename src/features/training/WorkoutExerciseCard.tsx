@@ -6,22 +6,42 @@ import { Stepper } from '../../components/Stepper';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { showToast } from '../../components/toastStore';
 import { getSetRecords } from '../../db/records';
-import { LEVEL_EQUIPMENT, type LoadType, type WeightUnit, type WorkoutSet } from '../../db/types';
+import {
+  LEVEL_EQUIPMENT,
+  type Exercise,
+  type LoadType,
+  type WeightUnit,
+  type WorkoutSet,
+} from '../../db/types';
 import {
   addSet,
   applyToOpenSets,
   completeSet,
   deleteSet,
   removeWorkoutExercise,
+  replaceWorkoutExercise,
   setWorkoutExerciseLoadType,
+  skipWorkoutExercise,
   uncompleteSet,
   updateSet,
+  type WorkoutExerciseTargets,
   type WorkoutItem,
 } from '../../db/workouts';
-import { formatRecord, suggestProgression, type PersonalRecord } from '../../domain/strength';
+import { suggestAlternatives } from '../../domain/exercises';
+import { formatRepRange } from '../../domain/plans';
+import {
+  DEFAULT_REP_RANGE,
+  formatRecord,
+  progressionWeightStepKg,
+  suggestProgression,
+  type PersonalRecord,
+  type RepRange,
+} from '../../domain/strength';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
-import { formatSetSummary, formatWorkoutDate } from '../../domain/workout';
+import { formatClock, formatSetSummary, formatWorkoutDate } from '../../domain/workout';
+import { ExercisePicker } from './ExercisePicker';
 import { primeAudio } from './restAlarm';
+import { useActiveExercises } from './useExercises';
 import { useLastPerformance } from './useWorkouts';
 
 export type WorkoutMode = 'live' | 'edit';
@@ -34,6 +54,8 @@ interface WorkoutExerciseCardProps {
   restSeconds: number;
   /** Rekorde je Satz-ID */
   records: Map<string, PersonalRecord[]> | undefined;
+  /** Übungen, die sonst im Workout vorkommen (nicht als Alternative vorschlagen) */
+  otherExerciseIds: string[];
 }
 
 interface SetFormat {
@@ -51,6 +73,7 @@ export function WorkoutExerciseCard({
   unit,
   restSeconds,
   records,
+  otherExerciseIds,
 }: WorkoutExerciseCardProps) {
   const { workoutExercise, exercise, sets } = item;
   const name = exercise?.name ?? 'Unbekannte Übung';
@@ -64,6 +87,9 @@ export function WorkoutExerciseCard({
   // 'auto' = im laufenden Workout den ersten offenen Satz aufklappen
   const [expanded, setExpanded] = useState<string | null | 'auto'>(mode === 'live' ? 'auto' : null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [replacing, setReplacing] = useState(false);
+  const canSwap = mode === 'live' && sets.some((set) => set.completedAt === null);
+  const target = formatTarget(workoutExercise, format.isTimed);
   const expandedId =
     expanded === 'auto' ? (sets.find((set) => set.completedAt === null)?.id ?? null) : expanded;
 
@@ -88,6 +114,8 @@ export function WorkoutExerciseCard({
         </button>
       </div>
 
+      {target && <p className="text-sm text-slate-500 dark:text-slate-400">{target}</p>}
+
       {exercise && (
         <LastTime
           exerciseId={exercise.id}
@@ -95,6 +123,42 @@ export function WorkoutExerciseCard({
           workoutExerciseId={workoutExercise.id}
           format={format}
           mode={mode}
+          range={
+            workoutExercise.repMin !== null && workoutExercise.repMax !== null
+              ? { min: workoutExercise.repMin, max: workoutExercise.repMax }
+              : DEFAULT_REP_RANGE
+          }
+        />
+      )}
+
+      {canSwap && (
+        <div className="mt-1 flex gap-4">
+          <button
+            type="button"
+            className="min-h-11 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+            onClick={() => setReplacing(true)}
+          >
+            Ersetzen
+          </button>
+          <button
+            type="button"
+            className="min-h-11 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+            onClick={() => void skipWorkoutExercise(workoutExercise.id)}
+          >
+            Überspringen
+          </button>
+        </div>
+      )}
+
+      {replacing && exercise && (
+        <ReplaceExercisePicker
+          exercise={exercise}
+          excludeIds={otherExerciseIds}
+          onClose={() => setReplacing(false)}
+          onSelect={async (replacement) => {
+            setReplacing(false);
+            await replaceWorkoutExercise(workoutExercise.id, replacement.id);
+          }}
         />
       )}
 
@@ -164,6 +228,43 @@ export function WorkoutExerciseCard({
   );
 }
 
+/** Planziel und eigene Pausenzeit, z. B. „Ziel: 8–12 Wdh. · Pause 1:30“; `null` ohne Plan */
+function formatTarget(
+  { repMin, repMax, targetDurationSeconds, restSeconds }: WorkoutExerciseTargets,
+  isTimed: boolean,
+): string | null {
+  const parts: string[] = [];
+  if (isTimed && targetDurationSeconds !== null) {
+    parts.push(`Ziel: ${formatClock(targetDurationSeconds)}`);
+  } else if (!isTimed && repMin !== null && repMax !== null) {
+    parts.push(`Ziel: ${formatRepRange({ repMin, repMax })} Wdh.`);
+  }
+  if (restSeconds !== null) parts.push(`Pause ${formatClock(restSeconds)}`);
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+function ReplaceExercisePicker({
+  exercise,
+  excludeIds,
+  onSelect,
+  onClose,
+}: {
+  exercise: Exercise;
+  excludeIds: string[];
+  onSelect: (exercise: Exercise) => void;
+  onClose: () => void;
+}) {
+  const exercises = useActiveExercises();
+  return (
+    <ExercisePicker
+      title={`${exercise.name} ersetzen`}
+      suggestions={suggestAlternatives(exercise, exercises ?? [], { excludeIds })}
+      onSelect={onSelect}
+      onClose={onClose}
+    />
+  );
+}
+
 /** „Satz 1“, „Satz 2“ … für Arbeitssätze, „Aufwärmsatz 1“ … für Aufwärmsätze */
 function setLabels(sets: WorkoutSet[]) {
   let working = 0;
@@ -181,12 +282,14 @@ function LastTime({
   workoutExerciseId,
   format,
   mode,
+  range,
 }: {
   exerciseId: string;
   workoutId: string;
   workoutExerciseId: string;
   format: SetFormat;
   mode: WorkoutMode;
+  range: RepRange;
 }) {
   const last = useLastPerformance(exerciseId, workoutId);
   if (last === undefined) return null;
@@ -196,7 +299,8 @@ function LastTime({
       ? suggestProgression(working, {
           isTimed: format.isTimed,
           isBodyweight: format.isBodyweight,
-          weightStepKg: displayToKg(format.unit === 'kg' ? 2.5 : 5, format.unit),
+          range,
+          weightStepKg: progressionWeightStepKg(format.unit),
         })
       : null;
   return (

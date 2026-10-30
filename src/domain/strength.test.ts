@@ -7,6 +7,8 @@ import {
   epley,
   estimateOneRepMax,
   formatRecord,
+  plannedSetValues,
+  progressionWeightStepKg,
   sessionRecords,
   sessionVolumeKg,
   setOneRepMax,
@@ -41,6 +43,76 @@ const bodyweight: ExerciseKind = { isTimed: false, isBodyweight: true, bodyWeigh
 const timed: ExerciseKind = { isTimed: true, isBodyweight: true, bodyWeightKg: 80 };
 
 const types = (records: PersonalRecord[]) => records.map((r) => r.type);
+
+describe('plannedSetValues (Vorbefüllung aus dem Plan)', () => {
+  const plan = {
+    count: 3,
+    isTimed: false,
+    isBodyweight: false,
+    range: { min: 6, max: 10 },
+    targetDurationSeconds: null,
+    weightStepKg: 2.5,
+  };
+  const logged = (weight: number, reps: number, extra: Partial<StrengthSet> = {}) => ({
+    ...set(weight, reps, extra),
+    rpe: null,
+    rir: null,
+  });
+
+  it('nutzt beim ersten Mal die Untergrenze des Zielbereichs ohne Last', () => {
+    const values = plannedSetValues({ ...plan, lastSets: [] });
+    expect(values).toHaveLength(3);
+    expect(values[0]).toMatchObject({ weight: null, reps: 6, durationSeconds: null });
+  });
+
+  it('startet Körpergewichtsübungen mit 0 kg Zusatzgewicht', () => {
+    const [first] = plannedSetValues({ ...plan, isBodyweight: true, lastSets: [] });
+    expect(first).toMatchObject({ weight: 0, reps: 6 });
+  });
+
+  it('nutzt bei Halteübungen die Zieldauer', () => {
+    const [first] = plannedSetValues({
+      ...plan,
+      isTimed: true,
+      targetDurationSeconds: 45,
+      lastSets: [],
+    });
+    expect(first).toMatchObject({ reps: null, durationSeconds: 45 });
+  });
+
+  it('steigert die Last, wenn alle Sätze die Obergrenze erreicht haben', () => {
+    const values = plannedSetValues({ ...plan, lastSets: [logged(60, 10), logged(60, 10)] });
+    expect(values.map((v) => [v.weight, v.reps])).toEqual([
+      [62.5, 6],
+      [62.5, 6],
+      [62.5, 6],
+    ]);
+  });
+
+  it('bleibt sonst beim Gewicht und legt eine Wdh. drauf', () => {
+    const [first] = plannedSetValues({ ...plan, lastSets: [logged(60, 8), logged(60, 7)] });
+    expect(first).toMatchObject({ weight: 60, reps: 8 });
+  });
+
+  it('nimmt ohne Planbereich den Standardbereich und lässt Wdh. beim ersten Mal offen', () => {
+    expect(plannedSetValues({ ...plan, range: null, lastSets: [] })[0]?.reps).toBeNull();
+    const [next] = plannedSetValues({ ...plan, range: null, lastSets: [logged(60, 12)] });
+    expect(next).toMatchObject({ weight: 62.5, reps: 8 });
+  });
+
+  it('behält die Exzentrik vom letzten Mal', () => {
+    const [first] = plannedSetValues({
+      ...plan,
+      lastSets: [logged(80, 8, { eccentricWeight: 100 })],
+    });
+    expect(first).toMatchObject({ weight: 80, eccentricWeight: 100 });
+  });
+
+  it('rechnet den Gewichtssprung zur Anzeigeeinheit passend um', () => {
+    expect(progressionWeightStepKg('kg')).toBe(2.5);
+    expect(progressionWeightStepKg('lb')).toBeCloseTo(2.268, 3);
+  });
+});
 
 describe('1RM-Formeln', () => {
   it('rechnet Epley und Brzycki', () => {

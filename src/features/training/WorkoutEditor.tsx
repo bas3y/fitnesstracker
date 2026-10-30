@@ -44,8 +44,15 @@ export function WorkoutEditor({ detail, mode }: { detail: WorkoutDetail; mode: W
           item={item}
           mode={mode}
           unit={settings?.weightUnit ?? 'kg'}
-          restSeconds={settings?.restTimerSeconds ?? REST_TIMER_DEFAULTS.restTimerSeconds}
+          restSeconds={
+            item.workoutExercise.restSeconds ??
+            settings?.restTimerSeconds ??
+            REST_TIMER_DEFAULTS.restTimerSeconds
+          }
           records={records}
+          otherExerciseIds={items
+            .filter((other) => other !== item)
+            .map((other) => other.workoutExercise.exerciseId)}
         />
       ))}
       <button type="button" className={`${secondaryButton} mb-4`} onClick={() => setPicking(true)}>
