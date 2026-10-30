@@ -54,7 +54,6 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
   const { plan, days } = detail;
   const navigate = useNavigate();
   const settings = useSettings();
-  const [sorting, setSorting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isActive = settings?.activePlanId === plan.id;
 
@@ -101,44 +100,29 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
       </Card>
 
       <h2 className="mb-2 text-lg font-semibold">Trainings</h2>
-      {sorting && days.length > 1 ? (
-        <SortableList
-          label="Reihenfolge der Trainings"
-          items={days.map((item) => ({ id: item.day.id, name: item.day.name }))}
-          onReorder={(ids) => reorderPlanDays(plan.id, ids)}
-          onDone={() => setSorting(false)}
-        />
-      ) : (
-        <>
-          {days.length > 1 && (
-            <button
-              type="button"
-              className="min-h-11 text-sm font-medium text-emerald-700 dark:text-emerald-400"
-              onClick={() => setSorting(true)}
-            >
-              ⠿ Reihenfolge ändern
-            </button>
-          )}
-          {days.map((item) => (
-            <LinkRow
-              key={item.day.id}
-              to={`${PLANS_PATH}/${plan.id}/days/${item.day.id}`}
-              label={item.day.name}
-              hint={dayHint(item, plan.schedule)}
-            />
-          ))}
-          <button
-            type="button"
-            className={`${secondaryButton} mt-2 mb-6`}
-            onClick={async () => {
-              const day = await addPlanDay(plan.id);
-              navigate(`${PLANS_PATH}/${plan.id}/days/${day.id}`);
-            }}
-          >
-            + Training hinzufügen
-          </button>
-        </>
-      )}
+      <SortableList
+        label="Trainings"
+        items={days.map((item) => ({ ...item, id: item.day.id, name: item.day.name }))}
+        onReorder={(ids) => reorderPlanDays(plan.id, ids)}
+        renderItem={(item, { handle }) => (
+          <LinkRow
+            to={`${PLANS_PATH}/${plan.id}/days/${item.day.id}`}
+            label={item.day.name}
+            hint={dayHint(item, plan.schedule)}
+            handle={handle}
+          />
+        )}
+      />
+      <button
+        type="button"
+        className={`${secondaryButton} mt-2 mb-6`}
+        onClick={async () => {
+          const day = await addPlanDay(plan.id);
+          navigate(`${PLANS_PATH}/${plan.id}/days/${day.id}`);
+        }}
+      >
+        + Training hinzufügen
+      </button>
 
       <div className="mb-4 flex flex-col gap-2">
         <button

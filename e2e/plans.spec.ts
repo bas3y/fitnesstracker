@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fillStepper, goOffline, skipRest } from './helpers';
+import { confirmStart, dragTo, fillStepper, goOffline, skipRest } from './helpers';
 
 const openTraining = (page: Page) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Training').click();
@@ -13,6 +13,7 @@ test('Plan aus Vorlage → Workout starten → Sätze vorbefüllt, Rotation, Ers
 
   // Plan aus Vorlage wird automatisch aktiv
   await page.getByRole('link', { name: /Trainingspläne/ }).click();
+  await page.getByRole('link', { name: '+ Neuer Plan' }).click();
   await page.getByRole('button', { name: /Push\/Pull\/Legs/ }).click();
   await expect(page.getByRole('heading', { name: 'Push/Pull/Legs', level: 1 })).toBeVisible();
   await expect(page.getByText('Aktiver Plan')).toBeVisible();
@@ -21,6 +22,15 @@ test('Plan aus Vorlage → Workout starten → Sätze vorbefüllt, Rotation, Ers
   await openTraining(page);
   await expect(page.getByText('Erstes Training des Plans')).toBeVisible();
   await page.getByRole('button', { name: 'Push starten' }).click();
+
+  // Erst nach der Rückfrage geht es los; Abbrechen startet nichts
+  const confirm = page.getByRole('alertdialog', { name: 'Push starten?' });
+  await expect(confirm).toContainText('Bankdrücken (Langhantel)');
+  await confirm.getByRole('button', { name: 'Abbrechen' }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/training$/);
+  await page.getByRole('button', { name: 'Push starten' }).click();
+  await confirmStart(page);
   await expect(page.getByRole('heading', { name: 'Push', level: 1 })).toBeVisible();
 
   // Sätze sind aus dem Plan vorbefüllt
@@ -82,6 +92,7 @@ test('Plan aus Vorlage → Workout starten → Sätze vorbefüllt, Rotation, Ers
     .getByRole('list', { name: 'Trainings des Plans' })
     .getByRole('button', { name: 'Push' })
     .click();
+  await confirmStart(page);
   const nextBench = page.getByRole('region', { name: 'Bankdrücken (Langhantel)' });
   await expect(nextBench.getByRole('button', { name: 'Satz 1: 62,5 kg × 6' })).toBeVisible();
   await expect(nextBench.getByRole('button', { name: 'Satz 4: 62,5 kg × 6' })).toBeVisible();
@@ -91,6 +102,7 @@ test('Plan aus Vorlage → Workout starten → Sätze vorbefüllt, Rotation, Ers
   await page.getByRole('button', { name: 'Workout verwerfen' }).click();
   await expect(page.getByRole('button', { name: 'Pull starten' })).toBeVisible();
   await page.getByRole('button', { name: 'Freies Training' }).click();
+  await confirmStart(page);
   await expect(page.getByRole('heading', { name: 'Workout', level: 1 })).toBeVisible();
   await expect(page.getByText('Noch keine Übungen')).toBeVisible();
 });
@@ -102,7 +114,13 @@ test('eigenen Plan anlegen, bearbeiten, duplizieren und löschen (offline)', asy
   await page.goto('./#/training/plans');
   await goOffline(page, context);
 
-  await page.getByRole('button', { name: '+ Neuer Plan' }).click();
+  // Ohne Pläne steht dort nur „Neuer Plan“, Vorlagen kommen erst danach
+  await expect(page.getByText('Push/Pull/Legs')).toHaveCount(0);
+  await page.getByRole('link', { name: '+ Neuer Plan' }).click();
+  for (const name of ['Arnold-Split', 'Calisthenics', 'Bauchworkout']) {
+    await expect(page.getByRole('button', { name })).toBeVisible();
+  }
+  await page.getByRole('button', { name: /Leerer Plan/ }).click();
   const planName = page.getByLabel('Name des Plans');
   await planName.fill('Mein Split');
   await planName.press('Enter');
@@ -126,6 +144,7 @@ test('eigenen Plan anlegen, bearbeiten, duplizieren und löschen (offline)', asy
   const row = page.getByRole('list', { name: 'Übungen im Training' }).getByRole('listitem');
   await fillStepper(row, 'Sätze', '5');
   await fillStepper(row, 'Wdh. bis', '6');
+  await expect(row.getByLabel('Wdh. von', { exact: true })).toHaveValue('6');
   await fillStepper(row, 'Wdh. von', '4');
   await fillStepper(row, 'Pause', '150');
   await expect(row).toContainText('5 × 4–6 · Pause 2:30');
@@ -133,16 +152,20 @@ test('eigenen Plan anlegen, bearbeiten, duplizieren und löschen (offline)', asy
   await page.getByRole('link', { name: 'Zurück' }).click();
   await expect(page.getByRole('link', { name: /Brust/ })).toContainText('Mo, Do · 1 Übung');
 
-  // Nach Neuladen noch da, zweites Training ergänzen, Reihenfolge per Tastatur
+  // Nach Neuladen noch da, zweites Training ergänzen, Griff ist direkt da
   await page.reload();
   await page.getByRole('button', { name: '+ Training hinzufügen' }).click();
   await expect(page.getByRole('heading', { name: 'Training 2', level: 1 })).toBeVisible();
   await page.getByRole('link', { name: 'Zurück' }).click();
-  await page.getByRole('button', { name: 'Reihenfolge ändern' }).click();
-  const order = page.getByRole('list', { name: 'Reihenfolge der Trainings' });
+  const order = page.getByRole('list', { name: 'Trainings' });
   await order.getByRole('button', { name: 'Training 2 verschieben' }).press('ArrowUp');
   await expect(order.getByRole('listitem').first()).toContainText('Training 2');
-  await page.getByRole('button', { name: 'Fertig' }).click();
+  await dragTo(
+    page,
+    order.getByRole('button', { name: 'Training 2 verschieben' }),
+    order.getByRole('listitem').nth(1),
+  );
+  await expect(order.getByRole('listitem').first()).toContainText('Brust');
 
   // Duplizieren: Kopie ist nicht aktiv, kann aber aktiv werden
   await page.getByRole('button', { name: 'Plan duplizieren' }).click();
@@ -150,7 +173,26 @@ test('eigenen Plan anlegen, bearbeiten, duplizieren und löschen (offline)', asy
   await page.getByRole('button', { name: 'Als aktiven Plan wählen' }).click();
   await expect(page.getByText('Aktiver Plan')).toBeVisible();
 
+  // Pläne lassen sich direkt in der Liste ziehen
+  await page.getByRole('link', { name: 'Zurück' }).click();
+  const plans = page.getByRole('list', { name: 'Pläne' });
+  await expect(plans.getByRole('listitem').first()).toContainText('Mein Split');
+  await dragTo(
+    page,
+    plans.getByRole('button', { name: 'Mein Split verschieben' }),
+    plans.getByRole('listitem').nth(1),
+  );
+  await expect(plans.getByRole('listitem').first()).toContainText('Mein Split (Kopie)');
+
+  // Weg und zurück: Die Liste kommt neu aus der Datenbank, erst danach neu laden
+  await plans.getByRole('link', { name: /Kopie/ }).click();
+  await page.getByRole('link', { name: 'Zurück' }).click();
+  await expect(plans.getByRole('listitem').first()).toContainText('Mein Split (Kopie)');
+  await page.reload();
+  await expect(plans.getByRole('listitem').first()).toContainText('Mein Split (Kopie)');
+
   // Löschen
+  await plans.getByRole('link', { name: /Kopie/ }).click();
   await page.getByRole('button', { name: 'Plan löschen' }).click();
   await page.getByRole('button', { name: 'Löschen', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Trainingspläne' })).toBeVisible();

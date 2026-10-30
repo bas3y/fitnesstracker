@@ -13,6 +13,7 @@ import {
   removePlanDay,
   reorderPlanDays,
   reorderPlanExercises,
+  reorderPlans,
   setActivePlan,
   startPlanWorkout,
   updatePlan,
@@ -97,6 +98,17 @@ describe('Pläne verwalten', () => {
     expect((await getSettings())?.activePlanId).toBe(first.id);
     expect((await loadPlanDetail(first.id))?.days.map((d) => d.day.name)).toEqual(['Training 1']);
     expect((await listPlans()).map((p) => p.plan.id)).toEqual([first.id, second.id]);
+  });
+
+  it('hängt neue Pläne hinten an und merkt die gezogene Reihenfolge', async () => {
+    const first = await createPlan('Erster');
+    const second = await createPlan('Zweiter');
+    const copy = await duplicatePlan(first.id);
+    expect((await listPlans()).map((p) => p.plan.id)).toEqual([first.id, second.id, copy.id]);
+
+    await reorderPlans([copy.id, first.id, second.id]);
+    expect((await listPlans()).map((p) => p.plan.id)).toEqual([copy.id, first.id, second.id]);
+    await expect(reorderPlans([first.id])).rejects.toThrow('Reihenfolge');
   });
 
   it('nummeriert neue Trainings und merkt Reihenfolge und Wochentage', async () => {
@@ -188,6 +200,9 @@ describe('Vorlagen', () => {
       'five-by-five',
       'full-body-3x',
       'upper-lower',
+      'arnold-split',
+      'calisthenics',
+      'abs',
     ]);
   });
 });

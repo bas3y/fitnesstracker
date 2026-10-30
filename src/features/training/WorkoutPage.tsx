@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dangerButton, inputField, primaryButton, secondaryButton } from '../../components/buttons';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card, Page } from '../../components/Page';
 import { deleteWorkout, finishWorkout, startWorkout, type WorkoutDetail } from '../../db/workouts';
 import { formatClock, formatTime, workoutDurationSeconds } from '../../domain/workout';
@@ -26,20 +27,27 @@ export function WorkoutPage() {
 
 function NoActiveWorkout() {
   const navigate = useNavigate();
+  const [confirmStart, setConfirmStart] = useState(false);
   return (
     <Page title="Workout" backTo={TRAINING_PATH}>
       <Card>
         <p className="mb-3 text-slate-600 dark:text-slate-400">Gerade läuft kein Workout.</p>
-        <button
-          type="button"
-          className={primaryButton}
-          onClick={async () => {
-            await startWorkout();
-            navigate(WORKOUT_PATH, { replace: true });
-          }}
-        >
+        <button type="button" className={primaryButton} onClick={() => setConfirmStart(true)}>
           Workout starten
         </button>
+        {confirmStart && (
+          <ConfirmDialog
+            title="Workout starten?"
+            confirmLabel="Starten"
+            onCancel={() => setConfirmStart(false)}
+            onConfirm={async () => {
+              await startWorkout();
+              navigate(WORKOUT_PATH, { replace: true });
+            }}
+          >
+            Du startest ein leeres Workout und fügst die Übungen selbst hinzu.
+          </ConfirmDialog>
+        )}
       </Card>
     </Page>
   );

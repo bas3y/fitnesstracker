@@ -36,13 +36,14 @@ const isolation = (key: string, sets = 3, min = 10, max = 15): PlanTemplateExerc
   reps: [min, max],
   restSeconds: 90,
 });
-const plank: PlanTemplateExercise = {
-  key: 'plank',
+const hold = (key: string, durationSeconds: number): PlanTemplateExercise => ({
+  key,
   sets: 3,
   reps: [8, 12],
-  durationSeconds: 45,
+  durationSeconds,
   restSeconds: 60,
-};
+});
+const plank = hold('plank', 45);
 
 /** Vorlagen werden beim Auswählen als eigener Plan kopiert und sind danach frei änderbar */
 export const PLAN_TEMPLATES: PlanTemplate[] = [
@@ -202,6 +203,101 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
           isolation('bulgarian-split-squat', 3, 8, 12),
           isolation('lying-leg-curl'),
           plank,
+        ],
+      },
+    ],
+  },
+  {
+    key: 'arnold-split',
+    name: 'Arnold-Split',
+    description: 'Drei Trainings im Wechsel: Brust & Rücken, Schultern & Arme, Beine',
+    schedule: 'rotation',
+    days: [
+      {
+        name: 'Brust & Rücken',
+        weekdays: [],
+        exercises: [
+          compound('barbell-bench-press', 4, 6, 10),
+          compound('pull-up', 4, 6, 10),
+          compound('incline-dumbbell-press', 3, 8, 12),
+          compound('barbell-row', 3, 8, 12),
+          isolation('dumbbell-flyes'),
+          isolation('dumbbell-pullover'),
+        ],
+      },
+      {
+        name: 'Schultern & Arme',
+        weekdays: [],
+        exercises: [
+          compound('overhead-press', 4, 6, 10),
+          isolation('lateral-raise'),
+          isolation('rear-delt-raise'),
+          isolation('barbell-curl', 3, 8, 12),
+          isolation('skull-crusher', 3, 8, 12),
+          isolation('incline-dumbbell-curl'),
+          isolation('triceps-pushdown'),
+        ],
+      },
+      {
+        name: 'Beine',
+        weekdays: [],
+        exercises: [
+          compound('barbell-squat', 4, 6, 10),
+          compound('romanian-deadlift', 3, 8, 12),
+          isolation('leg-extension'),
+          isolation('lying-leg-curl'),
+          isolation('standing-calf-raise'),
+          isolation('hanging-leg-raise', 3, 8, 15),
+        ],
+      },
+    ],
+  },
+  {
+    key: 'calisthenics',
+    name: 'Calisthenics',
+    description: 'Zwei Ganzkörper-Trainings im Wechsel, nur mit Körpergewicht',
+    schedule: 'rotation',
+    days: [
+      {
+        name: 'Calisthenics A',
+        weekdays: [],
+        exercises: [
+          compound('pull-up', 4, 5, 10),
+          compound('chest-dips', 4, 6, 12),
+          isolation('inverted-row', 3, 8, 15),
+          isolation('push-up', 3, 10, 20),
+          hold('hollow-hold', 30),
+        ],
+      },
+      {
+        name: 'Calisthenics B',
+        weekdays: [],
+        exercises: [
+          compound('chin-up', 4, 5, 10),
+          compound('pike-push-up', 3, 6, 12),
+          isolation('bodyweight-squat', 3, 15, 25),
+          isolation('hanging-knee-raise', 3, 8, 15),
+          plank,
+        ],
+      },
+    ],
+  },
+  {
+    key: 'abs',
+    name: 'Bauchworkout',
+    description: 'Ein kurzes Bauchtraining, auch als Ergänzung zum Haupttraining',
+    schedule: 'rotation',
+    days: [
+      {
+        name: 'Bauch',
+        weekdays: [],
+        exercises: [
+          isolation('hanging-leg-raise', 3, 8, 15),
+          isolation('cable-crunch', 3, 10, 15),
+          isolation('crunch', 3, 15, 25),
+          isolation('russian-twist', 3, 15, 25),
+          plank,
+          hold('side-plank', 30),
         ],
       },
     ],

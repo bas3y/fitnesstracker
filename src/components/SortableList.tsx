@@ -1,42 +1,84 @@
-import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
 import { moveItem } from '../domain/workout';
-import { primaryButton } from './buttons';
-
-interface Drag {
-  id: string;
-  /** Zeigerposition, auf die sich `dy` bezieht (wird beim Tauschen um eine Zeile verschoben) */
-  startY: number;
-  dy: number;
-  /** Abstand zweier Zeilen in px */
-  pitch: number;
-}
 
 export interface SortableItem {
   id: string;
+  /** Für die Beschriftung des Griffs */
   name: string;
-  hint?: ReactNode;
+}
+
+export interface SortableRowProps {
+  /** Griff zum Ziehen; `null`, solange es nichts zu sortieren gibt */
+  handle: ReactNode;
+  /** Gerade wird gezogen: Zeilen möglichst kompakt darstellen, damit lange Listen hinpassen */
+  compact: boolean;
+}
+
+interface Drag {
+  id: string;
+  pointerY: number;
+  /** Abstand Zeilenmitte–Zeiger; erst nach dem Zusammenklappen messbar */
+  offset: number | null;
+  /** Aktuelle Reihenfolge – Zeigerereignisse können schneller kommen als gerendert wird */
+  order: string[];
 }
 
 /**
- * Kompakte Liste zum Umsortieren per Ziehen am Griff. Pfeiltasten am Griff verschieben ebenfalls.
- * `onReorder` bekommt die neue Reihenfolge; `items` kommen danach aktualisiert zurück.
+ * Liste, deren Zeilen sich direkt am Griff ziehen lassen (Pfeiltasten am Griff gehen auch).
+ * `renderItem` baut den Griff in die Zeile ein. Die gezogene Zeile bewegt sich um die Strecke des
+ * Zeigers (kein Sprung, wenn die Liste beim Ziehen zusammenklappt). Positionen kommen aus dem DOM –
+ * Zeilen dürfen also unterschiedlich hoch sein.
  */
-export function SortableList({
+export function SortableList<T extends SortableItem>({
   label,
   items,
   onReorder,
-  onDone,
+  renderItem,
 }: {
   label: string;
-  items: SortableItem[];
+  items: T[];
+  /** Bekommt die neue Reihenfolge; `items` kommen danach aktualisiert zurück */
   onReorder: (ids: string[]) => Promise<void>;
-  onDone: () => void;
+  renderItem: (item: T, row: SortableRowProps) => ReactNode;
 }) {
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
-  const [drag, setDrag] = useState<Drag | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [droppedId, setDroppedId] = useState<string | null>(null);
+  const drag = useRef<Drag | null>(null);
   const saving = useRef(false);
+  const list = useRef<HTMLUListElement>(null);
   const order = localOrder ?? items.map((item) => item.id);
   const byId = new Map(items.map((item) => [item.id, item]));
+
+  const rowOf = (id: string) => list.current?.querySelector<HTMLElement>(`[data-sort-id="${id}"]`);
+  const middleOf = (row: HTMLElement) =>
+    list.current!.getBoundingClientRect().top + row.offsetTop + row.offsetHeight / 2;
+
+  const followPointer = () => {
+    const current = drag.current;
+    const row = current && rowOf(current.id);
+    if (!current || !row) return;
+    if (current.offset === null) {
+      row.scrollIntoView?.({ block: 'nearest' });
+      current.offset = middleOf(row) - current.pointerY;
+    }
+    row.style.transform = `translateY(${current.pointerY + current.offset - middleOf(row)}px)`;
+  };
+
+  // Auch nach dem Zusammenklappen und nach jedem Tausch, weil sich dann das Layout ändert
+  useLayoutEffect(followPointer, [draggingId, localOrder]);
+
+  // Nach dem Aufklappen die abgelegte Zeile wieder in den sichtbaren Bereich holen
+  useLayoutEffect(() => {
+    if (droppedId) rowOf(droppedId)?.scrollIntoView?.({ block: 'nearest' });
+  }, [droppedId]);
 
   const save = async (ids: string[]) => {
     saving.current = true;
@@ -52,35 +94,39 @@ export function SortableList({
   const onPointerDown = (event: PointerEvent<HTMLButtonElement>, id: string) => {
     if (saving.current) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    const row = event.currentTarget.closest('li');
+    drag.current = { id, pointerY: event.clientY, offset: null, order };
+    setDroppedId(null);
     setLocalOrder(order);
-    setDrag({ id, startY: event.clientY, dy: 0, pitch: (row?.offsetHeight ?? 56) + 8 });
+    setDraggingId(id);
   };
 
   const onPointerMove = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!drag) return;
-    let { startY } = drag;
-    let dy = event.clientY - startY;
-    const index = order.indexOf(drag.id);
-    let next = order;
-    if (dy > drag.pitch / 2 && index < order.length - 1) {
-      next = moveItem(order, index, 1);
-      startY += drag.pitch;
-      dy -= drag.pitch;
-    } else if (dy < -drag.pitch / 2 && index > 0) {
-      next = moveItem(order, index, -1);
-      startY -= drag.pitch;
-      dy += drag.pitch;
+    const current = drag.current;
+    if (!current) return;
+    current.pointerY = event.clientY;
+    followPointer();
+    const middle = event.clientY + (current.offset ?? 0);
+    const index = current.order.indexOf(current.id);
+    const next = rowOf(current.order[index + 1] ?? '');
+    const previous = rowOf(current.order[index - 1] ?? '');
+    const direction =
+      next && middle > middleOf(next) ? 1 : previous && middle < middleOf(previous) ? -1 : 0;
+    if (direction) {
+      current.order = moveItem(current.order, index, direction);
+      setLocalOrder(current.order);
     }
-    if (next !== order) setLocalOrder(next);
-    setDrag({ ...drag, startY, dy });
   };
 
   const onPointerUp = () => {
-    if (!drag) return;
-    setDrag(null);
+    if (!drag.current) return;
+    const { id, order: dropped } = drag.current;
+    const row = rowOf(id);
+    if (row) row.style.transform = '';
+    drag.current = null;
+    setDraggingId(null);
+    setDroppedId(id);
     const initial = items.map((item) => item.id);
-    if (order.join() !== initial.join()) void save(order);
+    if (dropped.join() !== initial.join()) void save(dropped);
     else setLocalOrder(null);
   };
 
@@ -93,48 +139,35 @@ export function SortableList({
   };
 
   return (
-    <div className="mb-4">
-      <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">
-        Am Griff ⠿ ziehen, um die Reihenfolge zu ändern.
-      </p>
-      <ul aria-label={label} className="mb-4 flex flex-col gap-2">
-        {order.map((id) => {
-          const item = byId.get(id);
-          if (!item) return null;
-          const dragging = drag?.id === id;
-          return (
-            <li
-              key={id}
-              style={dragging ? { transform: `translateY(${drag.dy}px)` } : undefined}
-              className={`flex min-h-14 items-center gap-2 rounded-2xl bg-white pr-4 shadow-sm dark:bg-slate-800 ${
-                dragging ? 'relative z-10 shadow-lg ring-2 ring-emerald-500' : ''
-              }`}
+    <ul ref={list} aria-label={label} className="relative">
+      {order.map((id) => {
+        const item = byId.get(id);
+        if (!item) return null;
+        const handle =
+          items.length > 1 ? (
+            <button
+              type="button"
+              aria-label={`${item.name} verschieben`}
+              className="flex h-14 w-10 shrink-0 cursor-grab touch-none items-center justify-center text-xl text-slate-400 select-none"
+              onPointerDown={(event) => onPointerDown(event, id)}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
+              onKeyDown={(event) => onKeyDown(event, id)}
             >
-              <button
-                type="button"
-                aria-label={`${item.name} verschieben`}
-                className="flex h-14 w-12 shrink-0 cursor-grab touch-none items-center justify-center text-xl text-slate-400 select-none"
-                onPointerDown={(event) => onPointerDown(event, id)}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
-                onKeyDown={(event) => onKeyDown(event, id)}
-              >
-                ⠿
-              </button>
-              <span className="min-w-0 flex-1 truncate font-medium">{item.name}</span>
-              {item.hint && (
-                <span className="shrink-0 text-sm text-slate-500 dark:text-slate-400">
-                  {item.hint}
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      <button type="button" className={primaryButton} onClick={onDone}>
-        Fertig
-      </button>
-    </div>
+              ⠿
+            </button>
+          ) : null;
+        return (
+          <li
+            key={id}
+            data-sort-id={id}
+            className={draggingId === id ? 'relative z-10 rounded-2xl shadow-lg' : undefined}
+          >
+            {renderItem(item, { handle, compact: draggingId !== null })}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

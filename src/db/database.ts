@@ -140,6 +140,16 @@ export class AppDatabase extends Dexie {
             item.restSeconds ??= null;
           });
       });
+    // Reihenfolge der Pläne: bisherige Pläne behalten ihre Anlagereihenfolge
+    this.version(8)
+      .stores({})
+      .upgrade(async (tx) => {
+        const plans = await tx.table<Plan, string>('plans').toArray();
+        const sorted = plans.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+        await tx
+          .table<Plan, string>('plans')
+          .bulkPut(sorted.map((plan, order) => ({ ...plan, order })));
+      });
   }
 }
 

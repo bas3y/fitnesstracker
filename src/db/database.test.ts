@@ -160,7 +160,33 @@ describe('AppDatabase-Migration', () => {
     });
     expect(await v7.sets.get('s1')).toMatchObject({ weight: 100 });
     expect(await v7.plans.count()).toBe(0);
-    expect(v7.verno).toBe(7);
     await v7.delete();
+  });
+
+  it('Version 8 nummeriert bestehende Pläne in Anlagereihenfolge', async () => {
+    const name = 'migration-test-v8';
+    const v7 = new Dexie(name);
+    v7.version(7).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+    });
+    await v7.table('plans').bulkAdd([
+      { id: 'b', name: 'Zweiter', createdAt: '2026-02-01T00:00:00.000Z' },
+      { id: 'a', name: 'Erster', createdAt: '2026-01-01T00:00:00.000Z' },
+    ]);
+    v7.close();
+
+    const v8 = new AppDatabase(name);
+    expect(await v8.plans.get('a')).toMatchObject({ name: 'Erster', order: 0 });
+    expect(await v8.plans.get('b')).toMatchObject({ name: 'Zweiter', order: 1 });
+    expect(v8.verno).toBe(8);
+    await v8.delete();
   });
 });

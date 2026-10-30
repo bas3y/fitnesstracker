@@ -164,6 +164,7 @@ export type PlanSchedule = (typeof PLAN_SCHEDULES)[number];
 export interface Plan extends BaseEntity {
   name: string;
   schedule: PlanSchedule;
+  order: number;
 }
 
 export interface PlanDay extends BaseEntity {

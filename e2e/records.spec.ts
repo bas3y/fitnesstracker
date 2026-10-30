@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addExercise, fillStepper, goOffline, skipRest } from './helpers';
+import { addExercise, confirmStart, fillStepper, goOffline, skipRest } from './helpers';
 
 test('Vorschlag, PR-Toast, Exzentrik und PR-Markierung in der Historie (offline)', async ({
   page,
@@ -10,6 +10,7 @@ test('Vorschlag, PR-Toast, Exzentrik und PR-Markierung in der Historie (offline)
 
   // Erstes Training = Ausgangswert, kein Rekord
   await page.getByRole('button', { name: 'Workout starten' }).click();
+  await confirmStart(page);
   const bench = await addExercise(page, 'Bankdrücken (Langhantel)');
   await fillStepper(bench, 'Gewicht', '60');
   await fillStepper(bench, 'Wiederholungen', '10');
@@ -23,6 +24,7 @@ test('Vorschlag, PR-Toast, Exzentrik und PR-Markierung in der Historie (offline)
   // Zweites Training: Overload-Vorschlag übernehmen, dann schwerer → PR-Toast
   await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Training').click();
   await page.getByRole('button', { name: 'Workout starten' }).click();
+  await confirmStart(page);
   const nextBench = await addExercise(page, 'Bankdrücken (Langhantel)');
   await expect(nextBench).toContainText('Vorschlag: 60 kg × 11 (+1 Wdh.)');
   await nextBench.getByRole('button', { name: 'Vorschlag übernehmen' }).click();

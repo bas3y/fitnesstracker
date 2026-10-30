@@ -84,7 +84,21 @@ export async function listPlans(): Promise<PlanSummary[]> {
       dayNames: (await activeDays(plan.id)).map((day) => day.name),
     })),
   );
-  return summaries.sort((a, b) => a.plan.createdAt.localeCompare(b.plan.createdAt));
+  return summaries.sort(
+    (a, b) => a.plan.order - b.plan.order || a.plan.createdAt.localeCompare(b.plan.createdAt),
+  );
+}
+
+async function nextPlanOrder(): Promise<number> {
+  const plans = await listActive(db.plans);
+  return Math.max(-1, ...plans.map((plan) => plan.order)) + 1;
+}
+
+export function reorderPlans(ids: string[]): Promise<void> {
+  return db.transaction('rw', db.plans, async () => {
+    assertSameIds(await listActive(db.plans), ids);
+    for (const [order, id] of ids.entries()) await update(db.plans, id, { order });
+  });
 }
 
 async function loadDayDetail(day: PlanDay): Promise<PlanDayDetail> {
@@ -121,7 +135,11 @@ async function activateIfNone(planId: string): Promise<void> {
 /** Neuer Plan mit einem leeren „Training 1“ */
 export function createPlan(name = 'Neuer Plan'): Promise<Plan> {
   return db.transaction('rw', PLAN_TABLES, async () => {
-    const plan = await create<Plan>(db.plans, { name, schedule: 'rotation' });
+    const plan = await create<Plan>(db.plans, {
+      name,
+      schedule: 'rotation',
+      order: await nextPlanOrder(),
+    });
     await create<PlanDay>(db.planDays, {
       planId: plan.id,
       name: 'Training 1',
@@ -147,6 +165,7 @@ export function createPlanFromTemplate(key: string): Promise<Plan> {
     const plan = await create<Plan>(db.plans, {
       name: template.name,
       schedule: template.schedule,
+      order: await nextPlanOrder(),
     });
     for (const [dayOrder, templateDay] of template.days.entries()) {
       const day = await create<PlanDay>(db.planDays, {
@@ -183,6 +202,7 @@ export function duplicatePlan(id: string): Promise<Plan> {
     const plan = await create<Plan>(db.plans, {
       name: `${source.name} (Kopie)`,
       schedule: source.schedule,
+      order: await nextPlanOrder(),
     });
     for (const sourceDay of await activeDays(id)) {
       const { name, order, weekdays } = sourceDay;

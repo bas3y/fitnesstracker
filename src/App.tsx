@@ -6,6 +6,7 @@ import { FoodSearchPage } from './features/nutrition/FoodSearchPage';
 import { PlanDayPage } from './features/plans/PlanDayPage';
 import { PlanDetailPage } from './features/plans/PlanDetailPage';
 import { PlanListPage } from './features/plans/PlanListPage';
+import { PlanNewPage } from './features/plans/PlanNewPage';
 import { AboutPage } from './features/settings/AboutPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { StatsPage } from './features/stats/StatsPage';
@@ -34,6 +35,7 @@ export function App() {
           <Route path="training/history/:id" element={<WorkoutDetailPage />} />
           <Route path="training/history/:id/edit" element={<WorkoutEditPage />} />
           <Route path="training/plans" element={<PlanListPage />} />
+          <Route path="training/plans/new" element={<PlanNewPage />} />
           <Route path="training/plans/:id" element={<PlanDetailPage />} />
           <Route path="training/plans/:id/days/:dayId" element={<PlanDayPage />} />
           <Route path="daily" element={<DailyPage />} />

@@ -96,6 +96,8 @@ const setSchema = baseEntitySchema.extend(setValuesSchema.shape).extend({
 const planSchema = baseEntitySchema.extend({
   name: z.string().min(1),
   schedule: z.enum(PLAN_SCHEDULES),
+  // Seit DB-Version 8; bei gleichem Wert zählt die Anlagereihenfolge
+  order: z.number().default(0),
 });
 const planDaySchema = baseEntitySchema.extend({
   planId: z.string().min(1),

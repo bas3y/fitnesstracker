@@ -55,20 +55,33 @@ export function PlaceholderPage({
   );
 }
 
-/** Große, tippbare Zeile mit Pfeil – für Verweise auf Unterseiten */
-export function LinkRow({ to, label, hint }: { to: string; label: string; hint?: string }) {
+/** Große, tippbare Zeile mit Pfeil – für Verweise auf Unterseiten; `handle` = Griff zum Sortieren */
+export function LinkRow({
+  to,
+  label,
+  hint,
+  handle,
+}: {
+  to: string;
+  label: string;
+  hint?: string;
+  handle?: ReactNode;
+}) {
   return (
-    <Link
-      to={to}
-      className="mb-2 flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700"
-    >
-      <span>
-        <span className="block font-medium">{label}</span>
-        {hint && <span className="block text-sm text-slate-500 dark:text-slate-400">{hint}</span>}
-      </span>
-      <span aria-hidden="true" className="text-xl text-slate-400">
-        ›
-      </span>
-    </Link>
+    <div className="mb-2 flex min-h-14 items-center rounded-2xl bg-white shadow-sm dark:bg-slate-800">
+      {handle}
+      <Link
+        to={to}
+        className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 active:bg-slate-50 dark:active:bg-slate-700"
+      >
+        <span className="min-w-0">
+          <span className="block font-medium">{label}</span>
+          {hint && <span className="block text-sm text-slate-500 dark:text-slate-400">{hint}</span>}
+        </span>
+        <span aria-hidden="true" className="text-xl text-slate-400">
+          ›
+        </span>
+      </Link>
+    </div>
   );
 }

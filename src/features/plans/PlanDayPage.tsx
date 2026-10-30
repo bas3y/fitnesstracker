@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { dangerButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
@@ -64,7 +64,6 @@ function DayEditor({
   const { day, items } = detail;
   const navigate = useNavigate();
   const [picking, setPicking] = useState(false);
-  const [sorting, setSorting] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -104,55 +103,35 @@ function DayEditor({
         </div>
       </Card>
 
-      {sorting && items.length > 1 ? (
-        <SortableList
-          label="Reihenfolge der Übungen"
-          items={items.map(({ planExercise, exercise }) => ({
-            id: planExercise.id,
-            name: exercise?.name ?? 'Unbekannte Übung',
-          }))}
-          onReorder={(ids) => reorderPlanExercises(day.id, ids)}
-          onDone={() => setSorting(false)}
-        />
-      ) : (
-        <>
-          {items.length === 0 && (
-            <p className="mb-4 text-slate-600 dark:text-slate-400">
-              Noch keine Übungen. Füge die erste Übung hinzu.
-            </p>
-          )}
-          {items.length > 1 && (
-            <button
-              type="button"
-              className="min-h-11 text-sm font-medium text-emerald-700 dark:text-emerald-400"
-              onClick={() => setSorting(true)}
-            >
-              ⠿ Reihenfolge ändern
-            </button>
-          )}
-          {items.length > 0 && (
-            <ul aria-label="Übungen im Training" className="mb-3 flex flex-col gap-2">
-              {items.map((item) => (
-                <PlanExerciseRow
-                  key={item.planExercise.id}
-                  item={item}
-                  expanded={expanded === item.planExercise.id}
-                  onToggle={() =>
-                    setExpanded(expanded === item.planExercise.id ? null : item.planExercise.id)
-                  }
-                />
-              ))}
-            </ul>
-          )}
-          <button
-            type="button"
-            className={`${secondaryButton} mb-6`}
-            onClick={() => setPicking(true)}
-          >
-            + Übung hinzufügen
-          </button>
-        </>
+      {items.length === 0 && (
+        <p className="mb-4 text-slate-600 dark:text-slate-400">
+          Noch keine Übungen. Füge die erste Übung hinzu.
+        </p>
       )}
+      <SortableList
+        label="Übungen im Training"
+        items={items.map((item) => ({
+          ...item,
+          id: item.planExercise.id,
+          name: item.exercise?.name ?? 'Unbekannte Übung',
+        }))}
+        onReorder={(ids) => reorderPlanExercises(day.id, ids)}
+        renderItem={(item, { handle, compact }) => (
+          <PlanExerciseRow
+            item={item}
+            handle={handle}
+            expanded={!compact && expanded === item.id}
+            onToggle={() => setExpanded(expanded === item.id ? null : item.id)}
+          />
+        )}
+      />
+      <button
+        type="button"
+        className={`${secondaryButton} mt-1 mb-6`}
+        onClick={() => setPicking(true)}
+      >
+        + Übung hinzufügen
+      </button>
 
       {confirmDelete ? (
         <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/40">
@@ -204,10 +183,12 @@ function DayEditor({
 
 function PlanExerciseRow({
   item,
+  handle,
   expanded,
   onToggle,
 }: {
   item: PlanDayItem;
+  handle: ReactNode;
   expanded: boolean;
   onToggle: () => void;
 }) {
@@ -227,18 +208,21 @@ function PlanExerciseRow({
   const defaultRest = settings?.restTimerSeconds ?? REST_TIMER_DEFAULTS.restTimerSeconds;
 
   return (
-    <li className="rounded-2xl bg-white shadow-sm dark:bg-slate-800">
-      <button
-        type="button"
-        aria-expanded={expanded}
-        className="min-h-14 w-full px-4 py-2 text-left"
-        onClick={onToggle}
-      >
-        <span className="block font-medium">{name}</span>
-        <span className="block text-sm text-slate-500 tabular-nums dark:text-slate-400">
-          {summary}
-        </span>
-      </button>
+    <div className="mb-2 rounded-2xl bg-white shadow-sm dark:bg-slate-800">
+      <div className="flex items-center">
+        {handle}
+        <button
+          type="button"
+          aria-expanded={expanded}
+          className="min-h-14 min-w-0 flex-1 px-4 py-2 text-left"
+          onClick={onToggle}
+        >
+          <span className="block font-medium">{name}</span>
+          <span className="block text-sm text-slate-500 tabular-nums dark:text-slate-400">
+            {summary}
+          </span>
+        </button>
+      </div>
       {expanded && (
         <div className="flex flex-col gap-3 border-t border-slate-200 p-4 dark:border-slate-700">
           <Stepper
@@ -313,6 +297,6 @@ function PlanExerciseRow({
           </button>
         </div>
       )}
-    </li>
+    </div>
   );
 }

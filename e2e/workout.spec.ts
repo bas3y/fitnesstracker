@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addExercise, fillStepper, goOffline, skipRest } from './helpers';
+import { addExercise, confirmStart, dragTo, fillStepper, goOffline, skipRest } from './helpers';
 
 test('komplettes Workout offline loggen, neu laden, in der Historie finden', async ({
   page,
@@ -10,6 +10,7 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
 
   // Starten
   await page.getByRole('button', { name: 'Workout starten' }).click();
+  await confirmStart(page);
   await expect(page.getByRole('heading', { level: 1, name: 'Workout' })).toBeVisible();
 
   // Langhantel-Übung: Gewicht + Wdh., abhaken → Pausen-Timer
@@ -60,24 +61,12 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
   await expect(legPress.getByRole('button', { name: 'Satz 1: Stufe 7 × 12' })).toBeVisible();
   await skipRest(page);
 
-  // Reihenfolge ändern: Plank am Griff eine Position nach oben ziehen
-  await page.getByRole('button', { name: 'Reihenfolge ändern' }).click();
+  // Reihenfolge: Plank am Griff direkt an der Karte eine Position nach oben ziehen
   const handle = page.getByRole('button', { name: 'Unterarmstütz (Plank) verschieben' });
-  const box = (await handle.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  for (let step = 1; step <= 8; step++) {
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - step * 10);
-  }
-  await page.mouse.up();
-  const orderList = page.getByRole('list', { name: 'Reihenfolge der Übungen' });
-  await expect(orderList.getByRole('listitem')).toContainText([
-    'Bankdrücken (Langhantel)',
-    'Unterarmstütz (Plank)',
-    'Klimmzüge',
-    'Beinpresse',
-  ]);
-  await page.getByRole('button', { name: 'Fertig' }).click();
+  await dragTo(page, handle, pullUps);
+  // Weg und zurück: Die Reihenfolge kommt neu aus der Datenbank
+  await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Training').click();
+  await page.getByRole('link', { name: 'Workout fortsetzen' }).click();
   const regions = page.getByRole('region');
   await expect(regions.nth(1)).toHaveAccessibleName('Unterarmstütz (Plank)');
   await expect(regions.nth(2)).toHaveAccessibleName('Klimmzüge');
@@ -129,6 +118,7 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
   // „Letztes Mal“ im nächsten Workout, dann verwerfen
   await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Training').click();
   await page.getByRole('button', { name: 'Workout starten' }).click();
+  await confirmStart(page);
   const nextBench = await addExercise(page, 'Bankdrücken (Langhantel)');
   await expect(nextBench).toContainText(
     /Letztes Mal \(.+\): 60 kg × 10 · 62,5 kg × 10 · 62,5 kg × 6/,

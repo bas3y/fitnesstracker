@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { primaryButton } from '../../components/buttons';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { startWorkout } from '../../db/workouts';
 import { formatClock, formatTime, workoutDurationSeconds } from '../../domain/workout';
@@ -13,6 +15,7 @@ export function TrainingPage() {
   const active = useActiveWorkout();
   const now = useNow(!!active);
   const activePlan = useActivePlanSuggestion();
+  const [confirmStart, setConfirmStart] = useState(false);
 
   return (
     <Page title="Training">
@@ -34,13 +37,23 @@ export function TrainingPage() {
             type="button"
             className={primaryButton}
             disabled={active === undefined || activePlan === undefined}
-            onClick={async () => {
-              await startWorkout();
-              navigate(WORKOUT_PATH);
-            }}
+            onClick={() => setConfirmStart(true)}
           >
             Workout starten
           </button>
+          {confirmStart && (
+            <ConfirmDialog
+              title="Workout starten?"
+              confirmLabel="Starten"
+              onCancel={() => setConfirmStart(false)}
+              onConfirm={async () => {
+                await startWorkout();
+                navigate(WORKOUT_PATH);
+              }}
+            >
+              Du startest ein leeres Workout und fügst die Übungen selbst hinzu.
+            </ConfirmDialog>
+          )}
         </Card>
       )}
       <LinkRow to={PLANS_PATH} label="Trainingspläne" hint="Vorlagen, eigene Pläne, aktiver Plan" />

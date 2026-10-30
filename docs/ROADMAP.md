@@ -270,7 +270,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
   - Vorlagen in `src/data/planTemplates.ts` (Push/Pull/Legs, 5×5, Ganzkörper 3×/Woche, Oberkörper/Unterkörper), Verweise auf `builtinKey` per Datentest geprüft.
   - UI in `src/features/plans/`: `PlanListPage` (`/training/plans`), `PlanDetailPage` (`/training/plans/:id`: Name, Rotation/Wochentage, aktiv wählen, Trainings sortieren, duplizieren, löschen), `PlanDayPage` (`/training/plans/:id/days/:dayId`: Name, Wochentage, Übungen mit Sätzen, Wdh.-Bereich bzw. Zieldauer, Pause), `PlanSuggestionCard` auf der Trainingsseite (Vorschlag starten, anderes Training wählen, freies Training).
   - Laufendes Workout: Titel = Name des Trainings, Zielzeile an der Karte („Ziel: 6–10 Wdh. · Pause 3:00“), Pausenzeit der Plan-Übung gilt beim Abhaken, Overload-Vorschlag nutzt den Plan-Zielbereich, „Ersetzen“ (`ExercisePicker` mit neuer Prop `suggestions`) und „Überspringen“ an jeder Übung mit offenen Sätzen.
-  - `SortableList` (`src/components/`) aus `ExerciseOrderList` herausgelöst, damit Trainings und Plan-Übungen dasselbe Ziehen nutzen.
+  - `SortableList` (`src/components/`) ersetzt `ExerciseOrderList`: Griffe sind in Workout, Plan-Übungen, Trainings und Plänen direkt an der Zeile (siehe Nachtrag).
   - Tests: `src/domain/plans.test.ts`, `src/db/plans.test.ts`, `plannedSetValues`, `suggestAlternatives`, Vorlagen-Datentest, Migration v6→v7, Backup mit Plänen und aus v6. E2E `e2e/plans.spec.ts` (offline in beiden Viewports: Vorlage → Vorschlag → vorbefüllte Sätze, Ersetzen, Überspringen, Plan-Pause, Neuladen, Rotation, anderes und freies Training, eigener Plan bis Löschen).
 - Abweichungen:
   - Vorlagen liegen nicht in der DB und laufen nicht über den Seed: Sie werden beim Auswählen als normaler, frei änderbarer Plan kopiert. Fehlt eine Übung, entfällt sie aus der Kopie.
@@ -281,9 +281,16 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
   - Ersetzen ändert nur das Workout, nicht den Plan. Offene Sätze wandern zur neuen Übung (Anzahl und Ziele bleiben), abgehakte bleiben bei der alten; die neue steht dann direkt dahinter. Aufwärmsätze zählen dabei nicht mit.
   - Überspringen hat keine Rückfrage, weil nur offene Sätze entfallen; ohne abgehakten Satz verschwindet die Übung aus dem Workout.
   - Alternativen: gleiche Kategorie und mindestens ein gemeinsamer Hauptmuskel; exakt gleiche Hauptmuskeln zuerst, bei Gleichstand Favoriten und anderes Equipment. Übungen, die schon im Workout sind, werden nicht vorgeschlagen.
+  - Nachtrag nach Nutzer-Feedback:
+    - **Ziehen direkt:** Der Modus „Reihenfolge ändern“ ist entfallen. Griff ⠿ an jeder Zeile (ab zwei Einträgen). Im Workout klappen beim Ziehen alle Karten auf ihre Kopfzeile zusammen, damit man nicht über lange Karten ziehen muss; beim Ablegen kommen sie unverändert zurück. Die Zeile bewegt sich um die Strecke des Fingers, damit sie beim Zusammenklappen nicht springt. Pfeiltasten am Griff funktionieren weiter.
+    - **Pläne sortierbar:** Dexie v8, `Plan.order` (bestehende Pläne behalten die Anlagereihenfolge), `reorderPlans`, Backup-Default 0 (bei Gleichstand zählt `createdAt`).
+    - **Bestätigung vor jedem Start** (`ConfirmDialog`): Plan-Training, anderes Training, freies Training und „Workout starten“. Beim Plan-Training zeigt die Rückfrage die Übungen.
+    - **„Neuer Plan“** führt auf die eigene Seite `/training/plans/new` (`PlanNewPage`) mit „Leerer Plan“ und den Vorlagen als klar erkennbaren Buttons. Die Planliste zeigt nur noch eigene Pläne und „+ Neuer Plan“, die Vorlagen stehen immer hinter diesem Button – auch wenn schon Pläne existieren.
+    - **Neue Vorlagen:** Arnold-Split, Calisthenics (A/B) und Bauchworkout. Alle drei laufen als Rotation; das Bauchworkout hat nur ein Training. Es gibt nur einen aktiven Plan, das Bauchworkout lässt sich also nicht parallel zu einem Hauptplan vorschlagen.
 - Offene Punkte:
   - Mehrfachauswahl im `ExercisePicker` (Hinweis aus Schritt 3) wurde nicht ergänzt: Jede Übung wird einzeln hinzugefügt, danach ist ihr Ziel direkt aufgeklappt.
   - Aufwärmsätze sind nicht planbar.
+  - Ziehen ist per Maus in beiden Viewports getestet (Playwright), nicht per echtem Touch: auf dem Handy prüfen. Kein automatisches Scrollen am Bildschirmrand; bei sehr langen Listen ergänzen.
   - Der Vorschlag wird nur auf der Trainingsseite angezeigt. Schritt 8: `loadActivePlanSuggestion()`/`useActivePlanSuggestion()` für das Dashboard wiederverwenden.
   - Verlauf und Detailseite zeigen den Trainingsnamen noch nicht (`WorkoutDetail.planDayName` gibt es schon, `WorkoutSummary` noch nicht).
   - Trainingsblöcke (Schritt 18) können auf `plans` aufsetzen.

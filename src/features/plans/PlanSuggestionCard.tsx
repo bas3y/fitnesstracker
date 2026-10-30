@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { primaryButton, secondaryButton } from '../../components/buttons';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card } from '../../components/Page';
 import { startPlanWorkout, type ActivePlanSuggestion, type PlanDayDetail } from '../../db/plans';
 import { startWorkout } from '../../db/workouts';
@@ -20,21 +21,36 @@ function reasonText({ reason, lastDay }: PlanDaySuggestion<PlanDayDetail>): stri
   }
 }
 
+const exerciseNames = ({ items }: PlanDayDetail) =>
+  items.map((item) => item.exercise?.name ?? 'Unbekannte Übung').join(', ');
+
 /** Vorschlag fürs heutige Training: bestätigen, anderes Training wählen oder frei trainieren */
 export function PlanSuggestionCard({ active }: { active: ActivePlanSuggestion }) {
   const navigate = useNavigate();
   const [choosing, setChoosing] = useState(false);
+  // Gestartet wird erst nach der Rückfrage: ein Training bzw. 'free' für das freie Training
+  const [pending, setPending] = useState<PlanDayDetail | 'free' | null>(null);
   const { plan, days, suggestion } = active;
   const planPath = `${PLANS_PATH}/${plan.id}`;
 
-  const startDay = async (id: string) => {
-    await startPlanWorkout(id);
+  const start = async () => {
+    if (pending === 'free') await startWorkout();
+    else if (pending) await startPlanWorkout(pending.day.id);
     navigate(WORKOUT_PATH);
   };
-  const startFree = async () => {
-    await startWorkout();
-    navigate(WORKOUT_PATH);
-  };
+
+  const confirm = pending && (
+    <ConfirmDialog
+      title={pending === 'free' ? 'Freies Training starten?' : `${pending.day.name} starten?`}
+      confirmLabel="Starten"
+      onConfirm={() => void start()}
+      onCancel={() => setPending(null)}
+    >
+      {pending === 'free'
+        ? 'Du startest ein leeres Workout und fügst die Übungen selbst hinzu.'
+        : exerciseNames(pending) || 'Dieses Training hat noch keine Übungen.'}
+    </ConfirmDialog>
+  );
 
   if (!suggestion) {
     return (
@@ -46,25 +62,25 @@ export function PlanSuggestionCard({ active }: { active: ActivePlanSuggestion })
           <Link to={planPath} className={primaryButton}>
             Plan bearbeiten
           </Link>
-          <button type="button" className={secondaryButton} onClick={() => void startFree()}>
+          <button type="button" className={secondaryButton} onClick={() => setPending('free')}>
             Freies Training
           </button>
         </div>
+        {confirm}
       </Card>
     );
   }
 
-  const { day, items } = suggestion.day;
-  const names = items.map((item) => item.exercise?.name ?? 'Unbekannte Übung');
+  const suggested = suggestion.day;
 
   return (
     <Card title={plan.name}>
       <p className="text-sm text-slate-500 dark:text-slate-400">{reasonText(suggestion)}</p>
-      <p className="text-xl font-bold">{day.name}</p>
-      <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">{names.join(', ')}</p>
+      <p className="text-xl font-bold">{suggested.day.name}</p>
+      <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">{exerciseNames(suggested)}</p>
       <div className="flex flex-col gap-2">
-        <button type="button" className={primaryButton} onClick={() => void startDay(day.id)}>
-          {day.name} starten
+        <button type="button" className={primaryButton} onClick={() => setPending(suggested)}>
+          {suggested.day.name} starten
         </button>
         <button
           type="button"
@@ -78,21 +94,18 @@ export function PlanSuggestionCard({ active }: { active: ActivePlanSuggestion })
           <ul aria-label="Trainings des Plans" className="flex flex-col gap-2">
             {days.map((item) => (
               <li key={item.day.id}>
-                <button
-                  type="button"
-                  className={secondaryButton}
-                  onClick={() => void startDay(item.day.id)}
-                >
+                <button type="button" className={secondaryButton} onClick={() => setPending(item)}>
                   {item.day.name}
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <button type="button" className={secondaryButton} onClick={() => void startFree()}>
+        <button type="button" className={secondaryButton} onClick={() => setPending('free')}>
           Freies Training
         </button>
       </div>
+      {confirm}
     </Card>
   );
 }
