@@ -344,6 +344,7 @@ Hinweise:
 - Zeitraumfilter (4 Wochen, 3 Monate, 1 Jahr, alles)
 - *Nutzerwunsch (hier oder Schritt 16):* **Auswertung der Satzpausen**: Wie hängt die Leistung im nächsten Satz (Wdh./Gewicht) von der Pausenlänge ab? Daraus Empfehlung: Pause verlängern, wenn die Leistung stark einbricht, oder härter trainieren/kürzer pausieren, wenn kaum Unterschied – mit sinnvoller Obergrenze. Dafür die tatsächliche Pause messen (Zeit zwischen `completedAt` zweier Sätze), nicht nur die Timer-Einstellung (`restSeconds`).
 - Aggregationen in `src/domain/` mit Unit-Tests
+- *Nutzerwunsch (Ergänzung, gehört nicht zu den Statistiken):* **Favorit direkt in der Übungssuche:** Beim Erstellen eines Plans soll man eine Übung in der Suche (`ExercisePicker`) per Stern-Symbol als Favorit markieren können, ohne die Auswahl zu verlassen. Vorhanden sind `setExerciseFavorite` und der Stern in `ExerciseListPage`; im Picker ist der Stern bisher nur Anzeige. Er muss als eigener Button neben der Auswahl-Schaltfläche stehen (keine Buttons ineinander), und ein Tipp darauf darf die Übung nicht auswählen.
 
 **Fertig wenn:** Graphen mit Testdaten korrekt, Unit-Tests für Aggregationen.
 
