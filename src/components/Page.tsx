@@ -55,17 +55,22 @@ export function PlaceholderPage({
   );
 }
 
-/** Große, tippbare Zeile mit Pfeil – für Verweise auf Unterseiten; `handle` = Griff zum Sortieren */
+/**
+ * Große, tippbare Zeile mit Pfeil – für Verweise auf Unterseiten.
+ * `handle` = Griff zum Sortieren, `action` = Schaltfläche am Zeilenende (z. B. Löschen).
+ */
 export function LinkRow({
   to,
   label,
   hint,
   handle,
+  action,
 }: {
   to: string;
   label: string;
   hint?: string;
   handle?: ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <div className="mb-2 flex min-h-14 items-center rounded-2xl bg-white shadow-sm dark:bg-slate-800">
@@ -82,6 +87,7 @@ export function LinkRow({
           ›
         </span>
       </Link>
+      {action}
     </div>
   );
 }

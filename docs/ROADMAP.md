@@ -286,6 +286,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
     - **Pläne sortierbar:** Dexie v8, `Plan.order` (bestehende Pläne behalten die Anlagereihenfolge), `reorderPlans`, Backup-Default 0 (bei Gleichstand zählt `createdAt`).
     - **Bestätigung vor jedem Start** (`ConfirmDialog`): Plan-Training, anderes Training, freies Training und „Workout starten“. Beim Plan-Training zeigt die Rückfrage die Übungen.
     - **„Neuer Plan“** führt auf die eigene Seite `/training/plans/new` (`PlanNewPage`) mit „Leerer Plan“ und den Vorlagen als klar erkennbaren Buttons. Die Planliste zeigt nur noch eigene Pläne und „+ Neuer Plan“, die Vorlagen stehen immer hinter diesem Button – auch wenn schon Pläne existieren.
+    - **Löschen in der Liste:** ✕ mit Rückfrage an jedem Training (Plan-Seite) und jedem Plan (Planliste); `LinkRow` hat dafür die Prop `action`. Bisherige Workouts bleiben erhalten.
     - **Neue Vorlagen:** Arnold-Split, Calisthenics (A/B) und Bauchworkout. Alle drei laufen als Rotation; das Bauchworkout hat nur ein Training. Es gibt nur einen aktiven Plan, das Bauchworkout lässt sich also nicht parallel zu einem Hauptplan vorschlagen.
 - Offene Punkte:
   - Mehrfachauswahl im `ExercisePicker` (Hinweis aus Schritt 3) wurde nicht ergänzt: Jede Übung wird einzeln hinzugefügt, danach ist ihr Ziel direkt aufgeklappt.

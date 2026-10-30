@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { dangerButton, primaryButton, secondaryButton } from '../../components/buttons';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { SortableList } from '../../components/SortableList';
@@ -8,16 +9,18 @@ import {
   addPlanDay,
   deletePlan,
   duplicatePlan,
+  removePlanDay,
   reorderPlanDays,
   setActivePlan,
   updatePlan,
   type PlanDayDetail,
   type PlanDetail,
 } from '../../db/plans';
-import { PLAN_SCHEDULES, type PlanSchedule } from '../../db/types';
+import { PLAN_SCHEDULES, type PlanDay, type PlanSchedule } from '../../db/types';
 import { formatWeekdays, PLAN_SCHEDULE_LABELS } from '../../domain/plans';
 import { useSettings } from '../settings/useSettings';
 import { PLANS_PATH } from '../training/paths';
+import { DeleteRowButton } from './DeleteRowButton';
 import { NameField } from './NameField';
 import { usePlanDetail } from './usePlans';
 
@@ -55,6 +58,7 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
   const navigate = useNavigate();
   const settings = useSettings();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deletingDay, setDeletingDay] = useState<PlanDay | null>(null);
   const isActive = settings?.activePlanId === plan.id;
 
   return (
@@ -110,9 +114,23 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
             label={item.day.name}
             hint={dayHint(item, plan.schedule)}
             handle={handle}
+            action={<DeleteRowButton name={item.name} onClick={() => setDeletingDay(item.day)} />}
           />
         )}
       />
+      {deletingDay && (
+        <ConfirmDialog
+          title={`„${deletingDay.name}“ löschen?`}
+          confirmLabel="Löschen"
+          onCancel={() => setDeletingDay(null)}
+          onConfirm={async () => {
+            await removePlanDay(deletingDay.id);
+            setDeletingDay(null);
+          }}
+        >
+          Das Training wird aus dem Plan entfernt. Bisherige Workouts bleiben erhalten.
+        </ConfirmDialog>
+      )}
       <button
         type="button"
         className={`${secondaryButton} mt-2 mb-6`}

@@ -107,6 +107,41 @@ test('Plan aus Vorlage → Workout starten → Sätze vorbefüllt, Rotation, Ers
   await expect(page.getByText('Noch keine Übungen')).toBeVisible();
 });
 
+test('Trainings und Pläne direkt in der Liste löschen (offline)', async ({ page, context }) => {
+  await page.goto('./#/training/plans');
+  await goOffline(page, context);
+  await page.getByRole('link', { name: '+ Neuer Plan' }).click();
+  await page.getByRole('button', { name: /Arnold-Split/ }).click();
+
+  const days = page.getByRole('list', { name: 'Trainings' });
+  await expect(days.getByRole('listitem')).toHaveCount(3);
+
+  // Abbrechen löscht nichts
+  await days.getByRole('button', { name: 'Beine löschen' }).click();
+  await page
+    .getByRole('alertdialog', { name: '„Beine“ löschen?' })
+    .getByRole('button', { name: 'Abbrechen' })
+    .click();
+  await expect(days.getByRole('listitem')).toHaveCount(3);
+
+  await days.getByRole('button', { name: 'Beine löschen' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Löschen' }).click();
+  await expect(days.getByRole('listitem')).toHaveCount(2);
+  await expect(days).not.toContainText('Beine');
+
+  // Auch nach Neuladen weg, und der Vorschlag kennt das Training nicht mehr
+  await page.reload();
+  await expect(days.getByRole('listitem')).toHaveCount(2);
+
+  // Ganzen Plan aus der Liste löschen → wieder nur „Neuer Plan“
+  await page.getByRole('link', { name: 'Zurück' }).click();
+  const plans = page.getByRole('list', { name: 'Pläne' });
+  await plans.getByRole('button', { name: 'Arnold-Split löschen' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Löschen' }).click();
+  await expect(plans.getByRole('listitem')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: '+ Neuer Plan' })).toBeVisible();
+});
+
 test('eigenen Plan anlegen, bearbeiten, duplizieren und löschen (offline)', async ({
   page,
   context,
