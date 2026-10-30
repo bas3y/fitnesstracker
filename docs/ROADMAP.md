@@ -13,7 +13,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 4 – Workout loggen
 - [x] Schritt 5 – Berechnungen & PRs
 - [x] Schritt 6 – Trainingspläne
-- [ ] Schritt 6b – Offene Punkte aus Schritt 6 & Handytest
+- [x] Schritt 6b – Offene Punkte aus Schritt 6 & Handytest
 - [ ] Schritt 7 – Statistiken & Graphen (Kraft)
 - [ ] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
 - [ ] Schritt 9 – Tägliches Tracking
@@ -332,7 +332,7 @@ Hinweise:
   - Bereits enthaltene Übungen bleiben wählbar (nur markiert), weil dieselbe Übung bewusst zweimal im Training stehen darf.
   - Scrollen startet erst nach 8 px Bewegung, sonst liefe die Seite los, sobald man einen Griff am Rand nur antippt.
   - Der Trainingsname wird live aus `planDays` gelesen: Umbenennen ändert ihn auch in alten Workouts, gelöschte Trainings behalten ihren letzten Namen.
-- Ergebnis Handytest: **steht noch aus** (Checkbox deshalb nicht abgehakt).
+- Ergebnis Handytest: vom Nutzer bestätigt, alles in Ordnung, keine Probleme gemeldet. Gerät nicht genannt; ob Android dabei war, ist offen (sonst in Schritt 20 nachholen).
 - Offene Punkte:
   - Nach einem Aufwärmsatz startet die volle Pausenzeit der Übung; eine kürzere Aufwärmpause wäre eine mögliche Erweiterung (Rückmeldung aus dem Handytest abwarten).
   - Mehrfachauswahl gibt es nicht im laufenden Workout. Bei Bedarf dort `onSelectMany` anschließen.
