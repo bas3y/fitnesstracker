@@ -13,6 +13,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 4 – Workout loggen
 - [x] Schritt 5 – Berechnungen & PRs
 - [x] Schritt 6 – Trainingspläne
+- [ ] Schritt 6b – Offene Punkte aus Schritt 6 & Handytest
 - [ ] Schritt 7 – Statistiken & Graphen (Kraft)
 - [ ] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
 - [ ] Schritt 9 – Tägliches Tracking
@@ -295,6 +296,33 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
   - Der Vorschlag wird nur auf der Trainingsseite angezeigt. Schritt 8: `loadActivePlanSuggestion()`/`useActivePlanSuggestion()` für das Dashboard wiederverwenden.
   - Verlauf und Detailseite zeigen den Trainingsnamen noch nicht (`WorkoutDetail.planDayName` gibt es schon, `WorkoutSummary` noch nicht).
   - Trainingsblöcke (Schritt 18) können auf `plans` aufsetzen.
+
+### Schritt 6b – Offene Punkte aus Schritt 6 & Handytest
+**Ziel:** Alles Offene aus Schritt 6 erledigen und den Stand auf dem echten Handy prüfen. Danach folgt Schritt 7.
+
+Umsetzen:
+- **Verlauf:** ✕ mit Rückfrage an jedem Workout direkt in der Liste (`WorkoutHistoryPage`), wie bei Trainings und Plänen (`LinkRow` Prop `action`, `DeleteRowButton`, `ConfirmDialog`; `DeleteRowButton` dafür nach `src/components/` verschieben). Falls der Nutzer beim Start sagt, dass das nicht gemeint war, weglassen.
+- **Trainingsname im Verlauf:** `planDayName` auch in `WorkoutSummary`, in Verlaufsliste und Detailseite anzeigen.
+- **Mehrfachauswahl im `ExercisePicker`** für den Plan-Editor: mehrere Übungen auswählen und zusammen hinzufügen; bereits enthaltene Übungen markieren.
+- **Aufwärmsätze planbar:** optionale Anzahl je Plan-Übung (neue Dexie-Version + Backup-Default), `addPlannedSets` legt sie vor den Arbeitssätzen an.
+- **Automatisches Scrollen** in `SortableList`, wenn beim Ziehen der Bildschirmrand erreicht wird.
+
+Danach veröffentlichen und testen:
+- **Push:** Der Nutzer hat diesen Schritt ausdrücklich so gewünscht: Wer „Schritt 6b starten“ schreibt, gibt den Push auf `main` frei (Ausnahme von „Kein Push“, siehe Hinweise in `CLAUDE.md`). Erst pushen, wenn die Definition of Done erfüllt ist. Danach prüfen, dass die GitHub Action durchgelaufen ist, und dem Nutzer sagen, wann die Version online ist.
+- **Handytest durch den Nutzer:** App öffnen, „Neue Version verfügbar“ → „Neu laden“. Prüfen: Greift der Griff ⠿ beim **Ziehen mit dem Finger** sauber, ohne dass die Seite mitscrollt (Workout, Trainings, Pläne)? Fühlt sich das Zusammenklappen im Workout gut an? Sind Bestätigung, Vorlagen und ✕ gut bedienbar? Bleiben vorhandene Daten erhalten, läuft alles im Flugmodus? Android wurde in 2b nicht getestet, falls ein Gerät da ist nachholen.
+- Gefundene Probleme beheben und erneut pushen.
+
+Hinweise:
+- Dev-Server-Falle: Läuft beim Start ein `npm run preview` des Nutzers auf Port 4173, nicht beenden, sondern fragen (siehe `CLAUDE.md`, Build und E2E kollidieren sonst damit).
+- WLAN-Test per `--host` ist keine Alternative: Über `http` funktionieren Service Worker und `crypto.randomUUID()` nicht.
+
+**Fertig wenn:** Punkte umgesetzt, Definition of Done erfüllt, gepusht, Nutzer bestätigt den Handytest.
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
+- Ergebnis Handytest:
+- Offene Punkte:
 
 ### Schritt 7 – Statistiken & Graphen (Kraft)
 - Pro Übung: Verlauf max. Gewicht, geschätztes 1RM, Volumen (Recharts), PR-Liste
