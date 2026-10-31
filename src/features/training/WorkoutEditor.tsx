@@ -36,9 +36,11 @@ export function WorkoutEditor({ detail, mode }: { detail: WorkoutDetail; mode: W
             mode={mode}
             unit={settings?.weightUnit ?? 'kg'}
             restSeconds={
-              item.workoutExercise.restSeconds ??
-              settings?.restTimerSeconds ??
-              REST_TIMER_DEFAULTS.restTimerSeconds
+              settings?.restTimerEnabled === false
+                ? 0
+                : (item.workoutExercise.restSeconds ??
+                  settings?.restTimerSeconds ??
+                  REST_TIMER_DEFAULTS.restTimerSeconds)
             }
             records={records}
             otherExerciseIds={items

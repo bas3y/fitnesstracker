@@ -1,6 +1,7 @@
 import { db } from './database';
 import type { BuiltinExercise } from './schemas';
 import { applySeed } from './seed';
+import { getSettings } from './settings';
 import { resetDatabase } from './testUtils';
 import type { Exercise } from './types';
 import {
@@ -17,6 +18,7 @@ import {
   loadWorkoutDetail,
   removeWorkoutExercise,
   reorderWorkoutExercises,
+  setRestTimerEnabled,
   setWorkoutExerciseLoadType,
   startWorkout,
   uncompleteSet,
@@ -220,6 +222,27 @@ describe('Pausen-Timer', () => {
     const [set] = await setsOf(item.id);
     await completeSet(set!.id, 0);
     expect((await db.workouts.get(workout.id))?.restEndsAt).toBeNull();
+  });
+
+  it('beendet beim Ausschalten eine laufende Pause, der Satz behält seinen Zeitpunkt', async () => {
+    const workout = await startWorkout();
+    const item = await addWorkoutExercise(workout.id, bench.id);
+    const [set] = await setsOf(item.id);
+    await completeSet(set!.id, 90);
+
+    await setRestTimerEnabled(false);
+
+    expect((await db.workouts.get(workout.id))?.restEndsAt).toBeNull();
+    expect((await getSettings())?.restTimerEnabled).toBe(false);
+    expect((await db.sets.get(set!.id))?.completedAt).not.toBeNull();
+
+    await setRestTimerEnabled(true);
+    expect((await getSettings())?.restTimerEnabled).toBe(true);
+  });
+
+  it('lässt sich ohne laufendes Workout umschalten', async () => {
+    await setRestTimerEnabled(false);
+    expect((await getSettings())?.restTimerEnabled).toBe(false);
   });
 });
 

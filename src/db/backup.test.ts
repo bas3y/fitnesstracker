@@ -289,6 +289,20 @@ describe('Workouts im Backup', () => {
     expect((await loadPlanDetail(plan.id))?.days[0]?.items).toHaveLength(1);
   });
 
+  it('ergänzt bei Sicherungen aus DB-Version 9 die Pausen-Schalter', async () => {
+    const data = await validBackup();
+    data.dbVersion = 9;
+    delete data.tables.settings[0].restTimerEnabled;
+    delete data.tables.settings[0].restAnalysisEnabled;
+
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.settings[0]).toMatchObject({
+      restTimerEnabled: true,
+      restAnalysisEnabled: false,
+    });
+  });
+
   it('ergänzt bei Sicherungen aus DB-Version 8 die Aufwärmsätze', async () => {
     const plan = await createPlan('Mein Plan');
     const detail = await loadPlanDetail(plan.id);

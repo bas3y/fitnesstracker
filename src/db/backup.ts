@@ -39,6 +39,9 @@ const settingsSchema = baseEntitySchema.extend({
   restTimerVibrate: z.boolean().default(REST_TIMER_DEFAULTS.restTimerVibrate),
   // Seit DB-Version 7
   activePlanId: z.string().nullable().default(null),
+  // Seit DB-Version 10
+  restTimerEnabled: z.boolean().default(REST_TIMER_DEFAULTS.restTimerEnabled),
+  restAnalysisEnabled: z.boolean().default(false),
 });
 
 const catalogEntryFields = {

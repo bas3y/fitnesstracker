@@ -4,6 +4,7 @@ import { SegmentedControl } from '../../components/SegmentedControl';
 import { Stepper } from '../../components/Stepper';
 import { updateSettings } from '../../db/settings';
 import type { Settings } from '../../db/types';
+import { setRestTimerEnabled } from '../../db/workouts';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { BackupSection } from './BackupSection';
 import { StorageSection } from './StorageSection';
@@ -66,36 +67,69 @@ function TrainingCard({ settings }: { settings: Settings }) {
   return (
     <Card title="Training">
       <div className="flex flex-col gap-2">
-        <Stepper
-          label="Pausenzeit nach einem Satz"
-          value={settings.restTimerSeconds}
-          unit="s"
-          step={15}
-          max={900}
-          decimals={0}
-          onChange={(value) => value !== null && void updateSettings({ restTimerSeconds: value })}
-        />
-        <p className="text-sm text-slate-500 dark:text-slate-400">0 s = kein Pausen-Timer</p>
         <label className="flex min-h-11 items-center gap-3">
           <input
             type="checkbox"
             className={checkbox}
-            checked={settings.restTimerSound}
-            onChange={(event) => void updateSettings({ restTimerSound: event.target.checked })}
+            checked={settings.restTimerEnabled}
+            onChange={(event) => void setRestTimerEnabled(event.target.checked)}
           />
-          Ton am Ende der Pause
+          Pausen-Timer
         </label>
+        {settings.restTimerEnabled && (
+          <>
+            <Stepper
+              label="Pausenzeit nach einem Satz"
+              value={settings.restTimerSeconds}
+              unit="s"
+              step={15}
+              max={900}
+              decimals={0}
+              onChange={(value) =>
+                value !== null && void updateSettings({ restTimerSeconds: value })
+              }
+            />
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Pläne können je Übung eine eigene Pausenzeit festlegen.
+            </p>
+            <label className="flex min-h-11 items-center gap-3">
+              <input
+                type="checkbox"
+                className={checkbox}
+                checked={settings.restTimerSound}
+                onChange={(event) => void updateSettings({ restTimerSound: event.target.checked })}
+              />
+              Ton am Ende der Pause
+            </label>
+            <label className="flex min-h-11 items-center gap-3">
+              <input
+                type="checkbox"
+                className={checkbox}
+                checked={settings.restTimerVibrate}
+                onChange={(event) =>
+                  void updateSettings({ restTimerVibrate: event.target.checked })
+                }
+              />
+              Vibration (nicht auf dem iPhone)
+            </label>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Signale kommen nur, solange die App geöffnet ist.
+            </p>
+          </>
+        )}
+        <h3 className="mt-2 font-semibold">Erweitert</h3>
         <label className="flex min-h-11 items-center gap-3">
           <input
             type="checkbox"
             className={checkbox}
-            checked={settings.restTimerVibrate}
-            onChange={(event) => void updateSettings({ restTimerVibrate: event.target.checked })}
+            checked={settings.restAnalysisEnabled}
+            onChange={(event) => void updateSettings({ restAnalysisEnabled: event.target.checked })}
           />
-          Vibration (nicht auf dem iPhone)
+          Pausen-Auswertung
         </label>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Signale kommen nur, solange die App geöffnet ist.
+          Zeigt in der Statistik, wie sich die Pausenlänge auf den nächsten Satz auswirkt. Rechnet
+          auch mit bisherigen Trainings und funktioniert ohne Pausen-Timer.
         </p>
       </div>
     </Card>

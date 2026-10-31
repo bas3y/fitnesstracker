@@ -22,10 +22,14 @@ export interface Settings extends BaseEntity {
   lastBackupAt: Timestamp | null;
   /** Stand der mitgelieferten Daten (`0` = noch nicht eingespielt) */
   seedVersion: number;
+  /** Aus = nach dem Abhaken startet kein Timer, auch nicht mit der Pausenzeit eines Plans */
+  restTimerEnabled: boolean;
   /** Standard-Pausenzeit nach einem abgehakten Satz */
   restTimerSeconds: number;
   restTimerSound: boolean;
   restTimerVibrate: boolean;
+  /** Erweiterter Modus: Auswirkung der Satzpausen in der Statistik anzeigen */
+  restAnalysisEnabled: boolean;
   /** Plan, aus dem das heutige Training vorgeschlagen wird */
   activePlanId: string | null;
 }

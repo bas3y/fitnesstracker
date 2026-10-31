@@ -213,7 +213,33 @@ describe('AppDatabase-Migration', () => {
       repMax: 10,
       warmupSets: 0,
     });
-    expect(v9.verno).toBe(9);
     await v9.delete();
+  });
+
+  it('Version 10 ergänzt die Pausen-Schalter und behält die Einstellungen', async () => {
+    const name = 'migration-test-v10';
+    const v9 = new Dexie(name);
+    v9.version(9).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+    });
+    await v9.table('settings').add({ id: 'app-settings', restTimerSeconds: 120 });
+    v9.close();
+
+    const v10 = new AppDatabase(name);
+    expect(await v10.settings.get('app-settings')).toMatchObject({
+      restTimerSeconds: 120,
+      restTimerEnabled: true,
+      restAnalysisEnabled: false,
+    });
+    expect(v10.verno).toBe(10);
+    await v10.delete();
   });
 });

@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { dangerButton, inputField, secondaryButton } from '../../components/buttons';
 import { StarIcon } from '../../components/icons';
 import { Card, Page } from '../../components/Page';
@@ -11,10 +11,16 @@ import {
 } from '../../db/exercises';
 import type { Exercise, MuscleGroup } from '../../db/types';
 import { EQUIPMENT_LABELS, EXERCISE_CATEGORY_LABELS, MUSCLE_LABELS } from '../../domain/labels';
+import { statsBackPath } from '../stats/statsFilter';
 import { Badge } from './ExerciseBrowser';
 import { useExercise } from './useExercises';
 
 const LIST_PATH = '/training/exercises';
+
+// Eigener Chunk wegen Recharts
+const ExerciseStats = lazy(() =>
+  import('../stats/ExerciseStats').then((module) => ({ default: module.ExerciseStats })),
+);
 
 export function ExerciseDetailPage() {
   const { id } = useParams();
@@ -39,16 +45,21 @@ export function ExerciseDetailPage() {
 }
 
 function ExerciseDetail({ exercise }: { exercise: Exercise }) {
+  const [params] = useSearchParams();
   const isOwn = exercise.source === 'user';
   const hidden = exercise.hiddenAt !== null;
 
   return (
-    <Page title={exercise.name} backTo={LIST_PATH}>
+    <Page title={exercise.name} backTo={statsBackPath(params) ?? LIST_PATH}>
       <div className="-mt-2 mb-4 flex flex-wrap gap-2">
         <Badge>{isOwn ? 'Eigene Übung' : 'Mitgeliefert'}</Badge>
         {hidden && <Badge>Ausgeblendet</Badge>}
         {exercise.isFavorite && <Badge>Favorit</Badge>}
       </div>
+
+      <Suspense fallback={null}>
+        <ExerciseStats exercise={exercise} />
+      </Suspense>
 
       <Card>
         <dl className="flex flex-col gap-3">

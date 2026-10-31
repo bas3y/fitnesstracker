@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { primaryButton, secondaryButton } from '../../components/buttons';
-import { StarIcon } from '../../components/icons';
 import { createUserExercise } from '../../db/exercises';
 import { EMPTY_EXERCISE_INPUT } from '../../db/schemas';
 import type { Exercise } from '../../db/types';
 import { INITIAL_BROWSER_STATE, type ExerciseBrowserState } from '../../domain/exercises';
 import { Badge, ExerciseBrowser, ExerciseSummary } from './ExerciseBrowser';
 import { ExerciseForm } from './ExerciseForm';
+import { FavoriteButton } from './FavoriteButton';
 import { useActiveExercises } from './useExercises';
 
 interface ExercisePickerBaseProps {
@@ -55,38 +55,34 @@ export function ExercisePicker({
   const renderOption = (exercise: Exercise) => {
     const position = selected.findIndex((item) => item.id === exercise.id);
     return (
-      <button
-        type="button"
-        aria-pressed={onSelectMany ? position >= 0 : undefined}
-        className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-slate-50 dark:active:bg-slate-700"
-        onClick={() => (onSelect ? onSelect(exercise) : toggle(exercise))}
-      >
-        {onSelectMany && (
-          <span
-            aria-hidden="true"
-            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold ${
-              position >= 0
-                ? 'border-emerald-600 bg-emerald-600 text-white'
-                : 'border-slate-300 dark:border-slate-600'
-            }`}
-          >
-            {position >= 0 && position + 1}
-          </span>
-        )}
-        <ExerciseSummary exercise={exercise} />
-        <span className="ml-auto flex shrink-0 items-center gap-2">
-          {addedIds?.has(exercise.id) && <Badge>Im Training</Badge>}
-          {exercise.isFavorite && (
-            <StarIcon
-              filled
-              aria-label="Favorit"
-              aria-hidden={false}
-              role="img"
-              className="h-5 w-5 shrink-0 text-amber-500"
-            />
+      <div className="flex items-center">
+        <button
+          type="button"
+          aria-pressed={onSelectMany ? position >= 0 : undefined}
+          className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left active:bg-slate-50 dark:active:bg-slate-700"
+          onClick={() => (onSelect ? onSelect(exercise) : toggle(exercise))}
+        >
+          {onSelectMany && (
+            <span
+              aria-hidden="true"
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold ${
+                position >= 0
+                  ? 'border-emerald-600 bg-emerald-600 text-white'
+                  : 'border-slate-300 dark:border-slate-600'
+              }`}
+            >
+              {position >= 0 && position + 1}
+            </span>
           )}
-        </span>
-      </button>
+          <ExerciseSummary exercise={exercise} />
+          {addedIds?.has(exercise.id) && (
+            <span className="ml-auto shrink-0">
+              <Badge>Im Training</Badge>
+            </span>
+          )}
+        </button>
+        <FavoriteButton exercise={exercise} />
+      </div>
     );
   };
 

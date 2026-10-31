@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { primaryButton } from '../../components/buttons';
-import { StarIcon } from '../../components/icons';
 import { Page } from '../../components/Page';
-import { setExerciseFavorite } from '../../db/exercises';
 import type { Exercise } from '../../db/types';
 import { INITIAL_BROWSER_STATE, type ExerciseBrowserState } from '../../domain/exercises';
 import { ExerciseBrowser, ExerciseSummary } from './ExerciseBrowser';
+import { FavoriteButton } from './FavoriteButton';
 import { useActiveExercises } from './useExercises';
 
 // Suche und Filter bleiben beim Wechsel zur Detailseite und zurück erhalten (bis zum Neuladen)
@@ -48,22 +47,5 @@ function ExerciseListRow({ exercise }: { exercise: Exercise }) {
       </Link>
       <FavoriteButton exercise={exercise} />
     </div>
-  );
-}
-
-function FavoriteButton({ exercise }: { exercise: Exercise }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={exercise.isFavorite}
-      aria-label={`Favorit: ${exercise.name}`}
-      className="flex h-14 w-14 shrink-0 items-center justify-center"
-      onClick={() => void setExerciseFavorite(exercise.id, !exercise.isFavorite)}
-    >
-      <StarIcon
-        filled={exercise.isFavorite}
-        className={`h-6 w-6 ${exercise.isFavorite ? 'text-amber-500' : 'text-slate-400'}`}
-      />
-    </button>
   );
 }

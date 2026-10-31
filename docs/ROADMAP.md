@@ -14,7 +14,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 5 – Berechnungen & PRs
 - [x] Schritt 6 – Trainingspläne
 - [x] Schritt 6b – Offene Punkte aus Schritt 6 & Handytest
-- [ ] Schritt 7 – Statistiken & Graphen (Kraft)
+- [x] Schritt 7 – Statistiken & Graphen (Kraft)
 - [ ] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
 - [ ] Schritt 9 – Tägliches Tracking
 - [ ] Schritt 10 – Habit-Tracker
@@ -345,13 +345,33 @@ Hinweise:
 - *Nutzerwunsch (hier oder Schritt 16):* **Auswertung der Satzpausen**: Wie hängt die Leistung im nächsten Satz (Wdh./Gewicht) von der Pausenlänge ab? Daraus Empfehlung: Pause verlängern, wenn die Leistung stark einbricht, oder härter trainieren/kürzer pausieren, wenn kaum Unterschied – mit sinnvoller Obergrenze. Dafür die tatsächliche Pause messen (Zeit zwischen `completedAt` zweier Sätze), nicht nur die Timer-Einstellung (`restSeconds`).
 - Aggregationen in `src/domain/` mit Unit-Tests
 - *Nutzerwunsch (Ergänzung, gehört nicht zu den Statistiken):* **Favorit direkt in der Übungssuche:** Beim Erstellen eines Plans soll man eine Übung in der Suche (`ExercisePicker`) per Stern-Symbol als Favorit markieren können, ohne die Auswahl zu verlassen. Vorhanden sind `setExerciseFavorite` und der Stern in `ExerciseListPage`; im Picker ist der Stern bisher nur Anzeige. Er muss als eigener Button neben der Auswahl-Schaltfläche stehen (keine Buttons ineinander), und ein Tipp darauf darf die Übung nicht auswählen.
+- *Nutzerwunsch (bei der Planung ergänzt):* Filter nach **Muskelgruppe**, **Fortschritt je Muskelgruppe in %** mit Hinweis, wo der Fokus liegen sollte. **Pausen-Timer in den Einstellungen abschaltbar**, Pausen-Auswertung zusätzlich als **erweiterter Modus** einschaltbar.
 
 **Fertig wenn:** Graphen mit Testdaten korrekt, Unit-Tests für Aggregationen.
 
 **Notizen:**
 - Gebaut:
+  - Dexie v10: `Settings.restTimerEnabled` (Standard an) und `restAnalysisEnabled` (Standard aus), Backup-Defaults.
+  - `src/domain/stats.ts` (Zeitraum, Verlauf je Kennzahl, Heatmap, Sätze je Muskelgruppe, Fortschritt, Fokus, Satzpausen), `src/db/stats.ts` (`loadStatsSessions`), `currentBests` in `src/domain/strength.ts`, `loadFinishedExerciseSessions` in `src/db/records.ts`. `exerciseKind` liegt jetzt in `strength.ts`.
+  - UI: `StatsPage` (Zeitraum, Muskelgruppe, Fokus, Trainingstage, Sätze pro Woche, Fortschritt, Übungen, Satzpausen), `ExerciseStats` auf der Übungs-Detailseite (Verlauf, Bestwerte, letzte Rekorde, Pausen), `src/components/charts.tsx` (Recharts-Wrapper), `src/components/Heatmap.tsx` (ohne Recharts, Prop `weekCount`, wiederverwendbar für Schritt 8/15), Filter in der URL über `src/features/stats/statsFilter.ts`.
+  - Recharts 3 liegt in einem eigenen Chunk: `StatsPage` und `ExerciseStats` werden per `React.lazy` geladen und sind precacht.
+  - `FavoriteButton` als eigener Button in Übungsliste und `ExercisePicker` (Einfach- und Mehrfachauswahl, auch Vorschläge).
+  - Einstellungen: Schalter „Pausen-Timer“ (`setRestTimerEnabled` beendet auch eine laufende Pause), „Erweitert: Pausen-Auswertung“.
+  - Tests: `stats.test.ts` (Domain und DB), `currentBests`, Timer-Schalter, Migration v9→v10, Backup aus v9, Picker-Stern. E2E `e2e/stats.spec.ts` offline in beiden Viewports, Testdaten über den normalen Backup-Import.
 - Abweichungen:
+  - Fortschritt: Bestwert der ersten gegen den der letzten zwei Einheiten im Zeitraum (mind. 4 Einheiten), je Gruppe Median der Übungen mit diesem Hauptmuskel. Kennzahl: 1RM, sonst Stufe mit Wdh., bei Körpergewicht ohne 1RM die Wdh., bei Halteübungen die Dauer. Prozentwerte verschiedener Kennzahlen werden im Median zusammengeführt, kg und Stufen aber nie miteinander verrechnet.
+  - Hinweis auf vernachlässigte Gruppen steht in der Karte „Fokus“ (höchstens 3) plus orange Balken, nicht als zweiter Text. „Große Gruppen“ = `MAJOR_MUSCLES`, Waden und Unterarme zählen nicht dazu. Vernachlässigt erst ab 2 Wochen seit dem ersten Training.
+  - Bestwerte und Heatmap ignorieren den Zeitraum. Die Heatmap folgt aber dem Muskelfilter. Hat eine Übung den Muskel nur als Hilfsmuskel, zählen ihre Sätze dort voll, in „Sätze pro Woche“ halb.
+  - Pausen werden nur je Übung ausgewertet, weil eine Mischung über Übungen verzerrt. Ab 15 Satzpaaren und mindestens einer Pausenlänge mit 5 Paaren, Empfehlung höchstens 5 min.
+  - Die Kennzahl auf der Übungsseite wird über Chips statt `SegmentedControl` gewählt: Bei Übungen mit kg und Stufen sind es bis zu 7 Kennzahlen.
+  - Der bisherige Hinweis „0 s = kein Pausen-Timer“ entfällt, 0 s funktioniert weiterhin für die Standardzeit. Der Stern im Picker zeigt jetzt immer auch Nicht-Favoriten als leeren Stern.
 - Offene Punkte:
+  - Körpergewichtsübungen rechnen weiter mit dem aktuellen Körpergewicht, auch in alten Einheiten (siehe Schritt 5/9). Eine Änderung des Körpergewichts verschiebt also ganze Kurven, nicht nur neue Punkte.
+  - Die Schwellen für Fokus und Pausen sind Faustwerte (`STALLED_PERCENT`, `NEGLECTED_SETS_PER_WEEK`, `HIGH_VOLUME_SETS_PER_WEEK`, Konstanten bei den Satzpausen in `stats.ts`) und sollten mit echten Daten geprüft werden.
+  - Ein neuer Favorit rutscht im Picker sofort nach oben, die Zeile springt also unter dem Finger weg (wie in der Übungsliste). Auf dem Handy prüfen.
+  - Tooltip der Graphen per Touch nur auf dem echten Handy prüfbar.
+  - Schritt 8: `Heatmap` mit kleinerem `weekCount`, `summarizeDays` und `loadStatsSessions` für die Dashboard-Kacheln wiederverwenden.
+  - Hauptbundle liegt weiter über 500 kB (Vite-Warnung), Recharts ist nicht der Grund.
 
 ### Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
 - Dashboard: heutiger/nächster Plantag (Startbutton), letztes Workout, Wochenvolumen, neueste PRs, Mini-Heatmap

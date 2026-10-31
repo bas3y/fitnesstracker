@@ -161,6 +161,18 @@ export class AppDatabase extends Dexie {
             item.warmupSets ??= 0;
           }),
       );
+    // Pausen-Timer abschaltbar, Pausen-Auswertung als erweiterter Modus
+    this.version(10)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.restTimerEnabled ??= true;
+            settings.restAnalysisEnabled ??= false;
+          }),
+      );
   }
 }
 

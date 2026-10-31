@@ -1,13 +1,13 @@
 import {
   annotateSessions,
   detectRecords,
+  exerciseKind,
   sessionRecords,
-  type ExerciseKind,
   type PersonalRecord,
 } from '../domain/strength';
 import { db } from './database';
 import { SETTINGS_ID } from './settings';
-import type { Exercise, Workout, WorkoutSet } from './types';
+import type { Workout, WorkoutSet } from './types';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
 
@@ -17,18 +17,7 @@ export interface ExerciseSession {
   sets: WorkoutSet[];
 }
 
-export function exerciseKind(
-  exercise: Exercise | null | undefined,
-  bodyWeightKg: number | null,
-): ExerciseKind {
-  return {
-    isTimed: exercise?.isTimed ?? false,
-    isBodyweight: exercise?.equipment === 'bodyweight',
-    bodyWeightKg,
-  };
-}
-
-async function getBodyWeightKg(): Promise<number | null> {
+export async function getBodyWeightKg(): Promise<number | null> {
   return (await db.settings.get(SETTINGS_ID))?.bodyWeightKg ?? null;
 }
 
@@ -72,6 +61,12 @@ export async function loadExerciseSessions(exerciseId: string): Promise<Exercise
     workouts.filter((w): w is Workout => !!w),
     sets,
   );
+}
+
+/** Wie `loadExerciseSessions`, aber nur beendete Workouts (für Verläufe und Bestwerte) */
+export async function loadFinishedExerciseSessions(exerciseId: string): Promise<ExerciseSession[]> {
+  const sessions = await loadExerciseSessions(exerciseId);
+  return sessions.filter((session) => session.workout.endedAt !== null);
 }
 
 /** Rekorde, die ein abgehakter Satz gegenüber allem davor aufstellt (für den PR-Toast) */

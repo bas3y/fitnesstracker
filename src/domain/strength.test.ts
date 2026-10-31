@@ -2,6 +2,7 @@ import {
   annotateSessions,
   bestSet,
   brzycki,
+  currentBests,
   detectRecords,
   effectiveLoadKg,
   epley,
@@ -360,6 +361,60 @@ describe('sessionRecords (Markierung in der Historie)', () => {
     );
     expect(annotated.map((session) => session.flat().length)).toEqual([0, 0, 4]);
     expect(types(annotated[2]![0]!)).toEqual(['oneRepMax', 'setVolume', 'sessionVolume', 'reps']);
+  });
+});
+
+describe('currentBests (Bestwerte einer Übung)', () => {
+  const session = (startedAt: string, sets: StrengthSet[]) => ({ startedAt, sets });
+  const find = (bests: ReturnType<typeof currentBests>, type: string) =>
+    bests.find((best) => best.type === type);
+
+  it('zählt auch die erste Einheit und merkt sich das Datum', () => {
+    const bests = currentBests([session('2026-01-01', [set(100, 5)])], barbell);
+    expect(find(bests, 'weight')).toMatchObject({ value: 100, achievedAt: '2026-01-01' });
+    expect(find(bests, 'sessionVolume')).toMatchObject({ value: 500 });
+  });
+
+  it('behält das Datum, an dem der Wert zuerst erreicht wurde', () => {
+    const bests = currentBests(
+      [session('2026-01-01', [set(100, 5)]), session('2026-02-01', [set(100, 5)])],
+      barbell,
+    );
+    expect(find(bests, 'weight')?.achievedAt).toBe('2026-01-01');
+  });
+
+  it('nimmt pro Rekordart den höchsten Wert, ohne Aufwärmsätze', () => {
+    const bests = currentBests(
+      [
+        session('2026-01-01', [set(120, 1, { isWarmup: true }), set(100, 5)]),
+        session('2026-02-01', [set(90, 10)]),
+      ],
+      barbell,
+    );
+    expect(find(bests, 'weight')?.value).toBe(100);
+    expect(find(bests, 'setVolume')?.value).toBe(900);
+    expect(find(bests, 'reps')).toMatchObject({ value: 10, load: 90 });
+  });
+
+  it('nimmt bei gleichen Wdh. die höhere Last', () => {
+    const bests = currentBests([session('2026-01-01', [set(80, 5), set(100, 5)])], barbell);
+    expect(find(bests, 'reps')?.load).toBe(100);
+  });
+
+  it('trennt Stufen von kg', () => {
+    const bests = currentBests([session('2026-01-01', [set(50, 8), level(7, 12)])], barbell);
+    expect(find(bests, 'level')).toMatchObject({ value: 7, byLevel: true });
+    expect(find(bests, 'weight')).toMatchObject({ value: 50, byLevel: false });
+    expect(bests.filter((best) => best.type === 'reps')).toHaveLength(2);
+  });
+
+  it('nennt die Dauer bei Halteübungen', () => {
+    const bests = currentBests([session('2026-01-01', [hold(60)])], timed);
+    expect(find(bests, 'duration')?.value).toBe(60);
+  });
+
+  it('ist ohne Sätze leer', () => {
+    expect(currentBests([], barbell)).toEqual([]);
   });
 });
 

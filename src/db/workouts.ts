@@ -3,7 +3,7 @@ import { suggestSetValues } from '../domain/workout';
 import { db } from './database';
 import { create, nowIso, softDelete, update } from './repository';
 import { setValuesSchema, type SetValues } from './schemas';
-import { getSettings } from './settings';
+import { getSettings, updateSettings } from './settings';
 import type { Exercise, LoadType, Workout, WorkoutExercise, WorkoutSet } from './types';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
@@ -445,6 +445,15 @@ export function uncompleteSet(id: string): Promise<void> {
 
 export function setRestEndsAt(workoutId: string, restEndsAt: string | null): Promise<void> {
   return update(db.workouts, workoutId, { restEndsAt });
+}
+
+/** Ausschalten beendet auch eine gerade laufende Pause */
+export function setRestTimerEnabled(enabled: boolean): Promise<void> {
+  return db.transaction('rw', [db.settings, db.workouts], async () => {
+    await updateSettings({ restTimerEnabled: enabled });
+    const running = await getActiveWorkout();
+    if (!enabled && running?.restEndsAt) await setRestEndsAt(running.id, null);
+  });
 }
 
 /** Verlängert/verkürzt die laufende Pause (nicht unter „jetzt“) */

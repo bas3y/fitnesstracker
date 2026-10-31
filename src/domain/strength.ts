@@ -1,4 +1,4 @@
-import type { WeightUnit, WorkoutSet } from '../db/types';
+import type { Exercise, WeightUnit, WorkoutSet } from '../db/types';
 import { formatDecimal } from './format';
 import { displayToKg, kgToDisplay, roundTo } from './units';
 import { formatClock, formatWeight, suggestSetValues } from './workout';
@@ -19,6 +19,17 @@ export interface ExerciseKind {
   isBodyweight: boolean;
   /** Aus den Einstellungen; ohne Angabe gibt es bei Körpergewichtsübungen kein Volumen/1RM */
   bodyWeightKg: number | null;
+}
+
+export function exerciseKind(
+  exercise: Pick<Exercise, 'isTimed' | 'equipment'> | null | undefined,
+  bodyWeightKg: number | null,
+): ExerciseKind {
+  return {
+    isTimed: exercise?.isTimed ?? false,
+    isBodyweight: exercise?.equipment === 'bodyweight',
+    bodyWeightKg,
+  };
 }
 
 /** Darüber werden 1RM-Schätzungen zu ungenau */
@@ -100,7 +111,7 @@ export function bestSet<T extends StrengthSet>(sets: T[], kind: ExerciseKind): T
   return best;
 }
 
-function isPerformed(set: StrengthSet, kind: ExerciseKind) {
+export function isPerformed(set: StrengthSet, kind: ExerciseKind) {
   return ((kind.isTimed ? set.durationSeconds : set.reps) ?? 0) > 0;
 }
 
@@ -358,6 +369,73 @@ export function annotateSessions(
   kind: ExerciseKind,
 ): PersonalRecord[][][] {
   return sessions.map((session, index) => sessionRecords(session, sessions.slice(0, index), kind));
+}
+
+export interface ExerciseBest extends PersonalRecord {
+  /** Zeitpunkt der Einheit, in der der Wert zuerst erreicht wurde */
+  achievedAt: string;
+}
+
+/**
+ * Aktuelle Bestwerte je Rekordart – anders als `annotateSessions` zählt auch die erste Einheit.
+ * Wdh./Dauer: bester Wert überhaupt (bei Gleichstand mit der höheren Last), getrennt nach kg und Stufe.
+ */
+export function currentBests(
+  sessions: Array<{ startedAt: string; sets: StrengthSet[] }>,
+  kind: ExerciseKind,
+): ExerciseBest[] {
+  const bests = new Map<string, ExerciseBest>();
+  const put = (key: string, best: ExerciseBest, isBetter: (current: ExerciseBest) => boolean) => {
+    const current = bests.get(key);
+    if (!current || isBetter(current)) bests.set(key, best);
+  };
+  for (const { startedAt, sets } of sessions) {
+    for (const set of sets) {
+      const values = maxValues(set, kind);
+      for (const type of MAX_TYPES) {
+        const value = values[type];
+        if (value === undefined) continue;
+        put(
+          type,
+          {
+            type,
+            value,
+            previous: 0,
+            load: null,
+            byLevel: isLevelType(type),
+            achievedAt: startedAt,
+          },
+          (current) => value > current.value + EPSILON,
+        );
+      }
+      const loaded = loadedValue(set, kind);
+      if (loaded) {
+        const { type, value, load, byLevel } = loaded;
+        put(
+          `${type}-${byLevel}`,
+          { type, value, previous: 0, load, byLevel, achievedAt: startedAt },
+          (current) =>
+            value > current.value || (value === current.value && load > current.load! + EPSILON),
+        );
+      }
+    }
+    const value = sessionVolumeKg(sets, kind);
+    if (value > 0) {
+      put(
+        'sessionVolume',
+        {
+          type: 'sessionVolume',
+          value,
+          previous: 0,
+          load: null,
+          byLevel: false,
+          achievedAt: startedAt,
+        },
+        (current) => value > current.value + EPSILON,
+      );
+    }
+  }
+  return [...bests.values()].sort(byRecordOrder);
 }
 
 export function formatRecord(

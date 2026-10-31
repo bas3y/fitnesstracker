@@ -7,8 +7,9 @@ export const SETTINGS_ID = 'app-settings';
 
 export const REST_TIMER_DEFAULTS: Pick<
   Settings,
-  'restTimerSeconds' | 'restTimerSound' | 'restTimerVibrate'
+  'restTimerEnabled' | 'restTimerSeconds' | 'restTimerSound' | 'restTimerVibrate'
 > = {
+  restTimerEnabled: true,
   restTimerSeconds: 180,
   restTimerSound: true,
   restTimerVibrate: true,
@@ -23,6 +24,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   lastBackupAt: null,
   seedVersion: 0,
   activePlanId: null,
+  restAnalysisEnabled: false,
   ...REST_TIMER_DEFAULTS,
 };
 

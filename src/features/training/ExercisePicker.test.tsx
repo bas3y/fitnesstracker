@@ -70,8 +70,28 @@ describe('ExercisePicker', () => {
     expect(screen.queryByText(/Kniebeugen/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Ausgeblendete anzeigen')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /Bankdrücken/ }));
+    await user.click(screen.getByRole('button', { name: /^Bankdrücken/ }));
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ builtinKey: 'bench' }));
+  });
+
+  it('markiert per Stern als Favorit, ohne die Übung auszuwählen', async () => {
+    const user = userEvent.setup();
+    const { onSelect, onClose } = renderPicker();
+    const star = await screen.findByRole('button', { name: 'Favorit: Rudern (Kabel)' });
+    expect(star).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /^Rudern/ })).not.toContainElement(star);
+
+    await user.click(star);
+
+    await vi.waitFor(async () => expect((await byKey('row')).isFavorite).toBe(true));
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    await vi.waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Favorit: Rudern (Kabel)' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      ),
+    );
   });
 
   it('filtert nach Suche und Equipment', async () => {
@@ -114,7 +134,7 @@ describe('ExercisePicker', () => {
     const second = renderPicker();
     await screen.findByRole('list', { name: 'Übungsliste' });
     await user.click(screen.getByRole('button', { name: 'Eigene' }));
-    await user.click(await screen.findByRole('button', { name: /Hip Thrust/ }));
+    await user.click(await screen.findByRole('button', { name: /^Hip Thrust/ }));
     expect(second.onSelect).toHaveBeenCalledWith(expect.objectContaining({ name: 'Hip Thrust' }));
   });
 
@@ -143,14 +163,14 @@ describe('ExercisePicker', () => {
       await screen.findByRole('list', { name: 'Übungsliste' });
       expect(screen.queryByRole('button', { name: /hinzufügen$/ })).not.toBeInTheDocument();
 
-      const row = screen.getByRole('button', { name: /Rudern/ });
+      const row = screen.getByRole('button', { name: /^Rudern/ });
       await user.click(row);
       expect(row).toHaveAttribute('aria-pressed', 'true');
-      await user.click(screen.getByRole('button', { name: /Bankdrücken/ }));
-      await user.click(screen.getByRole('button', { name: /Bankdrücken/ }));
+      await user.click(screen.getByRole('button', { name: /^Bankdrücken/ }));
+      await user.click(screen.getByRole('button', { name: /^Bankdrücken/ }));
 
       await user.type(screen.getByRole('searchbox', { name: 'Übung suchen' }), 'kniebeuge');
-      await user.click(await screen.findByRole('button', { name: /Kniebeugen/ }));
+      await user.click(await screen.findByRole('button', { name: /^Kniebeugen/ }));
       await user.click(screen.getByRole('button', { name: '2 Übungen hinzufügen' }));
 
       expect(onSelectMany).toHaveBeenCalledTimes(1);
@@ -160,12 +180,22 @@ describe('ExercisePicker', () => {
       ]);
     });
 
+    it('behält die Auswahl, wenn man per Stern einen Favoriten setzt', async () => {
+      const user = userEvent.setup();
+      const onSelectMany = renderMany();
+      await user.click(await screen.findByRole('button', { name: /^Rudern/ }));
+      await user.click(screen.getByRole('button', { name: 'Favorit: Bankdrücken (Langhantel)' }));
+
+      await user.click(screen.getByRole('button', { name: '1 Übung hinzufügen' }));
+      expect(onSelectMany).toHaveBeenCalledWith([expect.objectContaining({ builtinKey: 'row' })]);
+    });
+
     it('markiert enthaltene Übungen, lässt sie aber wählbar', async () => {
       const user = userEvent.setup();
       const onSelectMany = renderMany(new Set([(await byKey('bench')).id]));
-      const bench = await screen.findByRole('button', { name: /Bankdrücken/ });
+      const bench = await screen.findByRole('button', { name: /^Bankdrücken/ });
       expect(bench).toHaveTextContent('Im Training');
-      expect(screen.getByRole('button', { name: /Rudern/ })).not.toHaveTextContent('Im Training');
+      expect(screen.getByRole('button', { name: /^Rudern/ })).not.toHaveTextContent('Im Training');
 
       await user.click(bench);
       await user.click(screen.getByRole('button', { name: '1 Übung hinzufügen' }));

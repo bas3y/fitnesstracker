@@ -51,6 +51,7 @@ interface WorkoutExerciseCardProps {
   /** `live` = laufendes Workout (abhaken + Pausen-Timer), `edit` = nachträglich bearbeiten */
   mode: WorkoutMode;
   unit: WeightUnit;
+  /** `0` = kein Pausen-Timer */
   restSeconds: number;
   /** Rekorde je Satz-ID */
   records: Map<string, PersonalRecord[]> | undefined;
@@ -95,7 +96,7 @@ export function WorkoutExerciseCard({
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [replacing, setReplacing] = useState(false);
   const canSwap = mode === 'live' && sets.some((set) => set.completedAt === null);
-  const target = formatTarget(workoutExercise, format.isTimed);
+  const target = formatTarget(workoutExercise, format.isTimed, restSeconds > 0);
   const expandedId =
     expanded === 'auto' ? (sets.find((set) => set.completedAt === null)?.id ?? null) : expanded;
 
@@ -261,6 +262,7 @@ export function WorkoutExerciseCard({
 function formatTarget(
   { repMin, repMax, targetDurationSeconds, restSeconds }: WorkoutExerciseTargets,
   isTimed: boolean,
+  showRest: boolean,
 ): string | null {
   const parts: string[] = [];
   if (isTimed && targetDurationSeconds !== null) {
@@ -268,7 +270,7 @@ function formatTarget(
   } else if (!isTimed && repMin !== null && repMax !== null) {
     parts.push(`Ziel: ${formatRepRange({ repMin, repMax })} Wdh.`);
   }
-  if (restSeconds !== null) parts.push(`Pause ${formatClock(restSeconds)}`);
+  if (showRest && restSeconds !== null) parts.push(`Pause ${formatClock(restSeconds)}`);
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
