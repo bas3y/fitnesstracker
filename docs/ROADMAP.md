@@ -18,6 +18,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
 - [x] Schritt 9 – Tägliches Tracking
 - [x] Schritt 10 – Habit-Tracker
+- [ ] Schritt 10b – Anpassungen nach dem Testen & Handytest
 - [ ] Schritt 11 – Supplements
 - [ ] Schritt 12 – Ernährung (MVP 2 fertig)
 - [ ] Schritt 13 – Ausdauer manuell
@@ -478,6 +479,30 @@ Hinweise:
   - Kein Dashboard-Widget, weil es nicht zum Umfang gehört. Die Ideensammlung nennt Habits in der Tagesübersicht: als neues Widget nach dem Muster von `TodayCard` ergänzbar (`HabitChecklist` wiederverwenden), dabei auf das Hauptbundle achten.
   - Erledigte Gewohnheiten rutschen nicht nach unten, Pausieren und Archivieren gibt es nicht. Schritt 18 (Streak-Übersicht) kann `habitStreak` verwenden. Erinnerungen gibt es ohne Server nicht, CSV-Export enthält Gewohnheiten nicht.
   - Emojis und `aria`-Rollen der Checkliste auf dem echten Handy ansehen. Lighthouse wurde nicht erneut ausgeführt.
+
+### Schritt 10b – Anpassungen nach dem Testen & Handytest
+**Ziel:** Die Wünsche des Nutzers aus dem eigenen Testen umsetzen und den Stand auf dem echten Handy prüfen. Danach folgt Schritt 11.
+
+**Beginn, wenn der Nutzer „Schritt 10b starten“ schreibt – wichtig:** Noch nichts bauen. Zuerst den Nutzer auffordern, alle gewünschten Anpassungen aufzuzählen, und die Liste dann gemeinsam abstimmen: fehlende Punkte oder sinnvolle Ergänzungen vorschlagen, Unklarheiten nachfragen. Erst nach der Abstimmung umsetzen und die endgültige Liste hier eintragen.
+
+Bisher genannte Wünsche (Stichpunkte, Details noch offen):
+- **Gewohnheiten mit Zählen:** In der Checkliste sollen auch Gewohnheiten mit Unterpunkten und Mengen möglich sein, die wie beim Wasser hochzählen. Beispiel: Supplements in einzelne Unterpunkte gliedern, je mit Menge. Auch für eigene Einträge frei nutzbar. Vor der Umsetzung klären, wie sich das zu Schritt 11 (Supplements mit Dosierung, Uhrzeiten und Bestand) verhält, damit nichts doppelt entsteht.
+- **Startseite:** Anpassungen, Inhalt nennt der Nutzer beim Start.
+- **Alltag:** Anpassungen, Inhalt nennt der Nutzer beim Start.
+- Weitere Punkte aus dem Testen des Nutzers.
+
+Danach veröffentlichen und testen:
+- **Push:** Der Nutzer hat ausdrücklich einen Push für den Handytest gewünscht: Wer „Schritt 10b starten“ schreibt, gibt den Push auf `main` frei (Ausnahme von „Kein Push“, siehe Hinweise in `CLAUDE.md`). Erst pushen, wenn die Definition of Done erfüllt ist. Danach prüfen, dass die GitHub Action durchgelaufen ist, und dem Nutzer sagen, wann die Version online ist.
+- **Handytest durch den Nutzer:** App öffnen, „Neue Version verfügbar“ → „Neu laden“. Gewohnheiten (Abhaken, Kalender, Emojis) und alle Anpassungen aus 10b prüfen, dazu die offenen Handy-Punkte aus Schritt 9 (`input type="date"`, Stepper). Bleiben vorhandene Daten erhalten, läuft alles im Flugmodus?
+- Gefundene Probleme beheben und erneut pushen.
+
+**Fertig wenn:** Abgestimmte Punkte umgesetzt, Definition of Done erfüllt, gepusht, Nutzer bestätigt den Handytest.
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
+- Ergebnis Handytest:
+- Offene Punkte:
 
 ### Schritt 11 – Supplements
 - `supplements` (Name, Dosierung, Einheit, Uhrzeiten, Bestand, Packungsgröße), `supplementIntakes`
