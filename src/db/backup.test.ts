@@ -151,6 +151,25 @@ describe('restoreBackup', () => {
   });
 });
 
+describe('Sicherungen aus DB-Version 10', () => {
+  it('ergänzt die Standard-Widgets und lehnt unbekannte Widgets ab', async () => {
+    const data = await validBackup();
+    data.dbVersion = 10;
+    delete data.tables.settings[0].dashboardWidgets;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.settings[0]!.dashboardWidgets).toEqual([
+      'week',
+      'lastWorkout',
+      'records',
+      'activity',
+    ]);
+
+    data.tables.settings[0].dashboardWidgets = ['unbekannt'];
+    expect(parseBackup(data).ok).toBe(false);
+  });
+});
+
 describe('Sicherungen aus DB-Version 2', () => {
   it('ergänzt Favorit, Ausblenden und Notiz an Übungen', async () => {
     const data = await validBackup();

@@ -5,6 +5,16 @@ import { db } from './db/database';
 import { ensureSettings, getSettings, SETTINGS_ID } from './db/settings';
 import { resetDatabase } from './db/testUtils';
 
+// Lazy-Routen vorab laden, sonst hängen die Tests von der Übersetzungszeit ab (Recharts)
+beforeAll(async () => {
+  await Promise.all([
+    import('./features/daily/DailyPage'),
+    import('./features/settings/SettingsPage'),
+    import('./features/stats/StatsPage'),
+    import('./features/training/TrainingPage'),
+  ]);
+}, 60_000);
+
 beforeEach(async () => {
   await resetDatabase();
   window.location.hash = '';
@@ -17,26 +27,23 @@ describe('App', () => {
     await vi.waitFor(async () => expect(await getSettings()).toBeDefined());
   });
 
-  // Die Routen werden hier zum ersten Mal geladen und übersetzt, im Gesamtlauf dauert das
-  it('navigiert über die Bottom-Navigation', { timeout: 60_000 }, async () => {
+  it('navigiert über die Bottom-Navigation', async () => {
     const user = userEvent.setup();
     render(<App />);
     const nav = screen.getByRole('navigation', { name: 'Hauptnavigation' });
 
     for (const label of ['Training', 'Alltag', 'Statistik', 'Einstellungen']) {
       await user.click(within(nav).getByRole('link', { name: label }));
-      expect(
-        await screen.findByRole('heading', { level: 1, name: label }, { timeout: 15_000 }),
-      ).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: label })).toBeInTheDocument();
     }
   });
 
-  it('speichert Einstellungen und zeigt den Namen im Dashboard', { timeout: 60_000 }, async () => {
+  it('speichert Einstellungen und zeigt den Namen im Dashboard', async () => {
     const user = userEvent.setup();
     window.location.hash = '#/settings';
     render(<App />);
 
-    const name = await screen.findByLabelText('Name', {}, { timeout: 15_000 });
+    const name = await screen.findByLabelText('Name');
     await user.type(name, 'Alex');
     await user.click(screen.getByRole('button', { name: 'lb' }));
     await vi.waitFor(() =>

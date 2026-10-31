@@ -239,7 +239,32 @@ describe('AppDatabase-Migration', () => {
       restTimerEnabled: true,
       restAnalysisEnabled: false,
     });
-    expect(v10.verno).toBe(10);
     await v10.delete();
+  });
+
+  it('Version 11 ergänzt die Dashboard-Widgets und behält die Einstellungen', async () => {
+    const name = 'migration-test-v11';
+    const v10 = new Dexie(name);
+    v10.version(10).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+    });
+    await v10.table('settings').add({ id: 'app-settings', name: 'Alex' });
+    v10.close();
+
+    const v11 = new AppDatabase(name);
+    expect(await v11.settings.get('app-settings')).toMatchObject({
+      name: 'Alex',
+      dashboardWidgets: ['week', 'lastWorkout', 'records', 'activity'],
+    });
+    expect(v11.verno).toBe(11);
+    await v11.delete();
   });
 });

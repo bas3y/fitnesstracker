@@ -1,6 +1,6 @@
 import { db } from './database';
 import { create, update, type EntityChanges, type NewEntity } from './repository';
-import type { Settings } from './types';
+import { DEFAULT_DASHBOARD_WIDGETS, type Settings } from './types';
 
 // Feste ID statt UUID: Es gibt genau einen Einstellungs-Datensatz pro Gerät
 export const SETTINGS_ID = 'app-settings';
@@ -25,6 +25,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   seedVersion: 0,
   activePlanId: null,
   restAnalysisEnabled: false,
+  dashboardWidgets: [...DEFAULT_DASHBOARD_WIDGETS],
   ...REST_TIMER_DEFAULTS,
 };
 

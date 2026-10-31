@@ -4,11 +4,14 @@ import { Link } from 'react-router-dom';
 export function Page({
   title,
   backTo,
+  backState,
   children,
 }: {
   title: string;
   /** Unterseiten: Ziel des Zurück-Links */
   backTo?: string;
+  /** Reicht die Herkunft an die übergeordnete Seite weiter (siehe `useBackTo`) */
+  backState?: unknown;
   children: ReactNode;
 }) {
   return (
@@ -16,6 +19,7 @@ export function Page({
       {backTo && (
         <Link
           to={backTo}
+          state={backState}
           className="-ml-2 mb-1 inline-flex min-h-11 items-center px-2 text-sm font-medium text-emerald-700 dark:text-emerald-400"
         >
           ‹ Zurück
@@ -61,12 +65,14 @@ export function PlaceholderPage({
  */
 export function LinkRow({
   to,
+  state,
   label,
   hint,
   handle,
   action,
 }: {
   to: string;
+  state?: unknown;
   label: string;
   hint?: string;
   handle?: ReactNode;
@@ -77,6 +83,7 @@ export function LinkRow({
       {handle}
       <Link
         to={to}
+        state={state}
         className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 active:bg-slate-50 dark:active:bg-slate-700"
       >
         <span className="min-w-0">

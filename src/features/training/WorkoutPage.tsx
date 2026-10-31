@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useBackTo } from '../../components/backNavigation';
 import { dangerButton, inputField, primaryButton, secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card, Page } from '../../components/Page';
@@ -13,10 +14,11 @@ import { useActiveWorkout, useNow, useWorkoutDetail } from './useWorkouts';
 export function WorkoutPage() {
   const active = useActiveWorkout();
   const detail = useWorkoutDetail(active?.id);
+  const backTo = useBackTo(TRAINING_PATH);
 
   if (active === undefined || (active && detail === undefined)) {
     return (
-      <Page title="Workout" backTo={TRAINING_PATH}>
+      <Page title="Workout" backTo={backTo}>
         {null}
       </Page>
     );
@@ -28,8 +30,9 @@ export function WorkoutPage() {
 function NoActiveWorkout() {
   const navigate = useNavigate();
   const [confirmStart, setConfirmStart] = useState(false);
+  const backTo = useBackTo(TRAINING_PATH);
   return (
-    <Page title="Workout" backTo={TRAINING_PATH}>
+    <Page title="Workout" backTo={backTo}>
       <Card>
         <p className="mb-3 text-slate-600 dark:text-slate-400">Gerade läuft kein Workout.</p>
         <button type="button" className={primaryButton} onClick={() => setConfirmStart(true)}>
@@ -57,9 +60,10 @@ function ActiveWorkout({ detail }: { detail: WorkoutDetail }) {
   const { workout } = detail;
   const now = useNow();
   const [finishing, setFinishing] = useState(false);
+  const backTo = useBackTo(TRAINING_PATH);
 
   return (
-    <Page title={detail.planDayName ?? 'Workout'} backTo={TRAINING_PATH}>
+    <Page title={detail.planDayName ?? 'Workout'} backTo={backTo}>
       <p className="-mt-3 mb-4 text-sm text-slate-500 dark:text-slate-400">
         Gestartet {formatTime(workout.startedAt)} ·{' '}
         <span className="tabular-nums" aria-label="Dauer">
@@ -89,6 +93,8 @@ function ActiveWorkout({ detail }: { detail: WorkoutDetail }) {
 
 function FinishCard({ detail, onCancel }: { detail: WorkoutDetail; onCancel: () => void }) {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const backTo = useBackTo(TRAINING_PATH);
   const [notes, setNotes] = useState(detail.workout.notes);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const sets = detail.items.flatMap((item) => item.sets);
@@ -97,7 +103,7 @@ function FinishCard({ detail, onCancel }: { detail: WorkoutDetail; onCancel: () 
 
   const discard = async () => {
     await deleteWorkout(detail.workout.id);
-    navigate(TRAINING_PATH, { replace: true });
+    navigate(backTo, { replace: true });
   };
 
   return (
@@ -132,7 +138,7 @@ function FinishCard({ detail, onCancel }: { detail: WorkoutDetail; onCancel: () 
                 className={primaryButton}
                 onClick={async () => {
                   await finishWorkout(detail.workout.id, notes);
-                  navigate(`${HISTORY_PATH}/${detail.workout.id}`, { replace: true });
+                  navigate(`${HISTORY_PATH}/${detail.workout.id}`, { replace: true, state });
                 }}
               >
                 Speichern

@@ -1,4 +1,18 @@
-import type { Equipment, ExerciseCategory, FoodCategory, MuscleGroup } from '../db/types';
+import type {
+  DashboardWidget,
+  Equipment,
+  ExerciseCategory,
+  FoodCategory,
+  MuscleGroup,
+} from '../db/types';
+
+export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hint: string }> = {
+  week: { name: 'Diese Woche', hint: 'Workouts, Sätze und Volumen' },
+  lastWorkout: { name: 'Letztes Workout', hint: 'Dein letztes Training auf einen Blick' },
+  records: { name: 'Erfolge', hint: 'Deine neuesten Rekorde' },
+  activity: { name: 'Trainingstage', hint: 'Heatmap der letzten 3 Monate' },
+  nextTraining: { name: 'Nächstes Training', hint: 'Vorschlag aus deinem Plan mit Startknopf' },
+};
 
 export const EXERCISE_CATEGORY_LABELS: Record<ExerciseCategory, string> = {
   strength: 'Kraft',

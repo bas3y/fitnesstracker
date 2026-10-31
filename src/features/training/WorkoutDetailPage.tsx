@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useBackTo } from '../../components/backNavigation';
 import { dangerButton, secondaryButton } from '../../components/buttons';
 import { TrophyIcon } from '../../components/icons';
 import { Card, Page } from '../../components/Page';
@@ -19,10 +20,11 @@ import { useWorkoutDetail, useWorkoutRecords } from './useWorkouts';
 export function WorkoutDetailPage() {
   const { id } = useParams();
   const detail = useWorkoutDetail(id);
+  const backTo = useBackTo(HISTORY_PATH);
 
   if (detail === undefined) {
     return (
-      <Page title="Workout" backTo={HISTORY_PATH}>
+      <Page title="Workout" backTo={backTo}>
         {null}
       </Page>
     );
@@ -33,8 +35,9 @@ export function WorkoutDetailPage() {
 }
 
 export function WorkoutNotFound() {
+  const backTo = useBackTo(HISTORY_PATH);
   return (
-    <Page title="Workout nicht gefunden" backTo={HISTORY_PATH}>
+    <Page title="Workout nicht gefunden" backTo={backTo}>
       <Card>
         <p className="text-slate-600 dark:text-slate-400">Dieses Workout gibt es nicht (mehr).</p>
       </Card>
@@ -46,9 +49,11 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
   const { workout, planDayName, items } = detail;
   const unit = useSettings()?.weightUnit ?? 'kg';
   const records = useWorkoutRecords(workout.id);
+  const { state } = useLocation();
+  const backTo = useBackTo(HISTORY_PATH);
 
   return (
-    <Page title={formatWorkoutDate(workout.startedAt)} backTo={HISTORY_PATH}>
+    <Page title={formatWorkoutDate(workout.startedAt)} backTo={backTo}>
       <p className="-mt-3 mb-4 text-sm text-slate-500 dark:text-slate-400">
         {planDayName && `${planDayName} · `}
         {formatTime(workout.startedAt)} Uhr · Dauer{' '}
@@ -110,7 +115,7 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
       })}
       <Card>
         <div className="flex flex-col gap-2">
-          <Link to={`${HISTORY_PATH}/${workout.id}/edit`} className={secondaryButton}>
+          <Link to={`${HISTORY_PATH}/${workout.id}/edit`} state={state} className={secondaryButton}>
             Bearbeiten
           </Link>
           <DeleteWorkoutButton id={workout.id} />
@@ -122,6 +127,7 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
 
 function DeleteWorkoutButton({ id }: { id: string }) {
   const navigate = useNavigate();
+  const backTo = useBackTo(HISTORY_PATH);
   const [confirming, setConfirming] = useState(false);
 
   if (!confirming) {
@@ -143,7 +149,7 @@ function DeleteWorkoutButton({ id }: { id: string }) {
           className={dangerButton}
           onClick={async () => {
             await deleteWorkout(id);
-            navigate(HISTORY_PATH, { replace: true });
+            navigate(backTo, { replace: true });
           }}
         >
           Endgültig löschen

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useFromHere } from '../../components/backNavigation';
 import { primaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card } from '../../components/Page';
@@ -17,6 +18,8 @@ export function TrainingStartCard({ compact = false }: { compact?: boolean }) {
   const now = useNow(!!active);
   const activePlan = useActivePlanSuggestion();
   const [confirmStart, setConfirmStart] = useState(false);
+  const from = useFromHere();
+  const backState = compact ? from : undefined;
 
   if (active) {
     return (
@@ -25,7 +28,7 @@ export function TrainingStartCard({ compact = false }: { compact?: boolean }) {
           Workout läuft seit {formatTime(active.startedAt)} (
           {formatClock(workoutDurationSeconds(active, now))}).
         </p>
-        <Link to={WORKOUT_PATH} className={primaryButton}>
+        <Link to={WORKOUT_PATH} state={backState} className={primaryButton}>
           Workout fortsetzen
         </Link>
       </Card>
@@ -50,7 +53,7 @@ export function TrainingStartCard({ compact = false }: { compact?: boolean }) {
           onCancel={() => setConfirmStart(false)}
           onConfirm={async () => {
             await startWorkout();
-            navigate(WORKOUT_PATH);
+            navigate(WORKOUT_PATH, { state: backState });
           }}
         >
           Du startest ein leeres Workout und fügst die Übungen selbst hinzu.

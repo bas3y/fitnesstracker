@@ -10,7 +10,7 @@ import {
 } from './schemas';
 import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
-import { LOAD_TYPES, PLAN_SCHEDULES } from './types';
+import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_WIDGETS, LOAD_TYPES, PLAN_SCHEDULES } from './types';
 
 export const BACKUP_APP = 'fitnesstracker';
 export const BACKUP_VERSION = 1;
@@ -42,6 +42,8 @@ const settingsSchema = baseEntitySchema.extend({
   // Seit DB-Version 10
   restTimerEnabled: z.boolean().default(REST_TIMER_DEFAULTS.restTimerEnabled),
   restAnalysisEnabled: z.boolean().default(false),
+  // Seit DB-Version 11
+  dashboardWidgets: z.array(z.enum(DASHBOARD_WIDGETS)).default([...DEFAULT_DASHBOARD_WIDGETS]),
 });
 
 const catalogEntryFields = {

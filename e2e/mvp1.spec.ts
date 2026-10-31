@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { confirmStart, fillStepper, goOffline, skipRest } from './helpers';
+import { confirmStart, dragTo, fillStepper, goOffline, skipRest } from './helpers';
 
 const BENCH = 'Bankdrücken (Langhantel)';
 
@@ -13,10 +13,33 @@ const weekTiles = (page: Page) =>
     .filter({ has: page.getByRole('heading', { name: 'Diese Woche' }) })
     .locator('dd');
 
+const dashboardHeading = (page: Page) =>
+  page.getByRole('heading', { level: 1, name: 'Fitnesstracker' });
+
 async function finishWorkout(page: Page) {
   await page.getByRole('button', { name: 'Workout beenden' }).click();
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(page).toHaveURL(/#\/training\/history\/[\w-]+$/);
+}
+
+/** Einfaches Workout mit einem Satz, danach zeigt die Seite das beendete Workout */
+async function logWorkout(page: Page, weight: string) {
+  await openNav(page, 'Training');
+  await page.getByRole('button', { name: 'Workout starten' }).click();
+  await confirmStart(page);
+  await page.getByRole('button', { name: '+ Übung hinzufügen' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Übung hinzufügen' });
+  await dialog.getByRole('searchbox', { name: 'Übung suchen' }).fill(BENCH);
+  await dialog
+    .getByRole('button', { name: /^Bankdrücken \(Langhantel\)/ })
+    .first()
+    .click();
+  const bench = page.getByRole('region', { name: BENCH });
+  await fillStepper(bench, 'Gewicht', weight);
+  await fillStepper(bench, 'Wiederholungen', '10');
+  await bench.getByRole('button', { name: 'Satz abhaken' }).click();
+  await skipRest(page);
+  await finishWorkout(page);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -26,7 +49,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('MVP 1 komplett: Plan, Training vom Dashboard, Statistik, CSV und Backup (offline)', async ({
+test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offline)', async ({
   page,
   context,
 }, testInfo) => {
@@ -34,9 +57,9 @@ test('MVP 1 komplett: Plan, Training vom Dashboard, Statistik, CSV und Backup (o
   await goOffline(page, context);
   await page.reload();
 
-  // Leeres Dashboard
+  // Leeres Dashboard: nur Zusammenfassung, kein Trainingsstart
   await expect(page.getByText('Nach deinem ersten Workout')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Workout starten' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Workout starten' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Diese Woche' })).toHaveCount(0);
 
   // CSV gibt es erst nach dem ersten Workout
@@ -44,15 +67,14 @@ test('MVP 1 komplett: Plan, Training vom Dashboard, Statistik, CSV und Backup (o
   await page.getByRole('button', { name: 'Workouts als CSV exportieren' }).click();
   await expect(page.getByRole('alert')).toContainText('Noch keine beendeten Workouts');
 
-  // Plan aus Vorlage anlegen
+  // Plan aus Vorlage, erstes Training über die Trainingsseite
   await openNav(page, 'Training');
   await page.getByRole('link', { name: /Trainingspläne/ }).click();
   await page.getByRole('link', { name: '+ Neuer Plan' }).click();
   await page.getByRole('button', { name: /Push\/Pull\/Legs/ }).click();
   await expect(page.getByText('Aktiver Plan')).toBeVisible();
 
-  // Erstes Training direkt vom Dashboard
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Training');
   await expect(page.getByText('Erstes Training des Plans')).toBeVisible();
   await page.getByRole('button', { name: 'Push starten' }).click();
   await confirmStart(page);
@@ -64,15 +86,15 @@ test('MVP 1 komplett: Plan, Training vom Dashboard, Statistik, CSV und Backup (o
   await skipRest(page);
   await finishWorkout(page);
 
-  // Dashboard zeigt das Training, der Vorschlag rückt weiter, noch kein Rekord
+  // Dashboard zeigt das Training, noch kein Rekord
   await openNav(page, 'Dashboard');
   await expect(weekTiles(page)).toHaveText(['1', '1', '600']);
   await expect(page.getByRole('link', { name: /^Push/ })).toContainText('1 Satz');
-  await expect(page.getByRole('button', { name: 'Pull starten' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Neueste Rekorde' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Erfolge' })).toHaveCount(0);
 
-  // Zweites Training: Auswahl über die Trainingsseite, Abstecher zum Dashboard
-  await page.getByRole('link', { name: 'Anderes Training' }).click();
+  // Zweites Training, Abstecher zum Dashboard, Fortsetzen über den Hinweis
+  await openNav(page, 'Training');
+  await expect(page.getByRole('button', { name: 'Pull starten' })).toBeVisible();
   await page.getByRole('button', { name: 'Anderes Training wählen' }).click();
   await page
     .getByRole('list', { name: 'Trainings des Plans' })
@@ -86,22 +108,21 @@ test('MVP 1 komplett: Plan, Training vom Dashboard, Statistik, CSV und Backup (o
   await skipRest(page);
 
   await openNav(page, 'Dashboard');
-  await page.getByRole('link', { name: 'Workout fortsetzen' }).click();
+  await page.getByRole('status').filter({ hasText: 'Workout läuft' }).click();
   await expect(page.getByRole('heading', { name: 'Push', level: 1 })).toBeVisible();
   await finishWorkout(page);
 
-  // Dashboard nach dem Neuladen: Woche, Rekorde, Heatmap
+  // Dashboard nach dem Neuladen: Woche, Erfolge, Heatmap
   await openNav(page, 'Dashboard');
   await page.reload();
   await expect(weekTiles(page)).toHaveText(['2', '2', '1225']);
-  const record = page.getByRole('link', { name: new RegExp(`^${BENCH.replace(/[()]/g, '\\$&')}`) });
+  const record = page.getByRole('link', { name: /^Bankdrücken \(Langhantel\)/ });
   await expect(record).toContainText('Gewicht: 62,5 kg');
   await expect(record).toContainText('Geschätztes 1RM: 83,3 kg');
   await expect(record).toContainText('(+2)');
 
   const heatmap = page.getByTestId('heatmap');
   await expect(page.getByText('1 Trainingstag in den letzten 3 Monaten')).toBeVisible();
-  await expect(heatmap.getByRole('button')).not.toHaveCount(0);
   await heatmap.getByRole('button', { name: /: 2 Sätze$/ }).click();
   await expect(page.getByRole('link', { name: 'Workout öffnen' })).toHaveCount(2);
 
@@ -112,7 +133,7 @@ test('MVP 1 komplett: Plan, Training vom Dashboard, Statistik, CSV und Backup (o
 
   // Statistik (eigener Chunk, muss offline aus dem Precache kommen)
   await openNav(page, 'Statistik');
-  await page.getByRole('link', { name: new RegExp(BENCH.replace(/[()]/g, '\\$&')) }).click();
+  await page.getByRole('link', { name: /Bankdrücken \(Langhantel\)/ }).click();
   await expect(page.getByTestId('history-summary')).toHaveText('60 kg → 62,5 kg (+4,2 %)');
 
   // CSV-Export: eine Zeile je Satz
@@ -155,14 +176,119 @@ test('MVP 1 komplett: Plan, Training vom Dashboard, Statistik, CSV und Backup (o
   await openNav(page, 'Dashboard');
   await expect(weekTiles(page)).toHaveText(['2', '2', '1225']);
   await expect(record).toContainText('Gewicht: 62,5 kg');
+  await openNav(page, 'Training');
   await expect(page.getByRole('button', { name: 'Pull starten' })).toBeVisible();
 });
 
-test('Dashboard ohne Plan startet ein freies Workout (offline)', async ({ page, context }) => {
+test('Zurück führt dorthin, woher man kam (offline)', async ({ page, context }) => {
   await page.goto('./');
   await goOffline(page, context);
+  await logWorkout(page, '60');
 
+  // Vom Dashboard über Bearbeiten und wieder zurück zum Dashboard
+  await openNav(page, 'Dashboard');
+  await page.getByRole('link', { name: /^Bankdrücken \(Langhantel\)/ }).click();
+  await page.getByRole('link', { name: 'Bearbeiten' }).click();
+  await expect(page.getByRole('heading', { name: 'Workout bearbeiten' })).toBeVisible();
+  await page.getByRole('link', { name: 'Fertig' }).click();
+  await page.getByRole('link', { name: 'Bearbeiten' }).click();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(page.getByRole('link', { name: 'Bearbeiten' })).toBeVisible();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(dashboardHeading(page)).toBeVisible();
+
+  // Heatmap auf dem Dashboard
+  await page
+    .getByTestId('heatmap')
+    .getByRole('button', { name: /: 1 Satz$/ })
+    .click();
+  await page.getByRole('link', { name: 'Workout öffnen' }).click();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(dashboardHeading(page)).toBeVisible();
+
+  // Heatmap in der Statistik: Filter bleiben erhalten
+  await openNav(page, 'Statistik');
+  await page.getByRole('button', { name: '4 Wo.' }).click();
+  await page
+    .getByTestId('heatmap')
+    .getByRole('button', { name: /: 1 Satz$/ })
+    .click();
+  await page.getByRole('link', { name: 'Workout öffnen' }).click();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(page.getByRole('button', { name: '4 Wo.' })).toHaveAttribute('aria-pressed', 'true');
+
+  // Über den Verlauf bleibt es beim Verlauf
+  await openNav(page, 'Training');
+  await page.getByRole('link', { name: /^Verlauf/ }).click();
+  await page.getByRole('list', { name: 'Workouts' }).getByRole('link').first().click();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(page.getByRole('heading', { name: 'Verlauf' })).toBeVisible();
+
+  // Laufendes Workout vom Dashboard aus öffnen
+  await openNav(page, 'Training');
+  await page.getByRole('button', { name: 'Workout starten' }).click();
+  await confirmStart(page);
+  await openNav(page, 'Dashboard');
+  await page.getByRole('status').filter({ hasText: 'Workout läuft' }).click();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(dashboardHeading(page)).toBeVisible();
+});
+
+test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', async ({
+  page,
+  context,
+}) => {
+  await page.goto('./');
+  await goOffline(page, context);
+  await logWorkout(page, '60');
+  await logWorkout(page, '62,5');
+  await openNav(page, 'Dashboard');
+
+  const headings = page.getByRole('main').getByRole('heading', { level: 2 });
+  await expect(headings).toHaveText(['Diese Woche', 'Letztes Workout', 'Erfolge', 'Trainingstage']);
+
+  await page.getByRole('button', { name: 'Anpassen' }).click();
+  const list = page.getByRole('list', { name: 'Widgets', exact: true });
+  // Nur die Zeilen, nicht die Listen in den Vorschauen
+  const widgets = list.locator(':scope > li');
+  await expect(widgets).toHaveCount(4);
+
+  // Vorschau ist nicht antippbar
+  await expect(list.locator('[inert]')).toHaveCount(4);
+
+  // Ziehen: Erfolge nach ganz oben
+  await dragTo(page, page.getByRole('button', { name: 'Erfolge verschieben' }), widgets.first());
+  await expect(page.getByRole('button', { name: /verschieben$/ }).first()).toHaveAccessibleName(
+    'Erfolge verschieben',
+  );
+
+  // Entfernen und hinzufügen
+  await page.getByRole('button', { name: 'Trainingstage entfernen' }).click();
+  await expect(widgets).toHaveCount(3);
+  await page.getByRole('button', { name: 'Nächstes Training hinzufügen' }).click();
+  await expect(widgets).toHaveCount(4);
+  await expect(page.getByRole('list', { name: 'Weitere Widgets' }).getByRole('button')).toHaveCount(
+    1,
+  );
+  await page.getByRole('button', { name: 'Fertig' }).click();
+
+  // Bleibt nach dem Neuladen erhalten
+  await page.reload();
+  await expect(headings.first()).toHaveText('Erfolge');
+  await expect(page.getByRole('heading', { name: 'Trainingstage' })).toHaveCount(0);
+
+  // Trainingsstart als Widget: Zurück führt zum Dashboard
   await page.getByRole('button', { name: 'Workout starten' }).click();
   await confirmStart(page);
   await expect(page).toHaveURL(/#\/training\/workout$/);
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(dashboardHeading(page)).toBeVisible();
+
+  // Alles entfernen
+  await page.getByRole('button', { name: 'Anpassen' }).click();
+  for (const name of ['Erfolge', 'Diese Woche', 'Letztes Workout', 'Nächstes Training']) {
+    await page.getByRole('button', { name: `${name} entfernen` }).click();
+  }
+  await page.getByRole('button', { name: 'Fertig' }).click();
+  await expect(page.getByText('Keine Widgets ausgewählt.')).toBeVisible();
 });

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useFromHere } from '../../components/backNavigation';
 import { primaryButton, secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card } from '../../components/Page';
@@ -36,6 +37,7 @@ export function PlanSuggestionCard({
   compact?: boolean;
 }) {
   const navigate = useNavigate();
+  const from = useFromHere();
   const [choosing, setChoosing] = useState(false);
   // Gestartet wird erst nach der Rückfrage: ein Training bzw. 'free' für das freie Training
   const [pending, setPending] = useState<PlanDayDetail | 'free' | null>(null);
@@ -45,7 +47,7 @@ export function PlanSuggestionCard({
   const start = async () => {
     if (pending === 'free') await startWorkout();
     else if (pending) await startPlanWorkout(pending.day.id);
-    navigate(WORKOUT_PATH);
+    navigate(WORKOUT_PATH, { state: compact ? from : undefined });
   };
 
   const confirm = pending && (

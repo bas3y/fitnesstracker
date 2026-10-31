@@ -383,8 +383,8 @@ Hinweise:
 
 **Notizen:**
 - Gebaut:
-  - **Dashboard** (`src/features/dashboard/HomePage.tsx`): Trainingskarte, „Diese Woche“ (Workouts, Sätze, Volumen), „Letztes Workout“, „Neueste Rekorde“ (höchstens 3 Zeilen, je Zeile 2 Rekorde + „(+n)“), Mini-Heatmap (14 Wochen). Ohne beendetes Workout nur Trainingskarte und Hinweis.
-  - `TrainingStartCard` (`src/features/training/`) aus der Trainingsseite herausgelöst (Fortsetzen, Plan-Vorschlag oder leeres Workout), auch auf dem Dashboard. `PlanSuggestionCard` hat dort `compact`: Start plus Link „Anderes Training“ zur Trainingsseite.
+  - **Dashboard** (`src/features/dashboard/HomePage.tsx`): „Diese Woche“ (Workouts, Sätze, Volumen), „Letztes Workout“, „Erfolge“ (höchstens 3 Zeilen, je Zeile 2 Rekorde + „(+n)“), Mini-Heatmap (14 Wochen), siehe Nachtrag. Ohne beendetes Workout nur ein Hinweis.
+  - `TrainingStartCard` (`src/features/training/`) aus der Trainingsseite herausgelöst (Fortsetzen, Plan-Vorschlag oder leeres Workout). `compact` = als Widget: Start plus Link „Anderes Training“ zur Trainingsseite.
   - `ActivityCard` (`src/features/stats/`) aus `StatsPage` herausgelöst, Prop `span` (`'3m'` | `'1y'`).
   - `weekSummary`, `recentRecords` in `src/domain/stats.ts` (Kalenderwoche ab Montag; Rekorde rückwärts berechnet, damit nur die nötige Historie läuft).
   - **CSV-Export** (Einstellungen → Export): `workoutsToCsv` in `src/domain/csv.ts`, `createWorkoutsCsvFile` in `src/db/workoutExport.ts`, `ExportSection`, Teilen/Download über `shareOrDownload`.
@@ -409,9 +409,15 @@ Hinweise:
   - CSV zählt nicht als Backup: `lastBackupAt` bleibt unverändert, ein Import ist nicht vorgesehen.
   - Volumen auf dem Dashboard wie überall ohne Stufen und Halteübungen, Körpergewichtsübungen mit aktuellem Körpergewicht.
   - **Zusatz:** `useActivePlanSuggestion` rechnet beim Tageswechsel neu, weil die installierte App oft über Nacht geöffnet bleibt.
-  - `App.test.tsx`: längere Wartezeiten, weil Routen dort jetzt beim ersten Aufruf geladen werden.
+  - `App.test.tsx` lädt die Lazy-Routen vorab. Der Test schlug vorher zweimal sporadisch fehl (Ursache nicht nachgestellt, auch nicht ohne Vitest-Cache).
+  - Nachtrag nach Nutzer-Feedback:
+    - **Zurück zur Herkunft:** Links in einen anderen Bereich geben `state={ from }` mit (`src/components/backNavigation.ts`: `useFromHere`, `useBackTo`). Betrifft Workout-Detail, Bearbeiten (reicht die Herkunft weiter über `Page`-Prop `backState`) und laufendes Workout, jeweils vom Dashboard, vom Hinweis „Workout läuft“ und von der Heatmap (auch in der Statistik). Ohne Herkunft gilt weiter die feste übergeordnete Seite. Nach dem Beenden eines Workouts, das über den Hinweis geöffnet wurde, führt „Zurück“ deshalb zur Herkunft statt zum Verlauf; beim Start über die Trainingsseite bleibt es beim Verlauf.
+    - **Widgets statt Trainingsstart:** Das Dashboard zeigt nur noch die Zusammenfassung. „Anpassen“ öffnet eine Vorschau der Widgets: am Griff ziehen (klappt dabei auf die Kopfzeile zusammen), ✕ entfernt, „Weitere Widgets“ fügt hinzu. Dexie v11, `Settings.dashboardWidgets` (geordnet, nur sichtbare), Backup-Default. Widgets: Diese Woche, Letztes Workout, Erfolge, Trainingstage, plus „Nächstes Training“ (`TrainingStartCard compact`), standardmäßig aus. „Neueste Rekorde“ heißt jetzt „Erfolge“.
+    - Widgets haben nur eine Größe. iPhone-artige kleine/große Kacheln und Nebeneinander sind nicht umgesetzt, nur die Reihenfolge untereinander.
 - Offene Punkte:
-  - Schritt 9: Dashboard-Kacheln für den Alltag unter „Diese Woche“ ergänzen.
+  - Schritt 9: Alltag als neues Widget ergänzen (`DASHBOARD_WIDGETS`, `DASHBOARD_WIDGET_LABELS`, `renderWidget` in `HomePage.tsx`). Bei bestehenden Nutzern erscheint es unter „Weitere Widgets“, nicht automatisch auf dem Dashboard.
+  - Ziehen auf der Vorschau auf dem echten Handy prüfen: Die Griffe sitzen links in der Kopfzeile, Widgets können hoch sein.
+  - Lighthouse wurde nach dem Nachtrag nicht erneut ausgeführt.
   - Schritt 15: `ActivityCard` und `weekSummary` um Ausdauer erweitern.
   - Dashboard-TBT von rund 300 ms beim Start bleibt (React, Dexie, Zod). Zod lässt sich nicht verzögern, weil `src/db/schemas.ts` beim Speichern gebraucht wird.
   - Teilen-Dialog für die CSV-Datei und das Öffnen in Excel nur auf echten Geräten prüfbar (E2E testet den Download-Fallback).

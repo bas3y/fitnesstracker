@@ -1,14 +1,15 @@
 import Dexie, { type Table } from 'dexie';
-import type {
-  Exercise,
-  Food,
-  Plan,
-  PlanDay,
-  PlanExercise,
-  Settings,
-  Workout,
-  WorkoutExercise,
-  WorkoutSet,
+import {
+  DEFAULT_DASHBOARD_WIDGETS,
+  type Exercise,
+  type Food,
+  type Plan,
+  type PlanDay,
+  type PlanExercise,
+  type Settings,
+  type Workout,
+  type WorkoutExercise,
+  type WorkoutSet,
 } from './types';
 
 export const DB_NAME = 'fitnesstracker';
@@ -171,6 +172,17 @@ export class AppDatabase extends Dexie {
           .modify((settings) => {
             settings.restTimerEnabled ??= true;
             settings.restAnalysisEnabled ??= false;
+          }),
+      );
+    // Dashboard mit anpassbaren Widgets
+    this.version(11)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.dashboardWidgets ??= [...DEFAULT_DASHBOARD_WIDGETS];
           }),
       );
   }

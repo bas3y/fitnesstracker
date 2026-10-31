@@ -32,7 +32,24 @@ export interface Settings extends BaseEntity {
   restAnalysisEnabled: boolean;
   /** Plan, aus dem das heutige Training vorgeschlagen wird */
   activePlanId: string | null;
+  /** Sichtbare Widgets auf dem Dashboard, in Anzeigereihenfolge */
+  dashboardWidgets: DashboardWidget[];
 }
+
+export const DASHBOARD_WIDGETS = [
+  'week',
+  'lastWorkout',
+  'records',
+  'activity',
+  'nextTraining',
+] as const;
+export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
+export const DEFAULT_DASHBOARD_WIDGETS: readonly DashboardWidget[] = [
+  'week',
+  'lastWorkout',
+  'records',
+  'activity',
+];
 
 /** `builtin` = aus `src/data/`, wird per Seed aktualisiert; `user` = selbst angelegt, nie überschrieben */
 export type DataSource = 'builtin' | 'user';

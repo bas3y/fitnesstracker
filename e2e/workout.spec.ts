@@ -92,9 +92,12 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
   await expect(page.getByText('Starker Tag')).toBeVisible();
   await expect(page.getByText('62,5 kg × 10')).toBeVisible();
 
-  // Nach Neuladen in der Historie
+  // Nach Neuladen in der Historie; das Workout wurde vom Dashboard aus geöffnet
   await page.reload();
   await page.getByRole('link', { name: 'Zurück' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Fitnesstracker' })).toBeVisible();
+  await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Training').click();
+  await page.getByRole('link', { name: /^Verlauf/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Verlauf' })).toBeVisible();
   const history = page.getByRole('list', { name: 'Workouts' });
   await expect(history.getByRole('listitem')).toHaveCount(1);

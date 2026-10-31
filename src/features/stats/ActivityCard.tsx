@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useFromHere } from '../../components/backNavigation';
 import { Heatmap } from '../../components/Heatmap';
 import { Card } from '../../components/Page';
 import {
@@ -30,6 +31,7 @@ export function ActivityCard({
   span?: keyof typeof SPANS;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const from = useFromHere();
   const days = summarizeDays(sessions);
   const values = new Map([...days].map(([key, day]) => [key, day.sets]));
   const day = selected ? days.get(selected) : undefined;
@@ -57,6 +59,7 @@ export function ActivityCard({
             <Link
               key={id}
               to={`${HISTORY_PATH}/${id}`}
+              state={from}
               className="inline-flex min-h-11 items-center font-medium text-emerald-700 dark:text-emerald-400"
             >
               Workout öffnen ›

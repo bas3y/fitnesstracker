@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { inputField, primaryButton } from '../../components/buttons';
 import { Card, Page } from '../../components/Page';
 import { Stepper } from '../../components/Stepper';
@@ -35,11 +35,12 @@ export function WorkoutEditPage() {
 
 function EditWorkout({ detail }: { detail: WorkoutDetail }) {
   const detailPath = `${HISTORY_PATH}/${detail.workout.id}`;
+  const { state } = useLocation();
   return (
-    <Page title="Workout bearbeiten" backTo={detailPath}>
+    <Page title="Workout bearbeiten" backTo={detailPath} backState={state}>
       <InfoCard workout={detail.workout} />
       <WorkoutEditor detail={detail} mode="edit" />
-      <Link to={detailPath} className={`${primaryButton} mb-4`}>
+      <Link to={detailPath} state={state} className={`${primaryButton} mb-4`}>
         Fertig
       </Link>
     </Page>
