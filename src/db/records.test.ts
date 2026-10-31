@@ -1,3 +1,5 @@
+import { toDateInput } from '../domain/workout';
+import { updateDailyLog } from './daily';
 import { db } from './database';
 import {
   countWorkoutRecords,
@@ -144,6 +146,25 @@ describe('PR beim Abhaken', () => {
       'setVolume',
       'reps',
     ]);
+  });
+
+  it('rechnet mit dem Körpergewicht vom Tag des Workouts', async () => {
+    const first = await loggedWorkout(pullUp, [[0, 8]]);
+    const second = await loggedWorkout(pullUp, [[0, 8]]);
+    await updateDailyLog(toDateInput(first.workout.startedAt), { weightKg: 70 });
+    await updateDailyLog(toDateInput(second.workout.startedAt), { weightKg: 90 });
+    await updateSettings({ bodyWeightKg: 100 });
+
+    const sessions = await loadExerciseSessions(pullUp.id);
+    expect(sessions.map((session) => session.workout.id)).toEqual([
+      first.workout.id,
+      second.workout.id,
+    ]);
+    expect(sessions.map((session) => session.sets[0]!.bodyWeightKg)).toEqual([70, 90]);
+
+    // Gleiche Wdh., aber 20 kg mehr Körpergewicht
+    const records = await getWorkoutRecords(second.workout.id);
+    expect(records.get(second.setIds[0]!)!.map((record) => record.type)).toContain('oneRepMax');
   });
 
   it('liefert für offene oder unbekannte Sätze nichts', async () => {

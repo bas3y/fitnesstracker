@@ -16,7 +16,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 6b – Offene Punkte aus Schritt 6 & Handytest
 - [x] Schritt 7 – Statistiken & Graphen (Kraft)
 - [x] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
-- [ ] Schritt 9 – Tägliches Tracking
+- [x] Schritt 9 – Tägliches Tracking
 - [ ] Schritt 10 – Habit-Tracker
 - [ ] Schritt 11 – Supplements
 - [ ] Schritt 12 – Ernährung (MVP 2 fertig)
@@ -435,8 +435,26 @@ Hinweise:
 
 **Notizen:**
 - Gebaut:
+  - Dexie v12: Tabellen `dailyLogs` (`date`, `steps`, `waterMl`, `sleepSeconds`, `sleepQuality`, `weightKg`, `mood`, `energy`) und `bodyMeasurements` (`date`, `values`: gemessene Stellen in Metern), je ein aktiver Eintrag pro Tag. Tagesziele `Settings.stepsGoal`/`waterGoalMl`/`sleepGoalSeconds` (10.000 Schritte, 2,5 l, 8 h). Backup-Defaults, Sicherungen aus v1–v11 bleiben importierbar.
+  - `src/db/daily.ts`: `updateDailyLog`, `addWater` (addiert im selben Schreibvorgang), `setCurrentBodyWeight`, `loadBodyWeights`, `setBodyMeasure`, `deleteBodyMeasurement`. `src/domain/daily.ts`: Tage (`dayKey`, `shiftDay`, `formatDayLabel`), `bodyWeightOn`, Kennzahlen (`dailyPoints`, `goalDays`, `goalPercent`), Körpermaße. `src/domain/units.ts`: `bodyLengthToDisplay` u. a.
+  - UI in `src/features/daily/`: `DailyPage` (`/daily`, Tag in der URL als `?date=`, Wasser mit +250/+500 ml, Schritte, Schlaf + Qualität, Gewicht, Stimmung, Energie; alles sofort gespeichert), `DailyHistoryPage` (`/daily/history`, Zeitraum, Kennzahl, Durchschnitt, Tage mit erreichtem Ziel), `BodyMeasurementsPage` (`/daily/measurements`, Maße je Tag, Verlauf, Liste mit ✕), `TodayCard` (Dashboard-Widget „Heute“ mit Schnelleingabe +250 ml), `DayNavigator`, `RatingPicker`, `GoalBar`. Einstellungen: Karte „Tagesziele“.
+  - **Offener Punkt aus Schritt 5/7 erledigt:** Körpergewichtsübungen rechnen mit dem Gewicht vom Tag des Workouts. `loadExerciseSessions`, `countWorkoutRecords` und `loadStatsSessions` geben jedem Satz `bodyWeightKg` mit (`withBodyWeight`), `effectiveLoadKg` bevorzugt diesen Wert vor `ExerciseKind.bodyWeightKg`.
+  - Tests: `src/domain/daily.test.ts`, `src/db/daily.test.ts`, Gewicht zum Workout-Tag (`records`, `stats`, `strength`), Migration v11→v12, Backup. E2E `e2e/daily.spec.ts` offline in beiden Viewports (Tag erfassen, Nachtrag, Neuladen, Ziel ändern, Verlauf, Widget, Körpermaße).
 - Abweichungen:
+  - **Gewicht an einer Stelle:** Das neueste eingetragene Gewicht wird automatisch `Settings.bodyWeightKg`. Das Gewicht in den Einstellungen zu ändern trägt es als Gewicht von heute ein. Leeren in den Einstellungen löscht nur den heutigen Wert, ältere Einträge bleiben; beim nächsten Eintrag gilt wieder das neueste Gewicht.
+  - Vor dem ersten Gewichtseintrag zählt für alte Workouts dieser erste Eintrag, ohne jeden Eintrag wie bisher das Gewicht aus den Einstellungen. Bestehende Kurven ändern sich beim Umstieg daher kaum.
+  - Wert 0 gilt in Auswertungen als nicht erfasst (Wasser steht z. B. nach +250 und −250 wieder auf 0), sonst zögen solche Tage den Durchschnitt nach unten.
+  - Schlaf zählt zu dem Tag, an dem man aufwacht („Die Nacht vor diesem Tag“).
+  - Wasser in ml wie in der Roadmap, nicht in Gramm. Körpermaße intern in Metern, Anzeige in cm bzw. Zoll, wenn die Distanzeinheit Meilen ist. Zusätzlich zu Brust, Taille, Hüfte, Arm und Oberschenkel gibt es Hals und Wade. Arm und Oberschenkel werden nicht nach links/rechts getrennt.
+  - Es gibt ein Widget „Heute“ mit vier Kacheln statt mehrerer einzelner Widgets. Nicht in den Standard-Widgets: Wie in Schritt 8 notiert, steht es unter „Anpassen → Weitere Widgets“.
+  - Der Verlauf zeigt je Kennzahl einen Graphen mit Auswahl statt aller Graphen untereinander. `ProgressChart` zeigt ab 60 Punkten keine Einzelpunkte mehr.
+  - `useStatsFilter` wird auch im Alltag-Verlauf für den Zeitraum verwendet.
 - Offene Punkte:
+  - `input type="date"` und die Stepper auf dem echten Handy prüfen (auf dem iPhone sieht der Datumsdialog anders aus als am PC).
+  - CSV-Export enthält die Alltagsdaten nicht (nur Workouts). Bei Bedarf ergänzen.
+  - Anteil des Körpergewichts je Übung (Liegestütze ≈ 65 %) bleibt offen, gerechnet wird weiter mit 100 %.
+  - Lighthouse wurde nicht erneut ausgeführt. Das Hauptbundle ist um rund 5 KB gewachsen (262 KB), Recharts bleibt im eigenen Chunk.
+  - Schritt 10: Habits auf `DailyPage` einhängen, `DayNavigator`/`useDayParam` wiederverwenden. Schritt 12: Tagesziele für Kalorien/Protein in `Settings` analog ergänzen, Trainingstag aus den Workouts ableiten.
 
 ### Schritt 10 – Habit-Tracker
 - `habits` (Name, Icon, Frequenz: täglich / x-mal pro Woche / bestimmte Wochentage, Gruppe Morgen/Abend/Sonstiges), `habitChecks`

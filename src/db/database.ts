@@ -1,6 +1,9 @@
 import Dexie, { type Table } from 'dexie';
+import { DAILY_GOAL_DEFAULTS } from './schemas';
 import {
   DEFAULT_DASHBOARD_WIDGETS,
+  type BodyMeasurement,
+  type DailyLog,
   type Exercise,
   type Food,
   type Plan,
@@ -25,6 +28,8 @@ export class AppDatabase extends Dexie {
   plans!: Table<Plan, string>;
   planDays!: Table<PlanDay, string>;
   planExercises!: Table<PlanExercise, string>;
+  dailyLogs!: Table<DailyLog, string>;
+  bodyMeasurements!: Table<BodyMeasurement, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -183,6 +188,22 @@ export class AppDatabase extends Dexie {
           .toCollection()
           .modify((settings) => {
             settings.dashboardWidgets ??= [...DEFAULT_DASHBOARD_WIDGETS];
+          }),
+      );
+    // Tägliches Tracking
+    this.version(12)
+      .stores({
+        dailyLogs: 'id, date, updatedAt',
+        bodyMeasurements: 'id, date, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.stepsGoal ??= DAILY_GOAL_DEFAULTS.stepsGoal;
+            settings.waterGoalMl ??= DAILY_GOAL_DEFAULTS.waterGoalMl;
+            settings.sleepGoalSeconds ??= DAILY_GOAL_DEFAULTS.sleepGoalSeconds;
           }),
       );
   }

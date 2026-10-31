@@ -1,4 +1,5 @@
 import type {
+  BodyMeasure,
   DashboardWidget,
   Equipment,
   ExerciseCategory,
@@ -12,6 +13,17 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   records: { name: 'Erfolge', hint: 'Deine neuesten Rekorde' },
   activity: { name: 'Trainingstage', hint: 'Heatmap der letzten 3 Monate' },
   nextTraining: { name: 'Nächstes Training', hint: 'Vorschlag aus deinem Plan mit Startknopf' },
+  daily: { name: 'Heute', hint: 'Schritte, Wasser, Schlaf und Gewicht' },
+};
+
+export const BODY_MEASURE_LABELS: Record<BodyMeasure, string> = {
+  neck: 'Hals',
+  chest: 'Brust',
+  waist: 'Taille',
+  hips: 'Hüfte',
+  arm: 'Arm',
+  thigh: 'Oberschenkel',
+  calf: 'Wade',
 };
 
 export const EXERCISE_CATEGORY_LABELS: Record<ExerciseCategory, string> = {

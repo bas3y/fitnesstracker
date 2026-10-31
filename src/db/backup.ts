@@ -2,6 +2,10 @@ import { z } from 'zod';
 import { db } from './database';
 import { nowIso } from './repository';
 import {
+  bodyMeasureSchema,
+  DAILY_GOAL_DEFAULTS,
+  dailyLogValuesSchema,
+  dayKeySchema,
   exerciseFieldsSchema,
   foodFieldsSchema,
   planExerciseValuesSchema,
@@ -10,7 +14,13 @@ import {
 } from './schemas';
 import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
-import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_WIDGETS, LOAD_TYPES, PLAN_SCHEDULES } from './types';
+import {
+  BODY_MEASURES,
+  DASHBOARD_WIDGETS,
+  DEFAULT_DASHBOARD_WIDGETS,
+  LOAD_TYPES,
+  PLAN_SCHEDULES,
+} from './types';
 
 export const BACKUP_APP = 'fitnesstracker';
 export const BACKUP_VERSION = 1;
@@ -44,6 +54,10 @@ const settingsSchema = baseEntitySchema.extend({
   restAnalysisEnabled: z.boolean().default(false),
   // Seit DB-Version 11
   dashboardWidgets: z.array(z.enum(DASHBOARD_WIDGETS)).default([...DEFAULT_DASHBOARD_WIDGETS]),
+  // Seit DB-Version 12
+  stepsGoal: z.number().int().positive().default(DAILY_GOAL_DEFAULTS.stepsGoal),
+  waterGoalMl: z.number().int().positive().default(DAILY_GOAL_DEFAULTS.waterGoalMl),
+  sleepGoalSeconds: z.number().int().positive().default(DAILY_GOAL_DEFAULTS.sleepGoalSeconds),
 });
 
 const catalogEntryFields = {
@@ -119,6 +133,14 @@ const planExerciseSchema = baseEntitySchema.extend(planExerciseValuesSchema.shap
   order: z.number(),
 });
 
+const dailyLogSchema = baseEntitySchema
+  .extend(dailyLogValuesSchema.shape)
+  .extend({ date: dayKeySchema });
+const bodyMeasurementSchema = baseEntitySchema.extend({
+  date: dayKeySchema,
+  values: z.partialRecord(z.enum(BODY_MEASURES), bodyMeasureSchema),
+});
+
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
   app: z.literal(BACKUP_APP, { message: 'Keine Fitnesstracker-Sicherung' }),
@@ -139,6 +161,8 @@ export const backupSchema = z.object({
     plans: z.array(planSchema).default([]),
     planDays: z.array(planDaySchema).default([]),
     planExercises: z.array(planExerciseSchema).default([]),
+    dailyLogs: z.array(dailyLogSchema).default([]),
+    bodyMeasurements: z.array(bodyMeasurementSchema).default([]),
   }),
 });
 
@@ -155,6 +179,8 @@ export const TABLE_LABELS: Record<TableName, string> = {
   plans: 'Trainingspläne',
   planDays: 'Trainings in Plänen',
   planExercises: 'Übungen in Plänen',
+  dailyLogs: 'Alltagseinträge',
+  bodyMeasurements: 'Körpermaße',
 };
 
 export async function createBackup(): Promise<Backup> {

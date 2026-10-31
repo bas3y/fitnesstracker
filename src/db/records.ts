@@ -1,20 +1,27 @@
+import { bodyWeightOn, type DatedWeight } from '../domain/daily';
 import {
   annotateSessions,
   detectRecords,
   exerciseKind,
   sessionRecords,
+  withBodyWeight,
   type PersonalRecord,
+  type StrengthSet,
 } from '../domain/strength';
+import { toDateInput } from '../domain/workout';
+import { loadBodyWeights } from './daily';
 import { db } from './database';
 import { SETTINGS_ID } from './settings';
 import type { Workout, WorkoutSet } from './types';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
 
+export type LoadedSet = WorkoutSet & Pick<StrengthSet, 'bodyWeightKg'>;
+
 export interface ExerciseSession {
   workout: Workout;
   /** Abgehakte Sätze in der Reihenfolge des Abhakens */
-  sets: WorkoutSet[];
+  sets: LoadedSet[];
 }
 
 export async function getBodyWeightKg(): Promise<number | null> {
@@ -24,7 +31,11 @@ export async function getBodyWeightKg(): Promise<number | null> {
 const bySequence = (a: WorkoutSet, b: WorkoutSet) =>
   (a.completedAt ?? '').localeCompare(b.completedAt ?? '') || a.order - b.order;
 
-function groupSessions(workouts: Workout[], sets: WorkoutSet[]): ExerciseSession[] {
+function groupSessions(
+  workouts: Workout[],
+  sets: WorkoutSet[],
+  weights: DatedWeight[],
+): ExerciseSession[] {
   const byWorkout = new Map<string, WorkoutSet[]>();
   for (const set of sets) {
     const list = byWorkout.get(set.workoutId) ?? [];
@@ -34,7 +45,13 @@ function groupSessions(workouts: Workout[], sets: WorkoutSet[]): ExerciseSession
   return workouts
     .filter((workout) => isActive(workout) && byWorkout.has(workout.id))
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt) || a.id.localeCompare(b.id))
-    .map((workout) => ({ workout, sets: byWorkout.get(workout.id)!.sort(bySequence) }));
+    .map((workout) => ({
+      workout,
+      sets: withBodyWeight(
+        byWorkout.get(workout.id)!.sort(bySequence),
+        bodyWeightOn(weights, toDateInput(workout.startedAt)),
+      ),
+    }));
 }
 
 /** Abgehakte Sätze einer Übung je Workout (auch das laufende), ältestes zuerst */
@@ -47,7 +64,7 @@ export async function loadExerciseSessions(exerciseId: string): Promise<Exercise
   if (items.length === 0) return [];
   const itemIds = new Set(items.map((item) => item.id));
   const workoutIds = [...new Set(items.map((item) => item.workoutId))];
-  const [workouts, sets] = await Promise.all([
+  const [workouts, sets, weights] = await Promise.all([
     db.workouts.bulkGet(workoutIds),
     db.sets
       .where('workoutId')
@@ -56,10 +73,12 @@ export async function loadExerciseSessions(exerciseId: string): Promise<Exercise
         (set) => isActive(set) && set.completedAt !== null && itemIds.has(set.workoutExerciseId),
       )
       .toArray(),
+    loadBodyWeights(),
   ]);
   return groupSessions(
     workouts.filter((w): w is Workout => !!w),
     sets,
+    weights,
   );
 }
 
@@ -85,7 +104,7 @@ export async function getSetRecords(setId: string): Promise<PersonalRecord[]> {
   const current = sessions[index]!.sets;
   const position = current.findIndex((s) => s.id === set.id);
   return detectRecords(
-    set,
+    current[position] ?? set,
     {
       history: sessions.slice(0, index).map((session) => session.sets),
       earlier: current.slice(0, Math.max(0, position)),
@@ -128,7 +147,7 @@ export async function getWorkoutRecords(workoutId: string): Promise<Map<string, 
 export async function countWorkoutRecords(): Promise<Map<string, number>> {
   const workouts = await db.workouts.filter((w) => isActive(w) && w.endedAt !== null).toArray();
   const ids = workouts.map((w) => w.id);
-  const [items, sets, bodyWeightKg] = await Promise.all([
+  const [items, sets, bodyWeightKg, weights] = await Promise.all([
     db.workoutExercises.where('workoutId').anyOf(ids).filter(isActive).toArray(),
     db.sets
       .where('workoutId')
@@ -136,6 +155,7 @@ export async function countWorkoutRecords(): Promise<Map<string, number>> {
       .filter((set) => isActive(set) && set.completedAt !== null)
       .toArray(),
     getBodyWeightKg(),
+    loadBodyWeights(),
   ]);
   const exerciseOf = new Map(items.map((item) => [item.id, item.exerciseId]));
   const setsByExercise = new Map<string, WorkoutSet[]>();
@@ -151,7 +171,7 @@ export async function countWorkoutRecords(): Promise<Map<string, number>> {
   const exercises = await db.exercises.bulkGet(exerciseIds);
   const counts = new Map<string, number>();
   exerciseIds.forEach((exerciseId, i) => {
-    const sessions = groupSessions(workouts, setsByExercise.get(exerciseId)!);
+    const sessions = groupSessions(workouts, setsByExercise.get(exerciseId)!, weights);
     const annotated = annotateSessions(
       sessions.map((session) => session.sets),
       exerciseKind(exercises[i], bodyWeightKg),

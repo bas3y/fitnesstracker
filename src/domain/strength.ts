@@ -12,13 +12,20 @@ export type StrengthSet = Pick<
   | 'reps'
   | 'durationSeconds'
   | 'isWarmup'
->;
+> & {
+  /** Körpergewicht am Tag des Workouts, falls bekannt (siehe `withBodyWeight`) */
+  bodyWeightKg?: number | null;
+};
 
 export interface ExerciseKind {
   isTimed: boolean;
   isBodyweight: boolean;
   /** Aus den Einstellungen; ohne Angabe gibt es bei Körpergewichtsübungen kein Volumen/1RM */
   bodyWeightKg: number | null;
+}
+
+export function withBodyWeight<T extends StrengthSet>(sets: T[], bodyWeightKg: number | null): T[] {
+  return bodyWeightKg === null ? sets : sets.map((set) => ({ ...set, bodyWeightKg }));
 }
 
 export function exerciseKind(
@@ -69,7 +76,8 @@ export function effectiveLoadKg(set: StrengthSet, kind: ExerciseKind): number | 
   if (set.level !== null) return null;
   let load: number | null = set.weight;
   if (kind.isBodyweight) {
-    load = kind.bodyWeightKg === null ? null : kind.bodyWeightKg + (set.weight ?? 0);
+    const bodyWeightKg = set.bodyWeightKg ?? kind.bodyWeightKg;
+    load = bodyWeightKg === null ? null : bodyWeightKg + (set.weight ?? 0);
   }
   return load !== null && load > 0 ? load : null;
 }

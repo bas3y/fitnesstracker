@@ -264,7 +264,37 @@ describe('AppDatabase-Migration', () => {
       name: 'Alex',
       dashboardWidgets: ['week', 'lastWorkout', 'records', 'activity'],
     });
-    expect(v11.verno).toBe(11);
     await v11.delete();
+  });
+
+  it('Version 12 ergänzt Tagesziele und Alltagstabellen und behält die Einstellungen', async () => {
+    const name = 'migration-test-v12';
+    const v11 = new Dexie(name);
+    v11.version(11).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+    });
+    await v11.table('settings').add({ id: 'app-settings', name: 'Alex', bodyWeightKg: 80 });
+    v11.close();
+
+    const v12 = new AppDatabase(name);
+    expect(await v12.settings.get('app-settings')).toMatchObject({
+      name: 'Alex',
+      bodyWeightKg: 80,
+      stepsGoal: 10_000,
+      waterGoalMl: 2500,
+      sleepGoalSeconds: 8 * 3600,
+    });
+    expect(await v12.dailyLogs.count()).toBe(0);
+    expect(await v12.bodyMeasurements.count()).toBe(0);
+    expect(v12.verno).toBe(12);
+    await v12.delete();
   });
 });

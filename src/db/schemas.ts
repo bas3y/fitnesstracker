@@ -100,6 +100,38 @@ export const planExerciseValuesSchema = z
 
 export type PlanExerciseValues = z.infer<typeof planExerciseValuesSchema>;
 
+export const MAX_STEPS = 200_000;
+export const MAX_WATER_ML = 20_000;
+export const MAX_SLEEP_SECONDS = 24 * 3600;
+export const MIN_BODY_WEIGHT_KG = 20;
+export const MAX_BODY_WEIGHT_KG = 400;
+export const MIN_BODY_MEASURE_M = 0.05;
+export const MAX_BODY_MEASURE_M = 3;
+
+export const DAILY_GOAL_DEFAULTS = {
+  stepsGoal: 10_000,
+  waterGoalMl: 2500,
+  sleepGoalSeconds: 8 * 3600,
+};
+
+const rating = z.number().int().min(1).max(5);
+
+/** Tageswerte (intern kg/Sekunden/ml); `null` = nicht erfasst */
+export const dailyLogValuesSchema = z.object({
+  steps: z.number().int().min(0).max(MAX_STEPS).nullable(),
+  waterMl: z.number().int().min(0).max(MAX_WATER_ML).nullable(),
+  sleepSeconds: z.number().int().min(0).max(MAX_SLEEP_SECONDS).nullable(),
+  sleepQuality: rating.nullable(),
+  weightKg: z.number().min(MIN_BODY_WEIGHT_KG).max(MAX_BODY_WEIGHT_KG).nullable(),
+  mood: rating.nullable(),
+  energy: rating.nullable(),
+});
+
+export type DailyLogValues = z.infer<typeof dailyLogValuesSchema>;
+
+export const dayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ungültiges Datum');
+export const bodyMeasureSchema = z.number().min(MIN_BODY_MEASURE_M).max(MAX_BODY_MEASURE_M);
+
 /** Wochentage wie `Date.getDay()` */
 export const weekdaysSchema = z.array(z.number().int().min(0).max(6));
 

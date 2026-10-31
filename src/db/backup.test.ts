@@ -6,11 +6,12 @@ import {
   parseBackupText,
   restoreBackup,
 } from './backup';
+import { getBodyMeasurement, getDailyLog, setBodyMeasure, updateDailyLog } from './daily';
 import { db } from './database';
 import { createUserExercise } from './exercises';
 import { addPlanExercise, createPlan, deletePlan, loadPlanDetail } from './plans';
 import { create } from './repository';
-import { EMPTY_EXERCISE_INPUT } from './schemas';
+import { DAILY_GOAL_DEFAULTS, EMPTY_EXERCISE_INPUT } from './schemas';
 import { applySeed, SEED_VERSION } from './seed';
 import { getSettings, updateSettings } from './settings';
 import { resetDatabase } from './testUtils';
@@ -60,6 +61,8 @@ describe('parseBackup', () => {
         plans: 0,
         planDays: 0,
         planExercises: 0,
+        dailyLogs: 0,
+        bodyMeasurements: 0,
       });
   });
 
@@ -148,6 +151,42 @@ describe('restoreBackup', () => {
     expect((await getSettings())?.seedVersion).toBe(SEED_VERSION);
     expect(await db.exercises.where('builtinKey').equals('barbell-bench-press').count()).toBe(1);
     expect(await db.foods.where('builtinKey').equals('oats').count()).toBe(1);
+  });
+});
+
+describe('Alltag in Sicherungen', () => {
+  it('stellt Tageseinträge und Körpermaße wieder her', async () => {
+    await updateDailyLog('2026-10-30', { steps: 8000, weightKg: 79.5 });
+    await setBodyMeasure('2026-10-30', 'waist', 0.85);
+    const result = parseBackup(JSON.parse(JSON.stringify(await createBackup())));
+    if (!result.ok) throw new Error(result.error);
+
+    await resetDatabase();
+    await restoreBackup(result.backup);
+
+    expect(await getDailyLog('2026-10-30')).toMatchObject({ steps: 8000, weightKg: 79.5 });
+    expect((await getBodyMeasurement('2026-10-30'))?.values).toEqual({ waist: 0.85 });
+  });
+
+  it('ergänzt in Sicherungen aus DB-Version 11 Tagesziele und leere Tabellen', async () => {
+    const data = await validBackup();
+    data.dbVersion = 11;
+    delete data.tables.dailyLogs;
+    delete data.tables.bodyMeasurements;
+    delete data.tables.settings[0].stepsGoal;
+    delete data.tables.settings[0].waterGoalMl;
+    delete data.tables.settings[0].sleepGoalSeconds;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.dailyLogs).toEqual([]);
+    expect(result.backup.tables.settings[0]).toMatchObject(DAILY_GOAL_DEFAULTS);
+  });
+
+  it('lehnt unbekannte Körpermaße ab', async () => {
+    await setBodyMeasure('2026-10-30', 'waist', 0.85);
+    const data = await validBackup();
+    data.tables.bodyMeasurements[0].values = { nase: 0.05 };
+    expect(parseBackup(data).ok).toBe(false);
   });
 });
 

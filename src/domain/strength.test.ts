@@ -194,6 +194,8 @@ describe('Last und Volumen', () => {
     expect(effectiveLoadKg(set(-20, 5), bodyweight)).toBe(60);
     expect(effectiveLoadKg(set(null, 5), bodyweight)).toBe(80);
     expect(effectiveLoadKg(set(10, 5), { ...bodyweight, bodyWeightKg: null })).toBeNull();
+    // Gewicht vom Tag des Workouts geht vor dem aktuellen
+    expect(effectiveLoadKg({ ...set(10, 5), bodyWeightKg: 70 }, bodyweight)).toBe(80);
     expect(effectiveLoadKg(set(-100, 5), bodyweight)).toBeNull();
   });
 

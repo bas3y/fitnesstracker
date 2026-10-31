@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Stepper } from '../../components/Stepper';
+import { setCurrentBodyWeight } from '../../db/daily';
+import { MAX_STEPS, MAX_WATER_ML } from '../../db/schemas';
 import { updateSettings } from '../../db/settings';
 import type { Settings } from '../../db/types';
 import { setRestTimerEnabled } from '../../db/workouts';
+import { hoursToSeconds, secondsToHours } from '../../domain/daily';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { BackupSection } from './BackupSection';
 import { ExportSection } from './ExportSection';
@@ -42,6 +45,7 @@ export function SettingsPage() {
             </div>
           </Card>
           <TrainingCard settings={settings} />
+          <DailyGoalsCard settings={settings} />
           <Card title="Darstellung">
             <SegmentedControl
               label="Theme"
@@ -138,6 +142,46 @@ function TrainingCard({ settings }: { settings: Settings }) {
   );
 }
 
+function DailyGoalsCard({ settings }: { settings: Settings }) {
+  return (
+    <Card title="Tagesziele">
+      <div className="flex flex-col gap-3">
+        <Stepper
+          label="Schritte pro Tag"
+          value={settings.stepsGoal}
+          step={500}
+          min={500}
+          max={MAX_STEPS}
+          decimals={0}
+          onChange={(stepsGoal) => stepsGoal !== null && void updateSettings({ stepsGoal })}
+        />
+        <Stepper
+          label="Wasser pro Tag"
+          value={settings.waterGoalMl}
+          unit="ml"
+          step={250}
+          min={250}
+          max={MAX_WATER_ML}
+          decimals={0}
+          onChange={(waterGoalMl) => waterGoalMl !== null && void updateSettings({ waterGoalMl })}
+        />
+        <Stepper
+          label="Schlaf pro Nacht"
+          value={secondsToHours(settings.sleepGoalSeconds)}
+          unit="h"
+          step={0.5}
+          min={1}
+          max={24}
+          decimals={2}
+          onChange={(hours) =>
+            hours !== null && void updateSettings({ sleepGoalSeconds: hoursToSeconds(hours) })
+          }
+        />
+      </div>
+    </Card>
+  );
+}
+
 function ProfileCard({ settings }: { settings: Settings }) {
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const unit = settings.weightUnit;
@@ -173,9 +217,12 @@ function ProfileCard({ settings }: { settings: Settings }) {
           startValue={unit === 'kg' ? 75 : 165}
           allowEmpty
           onChange={(value) =>
-            void updateSettings({ bodyWeightKg: value === null ? null : displayToKg(value, unit) })
+            void setCurrentBodyWeight(value === null ? null : displayToKg(value, unit))
           }
         />
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Wird auch als Gewicht von heute im Alltag eingetragen.
+        </p>
       </div>
     </Card>
   );

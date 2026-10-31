@@ -34,6 +34,10 @@ export interface Settings extends BaseEntity {
   activePlanId: string | null;
   /** Sichtbare Widgets auf dem Dashboard, in Anzeigereihenfolge */
   dashboardWidgets: DashboardWidget[];
+  // Tagesziele
+  stepsGoal: number;
+  waterGoalMl: number;
+  sleepGoalSeconds: number;
 }
 
 export const DASHBOARD_WIDGETS = [
@@ -42,6 +46,7 @@ export const DASHBOARD_WIDGETS = [
   'records',
   'activity',
   'nextTraining',
+  'daily',
 ] as const;
 export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
 export const DEFAULT_DASHBOARD_WIDGETS: readonly DashboardWidget[] = [
@@ -210,6 +215,33 @@ export interface PlanExercise extends BaseEntity {
   targetDurationSeconds: number | null;
   /** `null` = Standard aus den Einstellungen */
   restSeconds: number | null;
+}
+
+/** Lokaler Tag als `YYYY-MM-DD` */
+export type DayKey = string;
+
+/** Ein aktiver Eintrag je Tag; `null` = nicht erfasst */
+export interface DailyLog extends BaseEntity {
+  date: DayKey;
+  steps: number | null;
+  waterMl: number | null;
+  sleepSeconds: number | null;
+  /** 1–5 */
+  sleepQuality: number | null;
+  weightKg: number | null;
+  /** 1–5 */
+  mood: number | null;
+  /** 1–5 */
+  energy: number | null;
+}
+
+export const BODY_MEASURES = ['neck', 'chest', 'waist', 'hips', 'arm', 'thigh', 'calf'] as const;
+export type BodyMeasure = (typeof BODY_MEASURES)[number];
+
+/** Ein aktiver Eintrag je Tag; nur gemessene Stellen, Werte in Metern */
+export interface BodyMeasurement extends BaseEntity {
+  date: DayKey;
+  values: Partial<Record<BodyMeasure, number>>;
 }
 
 export const FOOD_CATEGORIES = [

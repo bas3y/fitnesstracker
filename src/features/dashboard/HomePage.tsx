@@ -28,6 +28,7 @@ import {
   formatWorkoutDuration,
   workoutDurationSeconds,
 } from '../../domain/workout';
+import { TodayCard } from '../daily/TodayCard';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from '../stats/ActivityCard';
 import { HISTORY_PATH } from '../training/paths';
@@ -71,6 +72,8 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
       return sessions.length > 0 ? <ActivityCard sessions={sessions} now={now} span="3m" /> : null;
     case 'nextTraining':
       return <TrainingStartCard compact />;
+    case 'daily':
+      return <TodayCard settings={settings} now={now} />;
   }
 }
 

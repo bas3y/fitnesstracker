@@ -14,6 +14,8 @@ import {
 const CHART_HEIGHT = 220;
 const LINE_COLOR = '#10b981';
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** Darüber verschwimmen die Punkte zu einer Fläche */
+const MAX_DOTS = 60;
 const tick = { fill: 'currentColor', fontSize: 12 };
 const grid = { stroke: 'currentColor', strokeOpacity: 0.15, vertical: false };
 
@@ -83,7 +85,7 @@ export function ProgressChart({
           dataKey="value"
           stroke={LINE_COLOR}
           strokeWidth={2}
-          dot={{ r: 3, fill: LINE_COLOR }}
+          dot={points.length > MAX_DOTS ? false : { r: 3, fill: LINE_COLOR }}
           isAnimationActive={false}
         />
       </LineChart>

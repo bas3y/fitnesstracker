@@ -1,3 +1,5 @@
+import { dayKey, shiftDay } from '../domain/daily';
+import { updateDailyLog } from './daily';
 import { db } from './database';
 import { loadFinishedExerciseSessions } from './records';
 import type { BuiltinExercise } from './schemas';
@@ -99,6 +101,18 @@ describe('loadStatsSessions', () => {
 
     const sessions = await loadStatsSessions();
     expect(sessions.map((session) => session.workoutId)).toEqual([first.id, last.id]);
+  });
+
+  it('gibt den Sätzen das Körpergewicht vom Tag des Workouts mit', async () => {
+    const workout = await startWorkout();
+    await logSet(workout.id, bench, 8);
+    await finishWorkout(workout.id, '');
+    const date = dayKey(new Date());
+    await updateDailyLog(date, { weightKg: 80 });
+    await updateDailyLog(shiftDay(date, 1), { weightKg: 90 });
+
+    const [session] = await loadStatsSessions();
+    expect(session!.sets[0]!.bodyWeightKg).toBe(80);
   });
 });
 
