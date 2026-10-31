@@ -20,12 +20,14 @@ import {
   muscleProgress,
   muscleVolumes,
   rangeStart,
+  recentRecords,
   restByExercise,
   restPairs,
   sortOverviews,
   summarizeDays,
   trainsMuscle,
   weeklyMuscleSets,
+  weekSummary,
   type RestPair,
   type StatsExercise,
   type StatsSession,
@@ -76,6 +78,74 @@ const session = (
 
 /** Lokaler Zeitpunkt, `days` Tage vor NOW */
 const daysAgo = (days: number) => new Date(2026, 9, 31 - days, 12).toISOString();
+
+describe('weekSummary', () => {
+  it('zählt die laufende Woche ab Montag 0 Uhr, ohne Aufwärmsätze', () => {
+    const monday = new Date(2026, 9, 26).toISOString();
+    const sunday = new Date(2026, 9, 25, 23, 59).toISOString();
+    const sessions = [
+      session(sunday, [set()]),
+      session(monday, [set({ isWarmup: true, weight: 40 }), set()]),
+      session(daysAgo(0), [set(), set({ weight: 50 })], { id: 'row' }),
+      { ...session(daysAgo(0), [set()], { id: 'curl' }), workoutId: `w-${daysAgo(0)}` },
+    ];
+
+    expect(weekSummary(sessions, null, NOW)).toEqual({
+      workouts: 2,
+      sets: 4,
+      volumeKg: 1000 + 1000 + 500 + 1000,
+    });
+  });
+
+  it('rechnet Körpergewichtsübungen mit Körpergewicht, Stufen und Halteübungen ohne Volumen', () => {
+    const sessions = [
+      session(daysAgo(0), [set({ weight: 10, reps: 5 })], { equipment: 'bodyweight' }),
+      session(daysAgo(0), [set({ weight: null, level: 7 })]),
+      session(daysAgo(0), [set({ reps: null, durationSeconds: 60 })], { isTimed: true }),
+    ];
+
+    expect(weekSummary(sessions, 80, NOW).volumeKg).toBe(450);
+    expect(weekSummary(sessions, null, NOW).volumeKg).toBe(0);
+    expect(weekSummary(sessions, 80, NOW).sets).toBe(3);
+  });
+
+  it('ist ohne Training in der Woche leer', () => {
+    expect(weekSummary([session(daysAgo(30), [set()])], null, NOW)).toEqual({
+      workouts: 0,
+      sets: 0,
+      volumeKg: 0,
+    });
+  });
+});
+
+describe('recentRecords', () => {
+  const bench = (days: number, weight: number) => session(daysAgo(days), [set({ weight })]);
+
+  it('liefert die neuesten Einheiten mit Rekord, die erste Einheit zählt nicht', () => {
+    const rows = recentRecords([bench(20, 100), bench(10, 105), bench(5, 110)], null, 10);
+
+    expect(rows.map((row) => row.startedAt)).toEqual([daysAgo(5), daysAgo(10)]);
+    expect(rows[0]!.records.map((record) => record.type)).toEqual([
+      'weight',
+      'oneRepMax',
+      'setVolume',
+      'sessionVolume',
+    ]);
+    expect(rows[0]!.records[0]!.value).toBe(110);
+  });
+
+  it('sortiert über Übungen hinweg und begrenzt die Anzahl', () => {
+    const row = (days: number, weight: number) =>
+      session(daysAgo(days), [set({ weight })], { id: 'row', name: 'Rudern' });
+    const rows = recentRecords([bench(20, 100), bench(10, 105), row(21, 60), row(3, 70)], null, 1);
+
+    expect(rows.map((item) => item.exercise.name)).toEqual(['Rudern']);
+  });
+
+  it('ist ohne Rekorde leer', () => {
+    expect(recentRecords([bench(20, 100), bench(10, 90)], null, 3)).toEqual([]);
+  });
+});
 
 describe('Zeitraum', () => {
   it('beginnt jeweils am Tagesanfang, „Alles“ hat keinen Beginn', () => {

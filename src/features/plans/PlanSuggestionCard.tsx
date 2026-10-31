@@ -6,7 +6,7 @@ import { Card } from '../../components/Page';
 import { startPlanWorkout, type ActivePlanSuggestion, type PlanDayDetail } from '../../db/plans';
 import { startWorkout } from '../../db/workouts';
 import type { PlanDaySuggestion } from '../../domain/plans';
-import { PLANS_PATH, WORKOUT_PATH } from '../training/paths';
+import { PLANS_PATH, TRAINING_PATH, WORKOUT_PATH } from '../training/paths';
 
 function reasonText({ reason, lastDay }: PlanDaySuggestion<PlanDayDetail>): string {
   switch (reason) {
@@ -24,8 +24,17 @@ function reasonText({ reason, lastDay }: PlanDaySuggestion<PlanDayDetail>): stri
 const exerciseNames = ({ items }: PlanDayDetail) =>
   items.map((item) => item.exercise?.name ?? 'Unbekannte Übung').join(', ');
 
-/** Vorschlag fürs heutige Training: bestätigen, anderes Training wählen oder frei trainieren */
-export function PlanSuggestionCard({ active }: { active: ActivePlanSuggestion }) {
+/**
+ * Vorschlag fürs heutige Training: bestätigen, anderes Training wählen oder frei trainieren.
+ * `compact` (Dashboard): Die weitere Auswahl liegt hinter einem Link zur Trainingsseite.
+ */
+export function PlanSuggestionCard({
+  active,
+  compact = false,
+}: {
+  active: ActivePlanSuggestion;
+  compact?: boolean;
+}) {
   const navigate = useNavigate();
   const [choosing, setChoosing] = useState(false);
   // Gestartet wird erst nach der Rückfrage: ein Training bzw. 'free' für das freie Training
@@ -82,28 +91,40 @@ export function PlanSuggestionCard({ active }: { active: ActivePlanSuggestion })
         <button type="button" className={primaryButton} onClick={() => setPending(suggested)}>
           {suggested.day.name} starten
         </button>
-        <button
-          type="button"
-          aria-expanded={choosing}
-          className={secondaryButton}
-          onClick={() => setChoosing(!choosing)}
-        >
-          Anderes Training wählen
-        </button>
-        {choosing && (
-          <ul aria-label="Trainings des Plans" className="flex flex-col gap-2">
-            {days.map((item) => (
-              <li key={item.day.id}>
-                <button type="button" className={secondaryButton} onClick={() => setPending(item)}>
-                  {item.day.name}
-                </button>
-              </li>
-            ))}
-          </ul>
+        {compact ? (
+          <Link to={TRAINING_PATH} className={secondaryButton}>
+            Anderes Training
+          </Link>
+        ) : (
+          <>
+            <button
+              type="button"
+              aria-expanded={choosing}
+              className={secondaryButton}
+              onClick={() => setChoosing(!choosing)}
+            >
+              Anderes Training wählen
+            </button>
+            {choosing && (
+              <ul aria-label="Trainings des Plans" className="flex flex-col gap-2">
+                {days.map((item) => (
+                  <li key={item.day.id}>
+                    <button
+                      type="button"
+                      className={secondaryButton}
+                      onClick={() => setPending(item)}
+                    >
+                      {item.day.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button type="button" className={secondaryButton} onClick={() => setPending('free')}>
+              Freies Training
+            </button>
+          </>
         )}
-        <button type="button" className={secondaryButton} onClick={() => setPending('free')}>
-          Freies Training
-        </button>
       </div>
       {confirm}
     </Card>

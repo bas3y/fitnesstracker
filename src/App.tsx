@@ -1,29 +1,58 @@
-import { lazy, Suspense } from 'react';
+import { lazy, type ComponentType } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Page } from './components/Page';
 import { HomePage } from './features/dashboard/HomePage';
-import { DailyPage } from './features/daily/DailyPage';
-import { FoodSearchPage } from './features/nutrition/FoodSearchPage';
-import { PlanDayPage } from './features/plans/PlanDayPage';
-import { PlanDetailPage } from './features/plans/PlanDetailPage';
-import { PlanListPage } from './features/plans/PlanListPage';
-import { PlanNewPage } from './features/plans/PlanNewPage';
-import { AboutPage } from './features/settings/AboutPage';
-import { SettingsPage } from './features/settings/SettingsPage';
-import { ExerciseDetailPage } from './features/training/ExerciseDetailPage';
-import { ExerciseCreatePage, ExerciseEditPage } from './features/training/ExerciseEditPage';
-import { ExerciseListPage } from './features/training/ExerciseListPage';
-import { TrainingPage } from './features/training/TrainingPage';
-import { WorkoutDetailPage } from './features/training/WorkoutDetailPage';
-import { WorkoutEditPage } from './features/training/WorkoutEditPage';
-import { WorkoutHistoryPage } from './features/training/WorkoutHistoryPage';
-import { WorkoutPage } from './features/training/WorkoutPage';
 
-// Eigener Chunk wegen Recharts
-const StatsPage = lazy(() =>
-  import('./features/stats/StatsPage').then((module) => ({ default: module.StatsPage })),
+/** Eigene Chunks halten den Start klein, offline liefert sie der Precache */
+function lazyPage<Name extends string>(
+  load: () => Promise<Record<Name, ComponentType>>,
+  name: Name,
+) {
+  return lazy(() => load().then((module) => ({ default: module[name] })));
+}
+
+const DailyPage = lazyPage(() => import('./features/daily/DailyPage'), 'DailyPage');
+const FoodSearchPage = lazyPage(
+  () => import('./features/nutrition/FoodSearchPage'),
+  'FoodSearchPage',
 );
+const PlanDayPage = lazyPage(() => import('./features/plans/PlanDayPage'), 'PlanDayPage');
+const PlanDetailPage = lazyPage(() => import('./features/plans/PlanDetailPage'), 'PlanDetailPage');
+const PlanListPage = lazyPage(() => import('./features/plans/PlanListPage'), 'PlanListPage');
+const PlanNewPage = lazyPage(() => import('./features/plans/PlanNewPage'), 'PlanNewPage');
+const AboutPage = lazyPage(() => import('./features/settings/AboutPage'), 'AboutPage');
+const SettingsPage = lazyPage(() => import('./features/settings/SettingsPage'), 'SettingsPage');
+const StatsPage = lazyPage(() => import('./features/stats/StatsPage'), 'StatsPage');
+const ExerciseDetailPage = lazyPage(
+  () => import('./features/training/ExerciseDetailPage'),
+  'ExerciseDetailPage',
+);
+const ExerciseCreatePage = lazyPage(
+  () => import('./features/training/ExerciseEditPage'),
+  'ExerciseCreatePage',
+);
+const ExerciseEditPage = lazyPage(
+  () => import('./features/training/ExerciseEditPage'),
+  'ExerciseEditPage',
+);
+const ExerciseListPage = lazyPage(
+  () => import('./features/training/ExerciseListPage'),
+  'ExerciseListPage',
+);
+const TrainingPage = lazyPage(() => import('./features/training/TrainingPage'), 'TrainingPage');
+const WorkoutDetailPage = lazyPage(
+  () => import('./features/training/WorkoutDetailPage'),
+  'WorkoutDetailPage',
+);
+const WorkoutEditPage = lazyPage(
+  () => import('./features/training/WorkoutEditPage'),
+  'WorkoutEditPage',
+);
+const WorkoutHistoryPage = lazyPage(
+  () => import('./features/training/WorkoutHistoryPage'),
+  'WorkoutHistoryPage',
+);
+const WorkoutPage = lazyPage(() => import('./features/training/WorkoutPage'), 'WorkoutPage');
 
 export function App() {
   return (
@@ -46,14 +75,7 @@ export function App() {
           <Route path="training/plans/:id/days/:dayId" element={<PlanDayPage />} />
           <Route path="daily" element={<DailyPage />} />
           <Route path="daily/foods" element={<FoodSearchPage />} />
-          <Route
-            path="stats"
-            element={
-              <Suspense fallback={<Page title="Statistik">{null}</Page>}>
-                <StatsPage />
-              </Suspense>
-            }
-          />
+          <Route path="stats" element={<StatsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/about" element={<AboutPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

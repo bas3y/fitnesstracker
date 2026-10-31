@@ -446,7 +446,7 @@ function SetRow({
             aria-pressed={done}
             className={`mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
               done
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-emerald-700 text-white'
                 : 'border border-slate-300 text-slate-400 dark:border-slate-600'
             }`}
             onClick={() => void (done ? uncompleteSet(set.id) : onComplete())}
@@ -648,7 +648,7 @@ function SetEditor({
       {mode === 'live' && set.completedAt === null && (
         <button
           type="button"
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 font-semibold text-white active:bg-emerald-700"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 font-semibold text-white active:bg-emerald-800"
           onClick={() => void onComplete()}
         >
           <CheckIcon className="h-5 w-5" />

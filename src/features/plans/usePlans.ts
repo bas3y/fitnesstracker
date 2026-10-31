@@ -5,6 +5,8 @@ import {
   loadPlanDayDetail,
   loadPlanDetail,
 } from '../../db/plans';
+import { toDateInput } from '../../domain/workout';
+import { useNow } from '../training/useWorkouts';
 
 export function usePlans() {
   return useLiveQuery(listPlans, []);
@@ -20,7 +22,11 @@ export function usePlanDayDetail(id: string | undefined) {
   return useLiveQuery(async () => (id ? loadPlanDayDetail(id) : null), [id]);
 }
 
-/** Aktiver Plan mit Vorschlag; `undefined` = lädt, `null` = kein aktiver Plan */
+/**
+ * Aktiver Plan mit Vorschlag; `undefined` = lädt, `null` = kein aktiver Plan.
+ * Der Tag ist Abhängigkeit, weil die installierte App oft über Nacht geöffnet bleibt.
+ */
 export function useActivePlanSuggestion() {
-  return useLiveQuery(() => loadActivePlanSuggestion(), []);
+  const today = toDateInput(useNow(true, 60_000).toISOString());
+  return useLiveQuery(() => loadActivePlanSuggestion(), [today]);
 }

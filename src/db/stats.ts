@@ -7,8 +7,10 @@ const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === 
 const bySequence = (a: WorkoutSet, b: WorkoutSet) =>
   (a.completedAt ?? '').localeCompare(b.completedAt ?? '') || a.order - b.order;
 
+export type LoadedStatsSession = Omit<StatsSession, 'sets'> & { sets: WorkoutSet[] };
+
 /** Abgehakte Sätze aller beendeten Workouts je Übung und Workout, ältestes zuerst */
-export async function loadStatsSessions(): Promise<StatsSession[]> {
+export async function loadStatsSessions(): Promise<LoadedStatsSession[]> {
   const workouts = await db.workouts.filter((w) => isActive(w) && w.endedAt !== null).toArray();
   const ids = workouts.map((workout) => workout.id);
   const [items, sets, exercises] = await Promise.all([

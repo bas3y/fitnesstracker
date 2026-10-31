@@ -202,7 +202,7 @@ function maxOf(values: Array<number | undefined>): number | undefined {
 
 const isLevelType = (type: RecordType) => type === 'level' || type === 'eccentricLevel';
 
-const byRecordOrder = (a: PersonalRecord, b: PersonalRecord) =>
+export const byRecordOrder = (a: PersonalRecord, b: PersonalRecord) =>
   RECORD_TYPES.indexOf(a.type) - RECORD_TYPES.indexOf(b.type);
 
 function bestSessionVolume(history: StrengthSet[][], kind: ExerciseKind) {

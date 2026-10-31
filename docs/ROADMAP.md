@@ -15,7 +15,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 6 – Trainingspläne
 - [x] Schritt 6b – Offene Punkte aus Schritt 6 & Handytest
 - [x] Schritt 7 – Statistiken & Graphen (Kraft)
-- [ ] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
+- [x] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
 - [ ] Schritt 9 – Tägliches Tracking
 - [ ] Schritt 10 – Habit-Tracker
 - [ ] Schritt 11 – Supplements
@@ -383,8 +383,39 @@ Hinweise:
 
 **Notizen:**
 - Gebaut:
+  - **Dashboard** (`src/features/dashboard/HomePage.tsx`): Trainingskarte, „Diese Woche“ (Workouts, Sätze, Volumen), „Letztes Workout“, „Neueste Rekorde“ (höchstens 3 Zeilen, je Zeile 2 Rekorde + „(+n)“), Mini-Heatmap (14 Wochen). Ohne beendetes Workout nur Trainingskarte und Hinweis.
+  - `TrainingStartCard` (`src/features/training/`) aus der Trainingsseite herausgelöst (Fortsetzen, Plan-Vorschlag oder leeres Workout), auch auf dem Dashboard. `PlanSuggestionCard` hat dort `compact`: Start plus Link „Anderes Training“ zur Trainingsseite.
+  - `ActivityCard` (`src/features/stats/`) aus `StatsPage` herausgelöst, Prop `span` (`'3m'` | `'1y'`).
+  - `weekSummary`, `recentRecords` in `src/domain/stats.ts` (Kalenderwoche ab Montag; Rekorde rückwärts berechnet, damit nur die nötige Historie läuft).
+  - **CSV-Export** (Einstellungen → Export): `workoutsToCsv` in `src/domain/csv.ts`, `createWorkoutsCsvFile` in `src/db/workoutExport.ts`, `ExportSection`, Teilen/Download über `shareOrDownload`.
+  - **Lazy Routes:** Alle Seiten außer dem Dashboard laden per `lazyPage` in `src/App.tsx`, `Suspense` sitzt im `Layout`. Hauptbundle 585 → 257 KB, Vite-Warnung weg.
+  - **Kontrast:** Weiße Schrift steht jetzt auf `emerald-700` statt `emerald-600` (Buttons, Chips, Satz-Haken, Picker), Einheit im Stepper dunkler.
+  - Tests: `csv.test.ts`, `workoutExport.test.ts`, `weekSummary`/`recentRecords` in `stats.test.ts`. E2E `e2e/mvp1.spec.ts` (offline in beiden Viewports): leeres Dashboard, Plan aus Vorlage, Training vom Dashboard, Fortsetzen, Rekord, Woche, Heatmap, Statistik, CSV, Backup, DB löschen, Import.
+- **Lighthouse-Ergebnis** (Lighthouse 11.7.1 im mobilen Profil, Build per gzip ausgeliefert wie auf GitHub Pages, leere Datenbank):
+
+  | Messung | PWA | Barrierefreiheit | Best Practices | Performance | FCP | LCP | TBT |
+  |---|---|---|---|---|---|---|---|
+  | Dashboard, Erstbesuch | 100 | 100 | 100 | 75 | 3,1 s | 3,8 s | 340 ms |
+  | Training, Erstbesuch | 100 | 100 | 100 | 86 | 3,0 s | 3,4 s | 0 ms |
+  | Einstellungen, Erstbesuch | 100 | 100 | 100 | 84 | 3,2 s | 3,6 s | 80 ms |
+  | Statistik, Erstbesuch | 100 | 100 | 100 | 77 | 3,6 s | 4,5 s | 10 ms |
+  | Dashboard, Wiederholung (Service Worker) | 100 | 100 | 100 | 94 | 0,3 s | 0,4 s | 280 ms |
+
+  Vorher (Dashboard, Erstbesuch über `vite preview`): Barrierefreiheit 95, Performance 76, TBT 700 ms. Der letzte Lauf war vor der Umstellung von `recentRecords`, die bei leerer Datenbank nichts ändert.
 - Abweichungen:
+  - Lazy Routes haben den Erstbesuch nicht schneller gemacht: FCP blieb bei rund 3 s (Performance-Wert unverändert), nur die Blockierzeit sank. Das betrifft aber nur den einmaligen Download, im Alltag kommt alles aus dem Service Worker. Daher kein weiterer Umbau.
+  - Lighthouse **11** statt aktueller Version, weil die PWA-Kategorie ab Version 12 entfernt wurde. Kein Projekt-Paket, Aufruf per `npx` (siehe `CLAUDE.md`).
+  - CSV: eine Datei mit einer Zeile je Satz, Semikolon, Dezimalkomma und UTF-8-BOM (für deutsches Excel). Gewichte in der eingestellten Einheit, nur beendete Workouts und abgehakte Sätze. Text, den Excel als Formel ausführen würde, bekommt ein `'` davor.
+  - CSV zählt nicht als Backup: `lastBackupAt` bleibt unverändert, ein Import ist nicht vorgesehen.
+  - Volumen auf dem Dashboard wie überall ohne Stufen und Halteübungen, Körpergewichtsübungen mit aktuellem Körpergewicht.
+  - **Zusatz:** `useActivePlanSuggestion` rechnet beim Tageswechsel neu, weil die installierte App oft über Nacht geöffnet bleibt.
+  - `App.test.tsx`: längere Wartezeiten, weil Routen dort jetzt beim ersten Aufruf geladen werden.
 - Offene Punkte:
+  - Schritt 9: Dashboard-Kacheln für den Alltag unter „Diese Woche“ ergänzen.
+  - Schritt 15: `ActivityCard` und `weekSummary` um Ausdauer erweitern.
+  - Dashboard-TBT von rund 300 ms beim Start bleibt (React, Dexie, Zod). Zod lässt sich nicht verzögern, weil `src/db/schemas.ts` beim Speichern gebraucht wird.
+  - Teilen-Dialog für die CSV-Datei und das Öffnen in Excel nur auf echten Geräten prüfbar (E2E testet den Download-Fallback).
+  - Lighthouse lief im Chromium von Playwright, nicht in Safari. Echter Handytest in Schritt 20 (oder früher per Push).
 
 ---
 

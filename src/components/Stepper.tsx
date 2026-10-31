@@ -75,7 +75,7 @@ export function Stepper({
             }}
           />
           {unit && (
-            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-500">
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-600 dark:text-slate-400">
               {unit}
             </span>
           )}

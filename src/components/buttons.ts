@@ -1,5 +1,5 @@
 export const primaryButton =
-  'flex min-h-11 w-full items-center justify-center rounded-xl bg-emerald-600 px-4 font-semibold text-white active:bg-emerald-700 disabled:opacity-50';
+  'flex min-h-11 w-full items-center justify-center rounded-xl bg-emerald-700 px-4 font-semibold text-white active:bg-emerald-800 disabled:opacity-50';
 export const secondaryButton =
   'flex min-h-11 w-full cursor-pointer items-center justify-center rounded-xl border border-slate-300 px-4 font-semibold disabled:opacity-50 dark:border-slate-600';
 export const dangerButton =

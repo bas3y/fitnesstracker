@@ -1,8 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { WeeklyBarChart } from '../../components/charts';
-import { Heatmap } from '../../components/Heatmap';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Select } from '../../components/Select';
@@ -15,7 +14,6 @@ import {
   exerciseOverviews,
   filterByRange,
   focusHints,
-  formatDayKey,
   formatFocusHint,
   formatPercent,
   formatRestAdvice,
@@ -30,7 +28,6 @@ import {
   sortOverviews,
   STATS_RANGE_LABELS,
   STATS_RANGES,
-  summarizeDays,
   trainsMuscle,
   weeklyMuscleSets,
   type ExerciseOverview,
@@ -39,14 +36,12 @@ import {
   type MuscleVolume,
   type StatsSession,
 } from '../../domain/stats';
-import { toDateInput } from '../../domain/workout';
 import { useSettings } from '../settings/useSettings';
-import { HISTORY_PATH } from '../training/paths';
+import { ActivityCard } from './ActivityCard';
 import { exerciseStatsPath, useStatsFilter } from './statsFilter';
 
 const HINT = 'text-sm text-slate-500 dark:text-slate-400';
 
-const countSets = (sets: number) => (sets === 1 ? '1 Satz' : `${sets} Sätze`);
 const SORT_OPTIONS: Array<{ value: ExerciseSort; label: string }> = [
   { value: 'recent', label: 'Zuletzt' },
   { value: 'progress', label: 'Fortschritt' },
@@ -164,51 +159,6 @@ function StatsContent({
       />
       {restAnalysis && <RestCard sessions={ofMuscle(ranged)} />}
     </>
-  );
-}
-
-function ActivityCard({ sessions, now }: { sessions: StatsSession[]; now: Date }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const days = summarizeDays(sessions);
-  const values = new Map([...days].map(([key, day]) => [key, day.sets]));
-  const day = selected ? days.get(selected) : undefined;
-  const today = toDateInput(now.toISOString());
-  const yearAgo = new Date(now);
-  yearAgo.setFullYear(now.getFullYear() - 1);
-  const yearStart = toDateInput(yearAgo.toISOString());
-  const activeDays = [...days.keys()].filter((key) => key >= yearStart && key <= today).length;
-
-  return (
-    <Card title="Trainingstage">
-      <Heatmap
-        values={values}
-        now={now}
-        selectedKey={selected}
-        onSelect={(key) => setSelected(key === selected ? null : key)}
-        describe={countSets}
-      />
-      {selected ? (
-        <div className="mt-1 text-sm">
-          <p className="font-medium">
-            {formatDayKey(selected)}: {day ? countSets(day.sets) : 'kein Training'}
-          </p>
-          {day?.workoutIds.map((id) => (
-            <Link
-              key={id}
-              to={`${HISTORY_PATH}/${id}`}
-              className="inline-flex min-h-11 items-center font-medium text-emerald-700 dark:text-emerald-400"
-            >
-              Workout öffnen ›
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <p className={`${HINT} mt-1`}>
-          {activeDays === 1 ? '1 Trainingstag' : `${activeDays} Trainingstage`} in den letzten 12
-          Monaten
-        </p>
-      )}
-    </Card>
   );
 }
 

@@ -17,23 +17,26 @@ describe('App', () => {
     await vi.waitFor(async () => expect(await getSettings()).toBeDefined());
   });
 
-  it('navigiert über die Bottom-Navigation', async () => {
+  // Die Routen werden hier zum ersten Mal geladen und übersetzt, im Gesamtlauf dauert das
+  it('navigiert über die Bottom-Navigation', { timeout: 60_000 }, async () => {
     const user = userEvent.setup();
     render(<App />);
     const nav = screen.getByRole('navigation', { name: 'Hauptnavigation' });
 
     for (const label of ['Training', 'Alltag', 'Statistik', 'Einstellungen']) {
       await user.click(within(nav).getByRole('link', { name: label }));
-      expect(await screen.findByRole('heading', { level: 1, name: label })).toBeInTheDocument();
+      expect(
+        await screen.findByRole('heading', { level: 1, name: label }, { timeout: 15_000 }),
+      ).toBeInTheDocument();
     }
   });
 
-  it('speichert Einstellungen und zeigt den Namen im Dashboard', async () => {
+  it('speichert Einstellungen und zeigt den Namen im Dashboard', { timeout: 60_000 }, async () => {
     const user = userEvent.setup();
     window.location.hash = '#/settings';
     render(<App />);
 
-    const name = await screen.findByLabelText('Name');
+    const name = await screen.findByLabelText('Name', {}, { timeout: 15_000 });
     await user.type(name, 'Alex');
     await user.click(screen.getByRole('button', { name: 'lb' }));
     await vi.waitFor(() =>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { ensureSettings } from '../db/settings';
 import { getBackupReminder } from '../domain/backupReminder';
@@ -37,7 +37,9 @@ export function Layout() {
       <RestTimerAlarm />
       <ToastHost />
       <main>
-        <Outlet />
+        <Suspense fallback={null}>
+          <Outlet />
+        </Suspense>
       </main>
       <BottomNav />
     </div>

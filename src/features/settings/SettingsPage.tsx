@@ -7,6 +7,7 @@ import type { Settings } from '../../db/types';
 import { setRestTimerEnabled } from '../../db/workouts';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { BackupSection } from './BackupSection';
+import { ExportSection } from './ExportSection';
 import { StorageSection } from './StorageSection';
 import { useSettings } from './useSettings';
 
@@ -54,6 +55,7 @@ export function SettingsPage() {
             />
           </Card>
           <BackupSection settings={settings} />
+          <ExportSection unit={settings.weightUnit} />
           <StorageSection />
         </>
       )}

@@ -2,12 +2,15 @@ import type { Exercise, MuscleGroup, WeightUnit, WorkoutSet } from '../db/types'
 import { formatDecimal } from './format';
 import { MUSCLE_LABELS } from './labels';
 import {
+  byRecordOrder,
   estimateOneRepMax,
   exerciseKind,
   isPerformed,
+  sessionRecords,
   sessionVolumeKg,
   setOneRepMax,
   type ExerciseKind,
+  type PersonalRecord,
   type StrengthSet,
 } from './strength';
 import { kgToDisplay, roundTo } from './units';
@@ -559,6 +562,66 @@ export function formatPercent(percent: number): string {
   const text = `${formatDecimal(Math.abs(rounded), 1)} %`;
   if (rounded > 0) return `+${text}`;
   return rounded < 0 ? `−${text}` : text;
+}
+
+// ---------- Dashboard ----------
+
+export interface WeekSummary {
+  workouts: number;
+  sets: number;
+  volumeKg: number;
+}
+
+/** Laufende Kalenderwoche (ab Montag): Aufwärmsätze zählen nicht, Volumen wie `sessionVolumeKg` */
+export function weekSummary(
+  sessions: StatsSession[],
+  bodyWeightKg: number | null,
+  now: Date,
+): WeekSummary {
+  const start = mondayOf(now).getTime();
+  const inWeek = sessions.filter((session) => Date.parse(session.startedAt) >= start);
+  return {
+    workouts: new Set(inWeek.map((session) => session.workoutId)).size,
+    sets: inWeek.reduce((sum, { sets }) => sum + sets.filter(isWorkingSet).length, 0),
+    volumeKg: inWeek.reduce(
+      (sum, { sets, exercise }) =>
+        sum + sessionVolumeKg(sets, exerciseKind(exercise, bodyWeightKg)),
+      0,
+    ),
+  };
+}
+
+export interface RecentRecords {
+  workoutId: string;
+  startedAt: string;
+  exercise: StatsExercise;
+  records: PersonalRecord[];
+}
+
+/** Neueste Einheiten mit Rekord, je Übung und Workout eine Zeile, neueste zuerst */
+export function recentRecords(
+  sessions: StatsSession[],
+  bodyWeightKg: number | null,
+  limit: number,
+): RecentRecords[] {
+  const chronological = [...sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  const groups = groupByExercise(chronological);
+  const rows: RecentRecords[] = [];
+  // Rückwärts, damit nur so viel Historie durchgerechnet wird wie nötig
+  for (const { workoutId, startedAt, exercise, sets } of chronological.reverse()) {
+    if (rows.length === limit) break;
+    const group = groups.get(exercise.id)!;
+    group.pop();
+    const records = sessionRecords(
+      sets,
+      group.map((session) => session.sets),
+      exerciseKind(exercise, bodyWeightKg),
+    )
+      .flat()
+      .sort(byRecordOrder);
+    if (records.length > 0) rows.push({ workoutId, startedAt, exercise, records });
+  }
+  return rows;
 }
 
 // ---------- Satzpausen ----------

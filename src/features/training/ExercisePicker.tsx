@@ -67,7 +67,7 @@ export function ExercisePicker({
               aria-hidden="true"
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold ${
                 position >= 0
-                  ? 'border-emerald-600 bg-emerald-600 text-white'
+                  ? 'border-emerald-700 bg-emerald-700 text-white'
                   : 'border-slate-300 dark:border-slate-600'
               }`}
             >
