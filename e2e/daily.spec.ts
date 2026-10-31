@@ -37,6 +37,8 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await expect(water.getByText('0 von 2500 ml')).toBeVisible();
   await fillStepper(card(page, 'Schritte'), 'Schritte gesamt', '8000');
   await fillStepper(card(page, 'Gewicht'), 'Körpergewicht an diesem Tag', '80');
+  // Nach dem Abschicken steht der gespeicherte Wert im Feld; Neuladen bräche das Schreiben sonst ab
+  await expect(page.getByLabel('Körpergewicht an diesem Tag', { exact: true })).toHaveValue('80');
 
   // Bleibt nach dem Neuladen erhalten
   await page.reload();

@@ -294,7 +294,34 @@ describe('AppDatabase-Migration', () => {
     });
     expect(await v12.dailyLogs.count()).toBe(0);
     expect(await v12.bodyMeasurements.count()).toBe(0);
-    expect(v12.verno).toBe(12);
+    expect(v12.verno).toBeGreaterThanOrEqual(12);
     await v12.delete();
+  });
+
+  it('Version 13 ergänzt die Habit-Tabellen und behält vorhandene Daten', async () => {
+    const name = 'migration-test-v13';
+    const v12 = new Dexie(name);
+    v12.version(12).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+    });
+    await v12.table('dailyLogs').add({ id: 'd1', date: '2026-10-30', steps: 8000 });
+    v12.close();
+
+    const v13 = new AppDatabase(name);
+    expect(await v13.dailyLogs.get('d1')).toMatchObject({ steps: 8000 });
+    expect(await v13.habits.count()).toBe(0);
+    expect(await v13.habitChecks.count()).toBe(0);
+    expect(v13.verno).toBe(13);
+    await v13.delete();
   });
 });

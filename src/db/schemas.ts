@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { EQUIPMENT, EXERCISE_CATEGORIES, FOOD_CATEGORIES, MUSCLE_GROUPS } from './types';
+import {
+  EQUIPMENT,
+  EXERCISE_CATEGORIES,
+  FOOD_CATEGORIES,
+  HABIT_FREQUENCIES,
+  HABIT_GROUPS,
+  MUSCLE_GROUPS,
+} from './types';
 
 const nutrient = z.number().nonnegative();
 
@@ -134,6 +141,33 @@ export const bodyMeasureSchema = z.number().min(MIN_BODY_MEASURE_M).max(MAX_BODY
 
 /** Wochentage wie `Date.getDay()` */
 export const weekdaysSchema = z.array(z.number().int().min(0).max(6));
+
+export const MAX_HABIT_TIMES_PER_WEEK = 6;
+
+export const habitInputSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(80, 'Höchstens 80 Zeichen'),
+    icon: z.string().min(1),
+    frequency: z.enum(HABIT_FREQUENCIES),
+    timesPerWeek: z.number().int().min(1).max(MAX_HABIT_TIMES_PER_WEEK),
+    weekdays: weekdaysSchema,
+    group: z.enum(HABIT_GROUPS),
+  })
+  .refine((input) => input.frequency !== 'weekdays' || input.weekdays.length > 0, {
+    path: ['weekdays'],
+    message: 'Mindestens einen Wochentag wählen',
+  });
+
+export type HabitInput = z.input<typeof habitInputSchema>;
+
+export const EMPTY_HABIT_INPUT: HabitInput = {
+  name: '',
+  icon: '⭐',
+  frequency: 'daily',
+  timesPerWeek: 3,
+  weekdays: [],
+  group: 'other',
+};
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 

@@ -244,6 +244,32 @@ export interface BodyMeasurement extends BaseEntity {
   values: Partial<Record<BodyMeasure, number>>;
 }
 
+export const HABIT_FREQUENCIES = ['daily', 'weekly', 'weekdays'] as const;
+/** `daily` = jeden Tag, `weekly` = x-mal pro Woche, `weekdays` = feste Wochentage */
+export type HabitFrequency = (typeof HABIT_FREQUENCIES)[number];
+
+export const HABIT_GROUPS = ['morning', 'evening', 'other'] as const;
+export type HabitGroup = (typeof HABIT_GROUPS)[number];
+
+export interface Habit extends BaseEntity {
+  name: string;
+  /** Emoji */
+  icon: string;
+  frequency: HabitFrequency;
+  /** Nur bei `frequency: 'weekly'` wirksam */
+  timesPerWeek: number;
+  /** Wie `Date.getDay()`; nur bei `frequency: 'weekdays'` wirksam */
+  weekdays: number[];
+  group: HabitGroup;
+  order: number;
+}
+
+/** Eine Gewohnheit an einem Tag erledigt; höchstens ein aktiver Eintrag je Gewohnheit und Tag */
+export interface HabitCheck extends BaseEntity {
+  habitId: string;
+  date: DayKey;
+}
+
 export const FOOD_CATEGORIES = [
   'fruit',
   'vegetables',

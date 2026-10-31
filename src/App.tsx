@@ -20,6 +20,13 @@ const DailyHistoryPage = lazyPage(
   'DailyHistoryPage',
 );
 const DailyPage = lazyPage(() => import('./features/daily/DailyPage'), 'DailyPage');
+const HabitCreatePage = lazyPage(() => import('./features/daily/HabitEditPage'), 'HabitCreatePage');
+const HabitDetailPage = lazyPage(
+  () => import('./features/daily/HabitDetailPage'),
+  'HabitDetailPage',
+);
+const HabitEditPage = lazyPage(() => import('./features/daily/HabitEditPage'), 'HabitEditPage');
+const HabitListPage = lazyPage(() => import('./features/daily/HabitListPage'), 'HabitListPage');
 const FoodSearchPage = lazyPage(
   () => import('./features/nutrition/FoodSearchPage'),
   'FoodSearchPage',
@@ -84,6 +91,10 @@ export function App() {
           <Route path="daily" element={<DailyPage />} />
           <Route path="daily/history" element={<DailyHistoryPage />} />
           <Route path="daily/measurements" element={<BodyMeasurementsPage />} />
+          <Route path="daily/habits" element={<HabitListPage />} />
+          <Route path="daily/habits/new" element={<HabitCreatePage />} />
+          <Route path="daily/habits/:id" element={<HabitDetailPage />} />
+          <Route path="daily/habits/:id/edit" element={<HabitEditPage />} />
           <Route path="daily/foods" element={<FoodSearchPage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="settings" element={<SettingsPage />} />

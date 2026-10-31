@@ -8,6 +8,7 @@ import {
   dayKeySchema,
   exerciseFieldsSchema,
   foodFieldsSchema,
+  habitInputSchema,
   planExerciseValuesSchema,
   setValuesSchema,
   weekdaysSchema,
@@ -141,6 +142,12 @@ const bodyMeasurementSchema = baseEntitySchema.extend({
   values: z.partialRecord(z.enum(BODY_MEASURES), bodyMeasureSchema),
 });
 
+const habitSchema = baseEntitySchema.extend(habitInputSchema.shape).extend({ order: z.number() });
+const habitCheckSchema = baseEntitySchema.extend({
+  habitId: z.string().min(1),
+  date: dayKeySchema,
+});
+
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
   app: z.literal(BACKUP_APP, { message: 'Keine Fitnesstracker-Sicherung' }),
@@ -163,6 +170,8 @@ export const backupSchema = z.object({
     planExercises: z.array(planExerciseSchema).default([]),
     dailyLogs: z.array(dailyLogSchema).default([]),
     bodyMeasurements: z.array(bodyMeasurementSchema).default([]),
+    habits: z.array(habitSchema).default([]),
+    habitChecks: z.array(habitCheckSchema).default([]),
   }),
 });
 
@@ -181,6 +190,8 @@ export const TABLE_LABELS: Record<TableName, string> = {
   planExercises: 'Übungen in Plänen',
   dailyLogs: 'Alltagseinträge',
   bodyMeasurements: 'Körpermaße',
+  habits: 'Gewohnheiten',
+  habitChecks: 'Erledigte Gewohnheiten',
 };
 
 export async function createBackup(): Promise<Backup> {

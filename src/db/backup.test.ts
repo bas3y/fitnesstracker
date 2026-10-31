@@ -9,9 +9,10 @@ import {
 import { getBodyMeasurement, getDailyLog, setBodyMeasure, updateDailyLog } from './daily';
 import { db } from './database';
 import { createUserExercise } from './exercises';
+import { createHabit, loadHabit, setHabitChecked } from './habits';
 import { addPlanExercise, createPlan, deletePlan, loadPlanDetail } from './plans';
 import { create } from './repository';
-import { DAILY_GOAL_DEFAULTS, EMPTY_EXERCISE_INPUT } from './schemas';
+import { DAILY_GOAL_DEFAULTS, EMPTY_EXERCISE_INPUT, EMPTY_HABIT_INPUT } from './schemas';
 import { applySeed, SEED_VERSION } from './seed';
 import { getSettings, updateSettings } from './settings';
 import { resetDatabase } from './testUtils';
@@ -63,6 +64,8 @@ describe('parseBackup', () => {
         planExercises: 0,
         dailyLogs: 0,
         bodyMeasurements: 0,
+        habits: 0,
+        habitChecks: 0,
       });
   });
 
@@ -186,6 +189,42 @@ describe('Alltag in Sicherungen', () => {
     await setBodyMeasure('2026-10-30', 'waist', 0.85);
     const data = await validBackup();
     data.tables.bodyMeasurements[0].values = { nase: 0.05 };
+    expect(parseBackup(data).ok).toBe(false);
+  });
+});
+
+describe('Gewohnheiten in Sicherungen', () => {
+  it('stellt Gewohnheiten und erledigte Tage wieder her', async () => {
+    const habit = await createHabit({ ...EMPTY_HABIT_INPUT, name: 'Lesen', group: 'evening' });
+    await setHabitChecked(habit.id, '2026-10-30', true);
+    const result = parseBackup(JSON.parse(JSON.stringify(await createBackup())));
+    if (!result.ok) throw new Error(result.error);
+    expect(countRows(result.backup)).toMatchObject({ habits: 1, habitChecks: 1 });
+
+    await resetDatabase();
+    await restoreBackup(result.backup);
+
+    expect(await loadHabit(habit.id)).toMatchObject({
+      habit: { name: 'Lesen', group: 'evening' },
+      dates: ['2026-10-30'],
+    });
+  });
+
+  it('ergänzt in Sicherungen aus DB-Version 12 leere Tabellen', async () => {
+    const data = await validBackup();
+    data.dbVersion = 12;
+    delete data.tables.habits;
+    delete data.tables.habitChecks;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.habits).toEqual([]);
+    expect(result.backup.tables.habitChecks).toEqual([]);
+  });
+
+  it('lehnt unbekannte Häufigkeiten ab', async () => {
+    await createHabit({ ...EMPTY_HABIT_INPUT, name: 'Lesen' });
+    const data = await validBackup();
+    data.tables.habits[0].frequency = 'monatlich';
     expect(parseBackup(data).ok).toBe(false);
   });
 });

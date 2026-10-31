@@ -6,6 +6,8 @@ import {
   type DailyLog,
   type Exercise,
   type Food,
+  type Habit,
+  type HabitCheck,
   type Plan,
   type PlanDay,
   type PlanExercise,
@@ -30,6 +32,8 @@ export class AppDatabase extends Dexie {
   planExercises!: Table<PlanExercise, string>;
   dailyLogs!: Table<DailyLog, string>;
   bodyMeasurements!: Table<BodyMeasurement, string>;
+  habits!: Table<Habit, string>;
+  habitChecks!: Table<HabitCheck, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -206,6 +210,11 @@ export class AppDatabase extends Dexie {
             settings.sleepGoalSeconds ??= DAILY_GOAL_DEFAULTS.sleepGoalSeconds;
           }),
       );
+    // Habit-Tracker
+    this.version(13).stores({
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+    });
   }
 }
 

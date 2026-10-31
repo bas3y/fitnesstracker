@@ -17,7 +17,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 7 – Statistiken & Graphen (Kraft)
 - [x] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
 - [x] Schritt 9 – Tägliches Tracking
-- [ ] Schritt 10 – Habit-Tracker
+- [x] Schritt 10 – Habit-Tracker
 - [ ] Schritt 11 – Supplements
 - [ ] Schritt 12 – Ernährung (MVP 2 fertig)
 - [ ] Schritt 13 – Ausdauer manuell
@@ -463,8 +463,21 @@ Hinweise:
 
 **Notizen:**
 - Gebaut:
+  - Dexie v13: Tabellen `habits` (`name`, `icon`, `frequency: 'daily' | 'weekly' | 'weekdays'`, `timesPerWeek`, `weekdays`, `group: 'morning' | 'evening' | 'other'`, `order`) und `habitChecks` (`habitId`, `date`, je Gewohnheit und Tag ein aktiver Eintrag). Backup-Defaults, Sicherungen aus v1–v12 bleiben importierbar.
+  - `src/db/habits.ts`: `createHabit`, `updateHabit`, `reorderHabits`, `deleteHabit` (Soft-Delete kaskadiert), `setHabitChecked` (setzt den Zielzustand, doppeltes Tippen legt nichts doppelt an), `loadHabits`, `loadHabit`. `src/domain/habits.ts`: `isHabitDue`, `habitStreak`, `checksInWeek`, `weekStart`, Kalender (`monthWeeks`, `shiftMonth`), Formatierung.
+  - UI in `src/features/daily/`: `HabitChecklist` auf der Alltag-Seite (eine Karte je Gruppe: Morgenroutine, Abendroutine, Gewohnheiten; mit Fortschritt, folgt dem gewählten Tag, ohne Gewohnheiten unsichtbar), `HabitListPage` (`/daily/habits`: sortieren, ✕), `HabitDetailPage` (`/daily/habits/:id`: Aktuell, Bestwert, Gesamt, Kalender), `HabitCalendar`, `HabitForm`/`HabitEditPage` (`/daily/habits/new`, `/daily/habits/:id/edit`).
+  - Tests: `src/domain/habits.test.ts`, `src/db/habits.test.ts`, Migration v12→v13, Backup. E2E `e2e/habits.spec.ts` offline in beiden Viewports (anlegen, sortieren, abhaken, Nachtrag, Neuladen, Kalender, bearbeiten, löschen).
 - Abweichungen:
+  - Streak-Regeln: Heute noch offen unterbricht keine Serie. `weekdays` zählt nur fällige Tage, ein verpasster Termin beendet die Serie auch an einem freien Tag. `weekly` zählt Wochen (Mo–So) mit erreichtem Ziel, die laufende Woche zählt erst ab erreichtem Ziel und bricht nichts.
+  - Gewertet wird immer nach dem **aktuellen** Rhythmus: Eine Änderung der Häufigkeit bewertet die ganze Vergangenheit neu, es gibt keine Historie des Rhythmus. Tage außerhalb des Rhythmus zählen nicht, bleiben aber im Kalender sichtbar und abwählbar.
+  - `timesPerWeek` höchstens 6, sonst ist es „Täglich“. Die Checkliste zeigt `weekly` an jedem Tag, auch wenn das Wochenziel schon erreicht ist. „Gesamt“ zählt alle erledigten Tage, auch die außerhalb des Rhythmus.
+  - Symbole sind eine feste Emoji-Auswahl (20 Stück, Darstellung je nach Gerät), keine freie Eingabe. Standard ⭐ statt ✅, weil ✅ neben dem leeren Kreis wie erledigt aussah.
+  - Der Kalender wird von der Alltag-Seite aus mit `useFromHere` geöffnet, „Zurück“ führt also zum gewählten Tag. Nach „Bearbeiten“ führt es zur Gewohnheiten-Liste.
+  - **Testkorrektur:** `e2e/daily.spec.ts` lud direkt nach der Gewichtseingabe neu und brach so gelegentlich den Schreibvorgang ab (rund 1 von 20 Läufen, beide Viewports). Der Test wartet jetzt auf den gespeicherten Wert (danach 60 von 60 Läufen grün). In der App betrifft das nur ein Neuladen im selben Moment wie die Eingabe.
 - Offene Punkte:
+  - Kein Dashboard-Widget, weil es nicht zum Umfang gehört. Die Ideensammlung nennt Habits in der Tagesübersicht: als neues Widget nach dem Muster von `TodayCard` ergänzbar (`HabitChecklist` wiederverwenden), dabei auf das Hauptbundle achten.
+  - Erledigte Gewohnheiten rutschen nicht nach unten, Pausieren und Archivieren gibt es nicht. Schritt 18 (Streak-Übersicht) kann `habitStreak` verwenden. Erinnerungen gibt es ohne Server nicht, CSV-Export enthält Gewohnheiten nicht.
+  - Emojis und `aria`-Rollen der Checkliste auf dem echten Handy ansehen. Lighthouse wurde nicht erneut ausgeführt.
 
 ### Schritt 11 – Supplements
 - `supplements` (Name, Dosierung, Einheit, Uhrzeiten, Bestand, Packungsgröße), `supplementIntakes`
