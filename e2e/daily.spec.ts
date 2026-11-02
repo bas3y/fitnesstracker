@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fillStepper, goOffline } from './helpers';
+import { dailyTile, fillStepper, goOffline } from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -13,6 +13,9 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await page.reload();
 
   await openNav(page, 'Alltag');
+  await expect(dailyTile(page, 'Körper & Befinden')).toContainText('Noch nichts eingetragen');
+  await dailyTile(page, 'Körper & Befinden').click();
+  await expect(page.getByRole('heading', { name: 'Körper & Befinden', level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Heute' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Nächster Tag' })).toBeDisabled();
 
@@ -64,10 +67,16 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await fillStepper(page.locator('body'), 'Wasser pro Tag', '2000');
 
   await openNav(page, 'Alltag');
+  await expect(dailyTile(page, 'Körper & Befinden')).toContainText('Wasser 1000 ml');
+  await expect(dailyTile(page, 'Körper & Befinden')).toContainText('Schlaf 7,5 h');
+  await dailyTile(page, 'Körper & Befinden').click();
   await expect(water.getByText('1000 von 2000 ml')).toBeVisible();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
 
-  // Verlauf als Karte auf der Seite (eigener Chunk mit Recharts, offline aus dem Precache)
-  const history = card(page, 'Verlauf');
+  // Verlauf als eigene Seite (eigener Chunk mit Recharts, offline aus dem Precache)
+  await dailyTile(page, 'Verlauf').click();
+  await expect(page.getByRole('heading', { name: 'Verlauf', level: 1 })).toBeVisible();
+  const history = page.locator('main');
   const metric = (name: string) =>
     history.getByRole('group', { name: 'Kennzahl' }).getByRole('button', { name, exact: true });
   await expect(history.getByTestId('daily-summary')).toHaveText('80 kg → 79,5 kg (−0,6 %)');
@@ -80,15 +89,14 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await expect(history.getByTestId('daily-summary')).toHaveText('Ø 5 von 5');
   await metric('Energie').click();
   await expect(history.getByText('Keine Einträge in diesem Zeitraum.')).toBeVisible();
-  // Zeitraum steht in der URL, der Tageswechsel behält ihn
+  // Zeitraum steht in der URL und übersteht das Neuladen
   await history.getByRole('button', { name: '4 Wo.' }).click();
-  await page.getByRole('button', { name: 'Vorheriger Tag' }).click();
+  await page.reload();
   await expect(history.getByRole('button', { name: '4 Wo.' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  // Alte Adresse des Verlaufs führt zur Alltag-Seite
-  await page.goto('./#/daily/history');
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
   await expect(page.getByRole('heading', { name: 'Alltag', level: 1 })).toBeVisible();
 
   // Widget: bei bestehenden Nutzern unter „Weitere Widgets“
@@ -106,7 +114,62 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await page.reload();
   await expect(card(page, 'Heute').getByText('1250 ml')).toBeVisible();
   await card(page, 'Heute').getByRole('link', { name: 'Eintragen' }).click();
-  await expect(page.getByRole('heading', { name: 'Alltag' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Körper & Befinden', level: 1 })).toBeVisible();
+  // Von der Startseite aus führt „Zurück“ dorthin
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(page.getByRole('heading', { name: 'Fitnesstracker', level: 1 })).toBeVisible();
+});
+
+test('Übersicht → Unterseite → zurück mit gewähltem Tag (offline)', async ({ page, context }) => {
+  await page.goto('./');
+  await goOffline(page, context);
+  await page.reload();
+
+  await openNav(page, 'Alltag');
+  const tiles = page.getByRole('list', { name: 'Bereiche' }).getByRole('link');
+  await expect(tiles).toHaveCount(6);
+  await expect(dailyTile(page, 'Gewohnheiten')).toContainText('Noch keine');
+  await expect(dailyTile(page, 'To-dos')).toContainText('Keine offen');
+  await expect(dailyTile(page, 'Ernährung')).toContainText('0 von 2200 kcal');
+  await expect(dailyTile(page, 'Supplements')).toContainText('Noch keine');
+
+  // Gestern wählen: Kacheln und Unterseiten zeigen diesen Tag
+  await page.getByRole('button', { name: 'Vorheriger Tag' }).click();
+  await expect(page.getByRole('heading', { name: 'Gestern' })).toBeVisible();
+  await expect(dailyTile(page, 'To-dos')).toContainText('Nichts erledigt');
+
+  const pages = [
+    { tile: 'Körper & Befinden', title: 'Körper & Befinden', withDay: true },
+    { tile: 'Ernährung', title: 'Ernährung', withDay: true },
+    { tile: 'Gewohnheiten', title: 'Gewohnheiten', withDay: false },
+    { tile: 'Supplements', title: 'Supplements', withDay: false },
+    { tile: 'To-dos', title: 'To-dos', withDay: false },
+    { tile: 'Verlauf', title: 'Verlauf', withDay: false },
+  ];
+  for (const { tile, title, withDay } of pages) {
+    await dailyTile(page, tile).click();
+    await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+    // Ohne Einträge zeigen Gewohnheiten/Supplements keine Tagauswahl
+    if (withDay) await expect(page.getByRole('heading', { name: 'Gestern' })).toBeVisible();
+    await page.getByRole('link', { name: '‹ Zurück' }).click();
+    await expect(page.getByRole('heading', { name: 'Alltag', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Gestern' })).toBeVisible();
+  }
+
+  // Auf der Unterseite den Tag wechseln: zurück zur Übersicht mit diesem Tag
+  await dailyTile(page, 'Körper & Befinden').click();
+  await page.getByRole('button', { name: 'Nächster Tag' }).click();
+  await expect(page.getByRole('heading', { name: 'Heute' })).toBeVisible();
+  await card(page, 'Wasser').getByRole('button', { name: '+500 ml' }).click();
+  await expect(card(page, 'Wasser').getByText('500 von 2500 ml')).toBeVisible();
+  // Körpermaße hängen unter Körper & Befinden
+  await page.getByRole('link', { name: /^Körpermaße/ }).click();
+  await expect(page.getByRole('heading', { name: 'Körpermaße', level: 1 })).toBeVisible();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(page.getByRole('heading', { name: 'Körper & Befinden', level: 1 })).toBeVisible();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(page.getByRole('heading', { name: 'Heute' })).toBeVisible();
+  await expect(dailyTile(page, 'Körper & Befinden')).toContainText('Wasser 500 ml');
 });
 
 test('Körpermaße erfassen, ansehen und löschen (offline)', async ({ page, context }) => {

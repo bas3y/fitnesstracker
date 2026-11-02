@@ -15,6 +15,11 @@ const BodyMeasurementsPage = lazyPage(
   () => import('./features/daily/BodyMeasurementsPage'),
   'BodyMeasurementsPage',
 );
+const BodyPage = lazyPage(() => import('./features/daily/BodyPage'), 'BodyPage');
+const DailyHistoryPage = lazyPage(
+  () => import('./features/daily/DailyHistoryPage'),
+  'DailyHistoryPage',
+);
 const DailyPage = lazyPage(() => import('./features/daily/DailyPage'), 'DailyPage');
 const HabitCreatePage = lazyPage(() => import('./features/daily/HabitEditPage'), 'HabitCreatePage');
 const HabitDetailPage = lazyPage(
@@ -113,8 +118,8 @@ export function App() {
           <Route path="training/plans/:id" element={<PlanDetailPage />} />
           <Route path="training/plans/:id/days/:dayId" element={<PlanDayPage />} />
           <Route path="daily" element={<DailyPage />} />
-          {/* Verlauf steht seit Schritt 10b als Karte auf der Alltag-Seite */}
-          <Route path="daily/history" element={<Navigate to="/daily" replace />} />
+          <Route path="daily/history" element={<DailyHistoryPage />} />
+          <Route path="daily/body" element={<BodyPage />} />
           <Route path="daily/measurements" element={<BodyMeasurementsPage />} />
           <Route path="daily/habits" element={<HabitListPage />} />
           <Route path="daily/habits/new" element={<HabitCreatePage />} />

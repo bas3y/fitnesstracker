@@ -1,14 +1,12 @@
 import { useState } from 'react';
-import { useBackTo } from '../../components/backNavigation';
 import { secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card, Page } from '../../components/Page';
 import { clearDoneTodos } from '../../db/todos';
 import type { Todo } from '../../db/types';
-import { dayKey } from '../../domain/daily';
 import { todayTodos, upcomingTodos } from '../../domain/todos';
-import { useNow } from '../training/useWorkouts';
 import { TodoAddForm, TodoRow } from './TodoParts';
+import { useDayBackTo, useDayParam } from './useDaily';
 import { useTodos } from './useTodos';
 
 const HINT = 'text-sm text-slate-500 dark:text-slate-400';
@@ -16,8 +14,9 @@ const DONE_SHOWN = 50;
 
 export function TodoPage() {
   const todos = useTodos();
-  const backTo = useBackTo('/daily');
-  const today = dayKey(useNow(true, 60_000));
+  // Aufgaben gelten immer ab heute, der gewählte Tag zählt nur für den Rückweg
+  const { date, today } = useDayParam();
+  const backTo = useDayBackTo(date, today);
   const [confirmClear, setConfirmClear] = useState(false);
 
   const open = todos ? todayTodos(todos, today) : [];

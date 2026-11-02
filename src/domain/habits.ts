@@ -310,6 +310,16 @@ export function amountInWeek(entries: readonly HabitEntry[], date: DayKey): numb
 
 // ---------- Verlauf ----------
 
+/** Stand eines Tages wie in der Checkliste: angezeigte Gewohnheiten ohne Aufhören */
+export function habitDayProgress(
+  items: readonly HabitHistoryItem[],
+  date: DayKey,
+): { done: number; total: number } {
+  const tasks = items.filter(({ habit }) => habit.kind !== 'quit' && isHabitShownOn(habit, date));
+  const done = tasks.filter(({ habit, entries }) => isHabitDoneOn(habit, entries, date)).length;
+  return { done, total: tasks.length };
+}
+
 export interface HabitHistoryItem {
   habit: Pick<
     Habit,

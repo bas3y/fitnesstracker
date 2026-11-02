@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useSearchParams } from 'react-router-dom';
+import { useBackTo } from '../../components/backNavigation';
 import {
   getBodyMeasurement,
   getDailyLog,
@@ -9,6 +10,7 @@ import {
 import type { DayKey } from '../../db/types';
 import { dayKey, isDayKey } from '../../domain/daily';
 import { useNow } from '../training/useWorkouts';
+import { DAILY_PATH, withDate } from './paths';
 
 /** `undefined` = lädt, `null` = noch kein Eintrag */
 export function useDailyLog(date: DayKey) {
@@ -46,4 +48,9 @@ export function useDayParam() {
       { replace: true },
     );
   return { date, today, setDate };
+}
+
+/** Zurück zur Herkunft (z. B. Startseite), sonst zu `parent` mit dem gewählten Tag */
+export function useDayBackTo(date: DayKey, today: DayKey, parent = DAILY_PATH) {
+  return useBackTo(withDate(parent, date, today));
 }

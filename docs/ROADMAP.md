@@ -21,7 +21,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 10b – Anpassungen nach dem Testen & Handytest
 - [x] Schritt 11 – Supplements
 - [x] Schritt 12 – Ernährung (MVP 2 fertig)
-- [ ] Schritt 12b – Alltag übersichtlicher (Kacheln + Unterseiten)
+- [x] Schritt 12b – Alltag übersichtlicher (Kacheln + Unterseiten)
 - [ ] Schritt 13 – Ausdauer manuell
 - [ ] Schritt 14 – FIT/GPX/TCX-Import
 - [ ] Schritt 15 – Ausdauer-Statistiken
@@ -621,8 +621,21 @@ Mit dem Nutzer abgestimmt (nach Schritt 12):
 
 **Notizen:**
 - Gebaut:
+  - `DailyPage` (`/daily`) = Tagauswahl + 6 Kacheln im 2er-Raster (Liste „Bereiche“): Gewohnheiten („3 von 5“ + Balken), To-dos („2 offen“, an früheren Tagen „n erledigt“), Ernährung („1366 von 2000 kcal“ + Balken), Supplements („1 von 3“ + „⚠️ Bestand niedrig“), Körper & Befinden (Wasser/Schlaf/Schritte, höchstens zwei Zeilen), Verlauf.
+  - Neue Unterseiten: `BodyPage` (`/daily/body`, bisheriges Tagesformular + Link „Körpermaße“) und `DailyHistoryPage` (`/daily/history`, lazy, ersetzt die Umleitung). `HabitListPage` zeigt Tagauswahl + Checkliste je Gruppe über „Alle Gewohnheiten“.
+  - Tag auf allen Unterseiten: `src/features/daily/paths.ts` (`withDate`, Pfadkonstanten), `useDayBackTo(date, today, parent?)` in `useDaily.ts` (Herkunft aus `state`, sonst Übersicht bzw. `parent` mit dem gewählten Tag). Wechselt man auf der Unterseite den Tag, führt „Zurück“ zu diesem Tag.
+  - Domain: `habitDayProgress` (`src/domain/habits.ts`), `lowStockSupplements` (`src/domain/supplements.ts`, auch in `SupplementChecklist` genutzt), je mit Unit-Test.
+  - Aufgeräumt: `SupplementChecklist` nur noch `widget`/`page`, `NutritionDayCard` ohne `variant` (nur Startseite). Widget „Heute“ → „Eintragen“ öffnet Körper & Befinden, „Zurück“ führt zur Startseite.
+  - E2E: neuer Test „Übersicht → Unterseite → zurück mit gewähltem Tag“ (alle 6 Kacheln, Tageswechsel auf der Unterseite, Körpermaße) in `e2e/daily.spec.ts`; `daily`, `habits`, `todos`, `supplements`, `nutrition`, `catalog` angepasst, Helfer `dailyTile`. 66/66 grün in beiden Viewports, offline.
 - Abweichungen:
+  - Körpermaße liegen nicht direkt auf „Körper & Befinden“, sondern als Link darunter (eigene Seite mit Graph und Liste bleibt, „Zurück“ führt zu Körper & Befinden).
+  - To-dos-Seite zeigt weiterhin „ab heute“ (Aufgaben wandern); der gewählte Tag zählt dort nur für den Rückweg. Die To-do-Kachel zeigt an früheren Tagen die an dem Tag erledigten.
+  - `mvp1.spec.ts` musste nicht geändert werden. Die Liste auf der Gewohnheiten-Seite heißt jetzt „Alle Gewohnheiten“ (Verwechslung mit der Checkliste vermeiden).
+  - Hauptbundle unverändert (~297 KB); neue Seiten je eigener Chunk.
 - Offene Punkte:
+  - Tiefere Seiten (Lebensmittel, Gewohnheit-Detail/-Bearbeiten, Supplement-Detail) führen zur jeweiligen Liste ohne den gewählten Tag zurück.
+  - Links „Alle Gewohnheiten“/„Alle Supplements“ in den Startseiten-Widgets geben keine Herkunft mit („Zurück“ führt zur Alltag-Übersicht statt zur Startseite).
+  - Kachel-Layout auf dem echten Handy ansehen (Emoji-Darstellung, Höhe bei langen Texten). Schritt 17 ergänzt eigene Kacheln in `DailyPage`.
 
 ---
 

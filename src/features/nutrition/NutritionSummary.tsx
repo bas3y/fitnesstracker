@@ -8,6 +8,7 @@ import { formatDecimal } from '../../domain/format';
 import { DASHBOARD_WIDGET_LABELS } from '../../domain/labels';
 import { formatKcal, goalForDay, nutritionDay, proteinPerKg } from '../../domain/nutrition';
 import { GoalBar } from '../daily/GoalBar';
+import { withDate } from '../daily/paths';
 import { NUTRITION_PATH } from './paths';
 import { useNutritionDay } from './useNutrition';
 
@@ -69,27 +70,25 @@ export function NutritionSummary({
   );
 }
 
-/** Karte auf der Alltag-Seite (`card`) bzw. Widget der Startseite (`widget`) */
+/** Widget der Startseite */
 export function NutritionDayCard({
   date,
   today,
   settings,
-  variant,
 }: {
   date: DayKey;
   today: DayKey;
   settings: Settings;
-  variant: 'card' | 'widget';
 }) {
   const data = useNutritionDay(date);
   const from = useFromHere();
   if (!data) return null;
-  const to = date === today ? NUTRITION_PATH : `${NUTRITION_PATH}?date=${date}`;
+  const to = withDate(NUTRITION_PATH, date, today);
   return (
     <NutritionSummary
       data={data}
       settings={settings}
-      title={variant === 'widget' ? DASHBOARD_WIDGET_LABELS.nutrition.name : 'Ernährung'}
+      title={DASHBOARD_WIDGET_LABELS.nutrition.name}
     >
       <Link
         to={to}

@@ -13,6 +13,9 @@ import {
   HABIT_GROUP_LABELS,
   isPaused,
 } from '../../domain/habits';
+import { DayNavigator } from './DayNavigator';
+import { HabitChecklist } from './HabitChecklist';
+import { useDayBackTo, useDayParam } from './useDaily';
 import { HABITS_PATH, useHabits } from './useHabits';
 
 function habitHint(habit: Habit): string {
@@ -27,6 +30,8 @@ function habitHint(habit: Habit): string {
 
 export function HabitListPage() {
   const habits = useHabits();
+  const { date, today, setDate } = useDayParam();
+  const backTo = useDayBackTo(date, today);
   const [deleting, setDeleting] = useState<Habit | null>(null);
   const [showArchive, setShowArchive] = useState(false);
   const all = (habits ?? []).map(({ habit }) => habit);
@@ -34,14 +39,21 @@ export function HabitListPage() {
   const archived = all.filter((habit) => habit.archivedAt !== null);
 
   return (
-    <Page title="Gewohnheiten" backTo="/daily">
+    <Page title="Gewohnheiten" backTo={backTo}>
+      {active.length > 0 && (
+        <>
+          <DayNavigator date={date} today={today} onChange={setDate} />
+          <HabitChecklist date={date} today={today} />
+          <h2 className="mb-3 text-lg font-semibold">Alle Gewohnheiten</h2>
+        </>
+      )}
       {habits && active.length === 0 && (
         <p className="mb-4 text-slate-600 dark:text-slate-400">
-          Noch keine Gewohnheiten. Lege die erste an, sie erscheint dann auf der Alltag-Seite.
+          Noch keine Gewohnheiten. Lege die erste an, sie erscheint dann hier als Checkliste.
         </p>
       )}
       <SortableList
-        label="Gewohnheiten"
+        label="Alle Gewohnheiten"
         items={active}
         onReorder={reorderHabits}
         renderItem={(habit, { handle }) => (

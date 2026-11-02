@@ -12,6 +12,7 @@ import {
   isLowStock,
   isSupplementDueOn,
   isSupplementHabitCandidate,
+  lowStockSupplements,
   stockDaysLeft,
   supplementAdherence,
   supplementDay,
@@ -199,6 +200,16 @@ describe('Bestand', () => {
     expect(formatDaysLeft(0)).toBe('Bestand aufgebraucht');
     expect(formatDaysLeft(1)).toBe('Reicht noch 1 Tag');
     expect(formatDaysLeft(5)).toBe('Reicht noch 5 Tage');
+  });
+
+  it('listet Supplements mit niedrigem Bestand samt Reichweite', () => {
+    const low = supplement({ id: 'low', stock: 35 });
+    const enough = supplement({ id: 'enough', stock: 100 });
+    const untracked = supplement({ id: 'untracked' });
+    expect(lowStockSupplements([enough, low, untracked], NO_TRAINING, TODAY, 7)).toEqual([
+      { supplement: low, days: 7 },
+    ]);
+    expect(lowStockSupplements([enough], NO_TRAINING, TODAY, 7)).toEqual([]);
   });
 });
 

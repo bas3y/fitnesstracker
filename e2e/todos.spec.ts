@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fillStepper, goOffline } from './helpers';
+import { dailyTile, fillStepper, goOffline } from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -17,7 +17,8 @@ async function addTodo(page: Page, title: string, priority?: string, day?: strin
 }
 
 test('To-dos: Priorität, Übertrag, Bearbeiten und Liste (offline)', async ({ page, context }) => {
-  await page.goto('./#/daily');
+  // Schnelleingabe steht als Widget auf der Startseite
+  await page.goto('./');
   await goOffline(page, context);
   await page.reload();
 
@@ -75,6 +76,14 @@ test('To-dos: Priorität, Übertrag, Bearbeiten und Liste (offline)', async ({ p
   await expect(page.getByRole('list', { name: 'Geplant' })).toHaveCount(0);
 
   await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(page.getByRole('heading', { name: 'Fitnesstracker', level: 1 })).toBeVisible();
+
+  // Kachel auf der Alltag-Übersicht
+  await openNav(page, 'Alltag');
+  await expect(dailyTile(page, 'To-dos')).toContainText('1 offen');
+  await dailyTile(page, 'To-dos').click();
+  await expect(page.getByRole('list', { name: 'Heute' })).toContainText('Wocheneinkauf');
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
   await expect(page.getByRole('heading', { name: 'Alltag', level: 1 })).toBeVisible();
 });
 
@@ -112,13 +121,15 @@ test('Startseite: Schnellzugriff, Gewohnheiten und To-dos als Widgets (offline)'
   await quick.getByRole('link', { name: /Training/ }).click();
   await expect(page.getByRole('heading', { name: 'Training', level: 1 })).toBeVisible();
 
-  // Werte kommen auf der Alltag-Seite an
+  // Werte kommen unter Alltag → Körper & Befinden an
   await openNav(page, 'Alltag');
+  await dailyTile(page, 'Körper & Befinden').click();
   await expect(card(page, 'Wasser').getByText('250 von 2500 ml')).toBeVisible();
   await expect(page.getByLabel('Körpergewicht an diesem Tag', { exact: true })).toHaveValue('81,5');
 
   // Gewohnheit direkt auf der Startseite abhaken
-  await page.getByRole('link', { name: /^Gewohnheiten/ }).click();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await dailyTile(page, 'Gewohnheiten').click();
   await page.getByRole('link', { name: '+ Neue Gewohnheit' }).click();
   await page.getByLabel('Name', { exact: true }).fill('Dehnen');
   await page.getByRole('button', { name: 'Anlegen' }).click();

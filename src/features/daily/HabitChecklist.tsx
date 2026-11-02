@@ -31,7 +31,7 @@ const ROUND_BUTTON =
   'flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 px-2 text-sm font-semibold tabular-nums active:bg-slate-200 dark:bg-slate-700 dark:active:bg-slate-600';
 
 /**
- * `groups`: eine Karte je Gruppe (Alltag-Seite); `widget`: eine Karte für alles (Startseite).
+ * `groups`: eine Karte je Gruppe (Gewohnheiten-Seite); `widget`: eine Karte für alles (Startseite).
  * Ohne anstehende Gewohnheiten rendert `groups` nichts, `widget` einen Hinweis.
  */
 export function HabitChecklist({

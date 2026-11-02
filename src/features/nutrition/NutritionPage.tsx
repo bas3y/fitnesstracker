@@ -1,9 +1,8 @@
-import { useBackTo } from '../../components/backNavigation';
 import { LinkRow, Page } from '../../components/Page';
 import { MEAL_TYPES } from '../../db/types';
 import { nutritionDay } from '../../domain/nutrition';
 import { DayNavigator } from '../daily/DayNavigator';
-import { useDayParam } from '../daily/useDaily';
+import { useDayBackTo, useDayParam } from '../daily/useDaily';
 import { useSettings } from '../settings/useSettings';
 import { MealCard } from './MealCard';
 import { NutritionSummary } from './NutritionSummary';
@@ -14,7 +13,7 @@ export function NutritionPage() {
   const settings = useSettings();
   const { date, today, setDate } = useDayParam();
   const data = useNutritionDay(date);
-  const backTo = useBackTo('/daily');
+  const backTo = useDayBackTo(date, today);
   const day = data && nutritionDay(data.entries);
 
   return (

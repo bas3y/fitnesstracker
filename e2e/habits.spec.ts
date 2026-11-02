@@ -1,8 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { dragTo, fillStepper, goOffline } from './helpers';
+import { dailyTile, dragTo, fillStepper, goOffline } from './helpers';
 
 const card = (page: Page, name: string) =>
   page.locator('section').filter({ has: page.getByRole('heading', { name, exact: true }) });
+
+const allHabits = (page: Page) => page.getByRole('list', { name: 'Alle Gewohnheiten' });
 
 const checkbox = (page: Page, name: string) => page.getByRole('checkbox', { name, exact: true });
 
@@ -17,7 +19,7 @@ async function addHabit(page: Page, name: string, fill?: () => Promise<void>) {
   await page.getByLabel('Name', { exact: true }).fill(name);
   await fill?.();
   await page.getByRole('button', { name: 'Anlegen' }).click();
-  await expect(page.getByRole('link', { name: new RegExp(name) })).toBeVisible();
+  await expect(allHabits(page).getByRole('link', { name: new RegExp(name) })).toBeVisible();
 }
 
 test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offline)', async ({
@@ -62,9 +64,11 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
     await expect(page.getByLabel('Tageslimit', { exact: true })).toHaveValue('5');
     await page.getByLabel('Einheit', { exact: true }).fill('Zigaretten');
   });
-  await expect(page.getByRole('link', { name: /Rauchen/ })).toContainText('Höchstens 5 Zigaretten');
+  await expect(allHabits(page).getByRole('link', { name: /Rauchen/ })).toContainText(
+    'Höchstens 5 Zigaretten',
+  );
 
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  // Checkliste des Tages steht über der Liste
   const habits = card(page, 'Gewohnheiten');
   await expect(habits.getByText('0 von 2 erledigt')).toBeVisible();
 
@@ -95,8 +99,10 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
   await expect(habits.getByText('2 von 2 erledigt')).toBeVisible();
   await expect(habits.getByText('6 von max. 5 Zigaretten')).toBeVisible();
 
-  // Verlauf auf der Alltag-Seite (Recharts-Chunk offline)
-  const history = card(page, 'Verlauf');
+  // Verlauf über die Alltag-Übersicht (Recharts-Chunk offline)
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await dailyTile(page, 'Verlauf').click();
+  const history = page.locator('main');
   const metrics = history.getByRole('group', { name: 'Kennzahl' });
   await metrics.getByRole('button', { name: 'Gewohnheiten' }).click();
   await expect(history.getByTestId('daily-summary')).toHaveText('Ø 100 % erledigt');
@@ -105,6 +111,9 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
     'Ø 6 Zigaretten pro Tag · im Limit an 0 von 1 Tagen',
   );
   await expect(page.getByRole('img', { name: '🚭 Rauchen im Verlauf' })).toBeVisible();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(dailyTile(page, 'Gewohnheiten')).toContainText('2 von 2');
+  await dailyTile(page, 'Gewohnheiten').click();
 
   // Detailseite Aufhören
   await page.getByRole('link', { name: 'Details: Rauchen' }).click();
@@ -121,8 +130,7 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
   await expect(page.getByRole('link', { name: 'Details: Lesen' })).toHaveCount(0);
   await expect(habits.getByText('1 von 1 erledigt')).toBeVisible();
 
-  await page.getByRole('link', { name: /^Gewohnheiten/ }).click();
-  const list = page.getByRole('list', { name: 'Gewohnheiten' });
+  const list = allHabits(page);
   await expect(list.getByRole('link', { name: /Lesen/ })).toContainText('Pausiert');
   await list.getByRole('link', { name: /Lesen/ }).click();
   await page.getByRole('button', { name: 'Fortsetzen' }).click();
@@ -195,10 +203,10 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
     .getByRole('button', { name: weekday })
     .click();
   await page.getByRole('button', { name: 'Anlegen' }).click();
-  await expect(page.getByRole('link', { name: /Nur heute fällig/ })).toBeVisible();
+  await expect(allHabits(page).getByRole('link', { name: /Nur heute fällig/ })).toBeVisible();
 
   // Reihenfolge ändern
-  const list = page.getByRole('list', { name: 'Gewohnheiten' });
+  const list = allHabits(page);
   await dragTo(
     page,
     list.getByRole('button', { name: 'Lesen verschieben' }),
@@ -206,8 +214,7 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
   );
   await expect(list.getByRole('listitem').first()).toContainText('Lesen');
 
-  // Checklisten je Gruppe
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  // Checklisten je Gruppe auf derselben Seite
   const morning = card(page, 'Morgenroutine');
   await expect(morning.getByText('0 von 1 erledigt')).toBeVisible();
   await expect(card(page, 'Abendroutine').getByRole('checkbox')).toHaveCount(1);
@@ -291,7 +298,7 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
   // Löschen mit Rückfrage
   await page.getByRole('button', { name: 'Gewohnheit löschen' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Löschen' }).click();
-  await expect(page.getByRole('heading', { name: 'Gewohnheiten' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gewohnheiten', level: 1 })).toBeVisible();
   await expect(list.getByRole('listitem')).toHaveCount(3);
 
   await list.getByRole('button', { name: 'Lesen löschen' }).click();

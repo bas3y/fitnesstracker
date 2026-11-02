@@ -296,6 +296,21 @@ export function isLowStock(daysLeft: number | null, thresholdDays: number): bool
   return daysLeft !== null && daysLeft <= thresholdDays;
 }
 
+/** Supplements, deren Bestand höchstens noch `thresholdDays` reicht, in Listenreihenfolge */
+export function lowStockSupplements<
+  S extends SupplementRules & Pick<Supplement, 'doses' | 'stock'>,
+>(
+  supplements: readonly S[],
+  trainingDays: TrainingDays,
+  today: DayKey,
+  thresholdDays: number,
+): Array<{ supplement: S; days: number }> {
+  return supplements.flatMap((supplement) => {
+    const days = stockDaysLeft(supplement, trainingDays, today);
+    return days !== null && isLowStock(days, thresholdDays) ? [{ supplement, days }] : [];
+  });
+}
+
 export function formatDaysLeft(days: number): string {
   if (days === 0) return 'Bestand aufgebraucht';
   return days === 1 ? 'Reicht noch 1 Tag' : `Reicht noch ${days} Tage`;

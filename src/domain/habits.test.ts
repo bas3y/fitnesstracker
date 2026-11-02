@@ -10,6 +10,7 @@ import {
   formatMonth,
   formatStreak,
   habitCompletion,
+  habitDayProgress,
   habitStreak,
   isHabitDoneOn,
   isHabitDue,
@@ -343,6 +344,18 @@ describe('Verlauf', () => {
     ]);
     const archived = { ...habit, archivedAt: '2026-10-24T12:00:00.000Z' };
     expect(habitCompletion([{ habit: archived, entries: [] }], null, '2026-10-25')).toHaveLength(1);
+  });
+
+  it('habitDayProgress: Stand des Tages ohne Aufhören, Pausierte und nicht Fällige', () => {
+    const items = [
+      { habit, entries: [{ date: '2026-10-24', itemId: null, amount: 1 }] },
+      { habit, entries: [] },
+      { habit: { ...habit, frequency: 'weekdays' as const, weekdays: [1] }, entries: [] },
+      { habit: { ...habit, pauses: [{ from: '2026-10-20', to: null }] }, entries: [] },
+      { habit: { ...habit, kind: 'quit' as const, target: 0 }, entries: [] },
+    ];
+    expect(habitDayProgress(items, '2026-10-24')).toEqual({ done: 1, total: 2 });
+    expect(habitDayProgress([], '2026-10-24')).toEqual({ done: 0, total: 0 });
   });
 
   it('quitAmounts: auch Tage ohne Eintrag ab dem Start', () => {

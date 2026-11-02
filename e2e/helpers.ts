@@ -54,6 +54,13 @@ export async function fillStepper(card: Locator, label: string, value: string) {
   await input.press('Enter');
 }
 
+/** Kachel auf der Alltag-Übersicht (Name steht vor dem Tagesstand) */
+export function dailyTile(page: Page, name: string): Locator {
+  return page
+    .getByRole('list', { name: 'Bereiche' })
+    .getByRole('link', { name: new RegExp(`^${name}`) });
+}
+
 export async function skipRest(page: Page) {
   const timer = page.getByRole('timer', { name: 'Pause' });
   await expect(timer).toBeVisible();

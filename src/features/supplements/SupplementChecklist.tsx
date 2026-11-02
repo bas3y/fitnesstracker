@@ -10,8 +10,7 @@ import {
   formatDose,
   formatDoseTime,
   isDoseOverdue,
-  isLowStock,
-  stockDaysLeft,
+  lowStockSupplements,
   supplementDay,
   type DoseEntry,
 } from '../../domain/supplements';
@@ -24,26 +23,22 @@ import { useSupplementOverview } from './useSupplements';
 const MUTED = 'text-sm text-slate-600 dark:text-slate-400';
 const LINK = 'font-semibold text-emerald-700 dark:text-emerald-400';
 
-/**
- * Einnahmen eines Tages. `card` (Alltag-Seite) ist ohne Supplements unsichtbar, `widget`
- * (Startseite) und `page` (Supplements-Seite) zeigen dann einen Hinweis.
- */
+/** Einnahmen eines Tages auf der Startseite (`widget`) oder der Supplements-Seite (`page`) */
 export function SupplementChecklist({
   date,
   today,
   settings,
-  variant = 'card',
+  variant,
 }: {
   date: DayKey;
   today: DayKey;
   settings: Settings;
-  variant?: 'card' | 'widget' | 'page';
+  variant: 'widget' | 'page';
 }) {
   const overview = useSupplementOverview();
   const now = useNow(true, 60_000);
   if (!overview) return null;
   const active = overview.items.filter(({ supplement }) => supplement.archivedAt === null);
-  if (active.length === 0 && variant === 'card') return null;
   const title = variant === 'page' ? 'Einnahmen' : 'Supplements';
 
   if (active.length === 0) {
@@ -65,10 +60,12 @@ export function SupplementChecklist({
   const due = entries.filter((entry) => entry.status === 'due');
   const optional = entries.filter((entry) => entry.status === 'optional');
   const taken = due.filter((entry) => entry.intake !== null).length;
-  const lowStock = active.flatMap(({ supplement }) => {
-    const days = stockDaysLeft(supplement, overview.trainingDays, today);
-    return isLowStock(days, settings.supplementLowStockDays) ? [{ supplement, days: days! }] : [];
-  });
+  const lowStock = lowStockSupplements(
+    active.map(({ supplement }) => supplement),
+    overview.trainingDays,
+    today,
+    settings.supplementLowStockDays,
+  );
   const row = (entry: DoseEntry) => (
     <DoseRow
       key={`${entry.supplement.id}-${entry.dose.id}`}

@@ -11,6 +11,7 @@ import type { DayKey, QuickAction, Settings } from '../../db/types';
 import { formatDecimal } from '../../domain/format';
 import { DASHBOARD_WIDGET_LABELS, QUICK_ACTION_LABELS } from '../../domain/labels';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
+import { MEASUREMENTS_PATH } from '../daily/paths';
 import { TodoAddForm } from '../daily/TodoParts';
 import { useDailyLog } from '../daily/useDaily';
 import { NUTRITION_PATH } from '../nutrition/paths';
@@ -76,7 +77,7 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
         );
       case 'measurements':
         return (
-          <Link to="/daily/measurements" state={FROM_DASHBOARD} className={TILE}>
+          <Link to={MEASUREMENTS_PATH} state={FROM_DASHBOARD} className={TILE}>
             {tile(action)}
           </Link>
         );

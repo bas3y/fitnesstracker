@@ -25,7 +25,8 @@ import {
 } from '../../domain/units';
 import { useSettings } from '../settings/useSettings';
 import { DayNavigator } from './DayNavigator';
-import { useBodyMeasurement, useBodyMeasurements, useDayParam } from './useDaily';
+import { BODY_PATH, MEASUREMENTS_PATH } from './paths';
+import { useBodyMeasurement, useBodyMeasurements, useDayBackTo, useDayParam } from './useDaily';
 
 const HINT = 'text-sm text-slate-500 dark:text-slate-400';
 const DEFAULT_START_CM = 50;
@@ -36,9 +37,10 @@ export function BodyMeasurementsPage() {
   const entry = useBodyMeasurement(date);
   const entries = useBodyMeasurements();
   const unit = settings?.distanceUnit;
+  const backTo = useDayBackTo(date, today, BODY_PATH);
 
   return (
-    <Page title="Körpermaße" backTo="/daily">
+    <Page title="Körpermaße" backTo={backTo}>
       <DayNavigator date={date} today={today} onChange={setDate} />
       {unit && entry !== undefined && entries && (
         <>
@@ -149,7 +151,7 @@ function EntryList({ entries, unit }: { entries: BodyMeasurement[]; unit: Distan
         {[...entries].reverse().map((entry) => (
           <li key={entry.id}>
             <LinkRow
-              to={`/daily/measurements?date=${entry.date}`}
+              to={`${MEASUREMENTS_PATH}?date=${entry.date}`}
               label={formatDayKey(entry.date)}
               hint={entryHint(entry, unit)}
               action={

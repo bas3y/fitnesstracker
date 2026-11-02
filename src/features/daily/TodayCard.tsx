@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useFromHere } from '../../components/backNavigation';
 import { secondaryButton } from '../../components/buttons';
 import { Card } from '../../components/Page';
 import { addWater } from '../../db/daily';
@@ -8,6 +9,7 @@ import { formatDecimal } from '../../domain/format';
 import { DASHBOARD_WIDGET_LABELS } from '../../domain/labels';
 import { kgToDisplay } from '../../domain/units';
 import { GoalBar } from './GoalBar';
+import { BODY_PATH } from './paths';
 import { useDailyLog } from './useDaily';
 
 const QUICK_WATER_ML = 250;
@@ -16,6 +18,7 @@ const QUICK_WATER_ML = 250;
 export function TodayCard({ settings, now }: { settings: Settings; now: Date }) {
   const today = dayKey(now);
   const log = useDailyLog(today);
+  const from = useFromHere();
   const weight = log?.weightKg ?? settings.bodyWeightKg;
   const unit = settings.weightUnit;
   const tiles = [
@@ -62,7 +65,7 @@ export function TodayCard({ settings, now }: { settings: Settings; now: Date }) 
         >
           +{QUICK_WATER_ML} ml
         </button>
-        <Link to="/daily" className={secondaryButton}>
+        <Link to={BODY_PATH} state={from} className={secondaryButton}>
           Eintragen
         </Link>
       </div>

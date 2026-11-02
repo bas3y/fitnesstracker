@@ -55,7 +55,7 @@ function toPoints(values: DayValue[]): DailyPoint[] {
 }
 
 /**
- * Verlauf als große Karte auf der Alltag-Seite: Zeitraum und Kennzahl wählen, Graph mit
+ * Verlauf als große Karte (Seite `DailyHistoryPage`): Zeitraum und Kennzahl wählen, Graph mit
  * Zusammenfassung. Lädt Recharts, deshalb nur per `React.lazy` einbinden.
  */
 export function DailyHistoryCard({ settings, today }: { settings: Settings; today: DayKey }) {
@@ -145,7 +145,7 @@ function History({
   })();
 
   return (
-    <Card title="Verlauf">
+    <Card>
       <div className="flex flex-col gap-3">
         <SegmentedControl
           label="Zeitraum"

@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { confirmStart, fillStepper, goOffline } from './helpers';
+import { confirmStart, dailyTile, fillStepper, goOffline } from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -139,11 +139,9 @@ test('Ernährung: Tag mit 3 Mahlzeiten offline erfassen, Summen, Wiederholen und
   await fillStepper(goals, 'Kalorien (Ruhetag)', '2000');
   await expect(goals.getByLabel('Kalorien (Ruhetag)', { exact: true })).toHaveValue('2000');
 
-  // Alltag-Seite und Startseite mit Widget und Schnellzugriff
+  // Kachel auf der Alltag-Übersicht, Startseite mit Widget und Schnellzugriff
   await openNav(page, 'Alltag');
-  await expect(card(page, 'Ernährung').getByTestId('nutrition-summary')).toContainText(
-    '1366 von 2000 kcal',
-  );
+  await expect(dailyTile(page, 'Ernährung')).toContainText('1366 von 2000 kcal');
   await openNav(page, 'Dashboard');
   await page.getByRole('button', { name: 'Anpassen' }).click();
   await page.getByRole('button', { name: 'Ernährung hinzufügen' }).click();
@@ -164,7 +162,9 @@ test('Ernährung: Tag mit 3 Mahlzeiten offline erfassen, Summen, Wiederholen und
   await page.getByRole('button', { name: 'Workout starten' }).click();
   await confirmStart(page);
   await openNav(page, 'Alltag');
-  const daily = card(page, 'Ernährung');
+  await expect(dailyTile(page, 'Ernährung')).toContainText('1366 von 2500 kcal');
+  await dailyTile(page, 'Ernährung').click();
+  const daily = card(page, 'Übersicht');
   await expect(daily).toContainText('Trainingstag');
   await expect(daily.getByTestId('nutrition-summary')).toContainText('1366 von 2500 kcal');
 });

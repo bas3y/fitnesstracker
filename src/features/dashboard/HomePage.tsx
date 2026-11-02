@@ -103,7 +103,7 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
         <SupplementChecklist variant="widget" date={today} today={today} settings={settings} />
       );
     case 'nutrition':
-      return <NutritionDayCard date={today} today={today} settings={settings} variant="widget" />;
+      return <NutritionDayCard date={today} today={today} settings={settings} />;
   }
 }
 

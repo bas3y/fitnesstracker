@@ -22,7 +22,7 @@ test('Übungen und Lebensmittel sind offline durchsuchbar', async ({ page, conte
   await expect(page.getByText('Keine passenden Übungen.')).toBeVisible();
   await exerciseSearch.fill('');
 
-  await page.goto('./#/daily');
+  await page.goto('./#/daily/nutrition');
   await page.getByRole('link', { name: /Lebensmittel/ }).click();
   const foodSearch = page.getByRole('searchbox', { name: 'Lebensmittel suchen' });
   await foodSearch.fill('Haferflocken');

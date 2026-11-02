@@ -7,7 +7,7 @@ import { doneOn, todayTodos, upcomingTodos } from '../../domain/todos';
 import { TodoAddForm, TodoRow } from './TodoParts';
 import { TODOS_PATH, useTodos } from './useTodos';
 
-/** Heutige Aufgaben mit Schnelleingabe (Alltag-Seite und Startseite); `limit` kürzt die Liste */
+/** Heutige Aufgaben mit Schnelleingabe (Widget der Startseite); `limit` kürzt die Liste */
 export function TodoCard({ today, limit }: { today: DayKey; limit?: number }) {
   const todos = useTodos();
   const from = useFromHere();

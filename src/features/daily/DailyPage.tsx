@@ -1,206 +1,217 @@
-import { lazy, Suspense } from 'react';
-import { secondaryButton } from '../../components/buttons';
-import { Card, LinkRow, Page } from '../../components/Page';
-import { Stepper } from '../../components/Stepper';
-import { addWater, updateDailyLog } from '../../db/daily';
-import { MAX_BODY_WEIGHT_KG, MAX_STEPS, MAX_WATER_ML, MIN_BODY_WEIGHT_KG } from '../../db/schemas';
-import type { DailyLog, DayKey, Settings } from '../../db/types';
-import { hoursToSeconds, formatSleep, secondsToHours } from '../../domain/daily';
+import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { Page } from '../../components/Page';
+import type { DayKey, Settings } from '../../db/types';
+import { formatSleep } from '../../domain/daily';
 import { formatDecimal } from '../../domain/format';
-import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
-import { NutritionDayCard } from '../nutrition/NutritionSummary';
-import { FOODS_PATH } from '../nutrition/paths';
+import { habitDayProgress } from '../../domain/habits';
+import { goalForDay, nutritionDay } from '../../domain/nutrition';
+import { lowStockSupplements, supplementDay } from '../../domain/supplements';
+import { doneOn, todayTodos } from '../../domain/todos';
+import { NUTRITION_PATH } from '../nutrition/paths';
+import { useNutritionDay } from '../nutrition/useNutrition';
 import { useSettings } from '../settings/useSettings';
 import { SUPPLEMENTS_PATH } from '../supplements/paths';
-import { SupplementChecklist } from '../supplements/SupplementChecklist';
+import { useSupplementOverview } from '../supplements/useSupplements';
 import { DayNavigator } from './DayNavigator';
 import { GoalBar } from './GoalBar';
-import { HabitChecklist } from './HabitChecklist';
-import { RatingPicker } from './RatingPicker';
-import { TodoCard } from './TodoCard';
+import { BODY_PATH, DAILY_HISTORY_PATH, withDate } from './paths';
 import { useDailyLog, useDayParam } from './useDaily';
-import { HABITS_PATH } from './useHabits';
-import { TODOS_PATH } from './useTodos';
+import { HABITS_PATH, useHabits } from './useHabits';
+import { TODOS_PATH, useTodos } from './useTodos';
 
-// Recharts nur in einem eigenen Chunk laden
-const DailyHistoryCard = lazy(() =>
-  import('./DailyHistoryCard').then((module) => ({ default: module.DailyHistoryCard })),
-);
+const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
 
-const WATER_STEP_ML = 250;
-const WATER_BOTTLE_ML = 500;
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+interface TileProps {
+  date: DayKey;
+  today: DayKey;
+}
 
+/** Alltag-Übersicht: Tag wählen, je Bereich eine Kachel mit dem Stand des Tages */
 export function DailyPage() {
   const settings = useSettings();
   const { date, today, setDate } = useDayParam();
-  const log = useDailyLog(date);
+  const day = { date, today };
 
   return (
     <Page title="Alltag">
       <DayNavigator date={date} today={today} onChange={setDate} />
-      {date === today && <TodoCard today={today} />}
-      <HabitChecklist date={date} today={today} />
-      {settings && <SupplementChecklist date={date} today={today} settings={settings} />}
-      {settings && (
-        <NutritionDayCard date={date} today={today} settings={settings} variant="card" />
-      )}
-      {settings && log !== undefined && (
-        <DayForm key={date} date={date} log={log} settings={settings} />
-      )}
-      {settings && (
-        <Suspense fallback={null}>
-          <DailyHistoryCard settings={settings} today={today} />
-        </Suspense>
-      )}
-      <LinkRow
-        to={HABITS_PATH}
-        label="Gewohnheiten"
-        hint="Anlegen, sortieren, pausieren, Kalender"
-      />
-      <LinkRow to={TODOS_PATH} label="To-dos" hint="Alle Aufgaben, geplant und erledigt" />
-      <LinkRow
-        to={SUPPLEMENTS_PATH}
-        label="Supplements"
-        hint="Dosis, Uhrzeiten, Bestand und Erinnerungen"
-      />
-      <LinkRow to="/daily/measurements" label="Körpermaße" hint="Brust, Taille, Arme und mehr" />
-      <LinkRow
-        to={FOODS_PATH}
-        label="Lebensmittel"
-        hint="Nährwertdatenbank, eigene Lebensmittel und Rezepte"
-      />
+      <ul aria-label="Bereiche" className="mb-4 grid grid-cols-2 gap-3">
+        <HabitsTile {...day} />
+        <TodosTile {...day} />
+        {settings && <NutritionTile {...day} settings={settings} />}
+        {settings && <SupplementsTile {...day} settings={settings} />}
+        <BodyTile {...day} />
+        <Tile to={withDate(DAILY_HISTORY_PATH, date, today)} icon="📈" name="Verlauf">
+          <span className={MUTED}>Graphen über Tage und Wochen</span>
+        </Tile>
+      </ul>
     </Page>
   );
 }
 
-function DayForm({
-  date,
-  log,
-  settings,
+function Tile({
+  to,
+  icon,
+  name,
+  children,
 }: {
-  date: DayKey;
-  log: DailyLog | null;
-  settings: Settings;
+  to: string;
+  icon: string;
+  name: string;
+  children?: ReactNode;
 }) {
-  const change = (changes: Parameters<typeof updateDailyLog>[1]) =>
-    void updateDailyLog(date, changes);
-  const water = log?.waterMl ?? 0;
-  const steps = log?.steps ?? 0;
-  const unit = settings.weightUnit;
-  const toDisplay = (kg: number) => roundTo(kgToDisplay(kg, unit), 1);
+  return (
+    <li className="grid">
+      <Link
+        to={to}
+        className="flex min-h-32 flex-col gap-1 rounded-2xl bg-white p-4 shadow-sm active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700"
+      >
+        <span aria-hidden="true" className="text-2xl">
+          {icon}
+        </span>
+        <span className="font-semibold">{name}</span>
+        <span className="flex flex-col gap-1">{children}</span>
+      </Link>
+    </li>
+  );
+}
 
+function Progress({ label, done, total }: { label: string; done: number; total: number }) {
   return (
     <>
-      <Card title="Wasser">
-        <div className="flex flex-col gap-3">
-          <p className="tabular-nums">
-            {formatDecimal(water, 0)} von {formatDecimal(settings.waterGoalMl, 0)} ml
-          </p>
-          <GoalBar label="Wasserziel" value={water} goal={settings.waterGoalMl} />
-          <div className="flex gap-2">
-            {[WATER_STEP_ML, WATER_BOTTLE_ML].map((ml) => (
-              <button
-                key={ml}
-                type="button"
-                className={secondaryButton}
-                onClick={() => void addWater(date, ml)}
-              >
-                +{ml} ml
-              </button>
-            ))}
-          </div>
-          <Stepper
-            label="Wasser gesamt"
-            value={water}
-            unit="ml"
-            step={WATER_STEP_ML}
-            max={MAX_WATER_ML}
-            decimals={0}
-            onChange={(value) => value !== null && change({ waterMl: value })}
-          />
-        </div>
-      </Card>
-
-      <Card title="Schritte">
-        <div className="flex flex-col gap-3">
-          <p className="tabular-nums">
-            {formatDecimal(steps, 0)} von {formatDecimal(settings.stepsGoal, 0)}
-          </p>
-          <GoalBar label="Schrittziel" value={steps} goal={settings.stepsGoal} />
-          <Stepper
-            label="Schritte gesamt"
-            value={steps}
-            step={500}
-            max={MAX_STEPS}
-            decimals={0}
-            onChange={(value) => value !== null && change({ steps: value })}
-          />
-        </div>
-      </Card>
-
-      <Card title="Schlaf">
-        <div className="flex flex-col gap-3">
-          <p className={HINT}>
-            Die Nacht vor diesem Tag. Ziel: {formatSleep(settings.sleepGoalSeconds)}
-          </p>
-          <Stepper
-            label="Schlafdauer"
-            value={log?.sleepSeconds == null ? null : secondsToHours(log.sleepSeconds)}
-            unit="h"
-            step={0.5}
-            max={24}
-            decimals={2}
-            startValue={secondsToHours(settings.sleepGoalSeconds)}
-            allowEmpty
-            onChange={(hours) =>
-              change({ sleepSeconds: hours === null ? null : hoursToSeconds(hours) })
-            }
-          />
-          <RatingPicker
-            label="Schlafqualität"
-            low="schlecht"
-            high="sehr gut"
-            value={log?.sleepQuality ?? null}
-            onChange={(sleepQuality) => change({ sleepQuality })}
-          />
-        </div>
-      </Card>
-
-      <Card title="Gewicht">
-        <Stepper
-          label="Körpergewicht an diesem Tag"
-          value={log?.weightKg == null ? null : toDisplay(log.weightKg)}
-          unit={unit}
-          step={0.1}
-          min={toDisplay(MIN_BODY_WEIGHT_KG)}
-          max={toDisplay(MAX_BODY_WEIGHT_KG)}
-          startValue={toDisplay(settings.bodyWeightKg ?? 75)}
-          allowEmpty
-          onChange={(value) =>
-            change({ weightKg: value === null ? null : displayToKg(value, unit) })
-          }
-        />
-      </Card>
-
-      <Card title="Befinden">
-        <div className="flex flex-col gap-3">
-          <RatingPicker
-            label="Stimmung"
-            low="schlecht"
-            high="sehr gut"
-            value={log?.mood ?? null}
-            onChange={(mood) => change({ mood })}
-          />
-          <RatingPicker
-            label="Energie"
-            low="niedrig"
-            high="hoch"
-            value={log?.energy ?? null}
-            onChange={(energy) => change({ energy })}
-          />
-        </div>
-      </Card>
+      <span className={`tabular-nums ${MUTED}`}>
+        {done} von {total}
+      </span>
+      <GoalBar label={label} value={done} goal={total} />
     </>
+  );
+}
+
+function HabitsTile({ date, today }: TileProps) {
+  const habits = useHabits();
+  const progress = habits && habitDayProgress(habits, date);
+  return (
+    <Tile to={withDate(HABITS_PATH, date, today)} icon="🔁" name="Gewohnheiten">
+      {habits &&
+        progress &&
+        (habits.every(({ habit }) => habit.archivedAt !== null) ? (
+          <span className={MUTED}>Noch keine</span>
+        ) : progress.total === 0 ? (
+          <span className={MUTED}>Nichts fällig</span>
+        ) : (
+          <Progress label="Gewohnheiten erledigt" {...progress} />
+        ))}
+    </Tile>
+  );
+}
+
+function TodosTile({ date, today }: TileProps) {
+  const todos = useTodos();
+  const status = (() => {
+    if (!todos) return null;
+    if (date !== today) {
+      const done = doneOn(todos, date).length;
+      return done === 0 ? 'Nichts erledigt' : `${done} erledigt`;
+    }
+    const open = todayTodos(todos, today).length;
+    if (open > 0) return `${open} offen`;
+    return doneOn(todos, today).length > 0 ? 'Alles erledigt' : 'Keine offen';
+  })();
+  return (
+    <Tile to={withDate(TODOS_PATH, date, today)} icon="✅" name="To-dos">
+      {status && <span className={MUTED}>{status}</span>}
+    </Tile>
+  );
+}
+
+function NutritionTile({ date, today, settings }: TileProps & { settings: Settings }) {
+  const data = useNutritionDay(date);
+  const kcal = data && nutritionDay(data.entries).total.kcal;
+  const goal = data && goalForDay(settings.nutritionGoals, data.isTrainingDay).kcal;
+  return (
+    <Tile to={withDate(NUTRITION_PATH, date, today)} icon="🍽️" name="Ernährung">
+      {kcal != null && goal != null && (
+        <>
+          <span className={`tabular-nums ${MUTED}`}>
+            {formatDecimal(Math.round(kcal), 0)} von {formatDecimal(goal, 0)} kcal
+          </span>
+          <GoalBar label="Kalorienziel" value={kcal} goal={goal} />
+        </>
+      )}
+    </Tile>
+  );
+}
+
+function SupplementsTile({ date, today, settings }: TileProps & { settings: Settings }) {
+  const overview = useSupplementOverview();
+  const content = (() => {
+    if (!overview) return null;
+    const active = overview.items.filter(({ supplement }) => supplement.archivedAt === null);
+    if (active.length === 0) return <span className={MUTED}>Noch keine</span>;
+    const due = supplementDay(active, date, today, overview.trainingDays).filter(
+      (entry) => entry.status === 'due',
+    );
+    const taken = due.filter((entry) => entry.intake !== null).length;
+    const lowStock = lowStockSupplements(
+      active.map(({ supplement }) => supplement),
+      overview.trainingDays,
+      today,
+      settings.supplementLowStockDays,
+    ).length;
+    return (
+      <>
+        {due.length === 0 ? (
+          <span className={MUTED}>Nichts fällig</span>
+        ) : (
+          <Progress label="Supplements genommen" done={taken} total={due.length} />
+        )}
+        {lowStock > 0 && (
+          <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
+            ⚠️ Bestand niedrig
+          </span>
+        )}
+      </>
+    );
+  })();
+  return (
+    <Tile to={withDate(SUPPLEMENTS_PATH, date, today)} icon="💊" name="Supplements">
+      {content}
+    </Tile>
+  );
+}
+
+function BodyTile({ date, today }: TileProps) {
+  const log = useDailyLog(date);
+  const lines = log
+    ? [
+        log.waterMl ? `Wasser ${formatDecimal(log.waterMl, 0)} ml` : null,
+        log.sleepSeconds ? `Schlaf ${formatSleep(log.sleepSeconds)}` : null,
+        log.steps ? `${formatDecimal(log.steps, 0)} Schritte` : null,
+      ]
+        .filter((line) => line !== null)
+        .slice(0, 2)
+    : [];
+  // Nur Gewicht oder Befinden: kurzer Hinweis statt „Noch nichts“
+  if (
+    lines.length === 0 &&
+    log &&
+    (log.weightKg ?? log.mood ?? log.energy ?? log.sleepQuality) != null
+  ) {
+    lines.push('Eingetragen');
+  }
+  return (
+    <Tile to={withDate(BODY_PATH, date, today)} icon="❤️" name="Körper & Befinden">
+      {log !== undefined &&
+        (lines.length === 0 ? (
+          <span className={MUTED}>Noch nichts eingetragen</span>
+        ) : (
+          lines.map((line) => (
+            <span key={line} className={`tabular-nums ${MUTED}`}>
+              {line}
+            </span>
+          ))
+        ))}
+    </Tile>
   );
 }

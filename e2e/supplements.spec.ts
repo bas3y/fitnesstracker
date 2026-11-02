@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { confirmStart, fillStepper, goOffline } from './helpers';
+import { confirmStart, dailyTile, fillStepper, goOffline } from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -92,7 +92,9 @@ test('Supplements: anlegen, abhaken, Bestand, Trainingstage, Erinnerung und Widg
   await reminder.click();
 
   await openNav(page, 'Alltag');
-  const daily = card(page, 'Supplements');
+  await expect(dailyTile(page, 'Supplements')).toContainText('1 von 2');
+  await dailyTile(page, 'Supplements').click();
+  const daily = card(page, 'Einnahmen');
   await expect(daily.getByText('1 von 2 genommen')).toBeVisible();
   await daily.getByRole('checkbox', { name: 'Pre-Workout' }).click();
   await expect(daily.getByText('2 von 2 genommen')).toBeVisible();
@@ -100,6 +102,9 @@ test('Supplements: anlegen, abhaken, Bestand, Trainingstage, Erinnerung und Widg
   await page.getByRole('button', { name: 'Vorheriger Tag' }).click();
   await expect(daily.getByText('0 von 1 genommen')).toBeVisible();
   await expect(daily.getByRole('checkbox', { name: 'Pre-Workout' })).toHaveCount(0);
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(page.getByRole('heading', { name: 'Gestern' })).toBeVisible();
+  await expect(dailyTile(page, 'Supplements')).toContainText('0 von 1');
 
   // Widget und Schnellzugriff auf der Startseite
   await openNav(page, 'Dashboard');
@@ -146,11 +151,11 @@ test('Supplements aus einer Gewohnheit übernehmen (offline)', async ({ page, co
   await fillStepper(body, 'Ziel pro Tag', '1');
   await page.getByLabel('Einheit', { exact: true }).fill('Tabletten');
   await page.getByRole('button', { name: 'Anlegen' }).click();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
   await page.getByRole('checkbox', { name: 'Vitamin D' }).click();
   await expect(card(page, 'Gewohnheiten').getByText('1 von 1 erledigt')).toBeVisible();
 
-  await page.getByRole('link', { name: /^Supplements/ }).click();
+  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await dailyTile(page, 'Supplements').click();
   await page.getByRole('button', { name: 'Aus Gewohnheit übernehmen' }).click();
   await page
     .getByRole('dialog', { name: 'Aus Gewohnheit übernehmen' })
@@ -170,6 +175,6 @@ test('Supplements aus einer Gewohnheit übernehmen (offline)', async ({ page, co
   ).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByRole('button', { name: 'Aus Gewohnheit übernehmen' })).toHaveCount(0);
   await page.getByRole('link', { name: '‹ Zurück' }).click();
-  await expect(card(page, 'Gewohnheiten')).toHaveCount(0);
-  await expect(card(page, 'Supplements').getByText('1 von 1 genommen')).toBeVisible();
+  await expect(dailyTile(page, 'Gewohnheiten')).toContainText('Noch keine');
+  await expect(dailyTile(page, 'Supplements')).toContainText('1 von 1');
 });

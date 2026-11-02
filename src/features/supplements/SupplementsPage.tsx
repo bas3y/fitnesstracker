@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useBackTo } from '../../components/backNavigation';
 import { primaryButton, secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
@@ -17,7 +16,7 @@ import type { Habit, Supplement } from '../../db/types';
 import { formatHabitTarget } from '../../domain/habits';
 import { formatDoseTime, formatSupplementSchedule } from '../../domain/supplements';
 import { DayNavigator } from '../daily/DayNavigator';
-import { useDayParam } from '../daily/useDaily';
+import { useDayBackTo, useDayParam } from '../daily/useDaily';
 import { useSettings } from '../settings/useSettings';
 import { SUPPLEMENTS_PATH } from './paths';
 import { SupplementChecklist } from './SupplementChecklist';
@@ -35,8 +34,8 @@ function supplementHint(supplement: Supplement): string {
 export function SupplementsPage() {
   const settings = useSettings();
   const overview = useSupplementOverview();
-  const backTo = useBackTo('/daily');
   const { date, today, setDate } = useDayParam();
+  const backTo = useDayBackTo(date, today);
   const [deleting, setDeleting] = useState<Supplement | null>(null);
   const [importing, setImporting] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
@@ -58,7 +57,7 @@ export function SupplementsPage() {
       {overview && active.length === 0 && (
         <p className={`mb-4 ${MUTED}`}>
           Noch keine Supplements. Lege das erste an: mit Dosis, Uhrzeit und optional Bestand. Es
-          erscheint dann auf der Alltag-Seite.
+          erscheint dann hier zum Abhaken.
         </p>
       )}
       {active.length > 0 && <h2 className="mb-3 text-lg font-semibold">Alle Supplements</h2>}
