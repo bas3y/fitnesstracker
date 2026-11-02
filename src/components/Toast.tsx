@@ -24,10 +24,14 @@ export function ToastHost() {
         <button
           type="button"
           aria-label={`${toast.title}: ${toast.lines.join(', ')} – schließen`}
-          className="pointer-events-auto mx-auto flex w-full max-w-md items-start gap-3 rounded-2xl bg-amber-500 px-4 py-3 text-left text-amber-950 shadow-lg"
+          className={`pointer-events-auto mx-auto flex w-full max-w-md items-start gap-3 rounded-2xl px-4 py-3 text-left shadow-lg ${
+            toast.variant === 'info'
+              ? 'bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900'
+              : 'bg-amber-500 text-amber-950'
+          }`}
           onClick={() => hideToast()}
         >
-          <TrophyIcon className="mt-0.5 h-6 w-6 shrink-0" />
+          {toast.variant !== 'info' && <TrophyIcon className="mt-0.5 h-6 w-6 shrink-0" />}
           <span className="min-w-0">
             <span className="block font-bold">{toast.title}</span>
             {toast.lines.map((line) => (

@@ -34,6 +34,8 @@ export interface Settings extends BaseEntity {
   activePlanId: string | null;
   /** Sichtbare Widgets auf dem Dashboard, in Anzeigereihenfolge */
   dashboardWidgets: DashboardWidget[];
+  /** Buttons im Widget „Schnellzugriff“, in Anzeigereihenfolge */
+  quickActions: QuickAction[];
   // Tagesziele
   stepsGoal: number;
   waterGoalMl: number;
@@ -41,7 +43,11 @@ export interface Settings extends BaseEntity {
 }
 
 export const DASHBOARD_WIDGETS = [
+  'quickActions',
+  'habits',
+  'todos',
   'week',
+  'progress',
   'lastWorkout',
   'records',
   'activity',
@@ -49,11 +55,37 @@ export const DASHBOARD_WIDGETS = [
   'daily',
 ] as const;
 export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
+/** Standardaufbau seit DB-Version 14 (bestehende Startseiten wurden einmalig umgestellt) */
 export const DEFAULT_DASHBOARD_WIDGETS: readonly DashboardWidget[] = [
+  'quickActions',
+  'habits',
+  'todos',
+  'week',
+  'progress',
+];
+/** Standard bis DB-Version 13 (für die Migrationstests und alte Sicherungen) */
+export const LEGACY_DASHBOARD_WIDGETS: readonly DashboardWidget[] = [
   'week',
   'lastWorkout',
   'records',
   'activity',
+];
+
+/** Neue Bereiche (Ernährung, Supplements, Ausdauer …) ergänzen hier ihren Button */
+export const QUICK_ACTIONS = [
+  'training',
+  'water',
+  'weight',
+  'steps',
+  'todo',
+  'measurements',
+] as const;
+export type QuickAction = (typeof QUICK_ACTIONS)[number];
+export const DEFAULT_QUICK_ACTIONS: readonly QuickAction[] = [
+  'training',
+  'water',
+  'weight',
+  'todo',
 ];
 
 /** `builtin` = aus `src/data/`, wird per Seed aktualisiert; `user` = selbst angelegt, nie überschrieben */
@@ -251,10 +283,43 @@ export type HabitFrequency = (typeof HABIT_FREQUENCIES)[number];
 export const HABIT_GROUPS = ['morning', 'evening', 'other'] as const;
 export type HabitGroup = (typeof HABIT_GROUPS)[number];
 
+export const HABIT_KINDS = ['check', 'count', 'items', 'quit'] as const;
+/**
+ * `check` = abhaken, `count` = Menge bis zum Ziel, `items` = Unterpunkte (je abhakbar oder zählbar),
+ * `quit` = aufhören/reduzieren: eingetragen werden nur Rückfälle, ein Tag ohne Eintrag ist geschafft
+ */
+export type HabitKind = (typeof HABIT_KINDS)[number];
+
+/** Unterpunkt; `target === step` = ein Tipp erledigt ihn (Anzeige als Haken) */
+export interface HabitItem {
+  id: string;
+  name: string;
+  target: number;
+  unit: string;
+  step: number;
+}
+
+/** Pausiert ab `from` bis vor `to`; `to: null` = pausiert noch */
+export interface HabitPause {
+  from: DayKey;
+  to: DayKey | null;
+}
+
 export interface Habit extends BaseEntity {
   name: string;
   /** Emoji */
   icon: string;
+  kind: HabitKind;
+  /** `count`: Tagesziel; `quit`: Tageslimit (0 = ganz aufhören); `check`/`items`: 1 */
+  target: number;
+  /** Einheit der Menge, z. B. „Seiten“; leer = Stück */
+  unit: string;
+  /** Schrittweite der Plus-Taste (`count`, `quit`) */
+  step: number;
+  /** Nur bei `kind: 'items'` */
+  items: HabitItem[];
+  /** Nur bei `kind: 'quit'`: Tag, ab dem gezählt wird */
+  startDate: DayKey | null;
   frequency: HabitFrequency;
   /** Nur bei `frequency: 'weekly'` wirksam */
   timesPerWeek: number;
@@ -262,12 +327,32 @@ export interface Habit extends BaseEntity {
   weekdays: number[];
   group: HabitGroup;
   order: number;
+  pauses: HabitPause[];
+  /** Archiviert = nicht mehr in Liste und Checkliste, Verlauf bleibt */
+  archivedAt: Timestamp | null;
 }
 
-/** Eine Gewohnheit an einem Tag erledigt; höchstens ein aktiver Eintrag je Gewohnheit und Tag */
+/**
+ * Menge einer Gewohnheit (bzw. eines Unterpunkts) an einem Tag; höchstens ein aktiver Eintrag je
+ * Gewohnheit, Unterpunkt und Tag. Menge 0 wird nicht gespeichert.
+ */
 export interface HabitCheck extends BaseEntity {
   habitId: string;
+  /** `null` = die Gewohnheit selbst */
+  itemId: string | null;
   date: DayKey;
+  amount: number;
+}
+
+export const TODO_PRIORITIES = ['high', 'medium', 'low'] as const;
+export type TodoPriority = (typeof TODO_PRIORITIES)[number];
+
+/** Offene Aufgaben mit `date` vor heute wandern in den heutigen Tag */
+export interface Todo extends BaseEntity {
+  title: string;
+  priority: TodoPriority;
+  date: DayKey;
+  completedAt: Timestamp | null;
 }
 
 export const FOOD_CATEGORIES = [

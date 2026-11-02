@@ -15,10 +15,6 @@ const BodyMeasurementsPage = lazyPage(
   () => import('./features/daily/BodyMeasurementsPage'),
   'BodyMeasurementsPage',
 );
-const DailyHistoryPage = lazyPage(
-  () => import('./features/daily/DailyHistoryPage'),
-  'DailyHistoryPage',
-);
 const DailyPage = lazyPage(() => import('./features/daily/DailyPage'), 'DailyPage');
 const HabitCreatePage = lazyPage(() => import('./features/daily/HabitEditPage'), 'HabitCreatePage');
 const HabitDetailPage = lazyPage(
@@ -27,6 +23,7 @@ const HabitDetailPage = lazyPage(
 );
 const HabitEditPage = lazyPage(() => import('./features/daily/HabitEditPage'), 'HabitEditPage');
 const HabitListPage = lazyPage(() => import('./features/daily/HabitListPage'), 'HabitListPage');
+const TodoPage = lazyPage(() => import('./features/daily/TodoPage'), 'TodoPage');
 const FoodSearchPage = lazyPage(
   () => import('./features/nutrition/FoodSearchPage'),
   'FoodSearchPage',
@@ -89,12 +86,14 @@ export function App() {
           <Route path="training/plans/:id" element={<PlanDetailPage />} />
           <Route path="training/plans/:id/days/:dayId" element={<PlanDayPage />} />
           <Route path="daily" element={<DailyPage />} />
-          <Route path="daily/history" element={<DailyHistoryPage />} />
+          {/* Verlauf steht seit Schritt 10b als Karte auf der Alltag-Seite */}
+          <Route path="daily/history" element={<Navigate to="/daily" replace />} />
           <Route path="daily/measurements" element={<BodyMeasurementsPage />} />
           <Route path="daily/habits" element={<HabitListPage />} />
           <Route path="daily/habits/new" element={<HabitCreatePage />} />
           <Route path="daily/habits/:id" element={<HabitDetailPage />} />
           <Route path="daily/habits/:id/edit" element={<HabitEditPage />} />
+          <Route path="daily/todos" element={<TodoPage />} />
           <Route path="daily/foods" element={<FoodSearchPage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="settings" element={<SettingsPage />} />

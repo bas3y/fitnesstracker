@@ -9,14 +9,15 @@ import {
 import { getBodyMeasurement, getDailyLog, setBodyMeasure, updateDailyLog } from './daily';
 import { db } from './database';
 import { createUserExercise } from './exercises';
-import { createHabit, loadHabit, setHabitChecked } from './habits';
+import { addHabitAmount, createHabit, loadHabit, pauseHabit, setHabitChecked } from './habits';
 import { addPlanExercise, createPlan, deletePlan, loadPlanDetail } from './plans';
 import { create } from './repository';
 import { DAILY_GOAL_DEFAULTS, EMPTY_EXERCISE_INPUT, EMPTY_HABIT_INPUT } from './schemas';
 import { applySeed, SEED_VERSION } from './seed';
 import { getSettings, updateSettings } from './settings';
 import { resetDatabase } from './testUtils';
-import type { Exercise } from './types';
+import { createTodo, listTodos } from './todos';
+import { DEFAULT_DASHBOARD_WIDGETS, DEFAULT_QUICK_ACTIONS, type Exercise } from './types';
 import {
   addWorkoutExercise,
   completeSet,
@@ -66,6 +67,7 @@ describe('parseBackup', () => {
         bodyMeasurements: 0,
         habits: 0,
         habitChecks: 0,
+        todos: 0,
       });
   });
 
@@ -227,6 +229,57 @@ describe('Gewohnheiten in Sicherungen', () => {
     data.tables.habits[0].frequency = 'monatlich';
     expect(parseBackup(data).ok).toBe(false);
   });
+
+  it('stellt Unterpunkte, Mengen, Pausen und To-dos wieder her', async () => {
+    const habit = await createHabit({
+      ...EMPTY_HABIT_INPUT,
+      name: 'Supplements',
+      kind: 'items',
+      items: [{ id: 'kreatin', name: 'Kreatin', target: 5, unit: 'g', step: 5 }],
+    });
+    await addHabitAmount(habit.id, '2026-10-30', 5, 'kreatin');
+    await pauseHabit(habit.id, '2026-10-31');
+    await createTodo({ title: 'Einkaufen', priority: 'high', date: '2026-10-30' });
+    const result = parseBackup(JSON.parse(JSON.stringify(await createBackup())));
+    if (!result.ok) throw new Error(result.error);
+
+    await resetDatabase();
+    await restoreBackup(result.backup);
+
+    expect(await loadHabit(habit.id)).toMatchObject({
+      habit: { kind: 'items', pauses: [{ from: '2026-10-31', to: null }] },
+      entries: [{ date: '2026-10-30', itemId: 'kreatin', amount: 5 }],
+      dates: ['2026-10-30'],
+    });
+    expect(await listTodos()).toMatchObject([{ title: 'Einkaufen', priority: 'high' }]);
+  });
+
+  it('ergänzt in Sicherungen aus DB-Version 13 die neuen Felder', async () => {
+    const habit = await createHabit({ ...EMPTY_HABIT_INPUT, name: 'Lesen' });
+    await setHabitChecked(habit.id, '2026-10-30', true);
+    const data = await validBackup();
+    data.dbVersion = 13;
+    for (const field of ['kind', 'target', 'unit', 'step', 'items', 'startDate', 'pauses']) {
+      delete data.tables.habits[0][field];
+    }
+    delete data.tables.habits[0].archivedAt;
+    delete data.tables.habitChecks[0].itemId;
+    delete data.tables.habitChecks[0].amount;
+    delete data.tables.todos;
+    delete data.tables.settings[0].quickActions;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.habits[0]).toMatchObject({
+      kind: 'check',
+      target: 1,
+      items: [],
+      pauses: [],
+      archivedAt: null,
+    });
+    expect(result.backup.tables.habitChecks[0]).toMatchObject({ itemId: null, amount: 1 });
+    expect(result.backup.tables.todos).toEqual([]);
+    expect(result.backup.tables.settings[0]!.quickActions).toEqual([...DEFAULT_QUICK_ACTIONS]);
+  });
 });
 
 describe('Sicherungen aus DB-Version 10', () => {
@@ -237,10 +290,7 @@ describe('Sicherungen aus DB-Version 10', () => {
     const result = parseBackup(data);
     if (!result.ok) throw new Error(result.error);
     expect(result.backup.tables.settings[0]!.dashboardWidgets).toEqual([
-      'week',
-      'lastWorkout',
-      'records',
-      'activity',
+      ...DEFAULT_DASHBOARD_WIDGETS,
     ]);
 
     data.tables.settings[0].dashboardWidgets = ['unbekannt'];

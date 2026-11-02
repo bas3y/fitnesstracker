@@ -8,9 +8,10 @@ import {
   dayKeySchema,
   exerciseFieldsSchema,
   foodFieldsSchema,
-  habitInputSchema,
+  habitFieldsSchema,
   planExerciseValuesSchema,
   setValuesSchema,
+  todoInputSchema,
   weekdaysSchema,
 } from './schemas';
 import { ensureSeeded } from './seed';
@@ -19,8 +20,10 @@ import {
   BODY_MEASURES,
   DASHBOARD_WIDGETS,
   DEFAULT_DASHBOARD_WIDGETS,
+  DEFAULT_QUICK_ACTIONS,
   LOAD_TYPES,
   PLAN_SCHEDULES,
+  QUICK_ACTIONS,
 } from './types';
 
 export const BACKUP_APP = 'fitnesstracker';
@@ -55,6 +58,8 @@ const settingsSchema = baseEntitySchema.extend({
   restAnalysisEnabled: z.boolean().default(false),
   // Seit DB-Version 11
   dashboardWidgets: z.array(z.enum(DASHBOARD_WIDGETS)).default([...DEFAULT_DASHBOARD_WIDGETS]),
+  // Seit DB-Version 14
+  quickActions: z.array(z.enum(QUICK_ACTIONS)).default([...DEFAULT_QUICK_ACTIONS]),
   // Seit DB-Version 12
   stepsGoal: z.number().int().positive().default(DAILY_GOAL_DEFAULTS.stepsGoal),
   waterGoalMl: z.number().int().positive().default(DAILY_GOAL_DEFAULTS.waterGoalMl),
@@ -142,10 +147,27 @@ const bodyMeasurementSchema = baseEntitySchema.extend({
   values: z.partialRecord(z.enum(BODY_MEASURES), bodyMeasureSchema),
 });
 
-const habitSchema = baseEntitySchema.extend(habitInputSchema.shape).extend({ order: z.number() });
+const habitSchema = baseEntitySchema.extend(habitFieldsSchema.shape).extend({
+  order: z.number(),
+  // Seit DB-Version 14
+  kind: habitFieldsSchema.shape.kind.default('check'),
+  target: habitFieldsSchema.shape.target.default(1),
+  unit: habitFieldsSchema.shape.unit.default(''),
+  step: habitFieldsSchema.shape.step.default(1),
+  items: habitFieldsSchema.shape.items.default([]),
+  startDate: habitFieldsSchema.shape.startDate.default(null),
+  pauses: z.array(z.object({ from: dayKeySchema, to: dayKeySchema.nullable() })).default([]),
+  archivedAt: timestamp.nullable().default(null),
+});
 const habitCheckSchema = baseEntitySchema.extend({
   habitId: z.string().min(1),
   date: dayKeySchema,
+  // Seit DB-Version 14
+  itemId: z.string().nullable().default(null),
+  amount: z.number().positive().default(1),
+});
+const todoSchema = baseEntitySchema.extend(todoInputSchema.shape).extend({
+  completedAt: timestamp.nullable(),
 });
 
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
@@ -172,6 +194,7 @@ export const backupSchema = z.object({
     bodyMeasurements: z.array(bodyMeasurementSchema).default([]),
     habits: z.array(habitSchema).default([]),
     habitChecks: z.array(habitCheckSchema).default([]),
+    todos: z.array(todoSchema).default([]),
   }),
 });
 
@@ -192,6 +215,7 @@ export const TABLE_LABELS: Record<TableName, string> = {
   bodyMeasurements: 'Körpermaße',
   habits: 'Gewohnheiten',
   habitChecks: 'Erledigte Gewohnheiten',
+  todos: 'To-dos',
 };
 
 export async function createBackup(): Promise<Backup> {

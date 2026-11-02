@@ -591,6 +591,57 @@ export function weekSummary(
   };
 }
 
+export interface TrainingProgress {
+  /** Median der Kraftübungen mit Fortschritt in den letzten 3 Monaten; `null` = zu wenig Daten */
+  strengthPercent: number | null;
+  /** Übungen, die in den Median eingehen */
+  exerciseCount: number;
+  workoutsThisMonth: number;
+  workoutsLastMonth: number;
+  recordsThisMonth: number;
+}
+
+/** Widget „Trainingsfortschritt“: Kraftsteigerung, Workouts im Kalendermonat, Rekorde im Monat */
+export function trainingProgress(
+  sessions: StatsSession[],
+  bodyWeightKg: number | null,
+  now: Date,
+): TrainingProgress {
+  const percents = exerciseOverviews(filterByRange(sessions, '3m', now), bodyWeightKg)
+    .filter(({ exercise, progress }) => progress && exercise.category === 'strength')
+    .map(({ progress }) => progress!.percent);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+  const workoutsBetween = (from: number, to: number) =>
+    new Set(
+      sessions
+        .filter(({ startedAt }) => Date.parse(startedAt) >= from && Date.parse(startedAt) < to)
+        .map(({ workoutId }) => workoutId),
+    ).size;
+
+  const chronological = [...sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  const groups = groupByExercise(chronological);
+  let recordsThisMonth = 0;
+  for (const { startedAt, exercise, sets } of chronological.reverse()) {
+    if (Date.parse(startedAt) < monthStart) break;
+    const group = groups.get(exercise.id)!;
+    group.pop();
+    recordsThisMonth += sessionRecords(
+      sets,
+      group.map((session) => session.sets),
+      exerciseKind(exercise, bodyWeightKg),
+    ).flat().length;
+  }
+
+  return {
+    strengthPercent: percents.length > 0 ? median(percents) : null,
+    exerciseCount: percents.length,
+    workoutsThisMonth: workoutsBetween(monthStart, Number.POSITIVE_INFINITY),
+    workoutsLastMonth: workoutsBetween(lastMonthStart, monthStart),
+    recordsThisMonth,
+  };
+}
+
 export interface RecentRecords {
   workoutId: string;
   startedAt: string;

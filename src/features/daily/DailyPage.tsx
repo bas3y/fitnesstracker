@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { secondaryButton } from '../../components/buttons';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { Stepper } from '../../components/Stepper';
@@ -12,8 +13,15 @@ import { DayNavigator } from './DayNavigator';
 import { GoalBar } from './GoalBar';
 import { HabitChecklist } from './HabitChecklist';
 import { RatingPicker } from './RatingPicker';
+import { TodoCard } from './TodoCard';
 import { useDailyLog, useDayParam } from './useDaily';
 import { HABITS_PATH } from './useHabits';
+import { TODOS_PATH } from './useTodos';
+
+// Recharts nur in einem eigenen Chunk laden
+const DailyHistoryCard = lazy(() =>
+  import('./DailyHistoryCard').then((module) => ({ default: module.DailyHistoryCard })),
+);
 
 const WATER_STEP_ML = 250;
 const WATER_BOTTLE_ML = 500;
@@ -27,12 +35,22 @@ export function DailyPage() {
   return (
     <Page title="Alltag">
       <DayNavigator date={date} today={today} onChange={setDate} />
+      {date === today && <TodoCard today={today} />}
       <HabitChecklist date={date} today={today} />
       {settings && log !== undefined && (
         <DayForm key={date} date={date} log={log} settings={settings} />
       )}
-      <LinkRow to={HABITS_PATH} label="Gewohnheiten" hint="Anlegen, sortieren und Kalender" />
-      <LinkRow to="/daily/history" label="Verlauf" hint="Gewicht, Schritte, Schlaf und mehr" />
+      {settings && (
+        <Suspense fallback={null}>
+          <DailyHistoryCard settings={settings} today={today} />
+        </Suspense>
+      )}
+      <LinkRow
+        to={HABITS_PATH}
+        label="Gewohnheiten"
+        hint="Anlegen, sortieren, pausieren, Kalender"
+      />
+      <LinkRow to={TODOS_PATH} label="To-dos" hint="Alle Aufgaben, geplant und erledigt" />
       <LinkRow to="/daily/measurements" label="Körpermaße" hint="Brust, Taille, Arme und mehr" />
       <LinkRow to="/daily/foods" label="Lebensmittel" hint="Nährwertdatenbank durchsuchen" />
     </Page>

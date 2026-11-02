@@ -34,7 +34,16 @@ export function useDayParam() {
   const today = dayKey(useNow(true, 60_000));
   const value = params.get('date');
   const date = value && isDayKey(value) && value <= today ? value : today;
+  // Andere Parameter (z. B. Zeitraum des Verlaufs) bleiben erhalten
   const setDate = (next: DayKey) =>
-    setParams(next === today ? {} : { date: next }, { replace: true });
+    setParams(
+      (current) => {
+        const params = new URLSearchParams(current);
+        if (next === today) params.delete('date');
+        else params.set('date', next);
+        return params;
+      },
+      { replace: true },
+    );
   return { date, today, setDate };
 }

@@ -5,7 +5,9 @@ import {
   FOOD_CATEGORIES,
   HABIT_FREQUENCIES,
   HABIT_GROUPS,
+  HABIT_KINDS,
   MUSCLE_GROUPS,
+  TODO_PRIORITIES,
 } from './types';
 
 const nutrient = z.number().nonnegative();
@@ -144,30 +146,95 @@ export const weekdaysSchema = z.array(z.number().int().min(0).max(6));
 
 export const MAX_HABIT_TIMES_PER_WEEK = 6;
 
-export const habitInputSchema = z
-  .object({
-    name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(80, 'Höchstens 80 Zeichen'),
-    icon: z.string().min(1),
-    frequency: z.enum(HABIT_FREQUENCIES),
-    timesPerWeek: z.number().int().min(1).max(MAX_HABIT_TIMES_PER_WEEK),
-    weekdays: weekdaysSchema,
-    group: z.enum(HABIT_GROUPS),
+export const MAX_HABIT_AMOUNT = 100_000;
+export const MAX_HABIT_ITEMS = 20;
+
+const habitAmount = z.number().positive('Menge muss größer als 0 sein').max(MAX_HABIT_AMOUNT);
+const habitUnit = z.string().trim().max(20, 'Einheit höchstens 20 Zeichen');
+
+export const habitItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1, 'Bitte jedem Unterpunkt einen Namen geben').max(60),
+  target: habitAmount,
+  unit: habitUnit,
+  step: habitAmount,
+});
+
+/** Felder einer Gewohnheit ohne Metadaten, Pausen und Archiv – für Formular und Backup */
+export const habitFieldsSchema = z.object({
+  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(80, 'Höchstens 80 Zeichen'),
+  icon: z.string().min(1),
+  kind: z.enum(HABIT_KINDS),
+  target: z.number().min(0).max(MAX_HABIT_AMOUNT),
+  unit: habitUnit,
+  step: habitAmount,
+  items: z.array(habitItemSchema).max(MAX_HABIT_ITEMS),
+  startDate: dayKeySchema.nullable(),
+  frequency: z.enum(HABIT_FREQUENCIES),
+  timesPerWeek: z.number().int().min(1).max(MAX_HABIT_TIMES_PER_WEEK),
+  weekdays: weekdaysSchema,
+  group: z.enum(HABIT_GROUPS),
+});
+
+/** Felder, die zur gewählten Art nicht passen, werden auf ihre Standardwerte gesetzt */
+export const habitInputSchema = habitFieldsSchema
+  .refine(
+    (input) => input.frequency !== 'weekdays' || input.kind === 'quit' || input.weekdays.length > 0,
+    {
+      path: ['weekdays'],
+      message: 'Mindestens einen Wochentag wählen',
+    },
+  )
+  .refine((input) => input.kind !== 'count' || input.target > 0, {
+    path: ['target'],
+    message: 'Das Ziel muss größer als 0 sein',
   })
-  .refine((input) => input.frequency !== 'weekdays' || input.weekdays.length > 0, {
-    path: ['weekdays'],
-    message: 'Mindestens einen Wochentag wählen',
+  .refine((input) => input.kind !== 'items' || input.items.length > 0, {
+    path: ['items'],
+    message: 'Mindestens einen Unterpunkt anlegen',
+  })
+  .refine((input) => input.kind !== 'quit' || input.startDate !== null, {
+    path: ['startDate'],
+    message: 'Bitte ein Startdatum wählen',
+  })
+  .transform((input) => {
+    const counts = input.kind === 'count' || input.kind === 'quit';
+    return {
+      ...input,
+      target: input.kind === 'check' || input.kind === 'items' ? 1 : input.target,
+      unit: counts ? input.unit : '',
+      step: counts ? input.step : 1,
+      items: input.kind === 'items' ? input.items : [],
+      startDate: input.kind === 'quit' ? input.startDate : null,
+      frequency: input.kind === 'quit' ? ('daily' as const) : input.frequency,
+    };
   });
 
 export type HabitInput = z.input<typeof habitInputSchema>;
+export type HabitValues = z.output<typeof habitInputSchema>;
 
 export const EMPTY_HABIT_INPUT: HabitInput = {
   name: '',
   icon: '⭐',
+  kind: 'check',
+  target: 1,
+  unit: '',
+  step: 1,
+  items: [],
+  startDate: null,
   frequency: 'daily',
   timesPerWeek: 3,
   weekdays: [],
   group: 'other',
 };
+
+export const todoInputSchema = z.object({
+  title: z.string().trim().min(1, 'Bitte eine Aufgabe eingeben').max(200, 'Höchstens 200 Zeichen'),
+  priority: z.enum(TODO_PRIORITIES),
+  date: dayKeySchema,
+});
+
+export type TodoInput = z.input<typeof todoInputSchema>;
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 

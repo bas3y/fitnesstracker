@@ -2,6 +2,8 @@ import Dexie, { type Table } from 'dexie';
 import { DAILY_GOAL_DEFAULTS } from './schemas';
 import {
   DEFAULT_DASHBOARD_WIDGETS,
+  DEFAULT_QUICK_ACTIONS,
+  LEGACY_DASHBOARD_WIDGETS,
   type BodyMeasurement,
   type DailyLog,
   type Exercise,
@@ -12,6 +14,7 @@ import {
   type PlanDay,
   type PlanExercise,
   type Settings,
+  type Todo,
   type Workout,
   type WorkoutExercise,
   type WorkoutSet,
@@ -34,6 +37,7 @@ export class AppDatabase extends Dexie {
   bodyMeasurements!: Table<BodyMeasurement, string>;
   habits!: Table<Habit, string>;
   habitChecks!: Table<HabitCheck, string>;
+  todos!: Table<Todo, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -191,7 +195,7 @@ export class AppDatabase extends Dexie {
           .table<Settings, string>('settings')
           .toCollection()
           .modify((settings) => {
-            settings.dashboardWidgets ??= [...DEFAULT_DASHBOARD_WIDGETS];
+            settings.dashboardWidgets ??= [...LEGACY_DASHBOARD_WIDGETS];
           }),
       );
     // Tägliches Tracking
@@ -215,6 +219,41 @@ export class AppDatabase extends Dexie {
       habits: 'id, updatedAt',
       habitChecks: 'id, habitId, date, updatedAt',
     });
+    // Gewohnheiten mit Mengen/Unterpunkten/Aufhören, Pausieren/Archivieren, To-dos, neue Startseite
+    this.version(14)
+      .stores({
+        todos: 'id, date, updatedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Habit, string>('habits')
+          .toCollection()
+          .modify((habit) => {
+            habit.kind ??= 'check';
+            habit.target ??= 1;
+            habit.unit ??= '';
+            habit.step ??= 1;
+            habit.items ??= [];
+            habit.startDate ??= null;
+            habit.pauses ??= [];
+            habit.archivedAt ??= null;
+          });
+        await tx
+          .table<HabitCheck, string>('habitChecks')
+          .toCollection()
+          .modify((check) => {
+            check.itemId ??= null;
+            check.amount ??= 1;
+          });
+        // Einmalige Umstellung auf den neuen Standardaufbau (mit dem Nutzer abgestimmt)
+        await tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.dashboardWidgets = [...DEFAULT_DASHBOARD_WIDGETS];
+            settings.quickActions ??= [...DEFAULT_QUICK_ACTIONS];
+          });
+      });
   }
 }
 

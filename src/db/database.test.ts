@@ -1,5 +1,6 @@
 import Dexie from 'dexie';
 import { AppDatabase } from './database';
+import { DEFAULT_DASHBOARD_WIDGETS, DEFAULT_QUICK_ACTIONS } from './types';
 
 describe('AppDatabase-Migration', () => {
   it('Version 2 ergänzt seedVersion und behält bestehende Einstellungen', async () => {
@@ -259,10 +260,11 @@ describe('AppDatabase-Migration', () => {
     await v10.table('settings').add({ id: 'app-settings', name: 'Alex' });
     v10.close();
 
+    // Version 14 stellt danach einmalig auf den neuen Standardaufbau um
     const v11 = new AppDatabase(name);
     expect(await v11.settings.get('app-settings')).toMatchObject({
       name: 'Alex',
-      dashboardWidgets: ['week', 'lastWorkout', 'records', 'activity'],
+      dashboardWidgets: [...DEFAULT_DASHBOARD_WIDGETS],
     });
     await v11.delete();
   });
@@ -321,7 +323,57 @@ describe('AppDatabase-Migration', () => {
     expect(await v13.dailyLogs.get('d1')).toMatchObject({ steps: 8000 });
     expect(await v13.habits.count()).toBe(0);
     expect(await v13.habitChecks.count()).toBe(0);
-    expect(v13.verno).toBe(13);
+    expect(v13.verno).toBeGreaterThanOrEqual(13);
     await v13.delete();
+  });
+
+  it('Version 14 ergänzt Mengen, Pausen und To-dos und stellt die Startseite um', async () => {
+    const name = 'migration-test-v14';
+    const v13 = new Dexie(name);
+    v13.version(13).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+    });
+    await v13.table('settings').add({
+      id: 'app-settings',
+      name: 'Alex',
+      dashboardWidgets: ['records', 'daily'],
+    });
+    await v13.table('habits').add({ id: 'h1', name: 'Lesen', frequency: 'daily', order: 0 });
+    await v13.table('habitChecks').add({ id: 'c1', habitId: 'h1', date: '2026-10-30' });
+    v13.close();
+
+    const v14 = new AppDatabase(name);
+    expect(await v14.habits.get('h1')).toMatchObject({
+      name: 'Lesen',
+      kind: 'check',
+      target: 1,
+      unit: '',
+      step: 1,
+      items: [],
+      startDate: null,
+      pauses: [],
+      archivedAt: null,
+    });
+    expect(await v14.habitChecks.get('c1')).toMatchObject({ itemId: null, amount: 1 });
+    expect(await v14.settings.get('app-settings')).toMatchObject({
+      name: 'Alex',
+      dashboardWidgets: [...DEFAULT_DASHBOARD_WIDGETS],
+      quickActions: [...DEFAULT_QUICK_ACTIONS],
+    });
+    expect(await v14.todos.count()).toBe(0);
+    expect(v14.verno).toBe(14);
+    await v14.delete();
   });
 });

@@ -41,11 +41,25 @@ export function HabitEditPage() {
     );
   }
 
-  const { name, icon, frequency, timesPerWeek, weekdays, group } = item.habit;
+  const { name, icon, kind, target, unit, step, items, startDate } = item.habit;
+  const { frequency, timesPerWeek, weekdays, group } = item.habit;
   return (
     <Page title="Gewohnheit bearbeiten" backTo={detailPath}>
       <HabitForm
-        initial={{ name, icon, frequency, timesPerWeek, weekdays, group }}
+        initial={{
+          name,
+          icon,
+          kind,
+          target,
+          unit,
+          step,
+          items,
+          startDate,
+          frequency,
+          timesPerWeek,
+          weekdays,
+          group,
+        }}
         submitLabel="Speichern"
         onSubmit={async (input) => {
           await updateHabit(item.habit.id, input);

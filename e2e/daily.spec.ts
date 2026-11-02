@@ -66,19 +66,30 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await openNav(page, 'Alltag');
   await expect(water.getByText('1000 von 2000 ml')).toBeVisible();
 
-  // Verlauf (eigener Chunk mit Recharts, muss offline aus dem Precache kommen)
-  await page.getByRole('link', { name: /^Verlauf/ }).click();
-  await expect(page.getByTestId('daily-summary')).toHaveText('80 kg → 79,5 kg (−0,6 %)');
+  // Verlauf als Karte auf der Seite (eigener Chunk mit Recharts, offline aus dem Precache)
+  const history = card(page, 'Verlauf');
+  const metric = (name: string) =>
+    history.getByRole('group', { name: 'Kennzahl' }).getByRole('button', { name, exact: true });
+  await expect(history.getByTestId('daily-summary')).toHaveText('80 kg → 79,5 kg (−0,6 %)');
   await expect(page.getByRole('img', { name: 'Gewicht im Verlauf' })).toBeVisible();
-  await page.getByRole('button', { name: 'Schritte' }).click();
-  await expect(page.getByTestId('daily-summary')).toHaveText(
+  await metric('Schritte').click();
+  await expect(history.getByTestId('daily-summary')).toHaveText(
     'Ø 10000 Schritte · Ziel an 1 von 2 Tagen',
   );
-  await page.getByRole('button', { name: 'Stimmung' }).click();
-  await expect(page.getByTestId('daily-summary')).toHaveText('Ø 5 von 5');
-  await page.getByRole('button', { name: 'Energie' }).click();
-  await expect(page.getByText('Keine Einträge in diesem Zeitraum.')).toBeVisible();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await metric('Stimmung').click();
+  await expect(history.getByTestId('daily-summary')).toHaveText('Ø 5 von 5');
+  await metric('Energie').click();
+  await expect(history.getByText('Keine Einträge in diesem Zeitraum.')).toBeVisible();
+  // Zeitraum steht in der URL, der Tageswechsel behält ihn
+  await history.getByRole('button', { name: '4 Wo.' }).click();
+  await page.getByRole('button', { name: 'Vorheriger Tag' }).click();
+  await expect(history.getByRole('button', { name: '4 Wo.' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  // Alte Adresse des Verlaufs führt zur Alltag-Seite
+  await page.goto('./#/daily/history');
+  await expect(page.getByRole('heading', { name: 'Alltag', level: 1 })).toBeVisible();
 
   // Widget: bei bestehenden Nutzern unter „Weitere Widgets“
   await openNav(page, 'Dashboard');

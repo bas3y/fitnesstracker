@@ -2,6 +2,8 @@ export interface ToastMessage {
   id: number;
   title: string;
   lines: string[];
+  /** `record` (Standard) = Rekord mit Pokal, `info` = schlichter Hinweis */
+  variant?: 'record' | 'info';
 }
 
 let current: ToastMessage | null = null;

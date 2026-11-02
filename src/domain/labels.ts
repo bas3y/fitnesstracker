@@ -5,15 +5,29 @@ import type {
   ExerciseCategory,
   FoodCategory,
   MuscleGroup,
+  QuickAction,
 } from '../db/types';
 
 export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hint: string }> = {
+  quickActions: { name: 'Schnellzugriff', hint: 'Buttons für Training, Wasser, Gewicht und mehr' },
+  habits: { name: 'Gewohnheiten', hint: 'Heute abhaken und zählen' },
+  todos: { name: 'To-dos', hint: 'Offene Aufgaben für heute' },
+  progress: { name: 'Trainingsfortschritt', hint: 'Kraftsteigerung, Workouts und Rekorde' },
   week: { name: 'Diese Woche', hint: 'Workouts, Sätze und Volumen' },
   lastWorkout: { name: 'Letztes Workout', hint: 'Dein letztes Training auf einen Blick' },
   records: { name: 'Erfolge', hint: 'Deine neuesten Rekorde' },
   activity: { name: 'Trainingstage', hint: 'Heatmap der letzten 3 Monate' },
   nextTraining: { name: 'Nächstes Training', hint: 'Vorschlag aus deinem Plan mit Startknopf' },
   daily: { name: 'Heute', hint: 'Schritte, Wasser, Schlaf und Gewicht' },
+};
+
+export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: string }> = {
+  training: { name: 'Training', icon: '🏋️' },
+  water: { name: '+250 ml Wasser', icon: '💧' },
+  weight: { name: 'Gewicht', icon: '⚖️' },
+  steps: { name: 'Schritte', icon: '👣' },
+  todo: { name: 'To-do', icon: '✅' },
+  measurements: { name: 'Körpermaße', icon: '📏' },
 };
 
 export const BODY_MEASURE_LABELS: Record<BodyMeasure, string> = {

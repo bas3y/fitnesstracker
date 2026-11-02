@@ -485,11 +485,14 @@ Hinweise:
 
 **Beginn, wenn der Nutzer „Schritt 10b starten“ schreibt – wichtig:** Noch nichts bauen. Zuerst den Nutzer auffordern, alle gewünschten Anpassungen aufzuzählen, und die Liste dann gemeinsam abstimmen: fehlende Punkte oder sinnvolle Ergänzungen vorschlagen, Unklarheiten nachfragen. Erst nach der Abstimmung umsetzen und die endgültige Liste hier eintragen.
 
-Bisher genannte Wünsche (Stichpunkte, Details noch offen):
-- **Gewohnheiten mit Zählen:** In der Checkliste sollen auch Gewohnheiten mit Unterpunkten und Mengen möglich sein, die wie beim Wasser hochzählen. Beispiel: Supplements in einzelne Unterpunkte gliedern, je mit Menge. Auch für eigene Einträge frei nutzbar. Vor der Umsetzung klären, wie sich das zu Schritt 11 (Supplements mit Dosierung, Uhrzeiten und Bestand) verhält, damit nichts doppelt entsteht.
-- **Startseite:** Anpassungen, Inhalt nennt der Nutzer beim Start.
-- **Alltag:** Anpassungen, Inhalt nennt der Nutzer beim Start.
-- Weitere Punkte aus dem Testen des Nutzers.
+Abgestimmte Liste (mit dem Nutzer beim Start von 10b):
+- **Gewohnheiten – neue Arten:** *Abhaken* (wie bisher), *Zählen* (Ziel + Einheit + Schrittweite, z. B. „10 Seiten lesen“, +1/+Schritt wie beim Wasser), *Mit Unterpunkten* (z. B. „Supplements“ mit „Kreatin 5 g“, „Omega-3 2 Kapseln“; jeder Unterpunkt abhakbar oder zählbar, erledigt wenn alle erledigt), *Aufhören/Reduzieren* (z. B. Snus, Zigaretten: nur Rückfälle mit Menge eintragen, Tag ohne Eintrag = geschafft, „seit X Tagen frei“ + Bestwert, optional Tageslimit zum Reduzieren, Menge im Verlauf; keine Ersparnis in €).
+- **Abgrenzung Schritt 11:** Supplements jetzt als Unterpunkte mit Menge. Bestand, Packungsgröße, Uhrzeiten und Warnungen kommen in Schritt 11 als eigener, ausführlicher Bereich.
+- **Gewohnheiten allgemein:** Erledigte rutschen in der Checkliste nach unten und sind einklappbar; **Pausieren** (nicht in der Checkliste, unterbricht keine Serie); **Archivieren** (aus der Liste, Verlauf bleibt, wiederherstellbar).
+- **To-dos (neu):** Aufgaben mit Datum und **Priorität** (hoch/mittel/niedrig); nicht erledigte Aufgaben wandern in den nächsten Tag.
+- **Startseite aufgeräumt, aus Widgets:** neue Widgets *Schnellzugriff* (wählbare Buttons, z. B. Training, Wasser, Gewicht, To-do; spätere Bereiche ergänzen eigene Buttons), *Gewohnheiten heute* (direkt abhaken/zählen), *To-dos*, *Trainingsfortschritt* (Kraftsteigerung gesamt in % der letzten 3 Monate, Workouts diesen Monat vs. Vormonat, neue Rekorde). Bestehende Startseite wird einmalig auf den neuen Standardaufbau umgestellt.
+- **Alltag:** Verlauf als große Karte direkt auf der Alltag-Seite (Zeitraum + Kennzahl filtern, wie in der Statistik), inkl. Gewohnheiten-Erfüllung und Aufhören-Mengen.
+- Nicht in 10b: CSV-Export für Alltagsdaten (irgendwann später). Kürzere Aufwärmpause und Körpergewichtsanteil je Übung werden laut Nutzer nicht gebraucht.
 
 Danach veröffentlichen und testen:
 - **Push:** Der Nutzer hat ausdrücklich einen Push für den Handytest gewünscht: Wer „Schritt 10b starten“ schreibt, gibt den Push auf `main` frei (Ausnahme von „Kein Push“, siehe Hinweise in `CLAUDE.md`). Erst pushen, wenn die Definition of Done erfüllt ist. Danach prüfen, dass die GitHub Action durchgelaufen ist, und dem Nutzer sagen, wann die Version online ist.
@@ -500,11 +503,33 @@ Danach veröffentlichen und testen:
 
 **Notizen:**
 - Gebaut:
+  - Dexie v14: `Habit.kind` (`check`/`count`/`items`/`quit`), `target`, `unit`, `step` („Pro Tipp“), `items` (Unterpunkte mit eigener Menge/Einheit/Schrittweite), `startDate` (nur `quit`), `pauses` (`{ from, to }`), `archivedAt`; `HabitCheck.amount` und `itemId` (ein aktiver Eintrag je Gewohnheit, Unterpunkt und Tag, Menge 0 wird nicht gespeichert). Neue Tabelle `todos` (`title`, `priority`, `date`, `completedAt`). `Settings.quickActions`. Upgrade setzt bestehende Gewohnheiten auf „Abhaken“ und Einträge auf Menge 1; Backup-Defaults, Sicherungen aus v1–v13 bleiben importierbar.
+  - `src/db/habits.ts`: `addHabitAmount`/`setHabitAmount` (atomar, nie unter 0), `setHabitDone` (Kalender: Ziel bzw. alle Unterpunkte voll/leer), `pauseHabit`/`resumeHabit`, `setHabitArchived`; `setHabitChecked` bleibt. `HabitWithChecks` hat jetzt `entries` (Mengen) und `dates` (erledigte Tage). `src/domain/habits.ts`: `isHabitDoneOn`, `dayAmount`, `doneDates`, `isSingleTap`, `isHabitShownOn`, Pausen (`isPausedOn`, `startPause`, `endPause`, `habitStreak` überspringt Pausen), `quitStreak`, `amountInWeek`, Verlauf (`habitCompletion`, `quitAmounts`), Formatierung.
+  - `src/db/todos.ts` + `src/domain/todos.ts` (`todayTodos`, `upcomingTodos`, `doneOn`, `formatTodoDate`). UI: `TodoCard` (Alltag-Seite nur für heute, Startseite mit `limit`), `TodoParts` (`TodoAddForm`, `TodoRow`, Bearbeiten-Dialog), `TodoPage` (`/daily/todos`: Heute, Geplant, Erledigt, „Erledigte entfernen“).
+  - Gewohnheiten-UI: `HabitForm` mit Art-Auswahl und Feldern je Art; `HabitChecklist` (offene zuerst, dann Aufhören, erledigte eingeklappt „n erledigt“; Variante `widget` für die Startseite); Zeilen mit −/+Schritt, Unterpunkte aufklappbar; `HabitDetailPage` mit Pausieren/Fortsetzen, Archivieren/Wiederherstellen und Kacheln je Art; `HabitCalendar` zeigt bei Aufhören grün/orange (nur Anzeige); `HabitListPage` mit „Pausiert“ und Archiv.
+  - **Startseite:** neue Widgets `quickActions` (`QuickActions`, Buttons Training/Fortsetzen, +250 ml Wasser mit Hinweis, Gewicht, Schritte, To-do, Körpermaße; Auswahl per Chips unter „Anpassen“), `habits`, `todos`, `progress` (`trainingProgress` in `src/domain/stats.ts`). Standard jetzt Schnellzugriff → Gewohnheiten → To-dos → Diese Woche → Trainingsfortschritt.
+  - **Alltag:** `DailyHistoryCard` (lazy, Recharts) ersetzt `DailyHistoryPage`; Kennzahlen zusätzlich „Gewohnheiten“ (Erfüllung in %) und je Aufhören-Gewohnheit die Menge. `/daily/history` leitet auf `/daily` um. `useDayParam` behält beim Tageswechsel andere URL-Parameter (Zeitraum).
+  - Gemeinsam: `Dialog` (`src/components/`), `showToast({ variant: 'info' })` ohne Pokal.
+  - Tests: Domain (Arten, Pausen, `quitStreak`, Verlauf, To-dos, `trainingProgress`), DB (Mengen, Unterpunkte, Pausen, Archiv, To-dos), Migration v13→v14, Backup aus v13. E2E angepasst (`habits`, `daily`, `mvp1`) und neu: Zählen/Unterpunkte/Aufhören/Verlauf/Pausieren/Archivieren in `e2e/habits.spec.ts`, `e2e/todos.spec.ts` (To-dos, Schnellzugriff, Gewohnheiten-Widget), alles offline in beiden Viewports.
 - Abweichungen:
+  - Die Startseite wurde bei bestehenden Nutzern **einmalig** auf den neuen Standard umgestellt (Upgrade v14 überschreibt `dashboardWidgets`). Sicherungen aus v11–v13 bringen beim Import ihre alte Auswahl mit.
+  - Aufhören: Häufigkeit entfällt (immer täglich). „Ganz aufhören“ = Limit 0. Ein Rückfall über dem Limit bricht die Serie **sofort** (anders als bei Gewohnheiten, wo „heute offen“ nichts bricht). Gezählt wird ab „Gezählt ab“ (`startDate`). Aufhören zählt nicht in „n von m erledigt“ und nicht in die Gewohnheiten-Erfüllung im Verlauf.
+  - „Pro Tipp“ gleich Ziel → Anzeige als Haken (z. B. „Kreatin 5 g“), sonst −/+. Mengen mit bis zu 2 Nachkommastellen.
+  - Pause beginnt am gewählten Tag (heute) und endet beim Fortsetzen; am selben Tag fortgesetzt verschwindet sie ganz. Pausierte Tage zählen weder für noch gegen eine Serie; eine Woche mit Pause bricht „x-mal pro Woche“ nicht.
+  - Gelöschte Unterpunkte: Ihre Mengen bleiben gespeichert, zählen aber nicht mehr.
+  - To-dos haben immer ein Datum (Standard heute), offene von früheren Tagen erscheinen heute mit „seit gestern“/„seit n Tagen“. Neue Aufgaben nur ab heute; beim Bearbeiten ist jedes Datum möglich. Die To-do-Karte steht auf der Alltag-Seite nur beim heutigen Tag.
+  - Trainingsfortschritt: „Kraft (3 Monate)“ = Median von `exerciseProgress` aller Kraftübungen (wie in der Statistik, ab 4 Einheiten), Workouts im Kalendermonat vs. Vormonat, Anzahl Rekorde im Monat.
+  - Verlauf-Karte steht unten auf der Alltag-Seite (vom Nutzer so bestätigt).
+  - Hauptbundle 262 → 290 KB (Gewohnheiten/To-dos auf der Startseite), Recharts bleibt im eigenen Chunk.
 - Ergebnis Handytest:
 - Offene Punkte:
+  - CSV-Export für Alltagsdaten (Nutzerwunsch „irgendwann“), dann auch Gewohnheiten und To-dos.
+  - Schritte 11–13/17: eigene Buttons im Schnellzugriff ergänzen (`QUICK_ACTIONS`, `QUICK_ACTION_LABELS`, Fall in `QuickActions`), z. B. Mahlzeit, Supplement genommen, Ausdauer, Journal. Bei bestehenden Nutzern erscheinen sie nur in der Auswahl unter „Anpassen“.
+  - Wiederkehrende To-dos gibt es nicht (dafür Gewohnheiten). Aufhören hat keine Ersparnis in € (Nutzer: nicht gewünscht).
 
 ### Schritt 11 – Supplements
+> **Aus 10b:** Supplements lassen sich schon als Gewohnheit mit Unterpunkten und Menge abhaken. Schritt 11 baut einen **eigenen, ausführlicheren Bereich** (Bestand, Packungsgröße, Uhrzeiten, Warnung bei niedrigem Bestand). Vorher klären, ob bestehende Supplement-Gewohnheiten übernommen werden sollen.
+
 - `supplements` (Name, Dosierung, Einheit, Uhrzeiten, Bestand, Packungsgröße), `supplementIntakes`
 - Abhaken pro Tag/Uhrzeit, Bestand automatisch reduzieren, Warnung bei niedrigem Bestand
 - Erinnerung nur bei geöffneter App (Notification API, falls erlaubt) – Einschränkung in der UI erklären

@@ -27,6 +27,7 @@ import {
   summarizeDays,
   trainsMuscle,
   weeklyMuscleSets,
+  trainingProgress,
   weekSummary,
   type RestPair,
   type StatsExercise,
@@ -144,6 +145,41 @@ describe('recentRecords', () => {
 
   it('ist ohne Rekorde leer', () => {
     expect(recentRecords([bench(20, 100), bench(10, 90)], null, 3)).toEqual([]);
+  });
+});
+
+describe('trainingProgress', () => {
+  const bench = (days: number, weight: number) =>
+    session(daysAgo(days), [set({ weight, reps: 1 })]);
+
+  it('Median der Kraftsteigerung, Workouts und Rekorde im Kalendermonat', () => {
+    // NOW = 31.10.: 30 Tage zurück ist der 1.10., 31 Tage der 30.09.
+    const sessions = [
+      bench(80, 100),
+      bench(40, 100),
+      bench(31, 105),
+      bench(20, 110),
+      bench(10, 108),
+      bench(5, 115),
+      session(daysAgo(3), [set({ weight: 50 })], { id: 'cardio', category: 'cardio' }),
+    ];
+    const result = trainingProgress(sessions, null, NOW);
+    // 3 Monate ab 31.07.: erste zwei Einheiten max. 100, letzte zwei max. 115
+    expect(result.strengthPercent).toBeCloseTo(15);
+    expect(result.exerciseCount).toBe(1);
+    expect(result.workoutsThisMonth).toBe(4);
+    expect(result.workoutsLastMonth).toBe(2);
+    // Oktober: 110 (Gewicht, 1RM, Volumen Satz/Einheit) und 115 (dasselbe)
+    expect(result.recordsThisMonth).toBe(8);
+  });
+
+  it('ohne genug Einheiten kein Prozentwert', () => {
+    expect(trainingProgress([bench(5, 100)], null, NOW)).toMatchObject({
+      strengthPercent: null,
+      exerciseCount: 0,
+      workoutsThisMonth: 1,
+      recordsThisMonth: 0,
+    });
   });
 });
 

@@ -1,22 +1,29 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState, type ReactNode } from 'react';
 import type { BackState } from '../../components/backNavigation';
+import { Link } from 'react-router-dom';
+import { Chip } from '../../components/Chip';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Card, LinkRow } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
-import { updateSettings } from '../../db/settings';
+import { getSettings, updateSettings } from '../../db/settings';
 import { loadStatsSessions } from '../../db/stats';
 import {
   DASHBOARD_WIDGETS,
+  QUICK_ACTIONS,
   type DashboardWidget,
+  type QuickAction,
   type Settings,
   type WeightUnit,
 } from '../../db/types';
 import type { WorkoutSummary } from '../../db/workouts';
 import { formatDecimal } from '../../domain/format';
-import { DASHBOARD_WIDGET_LABELS } from '../../domain/labels';
+import { DASHBOARD_WIDGET_LABELS, QUICK_ACTION_LABELS } from '../../domain/labels';
+import { dayKey } from '../../domain/daily';
 import {
+  formatPercent,
   recentRecords,
+  trainingProgress,
   weekSummary,
   type RecentRecords,
   type StatsSession,
@@ -28,14 +35,18 @@ import {
   formatWorkoutDuration,
   workoutDurationSeconds,
 } from '../../domain/workout';
+import { HabitChecklist } from '../daily/HabitChecklist';
 import { TodayCard } from '../daily/TodayCard';
+import { TodoCard } from '../daily/TodoCard';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from '../stats/ActivityCard';
 import { HISTORY_PATH } from '../training/paths';
 import { TrainingStartCard } from '../training/TrainingStartCard';
 import { useNow, useWorkoutHistory } from '../training/useWorkouts';
+import { QuickActions } from './QuickActions';
 
 const RECENT_RECORD_ROWS = 3;
+const TODO_LIMIT = 5;
 const RECORDS_PER_ROW = 2;
 const FROM_DASHBOARD: BackState = { from: '/' };
 const MUTED = 'text-slate-600 dark:text-slate-400';
@@ -52,7 +63,18 @@ interface WidgetData {
 function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
   const { settings, sessions, history, records, now } = data;
   const last = history[0];
+  const today = dayKey(now);
   switch (id) {
+    case 'quickActions':
+      return <QuickActions settings={settings} today={today} />;
+    case 'habits':
+      return <HabitChecklist variant="widget" date={today} today={today} />;
+    case 'todos':
+      return <TodoCard today={today} limit={TODO_LIMIT} />;
+    case 'progress':
+      return sessions.length > 0 ? (
+        <ProgressCard sessions={sessions} bodyWeightKg={settings.bodyWeightKg} now={now} />
+      ) : null;
     case 'week':
       return sessions.length > 0 ? (
         <WeekCard
@@ -154,6 +176,9 @@ function WidgetEditor({ data }: { data: WidgetData }) {
                 onClick={() => void save(dashboardWidgets.filter((widget) => widget !== id))}
               />
             </div>
+            {!compact && id === 'quickActions' && (
+              <QuickActionPicker selected={data.settings.quickActions} />
+            )}
             {!compact && (
               <div inert className="px-2">
                 {renderWidget(id as DashboardWidget, data) ?? (
@@ -197,6 +222,86 @@ function WidgetEditor({ data }: { data: WidgetData }) {
         </section>
       )}
     </>
+  );
+}
+
+/** Buttons des Schnellzugriffs wählen; Reihenfolge wie in `QUICK_ACTIONS` */
+function QuickActionPicker({ selected }: { selected: QuickAction[] }) {
+  // Aktuellen Stand lesen, damit schnelles Tippen auf zwei Chips nichts verliert
+  const toggle = async (action: QuickAction) => {
+    const current = (await getSettings())?.quickActions ?? selected;
+    const next = current.includes(action)
+      ? current.filter((item) => item !== action)
+      : QUICK_ACTIONS.filter((item) => item === action || current.includes(item));
+    await updateSettings({ quickActions: next });
+  };
+  return (
+    <div
+      role="group"
+      aria-label="Buttons im Schnellzugriff"
+      className="flex flex-wrap gap-1 px-3 pb-3"
+    >
+      {QUICK_ACTIONS.map((action) => (
+        <Chip
+          key={action}
+          pressed={selected.includes(action)}
+          className="px-3"
+          onClick={() => void toggle(action)}
+        >
+          {QUICK_ACTION_LABELS[action].icon} {QUICK_ACTION_LABELS[action].name}
+        </Chip>
+      ))}
+    </div>
+  );
+}
+
+function ProgressCard({
+  sessions,
+  bodyWeightKg,
+  now,
+}: {
+  sessions: StatsSession[];
+  bodyWeightKg: number | null;
+  now: Date;
+}) {
+  const progress = useMemo(
+    () => trainingProgress(sessions, bodyWeightKg, now),
+    [sessions, bodyWeightKg, now],
+  );
+  const { strengthPercent, workoutsThisMonth, workoutsLastMonth, recordsThisMonth } = progress;
+  const tiles = [
+    {
+      label: 'Kraft (3 Monate)',
+      value: strengthPercent === null ? '–' : formatPercent(strengthPercent),
+    },
+    { label: 'Workouts im Monat', value: String(workoutsThisMonth) },
+    { label: 'Rekorde im Monat', value: String(recordsThisMonth) },
+  ];
+  const diff = workoutsThisMonth - workoutsLastMonth;
+  return (
+    <Card title={DASHBOARD_WIDGET_LABELS.progress.name}>
+      <dl data-testid="training-progress" className="grid grid-cols-3 gap-2 text-center">
+        {tiles.map(({ label, value }) => (
+          <div key={label} className="flex flex-col-reverse">
+            <dt className="text-sm text-slate-500 dark:text-slate-400">{label}</dt>
+            <dd className="text-xl font-bold tabular-nums">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        {strengthPercent === null
+          ? 'Kraft: ab 4 Einheiten einer Übung in 3 Monaten. '
+          : `Median über ${progress.exerciseCount} ${progress.exerciseCount === 1 ? 'Übung' : 'Übungen'}. `}
+        Vormonat: {workoutsLastMonth} Workouts
+        {diff !== 0 && ` (${diff > 0 ? '+' : '−'}${Math.abs(diff)})`}.
+      </p>
+      <Link
+        to="/stats"
+        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+      >
+        Zur Statistik ›
+      </Link>
+    </Card>
   );
 }
 
