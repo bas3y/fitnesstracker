@@ -18,7 +18,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 8 – Dashboard & CSV-Export (MVP 1 fertig)
 - [x] Schritt 9 – Tägliches Tracking
 - [x] Schritt 10 – Habit-Tracker
-- [ ] Schritt 10b – Anpassungen nach dem Testen & Handytest
+- [x] Schritt 10b – Anpassungen nach dem Testen & Handytest
 - [ ] Schritt 11 – Supplements
 - [ ] Schritt 12 – Ernährung (MVP 2 fertig)
 - [ ] Schritt 13 – Ausdauer manuell
@@ -521,7 +521,9 @@ Danach veröffentlichen und testen:
   - Trainingsfortschritt: „Kraft (3 Monate)“ = Median von `exerciseProgress` aller Kraftübungen (wie in der Statistik, ab 4 Einheiten), Workouts im Kalendermonat vs. Vormonat, Anzahl Rekorde im Monat.
   - Verlauf-Karte steht unten auf der Alltag-Seite (vom Nutzer so bestätigt).
   - Hauptbundle 262 → 290 KB (Gewohnheiten/To-dos auf der Startseite), Recharts bleibt im eigenen Chunk.
-- Ergebnis Handytest:
+  - Zusätzlich behoben: Schnelles Tippen auf zwei Schnellzugriff-Chips konnte die Auswahl überschreiben; der Wasser-Hinweis zeigte einen Pokal (jetzt `variant: 'info'`).
+  - Gepusht als `0339e70`, GitHub Action erfolgreich.
+- Ergebnis Handytest: vom Nutzer bestätigt („passt alles“), keine Probleme gemeldet. Gerät nicht genannt; ob Android dabei war, bleibt offen (sonst in Schritt 20 nachholen).
 - Offene Punkte:
   - CSV-Export für Alltagsdaten (Nutzerwunsch „irgendwann“), dann auch Gewohnheiten und To-dos.
   - Schritte 11–13/17: eigene Buttons im Schnellzugriff ergänzen (`QUICK_ACTIONS`, `QUICK_ACTION_LABELS`, Fall in `QuickActions`), z. B. Mahlzeit, Supplement genommen, Ausdauer, Journal. Bei bestehenden Nutzern erscheinen sie nur in der Auswahl unter „Anpassen“.
