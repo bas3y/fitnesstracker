@@ -20,7 +20,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 10 – Habit-Tracker
 - [x] Schritt 10b – Anpassungen nach dem Testen & Handytest
 - [x] Schritt 11 – Supplements
-- [ ] Schritt 12 – Ernährung (MVP 2 fertig)
+- [x] Schritt 12 – Ernährung (MVP 2 fertig)
 - [ ] Schritt 13 – Ausdauer manuell
 - [ ] Schritt 14 – FIT/GPX/TCX-Import
 - [ ] Schritt 15 – Ausdauer-Statistiken
@@ -575,10 +575,29 @@ Mit dem Nutzer beim Start abgestimmt: Bestehende Supplement-Gewohnheiten **per B
 
 **Fertig wenn:** Tag mit 3 Mahlzeiten offline erfassen, Summen korrekt.
 
+Mit dem Nutzer beim Start abgestimmt: Ernährung liegt **unter Alltag** (keine sechste Navigation), Ziele sind **feste Werte** je Trainings-/Ruhetag (Protein mit g/kg-Hinweis), schnelles Wiederholen über **Lieblingsmahlzeiten und „Wie gestern“**.
+
 **Notizen:**
 - Gebaut:
+  - Dexie v16: Lebensmittel bekommen die Nutzerfelder `isFavorite`, `hiddenAt` und `recipe` (`ingredients` mit `foodId`/`grams`, `cookedWeightGrams`, `servings`); neue Tabellen `mealEntries` (`date`, `meal: breakfast|lunch|dinner|snack`, `foodId`, `name`, `grams`, `portion`, `nutrients` pro 100 g) und `savedMeals` (`name`, `items`); `Settings.nutritionGoals` (`training`/`rest` je `kcal`, `protein`, `carbs|null`, `fat|null`; Standard 2500/2200 kcal, 150 g Protein). Backup-Defaults, Sicherungen aus v1–v15 bleiben importierbar.
+  - `src/domain/nutrition.ts`: Nährwerte skalieren/summieren, `nutritionDay` (Summen je Mahlzeit und Tag), `goalForDay`, `proteinPerKg`, `recipeNutrition`/`recipeFoodValues`, Mengen (`portionAmount`, `defaultMealAmount`, Formatierung), Schnellauswahl (`recentFoodIds`, `frequentFoodIds`, 90 Tage).
+  - `src/db/foods.ts` (eigene Lebensmittel, Favorit, Ausblenden, Rezepte, `refreshRecipes`), `src/db/nutrition.ts` (Einträge, `loadNutritionDay` mit Trainingstag über `loadTrainingDays`, `copyMeal`, `loadFoodUsage`, Lieblingsmahlzeiten).
+  - UI in `src/features/nutrition/`: `NutritionPage` (`/daily/nutrition`: Tag wählen, Übersicht, 4 Mahlzeiten), `MealCard` (Einträge antippen = Menge/Mahlzeit ändern, ✕, „+ Hinzufügen“, „Wie gestern“, ★ Lieblingsmahlzeiten speichern/eintragen), `FoodPicker` (Vollbild, Favoriten/Zuletzt/Häufig ohne Suche, Stern, Menge in Gramm oder Portion mit Vorschau, bleibt nach dem Hinzufügen offen, eigenes Lebensmittel direkt anlegen), `NutritionSummary`/`NutritionDayCard` (Karte auf der Alltag-Seite, Widget „Ernährung“), `FoodListPage` (`/daily/foods`, ersetzt `FoodSearchPage`: Suche + Filter Favoriten/Eigene/Rezepte/Ausgeblendete in der URL), `FoodDetailPage` (Nährwerte pro 100 g und Portion, Zutaten, Favorit, Ausblenden bzw. Bearbeiten/Löschen), `FoodForm`, `RecipeForm` (Zutaten über den Picker, Gewicht nach dem Kochen, Portionen, Live-Ergebnis), `FoodEditPage` (`/daily/foods/new`, `/daily/foods/new-recipe`, `/daily/foods/:id/edit`). Einstellungen: Karte „Ernährung“. Startseite: Widget „Ernährung“, Schnellzugriff „🍽️ Mahlzeit“.
+  - Gemeinsam: `FavoriteToggle` (`src/components/`), `FavoriteButton` der Übungen nutzt ihn.
+  - Tests: `src/domain/nutrition.test.ts`, `src/db/nutrition.test.ts` (Lebensmittel, Rezepte inkl. Seed-Neuberechnung, Mahlzeiten, „Wie gestern“, Schnellauswahl, Lieblingsmahlzeiten), Migration v15→v16, Backup (Wiederherstellung, aus v15, ungültige Mahlzeit). E2E `e2e/nutrition.spec.ts` offline in beiden Viewports: 3 Mahlzeiten mit Summen und Neuladen, eigenes Lebensmittel im Picker, Lieblingsmahlzeit, „Wie gestern“, Menge ändern, Entfernen, Ziel ändern, Alltag-Karte, Widget, Schnellzugriff, Trainingstag; Lebensmittel/Rezept anlegen, Favorit, Ausblenden. `e2e/mvp1.spec.ts`: ein Widget mehr.
 - Abweichungen:
+  - Keine Tabelle `meals`: Eine Mahlzeit ist Tag + Typ an den Einträgen (`mealEntries`).
+  - **Name und Nährwerte werden beim Eintragen kopiert** (wie die Dosis bei Supplements): Spätere Änderungen an Lebensmitteln, Rezepten oder am Seed ändern vergangene Tage nicht. „Wie gestern“ kopiert die Einträge unverändert, Lieblingsmahlzeiten tragen mit den **aktuellen** Werten ein.
+  - Rezepte sind eigene Lebensmittel (`category: 'dishes'`, Feld `recipe`) und damit wie Lebensmittel such-, favorisier- und auswählbar. Nährwerte pro 100 g und die Portion „1 Portion“ werden gespeichert und bei Änderung einer Zutat und nach jedem Seed neu berechnet. Keine Rezepte in Rezepten. Gelöschte Zutaten zählen weiter.
+  - Trainingstag = an dem Tag gibt es ein (auch laufendes) Workout; vor dem Training gelten die Ruhetag-Ziele.
+  - Einträge werden ohne Rückfrage entfernt (✕ in der Zeile oder „Entfernen“ im Dialog), ebenso Lieblingsmahlzeiten im Dialog. „Wie gestern“ erscheint nur bei leerer Mahlzeit, wenn der Vortag dort Einträge hat.
+  - Doppelte Namen sind bei eigenen Lebensmitteln/Rezepten nicht erlaubt (auch nicht gegenüber mitgelieferten). Eigene Lebensmittel: Zucker ≤ Kohlenhydrate, Nährstoffe zusammen ≤ 100 g; Hinweis mit berechneten kcal und „Übernehmen“.
+  - Hauptbundle 290 → 296 KB (Widget auf der Startseite).
 - Offene Punkte:
+  - Trainingstag manuell festlegen (z. B. abends geplantes Training) gibt es nicht.
+  - Kein Ernährungs-Verlauf (Graph über Tage) im Alltag-Verlauf, kein CSV-Export der Ernährung. Barcode-Scanner erst mit Server (Phase 6).
+  - Seed-Lebensmittel mit Portionen prüfen; Zahlenfelder und Picker auf dem echten Handy ansehen. Lighthouse wurde nicht erneut ausgeführt.
+  - Schritt 13: Ausdauer-Einheiten in `loadTrainingDays` ergänzen, dann zählen sie auch für die Ernährungsziele.
 
 ---
 

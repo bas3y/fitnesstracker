@@ -411,7 +411,54 @@ describe('AppDatabase-Migration', () => {
     });
     expect(await v15.supplements.count()).toBe(0);
     expect(await v15.supplementIntakes.count()).toBe(0);
-    expect(v15.verno).toBe(15);
+    expect(v15.verno).toBeGreaterThanOrEqual(15);
     await v15.delete();
+  });
+
+  it('Version 16 ergänzt Ernährung, Felder an Lebensmitteln und die Ernährungsziele', async () => {
+    const name = 'migration-test-v16';
+    const v15 = new Dexie(name);
+    v15.version(15).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+    });
+    await v15.table('settings').add({ id: 'app-settings', name: 'Alex', stepsGoal: 8000 });
+    await v15.table('foods').add({ id: 'f1', source: 'user', name: 'Mein Müsli', kcal: 380 });
+    v15.close();
+
+    const v16 = new AppDatabase(name);
+    expect(await v16.foods.get('f1')).toMatchObject({
+      name: 'Mein Müsli',
+      kcal: 380,
+      isFavorite: false,
+      hiddenAt: null,
+      recipe: null,
+    });
+    expect(await v16.settings.get('app-settings')).toMatchObject({
+      name: 'Alex',
+      stepsGoal: 8000,
+      nutritionGoals: {
+        training: { kcal: 2500, protein: 150, carbs: null, fat: null },
+        rest: { kcal: 2200, protein: 150, carbs: null, fat: null },
+      },
+    });
+    expect(await v16.mealEntries.count()).toBe(0);
+    expect(await v16.savedMeals.count()).toBe(0);
+    expect(v16.verno).toBe(16);
+    await v16.delete();
   });
 });

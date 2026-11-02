@@ -9,14 +9,18 @@ import {
 import { getBodyMeasurement, getDailyLog, setBodyMeasure, updateDailyLog } from './daily';
 import { db } from './database';
 import { createUserExercise } from './exercises';
+import { createRecipe, createUserFood, setFoodFavorite } from './foods';
+import { addMealEntry, listMealEntries, listSavedMeals, saveMeal } from './nutrition';
 import { addHabitAmount, createHabit, loadHabit, pauseHabit, setHabitChecked } from './habits';
 import { addPlanExercise, createPlan, deletePlan, loadPlanDetail } from './plans';
 import { create } from './repository';
 import {
   DAILY_GOAL_DEFAULTS,
   EMPTY_EXERCISE_INPUT,
+  EMPTY_FOOD_INPUT,
   EMPTY_HABIT_INPUT,
   EMPTY_SUPPLEMENT_INPUT,
+  NUTRITION_GOAL_DEFAULTS,
 } from './schemas';
 import { createSupplement, loadSupplement, setSupplementTaken } from './supplements';
 import { applySeed, SEED_VERSION } from './seed';
@@ -76,6 +80,8 @@ describe('parseBackup', () => {
         todos: 0,
         supplements: 0,
         supplementIntakes: 0,
+        mealEntries: 0,
+        savedMeals: 0,
       });
   });
 
@@ -348,6 +354,76 @@ describe('Supplements im Backup', () => {
     });
     const data = await validBackup();
     data.tables.supplements[0].doses[0].timing = 'mittags';
+    expect(parseBackup(data).ok).toBe(false);
+  });
+});
+
+describe('Ernährung im Backup', () => {
+  it('stellt Lebensmittel, Rezepte, Mahlzeiten, Lieblingsmahlzeiten und Ziele wieder her', async () => {
+    const food = await createUserFood({
+      ...EMPTY_FOOD_INPUT,
+      name: 'Quark',
+      kcal: 67,
+      protein: 12,
+    });
+    await setFoodFavorite(food.id, true);
+    const recipe = await createRecipe({
+      name: 'Quarkspeise',
+      ingredients: [{ id: 'a', foodId: food.id, grams: 250 }],
+      cookedWeightGrams: null,
+      servings: 2,
+    });
+    await addMealEntry('2026-11-02', 'snack', recipe.id, {
+      grams: 125,
+      portion: { label: '1 Portion', grams: 125, count: 1 },
+    });
+    await saveMeal('Snack', '2026-11-02', 'snack');
+    await updateSettings({
+      nutritionGoals: {
+        training: { kcal: 2800, protein: 160, carbs: 300, fat: null },
+        rest: { kcal: 2300, protein: 160, carbs: null, fat: 70 },
+      },
+    });
+    const result = parseBackup(JSON.parse(JSON.stringify(await createBackup())));
+    if (!result.ok) throw new Error(result.error);
+    expect(countRows(result.backup)).toMatchObject({ mealEntries: 1, savedMeals: 1 });
+
+    await resetDatabase();
+    await restoreBackup(result.backup);
+    expect(await db.foods.get(food.id)).toMatchObject({ isFavorite: true });
+    expect(await db.foods.get(recipe.id)).toMatchObject({ recipe: { servings: 2 } });
+    expect(await listMealEntries('2026-11-02')).toMatchObject([
+      { name: 'Quarkspeise', grams: 125, portion: { count: 1 } },
+    ]);
+    expect(await listSavedMeals()).toMatchObject([{ savedMeal: { name: 'Snack' } }]);
+    expect((await getSettings())?.nutritionGoals.rest.fat).toBe(70);
+  });
+
+  it('ergänzt in Sicherungen aus DB-Version 15 Tabellen, Felder und Ziele', async () => {
+    await createUserFood({ ...EMPTY_FOOD_INPUT, name: 'Quark' });
+    const data = await validBackup();
+    data.dbVersion = 15;
+    delete data.tables.mealEntries;
+    delete data.tables.savedMeals;
+    delete data.tables.settings[0].nutritionGoals;
+    for (const key of ['isFavorite', 'hiddenAt', 'recipe']) delete data.tables.foods[0][key];
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.mealEntries).toEqual([]);
+    expect(result.backup.tables.savedMeals).toEqual([]);
+    expect(result.backup.tables.foods[0]).toMatchObject({
+      isFavorite: false,
+      hiddenAt: null,
+      recipe: null,
+    });
+    expect(result.backup.tables.settings[0]!.nutritionGoals).toEqual(NUTRITION_GOAL_DEFAULTS);
+  });
+
+  it('lehnt ungültige Mahlzeiten ab', async () => {
+    const food = await createUserFood({ ...EMPTY_FOOD_INPUT, name: 'Quark' });
+    await addMealEntry('2026-11-02', 'snack', food.id, { grams: 100, portion: null });
+    const data = await validBackup();
+    data.tables.mealEntries[0].meal = 'brunch';
     expect(parseBackup(data).ok).toBe(false);
   });
 });

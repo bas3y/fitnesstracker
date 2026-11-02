@@ -24,9 +24,20 @@ const HabitDetailPage = lazyPage(
 const HabitEditPage = lazyPage(() => import('./features/daily/HabitEditPage'), 'HabitEditPage');
 const HabitListPage = lazyPage(() => import('./features/daily/HabitListPage'), 'HabitListPage');
 const TodoPage = lazyPage(() => import('./features/daily/TodoPage'), 'TodoPage');
-const FoodSearchPage = lazyPage(
-  () => import('./features/nutrition/FoodSearchPage'),
-  'FoodSearchPage',
+const FoodCreatePage = lazyPage(
+  () => import('./features/nutrition/FoodEditPage'),
+  'FoodCreatePage',
+);
+const FoodDetailPage = lazyPage(
+  () => import('./features/nutrition/FoodDetailPage'),
+  'FoodDetailPage',
+);
+const FoodEditPage = lazyPage(() => import('./features/nutrition/FoodEditPage'), 'FoodEditPage');
+const FoodListPage = lazyPage(() => import('./features/nutrition/FoodListPage'), 'FoodListPage');
+const NutritionPage = lazyPage(() => import('./features/nutrition/NutritionPage'), 'NutritionPage');
+const RecipeCreatePage = lazyPage(
+  () => import('./features/nutrition/FoodEditPage'),
+  'RecipeCreatePage',
 );
 const PlanDayPage = lazyPage(() => import('./features/plans/PlanDayPage'), 'PlanDayPage');
 const PlanDetailPage = lazyPage(() => import('./features/plans/PlanDetailPage'), 'PlanDetailPage');
@@ -114,7 +125,12 @@ export function App() {
           <Route path="daily/supplements/new" element={<SupplementCreatePage />} />
           <Route path="daily/supplements/:id" element={<SupplementDetailPage />} />
           <Route path="daily/supplements/:id/edit" element={<SupplementEditPage />} />
-          <Route path="daily/foods" element={<FoodSearchPage />} />
+          <Route path="daily/nutrition" element={<NutritionPage />} />
+          <Route path="daily/foods" element={<FoodListPage />} />
+          <Route path="daily/foods/new" element={<FoodCreatePage />} />
+          <Route path="daily/foods/new-recipe" element={<RecipeCreatePage />} />
+          <Route path="daily/foods/:id" element={<FoodDetailPage />} />
+          <Route path="daily/foods/:id/edit" element={<FoodEditPage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/about" element={<AboutPage />} />

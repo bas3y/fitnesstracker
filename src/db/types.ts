@@ -47,6 +47,8 @@ export interface Settings extends BaseEntity {
   supplementRemindersEnabled: boolean;
   /** Zusätzlich Mitteilung des Systems, solange die App im Hintergrund noch läuft */
   supplementNotificationsEnabled: boolean;
+  /** Tagesziele Ernährung, getrennt nach Trainings- und Ruhetag */
+  nutritionGoals: NutritionGoals;
 }
 
 export const DASHBOARD_WIDGETS = [
@@ -61,6 +63,7 @@ export const DASHBOARD_WIDGETS = [
   'nextTraining',
   'daily',
   'supplements',
+  'nutrition',
 ] as const;
 export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
 /** Standardaufbau seit DB-Version 14 (bestehende Startseiten wurden einmalig umgestellt) */
@@ -88,6 +91,7 @@ export const QUICK_ACTIONS = [
   'todo',
   'measurements',
   'supplements',
+  'meal',
 ] as const;
 export type QuickAction = (typeof QUICK_ACTIONS)[number];
 export const DEFAULT_QUICK_ACTIONS: readonly QuickAction[] = [
@@ -447,13 +451,8 @@ export interface FoodPortion {
   grams: number;
 }
 
-/** Nährwerte pro 100 g; Kohlenhydrate wie in der EU ohne Ballaststoffe */
-export interface Food extends BaseEntity {
-  source: DataSource;
-  builtinKey: string | null;
-  name: string;
-  aliases: string[];
-  category: FoodCategory;
+/** Nährwerte in Gramm (bzw. kcal); Kohlenhydrate wie in der EU ohne Ballaststoffe */
+export interface Nutrients {
   kcal: number;
   protein: number;
   carbs: number;
@@ -461,7 +460,90 @@ export interface Food extends BaseEntity {
   fiber: number;
   sugar: number;
   alcohol: number;
+}
+
+export interface RecipeIngredient {
+  id: string;
+  foodId: string;
+  grams: number;
+}
+
+export interface Recipe {
+  ingredients: RecipeIngredient[];
+  /** Gewicht nach dem Kochen; `null` = Summe der Zutaten */
+  cookedWeightGrams: number | null;
+  /** Anzahl Portionen, die das Rezept ergibt */
+  servings: number;
+}
+
+/** Nährwerte pro 100 g; Kohlenhydrate wie in der EU ohne Ballaststoffe */
+export interface Food extends BaseEntity, Nutrients {
+  source: DataSource;
+  builtinKey: string | null;
+  name: string;
+  aliases: string[];
+  category: FoodCategory;
   portions: FoodPortion[];
   /** Herkunft, z. B. `usda:171688`, `manual` oder `null` bei eigenen Lebensmitteln */
   sourceRef: string | null;
+  // Nutzerangaben – werden vom Seed nie überschrieben
+  isFavorite: boolean;
+  /** Vom Nutzer ausgeblendet (getrennt von `deletedAt`, das der Seed für entfernte Einträge setzt) */
+  hiddenAt: Timestamp | null;
+  /** Nur eigene Rezepte; Nährwerte und Portion werden aus den Zutaten berechnet */
+  recipe: Recipe | null;
+}
+
+export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
+export type MealType = (typeof MEAL_TYPES)[number];
+
+/** Gewählte Portion einer Mahlzeit, z. B. 2 × „1 Ei“ à 60 g */
+export interface MealPortion {
+  label: string;
+  grams: number;
+  count: number;
+}
+
+/**
+ * Lebensmittel in einer Mahlzeit. Name und Nährwerte werden beim Eintragen kopiert, damit spätere
+ * Änderungen am Lebensmittel (oder am Seed) vergangene Tage nicht verändern.
+ */
+export interface MealEntry extends BaseEntity {
+  date: DayKey;
+  meal: MealType;
+  foodId: string;
+  name: string;
+  /** Gesamtmenge */
+  grams: number;
+  /** `null` = in Gramm eingegeben */
+  portion: MealPortion | null;
+  /** Pro 100 g */
+  nutrients: Nutrients;
+}
+
+export interface SavedMealItem {
+  id: string;
+  foodId: string;
+  grams: number;
+  portion: MealPortion | null;
+}
+
+/** Lieblingsmahlzeit: wird mit einem Tipp in eine Mahlzeit eingetragen (aktuelle Nährwerte) */
+export interface SavedMeal extends BaseEntity {
+  name: string;
+  items: SavedMealItem[];
+}
+
+/** `carbs`/`fat`: `null` = kein Ziel */
+export interface NutritionGoal {
+  kcal: number;
+  protein: number;
+  carbs: number | null;
+  fat: number | null;
+}
+
+export interface NutritionGoals {
+  /** Tage mit Workout */
+  training: NutritionGoal;
+  rest: NutritionGoal;
 }

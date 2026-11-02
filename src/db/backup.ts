@@ -9,7 +9,14 @@ import {
   exerciseFieldsSchema,
   foodFieldsSchema,
   habitFieldsSchema,
+  mealAmountSchema,
+  NUTRITION_GOAL_DEFAULTS,
+  nutrientsSchema,
+  nutritionGoalsSchema,
   planExerciseValuesSchema,
+  recipeSchema,
+  savedMealItemSchema,
+  savedMealNameSchema,
   setValuesSchema,
   SUPPLEMENT_SETTING_DEFAULTS,
   supplementFieldsSchema,
@@ -24,6 +31,7 @@ import {
   DEFAULT_DASHBOARD_WIDGETS,
   DEFAULT_QUICK_ACTIONS,
   LOAD_TYPES,
+  MEAL_TYPES,
   PLAN_SCHEDULES,
   QUICK_ACTIONS,
 } from './types';
@@ -78,6 +86,8 @@ const settingsSchema = baseEntitySchema.extend({
   supplementNotificationsEnabled: z
     .boolean()
     .default(SUPPLEMENT_SETTING_DEFAULTS.supplementNotificationsEnabled),
+  // Seit DB-Version 16
+  nutritionGoals: nutritionGoalsSchema.default(NUTRITION_GOAL_DEFAULTS),
 });
 
 const catalogEntryFields = {
@@ -98,7 +108,26 @@ const exerciseSchema = baseEntitySchema
     // Seit DB-Version 5
     loadType: z.enum(LOAD_TYPES).default('weight'),
   });
-const foodSchema = baseEntitySchema.extend(foodFieldsSchema.shape).extend(catalogEntryFields);
+const foodSchema = baseEntitySchema
+  .extend(foodFieldsSchema.shape)
+  .extend(catalogEntryFields)
+  .extend({
+    // Seit DB-Version 16
+    isFavorite: z.boolean().default(false),
+    hiddenAt: timestamp.nullable().default(null),
+    recipe: recipeSchema.nullable().default(null),
+  });
+const mealEntrySchema = baseEntitySchema.extend(mealAmountSchema.shape).extend({
+  date: dayKeySchema,
+  meal: z.enum(MEAL_TYPES),
+  foodId: z.string().min(1),
+  name: z.string().min(1),
+  nutrients: nutrientsSchema,
+});
+const savedMealSchema = baseEntitySchema.extend({
+  name: savedMealNameSchema,
+  items: z.array(savedMealItemSchema),
+});
 
 const workoutSchema = baseEntitySchema.extend({
   startedAt: timestamp,
@@ -224,6 +253,8 @@ export const backupSchema = z.object({
     todos: z.array(todoSchema).default([]),
     supplements: z.array(supplementSchema).default([]),
     supplementIntakes: z.array(supplementIntakeSchema).default([]),
+    mealEntries: z.array(mealEntrySchema).default([]),
+    savedMeals: z.array(savedMealSchema).default([]),
   }),
 });
 
@@ -247,6 +278,8 @@ export const TABLE_LABELS: Record<TableName, string> = {
   todos: 'To-dos',
   supplements: 'Supplements',
   supplementIntakes: 'Supplement-Einnahmen',
+  mealEntries: 'Einträge in Mahlzeiten',
+  savedMeals: 'Lieblingsmahlzeiten',
 };
 
 export async function createBackup(): Promise<Backup> {

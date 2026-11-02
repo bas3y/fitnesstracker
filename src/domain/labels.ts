@@ -4,6 +4,7 @@ import type {
   Equipment,
   ExerciseCategory,
   FoodCategory,
+  MealType,
   MuscleGroup,
   QuickAction,
 } from '../db/types';
@@ -20,6 +21,14 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   nextTraining: { name: 'Nächstes Training', hint: 'Vorschlag aus deinem Plan mit Startknopf' },
   daily: { name: 'Heute', hint: 'Schritte, Wasser, Schlaf und Gewicht' },
   supplements: { name: 'Supplements', hint: 'Heutige Einnahmen abhaken, Bestand im Blick' },
+  nutrition: { name: 'Ernährung', hint: 'Kalorien und Protein heute' },
+};
+
+export const MEAL_TYPE_LABELS: Record<MealType, string> = {
+  breakfast: 'Frühstück',
+  lunch: 'Mittagessen',
+  dinner: 'Abendessen',
+  snack: 'Snacks',
 };
 
 export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: string }> = {
@@ -30,6 +39,7 @@ export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: stri
   todo: { name: 'To-do', icon: '✅' },
   measurements: { name: 'Körpermaße', icon: '📏' },
   supplements: { name: 'Supplements', icon: '💊' },
+  meal: { name: 'Mahlzeit', icon: '🍽️' },
 };
 
 export const BODY_MEASURE_LABELS: Record<BodyMeasure, string> = {

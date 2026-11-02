@@ -1,5 +1,9 @@
 import Dexie, { type Table } from 'dexie';
-import { DAILY_GOAL_DEFAULTS, SUPPLEMENT_SETTING_DEFAULTS } from './schemas';
+import {
+  DAILY_GOAL_DEFAULTS,
+  NUTRITION_GOAL_DEFAULTS,
+  SUPPLEMENT_SETTING_DEFAULTS,
+} from './schemas';
 import {
   DEFAULT_DASHBOARD_WIDGETS,
   DEFAULT_QUICK_ACTIONS,
@@ -10,9 +14,11 @@ import {
   type Food,
   type Habit,
   type HabitCheck,
+  type MealEntry,
   type Plan,
   type PlanDay,
   type PlanExercise,
+  type SavedMeal,
   type Settings,
   type Supplement,
   type SupplementIntake,
@@ -42,6 +48,8 @@ export class AppDatabase extends Dexie {
   todos!: Table<Todo, string>;
   supplements!: Table<Supplement, string>;
   supplementIntakes!: Table<SupplementIntake, string>;
+  mealEntries!: Table<MealEntry, string>;
+  savedMeals!: Table<SavedMeal, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -276,6 +284,31 @@ export class AppDatabase extends Dexie {
               SUPPLEMENT_SETTING_DEFAULTS.supplementNotificationsEnabled;
           }),
       );
+    // Ernährung: Mahlzeiten, Lieblingsmahlzeiten, Favoriten/Ausblenden/Rezepte an Lebensmitteln
+    this.version(16)
+      .stores({
+        mealEntries: 'id, date, foodId, updatedAt',
+        savedMeals: 'id, updatedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Food, string>('foods')
+          .toCollection()
+          .modify((food) => {
+            food.isFavorite ??= false;
+            food.hiddenAt ??= null;
+            food.recipe ??= null;
+          });
+        await tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.nutritionGoals ??= {
+              training: { ...NUTRITION_GOAL_DEFAULTS.training },
+              rest: { ...NUTRITION_GOAL_DEFAULTS.rest },
+            };
+          });
+      });
   }
 }
 

@@ -1,6 +1,10 @@
 import { db } from './database';
 import { create, update, type EntityChanges, type NewEntity } from './repository';
-import { DAILY_GOAL_DEFAULTS, SUPPLEMENT_SETTING_DEFAULTS } from './schemas';
+import {
+  DAILY_GOAL_DEFAULTS,
+  NUTRITION_GOAL_DEFAULTS,
+  SUPPLEMENT_SETTING_DEFAULTS,
+} from './schemas';
 import { DEFAULT_DASHBOARD_WIDGETS, DEFAULT_QUICK_ACTIONS, type Settings } from './types';
 
 // Feste ID statt UUID: Es gibt genau einen Einstellungs-Datensatz pro Gerät
@@ -31,6 +35,10 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   ...REST_TIMER_DEFAULTS,
   ...DAILY_GOAL_DEFAULTS,
   ...SUPPLEMENT_SETTING_DEFAULTS,
+  nutritionGoals: {
+    training: { ...NUTRITION_GOAL_DEFAULTS.training },
+    rest: { ...NUTRITION_GOAL_DEFAULTS.rest },
+  },
 };
 
 export function getSettings(): Promise<Settings | undefined> {

@@ -1,5 +1,6 @@
 import type { Table } from 'dexie';
 import { db } from './database';
+import { FOOD_USER_DEFAULTS, refreshRecipes } from './foods';
 import { nowIso } from './repository';
 import type { BuiltinExercise, BuiltinFood } from './schemas';
 import { ensureSettings, SETTINGS_ID } from './settings';
@@ -49,7 +50,8 @@ export async function applySeed(data: SeedData, version: number): Promise<void> 
     if (settings.seedVersion >= version) return;
     const now = nowIso();
     await syncBuiltins(db.exercises, data.exercises, now, EXERCISE_USER_DEFAULTS);
-    await syncBuiltins(db.foods, data.foods, now, {});
+    await syncBuiltins(db.foods, data.foods, now, FOOD_USER_DEFAULTS);
+    await refreshRecipes();
     await db.settings.update(SETTINGS_ID, { seedVersion: version, updatedAt: now });
   });
 }
@@ -97,7 +99,7 @@ async function syncBuiltins<T extends CatalogEntity>(
     const changed = Object.entries(fields).some(
       ([field, value]) => JSON.stringify(record[field]) !== JSON.stringify(value),
     );
-    // Nutzerfelder (Favorit, Ausblenden, Notiz) bleiben erhalten. `deletedAt` setzt nur der Seed
+    // Nutzerfelder (Favorit, Ausblenden, Notiz, Rezept) bleiben erhalten. `deletedAt` setzt nur der Seed
     // selbst (Nutzer blenden über `hiddenAt` aus) → wieder aufgenommene Einträge zurückholen.
     if (changed || current.deletedAt !== null) {
       changes.push({ ...current, ...fields, deletedAt: null, updatedAt: now });

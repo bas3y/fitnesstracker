@@ -309,7 +309,7 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
   await page.getByRole('button', { name: 'Nächstes Training hinzufügen' }).click();
   await expect(widgets).toHaveCount(5);
   await expect(page.getByRole('list', { name: 'Weitere Widgets' }).getByRole('button')).toHaveCount(
-    6,
+    7,
   );
   await page.getByRole('button', { name: 'Fertig' }).click();
 

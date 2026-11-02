@@ -12,6 +12,7 @@ import {
   SUPPLEMENT_TIMINGS,
   TODO_PRIORITIES,
   TRAINING_KINDS,
+  type NutritionGoals,
 } from './types';
 
 const nutrient = z.number().nonnegative();
@@ -313,6 +314,155 @@ export const EMPTY_SUPPLEMENT_INPUT: SupplementInput = {
   packageSize: null,
   notes: '',
 };
+
+// ---------- Ernährung ----------
+
+export const NUTRITION_GOAL_DEFAULTS: NutritionGoals = {
+  training: { kcal: 2500, protein: 150, carbs: null, fat: null },
+  rest: { kcal: 2200, protein: 150, carbs: null, fat: null },
+};
+
+export const MAX_KCAL_GOAL = 10_000;
+export const MAX_MACRO_GOAL_G = 1000;
+/** Größte Menge eines Eintrags bzw. einer Portion */
+export const MAX_FOOD_GRAMS = 10_000;
+export const MAX_PORTION_COUNT = 100;
+export const MAX_FOOD_PORTIONS = 10;
+export const MAX_RECIPE_INGREDIENTS = 50;
+export const MAX_RECIPE_GRAMS = 100_000;
+export const MAX_RECIPE_SERVINGS = 100;
+
+const macroGoal = z.number().int().min(0).max(MAX_MACRO_GOAL_G);
+const nutritionGoalSchema = z.object({
+  kcal: z.number().int().min(0).max(MAX_KCAL_GOAL),
+  protein: macroGoal,
+  carbs: macroGoal.nullable(),
+  fat: macroGoal.nullable(),
+});
+export const nutritionGoalsSchema = z.object({
+  training: nutritionGoalSchema,
+  rest: nutritionGoalSchema,
+});
+
+export const nutrientsSchema = z.object({
+  kcal: nutrient,
+  protein: nutrient,
+  carbs: nutrient,
+  fat: nutrient,
+  fiber: nutrient,
+  sugar: nutrient,
+  alcohol: nutrient,
+});
+
+const portionLabel = z
+  .string()
+  .trim()
+  .min(1, 'Bitte jeder Portion einen Namen geben')
+  .max(60, 'Portion höchstens 60 Zeichen');
+const foodGrams = z.number().positive('Menge muss größer als 0 sein').max(MAX_FOOD_GRAMS);
+
+export const mealPortionSchema = z.object({
+  label: portionLabel,
+  grams: foodGrams,
+  count: z.number().positive('Anzahl muss größer als 0 sein').max(MAX_PORTION_COUNT),
+});
+
+/** Menge eines Eintrags; bei einer Portion ergibt sich `grams` aus Portion × Anzahl */
+export const mealAmountSchema = z.object({
+  grams: foodGrams,
+  portion: mealPortionSchema.nullable(),
+});
+
+export type MealAmount = z.infer<typeof mealAmountSchema>;
+
+const per100g = (max: number) =>
+  z.number().min(0, 'Werte dürfen nicht negativ sein').max(max, `Höchstens ${max} pro 100 g`);
+
+/** Formular „Eigenes Lebensmittel“ (Werte pro 100 g) */
+export const foodInputSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(80, 'Höchstens 80 Zeichen'),
+    aliases: z.array(z.string().trim()).transform((list) => list.filter(Boolean)),
+    category: z.enum(FOOD_CATEGORIES),
+    kcal: per100g(1000),
+    protein: per100g(100),
+    carbs: per100g(100),
+    fat: per100g(100),
+    fiber: per100g(100),
+    sugar: per100g(100),
+    alcohol: per100g(100),
+    portions: z
+      .array(z.object({ label: portionLabel, grams: foodGrams }))
+      .max(MAX_FOOD_PORTIONS, `Höchstens ${MAX_FOOD_PORTIONS} Portionen`),
+  })
+  .refine((input) => input.sugar <= input.carbs, {
+    path: ['sugar'],
+    message: 'Zucker gehört zu den Kohlenhydraten und kann nicht mehr sein',
+  })
+  .refine(
+    (input) => input.protein + input.carbs + input.fat + input.fiber + input.alcohol <= 100.5,
+    { path: ['fat'], message: 'Zusammen sind das mehr als 100 g pro 100 g' },
+  );
+
+export type FoodInput = z.input<typeof foodInputSchema>;
+export type FoodValues = z.output<typeof foodInputSchema>;
+
+export const EMPTY_FOOD_INPUT: FoodInput = {
+  name: '',
+  aliases: [],
+  category: 'dishes',
+  kcal: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+  fiber: 0,
+  sugar: 0,
+  alcohol: 0,
+  portions: [],
+};
+
+export const recipeIngredientSchema = z.object({
+  id: z.string().min(1),
+  foodId: z.string().min(1),
+  grams: z.number().positive('Menge muss größer als 0 sein').max(MAX_RECIPE_GRAMS),
+});
+
+export const recipeSchema = z.object({
+  ingredients: z
+    .array(recipeIngredientSchema)
+    .min(1, 'Mindestens eine Zutat hinzufügen')
+    .max(MAX_RECIPE_INGREDIENTS, `Höchstens ${MAX_RECIPE_INGREDIENTS} Zutaten`),
+  cookedWeightGrams: z
+    .number()
+    .positive('Gewicht muss größer als 0 sein')
+    .max(MAX_RECIPE_GRAMS)
+    .nullable(),
+  servings: z.number().int().min(1).max(MAX_RECIPE_SERVINGS),
+});
+
+export const recipeInputSchema = recipeSchema.extend({
+  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(80, 'Höchstens 80 Zeichen'),
+});
+
+export type RecipeInput = z.input<typeof recipeInputSchema>;
+export type RecipeValues = z.output<typeof recipeInputSchema>;
+
+export const EMPTY_RECIPE_INPUT: RecipeInput = {
+  name: '',
+  ingredients: [],
+  cookedWeightGrams: null,
+  servings: 1,
+};
+
+export const savedMealItemSchema = mealAmountSchema.extend({
+  id: z.string().min(1),
+  foodId: z.string().min(1),
+});
+export const savedMealNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Bitte einen Namen eingeben')
+  .max(80, 'Höchstens 80 Zeichen');
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 

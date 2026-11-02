@@ -13,6 +13,7 @@ import { DASHBOARD_WIDGET_LABELS, QUICK_ACTION_LABELS } from '../../domain/label
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { TodoAddForm } from '../daily/TodoParts';
 import { useDailyLog } from '../daily/useDaily';
+import { NUTRITION_PATH } from '../nutrition/paths';
 import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { useActiveWorkout } from '../training/useWorkouts';
 
@@ -85,7 +86,15 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
             {tile(action)}
           </Link>
         );
-      default:
+      case 'meal':
+        return (
+          <Link to={NUTRITION_PATH} state={FROM_DASHBOARD} className={TILE}>
+            {tile(action)}
+          </Link>
+        );
+      case 'weight':
+      case 'steps':
+      case 'todo':
         return (
           <button type="button" className={TILE} onClick={() => setOpen(action)}>
             {tile(action)}

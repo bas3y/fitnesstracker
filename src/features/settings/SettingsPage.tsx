@@ -3,11 +3,19 @@ import { Card, LinkRow, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Stepper } from '../../components/Stepper';
 import { setCurrentBodyWeight } from '../../db/daily';
-import { MAX_LOW_STOCK_DAYS, MAX_STEPS, MAX_WATER_ML } from '../../db/schemas';
-import { updateSettings } from '../../db/settings';
-import type { Settings } from '../../db/types';
+import {
+  MAX_KCAL_GOAL,
+  MAX_LOW_STOCK_DAYS,
+  MAX_MACRO_GOAL_G,
+  MAX_STEPS,
+  MAX_WATER_ML,
+} from '../../db/schemas';
+import { getSettings, updateSettings } from '../../db/settings';
+import type { NutritionGoal, NutritionGoals, Settings } from '../../db/types';
 import { setRestTimerEnabled } from '../../db/workouts';
 import { hoursToSeconds, secondsToHours } from '../../domain/daily';
+import { formatDecimal } from '../../domain/format';
+import { proteinPerKg } from '../../domain/nutrition';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { notificationState, requestNotifications } from '../supplements/notifications';
 import { BackupSection } from './BackupSection';
@@ -47,6 +55,7 @@ export function SettingsPage() {
           </Card>
           <TrainingCard settings={settings} />
           <DailyGoalsCard settings={settings} />
+          <NutritionGoalsCard settings={settings} />
           <SupplementSettingsCard settings={settings} />
           <Card title="Darstellung">
             <SegmentedControl
@@ -179,6 +188,84 @@ function DailyGoalsCard({ settings }: { settings: Settings }) {
             hours !== null && void updateSettings({ sleepGoalSeconds: hoursToSeconds(hours) })
           }
         />
+      </div>
+    </Card>
+  );
+}
+
+const DAY_TYPES = [
+  { key: 'training', label: 'Trainingstag' },
+  { key: 'rest', label: 'Ruhetag' },
+] as const;
+
+function NutritionGoalsCard({ settings }: { settings: Settings }) {
+  const hint = 'text-sm text-slate-500 dark:text-slate-400';
+  // Aktuellen Stand lesen, damit schnelle Änderungen an zwei Feldern nichts verlieren
+  const change = async (day: keyof NutritionGoals, changes: Partial<NutritionGoal>) => {
+    const goals = (await getSettings())?.nutritionGoals ?? settings.nutritionGoals;
+    await updateSettings({ nutritionGoals: { ...goals, [day]: { ...goals[day], ...changes } } });
+  };
+
+  return (
+    <Card title="Ernährung">
+      <div className="flex flex-col gap-3">
+        <p className={hint}>
+          Trainingstag = an dem Tag gibt es ein Workout. Kohlenhydrate und Fett sind optional (leer
+          = kein Ziel).
+        </p>
+        {DAY_TYPES.map(({ key, label }) => {
+          const goal = settings.nutritionGoals[key];
+          const perKg = proteinPerKg(goal.protein, settings.bodyWeightKg);
+          return (
+            <div key={key} className="flex flex-col gap-3">
+              <h3 className="mt-1 font-semibold">{label}</h3>
+              <Stepper
+                label={`Kalorien (${label})`}
+                value={goal.kcal}
+                unit="kcal"
+                step={50}
+                min={500}
+                max={MAX_KCAL_GOAL}
+                decimals={0}
+                onChange={(kcal) => kcal !== null && void change(key, { kcal })}
+              />
+              <Stepper
+                label={`Protein (${label})`}
+                value={goal.protein}
+                unit="g"
+                step={5}
+                max={MAX_MACRO_GOAL_G}
+                decimals={0}
+                onChange={(protein) => protein !== null && void change(key, { protein })}
+              />
+              {perKg !== null && (
+                <p className={hint}>≈ {formatDecimal(perKg, 1)} g pro kg Körpergewicht</p>
+              )}
+              <Stepper
+                label={`Kohlenhydrate (${label})`}
+                value={goal.carbs}
+                unit="g"
+                step={10}
+                max={MAX_MACRO_GOAL_G}
+                decimals={0}
+                startValue={250}
+                allowEmpty
+                onChange={(carbs) => void change(key, { carbs })}
+              />
+              <Stepper
+                label={`Fett (${label})`}
+                value={goal.fat}
+                unit="g"
+                step={5}
+                max={MAX_MACRO_GOAL_G}
+                decimals={0}
+                startValue={70}
+                allowEmpty
+                onChange={(fat) => void change(key, { fat })}
+              />
+            </div>
+          );
+        })}
       </div>
     </Card>
   );

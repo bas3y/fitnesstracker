@@ -38,6 +38,7 @@ import {
 import { HabitChecklist } from '../daily/HabitChecklist';
 import { TodayCard } from '../daily/TodayCard';
 import { TodoCard } from '../daily/TodoCard';
+import { NutritionDayCard } from '../nutrition/NutritionSummary';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from '../stats/ActivityCard';
 import { SupplementChecklist } from '../supplements/SupplementChecklist';
@@ -101,6 +102,8 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
       return (
         <SupplementChecklist variant="widget" date={today} today={today} settings={settings} />
       );
+    case 'nutrition':
+      return <NutritionDayCard date={today} today={today} settings={settings} variant="widget" />;
   }
 }
 

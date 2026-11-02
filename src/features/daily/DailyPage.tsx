@@ -8,6 +8,8 @@ import type { DailyLog, DayKey, Settings } from '../../db/types';
 import { hoursToSeconds, formatSleep, secondsToHours } from '../../domain/daily';
 import { formatDecimal } from '../../domain/format';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
+import { NutritionDayCard } from '../nutrition/NutritionSummary';
+import { FOODS_PATH } from '../nutrition/paths';
 import { useSettings } from '../settings/useSettings';
 import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { SupplementChecklist } from '../supplements/SupplementChecklist';
@@ -40,6 +42,9 @@ export function DailyPage() {
       {date === today && <TodoCard today={today} />}
       <HabitChecklist date={date} today={today} />
       {settings && <SupplementChecklist date={date} today={today} settings={settings} />}
+      {settings && (
+        <NutritionDayCard date={date} today={today} settings={settings} variant="card" />
+      )}
       {settings && log !== undefined && (
         <DayForm key={date} date={date} log={log} settings={settings} />
       )}
@@ -60,7 +65,11 @@ export function DailyPage() {
         hint="Dosis, Uhrzeiten, Bestand und Erinnerungen"
       />
       <LinkRow to="/daily/measurements" label="Körpermaße" hint="Brust, Taille, Arme und mehr" />
-      <LinkRow to="/daily/foods" label="Lebensmittel" hint="Nährwertdatenbank durchsuchen" />
+      <LinkRow
+        to={FOODS_PATH}
+        label="Lebensmittel"
+        hint="Nährwertdatenbank, eigene Lebensmittel und Rezepte"
+      />
     </Page>
   );
 }
