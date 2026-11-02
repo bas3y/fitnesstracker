@@ -56,3 +56,13 @@ export async function updateSettings(changes: EntityChanges<Settings>): Promise<
   await ensureSettings();
   await update(db.settings, SETTINGS_ID, changes);
 }
+
+/** Änderung aus dem gespeicherten Stand, in einem Schreibvorgang (schnelles Tippen verliert nichts) */
+export function updateSettingsFrom(
+  changes: (current: Settings) => EntityChanges<Settings>,
+): Promise<void> {
+  return db.transaction('rw', db.settings, async () => {
+    const current = await ensureSettings();
+    await update(db.settings, SETTINGS_ID, changes(current));
+  });
+}

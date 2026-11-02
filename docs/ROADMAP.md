@@ -632,6 +632,7 @@ Mit dem Nutzer abgestimmt (nach Schritt 12):
   - To-dos-Seite zeigt weiterhin „ab heute“ (Aufgaben wandern); der gewählte Tag zählt dort nur für den Rückweg. Die To-do-Kachel zeigt an früheren Tagen die an dem Tag erledigten.
   - `mvp1.spec.ts` musste nicht geändert werden. Die Liste auf der Gewohnheiten-Seite heißt jetzt „Alle Gewohnheiten“ (Verwechslung mit der Checkliste vermeiden).
   - Hauptbundle unverändert (~297 KB); neue Seiten je eigener Chunk.
+  - **Nachtrag (Nutzerwunsch):** Beim Anpassen der Startseite werden Widgets jetzt **samt Inhalt** gezogen (vorher klappten alle auf die Überschrift zusammen). Hohe Widgets: an den Rand ziehen und halten, die Seite scrollt mit. Dabei behoben: Schnelles Tippen auf mehrere ✕/„hinzufügen“ konnte eine Änderung verlieren; Widgets und Schnellzugriff schreiben jetzt atomar über `updateSettingsFrom` (`src/db/settings.ts`).
 - Offene Punkte:
   - Tiefere Seiten (Lebensmittel, Gewohnheit-Detail/-Bearbeiten, Supplement-Detail) führen zur jeweiligen Liste ohne den gewählten Tag zurück.
   - Links „Alle Gewohnheiten“/„Alle Supplements“ in den Startseiten-Widgets geben keine Herkunft mit („Zurück“ führt zur Alltag-Übersicht statt zur Startseite).

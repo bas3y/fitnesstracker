@@ -1,5 +1,11 @@
 import { db } from './database';
-import { ensureSettings, getSettings, SETTINGS_ID, updateSettings } from './settings';
+import {
+  ensureSettings,
+  getSettings,
+  SETTINGS_ID,
+  updateSettings,
+  updateSettingsFrom,
+} from './settings';
 import { resetDatabase } from './testUtils';
 
 beforeEach(resetDatabase);
@@ -20,5 +26,15 @@ describe('settings', () => {
     expect(settings?.name).toBe('Alex');
     expect(settings?.weightUnit).toBe('lb');
     expect(settings?.distanceUnit).toBe('km');
+  });
+
+  it('updateSettingsFrom verliert bei gleichzeitigen Änderungen nichts', async () => {
+    await updateSettings({ dashboardWidgets: ['quickActions', 'habits', 'todos'] });
+    const remove = (id: string) =>
+      updateSettingsFrom(({ dashboardWidgets }) => ({
+        dashboardWidgets: dashboardWidgets.filter((widget) => widget !== id),
+      }));
+    await Promise.all([remove('habits'), remove('todos')]);
+    expect((await getSettings())?.dashboardWidgets).toEqual(['quickActions']);
   });
 });

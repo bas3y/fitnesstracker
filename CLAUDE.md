@@ -86,7 +86,7 @@ e2e/           Playwright-Tests
 **Datenbank & Konventionen:**
 - `src/db/database.ts`: Dexie-Schema (`AppDatabase`, Singleton `db`). Neue Tabelle = neue `version(n)`, Tabelle in `src/db/backup.ts` (`backupSchema` + `TABLE_LABELS`) ergänzen.
 - `src/db/repository.ts`: `create`/`update`/`softDelete`/`listActive` für alle Tabellen verwenden (setzen `id`, Zeitstempel, `deletedAt`).
-- Einstellungen: `useSettings()` (`src/features/settings/useSettings.ts`) zum Lesen, `updateSettings()` zum Schreiben.
+- Einstellungen: `useSettings()` (`src/features/settings/useSettings.ts`) zum Lesen, `updateSettings()` zum Schreiben; Listen, die aus dem bisherigen Stand berechnet werden (Widgets, Schnellzugriff), über `updateSettingsFrom(current => changes)` (atomar).
 - Mitgelieferte Daten: Tabellen `exercises`/`foods` (`source: 'builtin' | 'user'`, `builtinKey`), Seed über `ensureSeeded()` (`src/db/seed.ts`, läuft beim Start und nach Backup-Import). Typen/Enums in `src/db/types.ts`, Zod-Schemas in `src/db/schemas.ts`, deutsche Bezeichnungen in `src/domain/labels.ts`. Lebensmittel: Nährwerte pro 100 g, Kohlenhydrate **ohne** Ballaststoffe (EU).
 - Suche: `createSearch(items)` aus `src/domain/search.ts` (normalisiert Umlaute/ß, Aliase); UI-Baustein `CatalogSearch`.
 - Übungen: Nutzerfelder `isFavorite`, `hiddenAt` (Ausblenden – **nicht** `deletedAt`, das setzt bei builtin nur der Seed), `notes`. Schreiben über `src/db/exercises.ts` (`createUserExercise`, `updateUserExercise`, `deleteUserExercise`, `setExerciseFavorite/Hidden/Notes`). Filter/Sortierung in `src/domain/exercises.ts`.

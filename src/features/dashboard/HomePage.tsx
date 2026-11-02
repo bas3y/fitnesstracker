@@ -6,7 +6,7 @@ import { Chip } from '../../components/Chip';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Card, LinkRow } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
-import { getSettings, updateSettings } from '../../db/settings';
+import { updateSettings, updateSettingsFrom } from '../../db/settings';
 import { loadStatsSessions } from '../../db/stats';
 import {
   DASHBOARD_WIDGETS,
@@ -165,6 +165,8 @@ function WidgetList({ data }: { data: WidgetData }) {
 function WidgetEditor({ data }: { data: WidgetData }) {
   const { dashboardWidgets } = data.settings;
   const save = (widgets: DashboardWidget[]) => updateSettings({ dashboardWidgets: widgets });
+  const change = (next: (current: DashboardWidget[]) => DashboardWidget[]) =>
+    updateSettingsFrom((current) => ({ dashboardWidgets: next(current.dashboardWidgets) }));
   const hidden = DASHBOARD_WIDGETS.filter((id) => !dashboardWidgets.includes(id));
 
   return (
@@ -173,7 +175,8 @@ function WidgetEditor({ data }: { data: WidgetData }) {
         label="Widgets"
         items={dashboardWidgets.map((id) => ({ id, name: DASHBOARD_WIDGET_LABELS[id].name }))}
         onReorder={(ids) => save(ids as DashboardWidget[])}
-        renderItem={({ id, name }, { handle, compact }) => (
+        // Bewusst ohne `compact`: Widgets werden samt Inhalt gezogen
+        renderItem={({ id, name }, { handle }) => (
           <div className="mb-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-900">
             <div className="flex min-h-14 items-center">
               {handle ?? <span className="w-3 shrink-0" />}
@@ -181,21 +184,17 @@ function WidgetEditor({ data }: { data: WidgetData }) {
               <DeleteRowButton
                 name={name}
                 verb="entfernen"
-                onClick={() => void save(dashboardWidgets.filter((widget) => widget !== id))}
+                onClick={() => void change((current) => current.filter((widget) => widget !== id))}
               />
             </div>
-            {!compact && id === 'quickActions' && (
-              <QuickActionPicker selected={data.settings.quickActions} />
-            )}
-            {!compact && (
-              <div inert className="px-2">
-                {renderWidget(id as DashboardWidget, data) ?? (
-                  <p className={`px-1 pb-3 text-sm ${MUTED}`}>
-                    Zeigt erst nach deinem ersten Workout etwas.
-                  </p>
-                )}
-              </div>
-            )}
+            {id === 'quickActions' && <QuickActionPicker selected={data.settings.quickActions} />}
+            <div inert className="px-2">
+              {renderWidget(id as DashboardWidget, data) ?? (
+                <p className={`px-1 pb-3 text-sm ${MUTED}`}>
+                  Zeigt erst nach deinem ersten Workout etwas.
+                </p>
+              )}
+            </div>
           </div>
         )}
       />
@@ -209,7 +208,9 @@ function WidgetEditor({ data }: { data: WidgetData }) {
                   type="button"
                   aria-label={`${DASHBOARD_WIDGET_LABELS[id].name} hinzufügen`}
                   className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700"
-                  onClick={() => void save([...dashboardWidgets, id])}
+                  onClick={() =>
+                    void change((current) => (current.includes(id) ? current : [...current, id]))
+                  }
                 >
                   <span
                     aria-hidden="true"
@@ -235,14 +236,12 @@ function WidgetEditor({ data }: { data: WidgetData }) {
 
 /** Buttons des Schnellzugriffs wählen; Reihenfolge wie in `QUICK_ACTIONS` */
 function QuickActionPicker({ selected }: { selected: QuickAction[] }) {
-  // Aktuellen Stand lesen, damit schnelles Tippen auf zwei Chips nichts verliert
-  const toggle = async (action: QuickAction) => {
-    const current = (await getSettings())?.quickActions ?? selected;
-    const next = current.includes(action)
-      ? current.filter((item) => item !== action)
-      : QUICK_ACTIONS.filter((item) => item === action || current.includes(item));
-    await updateSettings({ quickActions: next });
-  };
+  const toggle = (action: QuickAction) =>
+    updateSettingsFrom(({ quickActions: current }) => ({
+      quickActions: current.includes(action)
+        ? current.filter((item) => item !== action)
+        : QUICK_ACTIONS.filter((item) => item === action || current.includes(item)),
+    }));
   return (
     <div
       role="group"

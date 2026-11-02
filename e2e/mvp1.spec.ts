@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { confirmStart, dragTo, fillStepper, goOffline, skipRest } from './helpers';
+import { confirmStart, fillStepper, goOffline, skipRest } from './helpers';
 
 const BENCH = 'Bankdrücken (Langhantel)';
 
@@ -293,12 +293,20 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
     'false',
   );
 
-  // Ziehen: Trainingsfortschritt nach ganz oben
-  await dragTo(
-    page,
-    page.getByRole('button', { name: 'Trainingsfortschritt verschieben' }),
-    widgets.first(),
-  );
+  // Ziehen samt Inhalt: Trainingsfortschritt an den oberen Rand ziehen und halten, bis die Seite
+  // hochgescrollt ist und das Widget oben steht
+  const handle = page.getByRole('button', { name: 'Trainingsfortschritt verschieben' });
+  await handle.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+  const from = (await handle.boundingBox())!;
+  const x = from.x + from.width / 2;
+  await page.mouse.move(x, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(x, 10, { steps: 10 });
+  await expect(list.locator(':scope > li[data-sort-id="progress"]')).toHaveCSS('order', '0');
+  await expect(
+    list.locator(':scope > li[data-sort-id="progress"]').getByTestId('training-progress'),
+  ).toBeVisible();
+  await page.mouse.up();
   await expect(page.getByRole('button', { name: /verschieben$/ }).first()).toHaveAccessibleName(
     'Trainingsfortschritt verschieben',
   );
