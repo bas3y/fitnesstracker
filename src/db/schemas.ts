@@ -7,7 +7,11 @@ import {
   HABIT_GROUPS,
   HABIT_KINDS,
   MUSCLE_GROUPS,
+  SUPPLEMENT_PERIODS,
+  SUPPLEMENT_SCHEDULES,
+  SUPPLEMENT_TIMINGS,
   TODO_PRIORITIES,
+  TRAINING_KINDS,
 } from './types';
 
 const nutrient = z.number().nonnegative();
@@ -235,6 +239,80 @@ export const todoInputSchema = z.object({
 });
 
 export type TodoInput = z.input<typeof todoInputSchema>;
+
+export const SUPPLEMENT_SETTING_DEFAULTS = {
+  supplementLowStockDays: 7,
+  supplementRemindersEnabled: true,
+  supplementNotificationsEnabled: false,
+};
+
+export const MAX_SUPPLEMENT_AMOUNT = 100_000;
+export const MAX_SUPPLEMENT_DOSES = 10;
+export const MAX_LOW_STOCK_DAYS = 90;
+
+const supplementAmount = z
+  .number()
+  .positive('Menge muss größer als 0 sein')
+  .max(MAX_SUPPLEMENT_AMOUNT);
+export const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Ungültige Uhrzeit');
+
+export const supplementDoseSchema = z
+  .object({
+    id: z.string().min(1),
+    amount: supplementAmount,
+    timing: z.enum(SUPPLEMENT_TIMINGS),
+    time: timeOfDaySchema.nullable(),
+    period: z.enum(SUPPLEMENT_PERIODS).nullable(),
+  })
+  .refine((dose) => dose.timing !== 'time' || dose.time !== null, {
+    path: ['time'],
+    message: 'Bitte eine Uhrzeit wählen',
+  })
+  .refine((dose) => dose.timing !== 'period' || dose.period !== null, {
+    path: ['period'],
+    message: 'Bitte eine Tageszeit wählen',
+  })
+  .transform((dose) => ({
+    ...dose,
+    time: dose.timing === 'time' ? dose.time : null,
+    period: dose.timing === 'period' ? dose.period : null,
+  }));
+
+/** Felder eines Supplements ohne Metadaten, Reihenfolge und Archiv – für Formular und Backup */
+export const supplementFieldsSchema = z.object({
+  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(80, 'Höchstens 80 Zeichen'),
+  unit: z.string().trim().max(20, 'Einheit höchstens 20 Zeichen'),
+  doses: z
+    .array(supplementDoseSchema)
+    .min(1, 'Mindestens eine Einnahme anlegen')
+    .max(MAX_SUPPLEMENT_DOSES),
+  schedule: z.enum(SUPPLEMENT_SCHEDULES),
+  weekdays: weekdaysSchema,
+  trainingKind: z.enum(TRAINING_KINDS),
+  stock: z.number().min(0).max(MAX_SUPPLEMENT_AMOUNT).nullable(),
+  packageSize: supplementAmount.nullable(),
+  notes: z.string().trim().max(500, 'Notiz höchstens 500 Zeichen'),
+});
+
+export const supplementInputSchema = supplementFieldsSchema.refine(
+  (input) => input.schedule !== 'weekdays' || input.weekdays.length > 0,
+  { path: ['weekdays'], message: 'Mindestens einen Wochentag wählen' },
+);
+
+export type SupplementInput = z.input<typeof supplementInputSchema>;
+export type SupplementValues = z.output<typeof supplementInputSchema>;
+
+export const EMPTY_SUPPLEMENT_INPUT: SupplementInput = {
+  name: '',
+  unit: '',
+  doses: [],
+  schedule: 'daily',
+  weekdays: [],
+  trainingKind: 'any',
+  stock: null,
+  packageSize: null,
+  notes: '',
+};
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 

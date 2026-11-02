@@ -12,7 +12,13 @@ import { createUserExercise } from './exercises';
 import { addHabitAmount, createHabit, loadHabit, pauseHabit, setHabitChecked } from './habits';
 import { addPlanExercise, createPlan, deletePlan, loadPlanDetail } from './plans';
 import { create } from './repository';
-import { DAILY_GOAL_DEFAULTS, EMPTY_EXERCISE_INPUT, EMPTY_HABIT_INPUT } from './schemas';
+import {
+  DAILY_GOAL_DEFAULTS,
+  EMPTY_EXERCISE_INPUT,
+  EMPTY_HABIT_INPUT,
+  EMPTY_SUPPLEMENT_INPUT,
+} from './schemas';
+import { createSupplement, loadSupplement, setSupplementTaken } from './supplements';
 import { applySeed, SEED_VERSION } from './seed';
 import { getSettings, updateSettings } from './settings';
 import { resetDatabase } from './testUtils';
@@ -68,6 +74,8 @@ describe('parseBackup', () => {
         habits: 0,
         habitChecks: 0,
         todos: 0,
+        supplements: 0,
+        supplementIntakes: 0,
       });
   });
 
@@ -279,6 +287,68 @@ describe('Gewohnheiten in Sicherungen', () => {
     expect(result.backup.tables.habitChecks[0]).toMatchObject({ itemId: null, amount: 1 });
     expect(result.backup.tables.todos).toEqual([]);
     expect(result.backup.tables.settings[0]!.quickActions).toEqual([...DEFAULT_QUICK_ACTIONS]);
+  });
+});
+
+describe('Supplements im Backup', () => {
+  it('stellt Supplements, Einnahmen und Bestand wieder her', async () => {
+    const supplement = await createSupplement({
+      ...EMPTY_SUPPLEMENT_INPUT,
+      name: 'Kreatin',
+      unit: 'g',
+      doses: [{ id: 'd1', amount: 5, timing: 'afterTraining', time: null, period: null }],
+      schedule: 'training',
+      trainingKind: 'strength',
+      stock: 100,
+      packageSize: 500,
+    });
+    await setSupplementTaken(supplement.id, 'd1', '2026-10-30', true);
+    await updateSettings({ supplementLowStockDays: 10 });
+    const result = parseBackup(JSON.parse(JSON.stringify(await createBackup())));
+    if (!result.ok) throw new Error(result.error);
+    expect(countRows(result.backup)).toMatchObject({ supplements: 1, supplementIntakes: 1 });
+
+    await resetDatabase();
+    await restoreBackup(result.backup);
+    expect(await loadSupplement(supplement.id)).toMatchObject({
+      supplement: { name: 'Kreatin', stock: 95, schedule: 'training', trainingKind: 'strength' },
+      intakes: [{ doseId: 'd1', date: '2026-10-30', stockDeducted: 5 }],
+    });
+    expect((await getSettings())?.supplementLowStockDays).toBe(10);
+  });
+
+  it('ergänzt in Sicherungen aus DB-Version 14 Tabellen und Einstellungen', async () => {
+    const data = await validBackup();
+    data.dbVersion = 14;
+    delete data.tables.supplements;
+    delete data.tables.supplementIntakes;
+    for (const key of [
+      'supplementLowStockDays',
+      'supplementRemindersEnabled',
+      'supplementNotificationsEnabled',
+    ]) {
+      delete data.tables.settings[0][key];
+    }
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.supplements).toEqual([]);
+    expect(result.backup.tables.supplementIntakes).toEqual([]);
+    expect(result.backup.tables.settings[0]).toMatchObject({
+      supplementLowStockDays: 7,
+      supplementRemindersEnabled: true,
+      supplementNotificationsEnabled: false,
+    });
+  });
+
+  it('lehnt ungültige Zeitpunkte ab', async () => {
+    await createSupplement({
+      ...EMPTY_SUPPLEMENT_INPUT,
+      name: 'Zink',
+      doses: [{ id: 'd1', amount: 1, timing: 'time', time: '08:00', period: null }],
+    });
+    const data = await validBackup();
+    data.tables.supplements[0].doses[0].timing = 'mittags';
+    expect(parseBackup(data).ok).toBe(false);
   });
 });
 

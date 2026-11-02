@@ -22,6 +22,7 @@ export function Heatmap({
   selectedKey,
   onSelect,
   describe,
+  level = heatLevel,
 }: {
   values: ReadonlyMap<string, number>;
   now: Date;
@@ -30,6 +31,8 @@ export function Heatmap({
   onSelect?: (key: string) => void;
   /** Text für Screenreader, z. B. „5 Sätze“ */
   describe: (value: number) => string;
+  /** Farbstufe 0–4 je Wert; Standard nach Anzahl der Sätze */
+  level?: (value: number) => 0 | 1 | 2 | 3 | 4;
 }) {
   const weeks = heatmapWeeks(values, now, weekCount);
   const scroller = useRef<HTMLDivElement>(null);
@@ -70,7 +73,7 @@ export function Heatmap({
                       type="button"
                       aria-label={`${formatDayKey(day.key)}: ${describe(day.value)}`}
                       aria-pressed={day.key === selectedKey}
-                      className={`${CELL} rounded-[3px] ${LEVEL_CLASSES[heatLevel(day.value)]} ${
+                      className={`${CELL} rounded-[3px] ${LEVEL_CLASSES[level(day.value)]} ${
                         day.key === selectedKey ? 'outline-2 outline-slate-500' : ''
                       }`}
                       onClick={() => onSelect?.(day.key)}

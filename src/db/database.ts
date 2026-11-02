@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { DAILY_GOAL_DEFAULTS } from './schemas';
+import { DAILY_GOAL_DEFAULTS, SUPPLEMENT_SETTING_DEFAULTS } from './schemas';
 import {
   DEFAULT_DASHBOARD_WIDGETS,
   DEFAULT_QUICK_ACTIONS,
@@ -14,6 +14,8 @@ import {
   type PlanDay,
   type PlanExercise,
   type Settings,
+  type Supplement,
+  type SupplementIntake,
   type Todo,
   type Workout,
   type WorkoutExercise,
@@ -38,6 +40,8 @@ export class AppDatabase extends Dexie {
   habits!: Table<Habit, string>;
   habitChecks!: Table<HabitCheck, string>;
   todos!: Table<Todo, string>;
+  supplements!: Table<Supplement, string>;
+  supplementIntakes!: Table<SupplementIntake, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -254,6 +258,24 @@ export class AppDatabase extends Dexie {
             settings.quickActions ??= [...DEFAULT_QUICK_ACTIONS];
           });
       });
+    // Supplements mit Bestand und Einnahmen
+    this.version(15)
+      .stores({
+        supplements: 'id, updatedAt',
+        supplementIntakes: 'id, supplementId, date, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.supplementLowStockDays ??= SUPPLEMENT_SETTING_DEFAULTS.supplementLowStockDays;
+            settings.supplementRemindersEnabled ??=
+              SUPPLEMENT_SETTING_DEFAULTS.supplementRemindersEnabled;
+            settings.supplementNotificationsEnabled ??=
+              SUPPLEMENT_SETTING_DEFAULTS.supplementNotificationsEnabled;
+          }),
+      );
   }
 }
 

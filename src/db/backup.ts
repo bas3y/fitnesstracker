@@ -11,6 +11,8 @@ import {
   habitFieldsSchema,
   planExerciseValuesSchema,
   setValuesSchema,
+  SUPPLEMENT_SETTING_DEFAULTS,
+  supplementFieldsSchema,
   todoInputSchema,
   weekdaysSchema,
 } from './schemas';
@@ -64,6 +66,18 @@ const settingsSchema = baseEntitySchema.extend({
   stepsGoal: z.number().int().positive().default(DAILY_GOAL_DEFAULTS.stepsGoal),
   waterGoalMl: z.number().int().positive().default(DAILY_GOAL_DEFAULTS.waterGoalMl),
   sleepGoalSeconds: z.number().int().positive().default(DAILY_GOAL_DEFAULTS.sleepGoalSeconds),
+  // Seit DB-Version 15
+  supplementLowStockDays: z
+    .number()
+    .int()
+    .positive()
+    .default(SUPPLEMENT_SETTING_DEFAULTS.supplementLowStockDays),
+  supplementRemindersEnabled: z
+    .boolean()
+    .default(SUPPLEMENT_SETTING_DEFAULTS.supplementRemindersEnabled),
+  supplementNotificationsEnabled: z
+    .boolean()
+    .default(SUPPLEMENT_SETTING_DEFAULTS.supplementNotificationsEnabled),
 });
 
 const catalogEntryFields = {
@@ -170,6 +184,19 @@ const todoSchema = baseEntitySchema.extend(todoInputSchema.shape).extend({
   completedAt: timestamp.nullable(),
 });
 
+const supplementSchema = baseEntitySchema.extend(supplementFieldsSchema.shape).extend({
+  order: z.number(),
+  archivedAt: timestamp.nullable(),
+});
+const supplementIntakeSchema = baseEntitySchema.extend({
+  supplementId: z.string().min(1),
+  doseId: z.string().min(1),
+  date: dayKeySchema,
+  amount: z.number().positive(),
+  takenAt: timestamp,
+  stockDeducted: z.number().nonnegative(),
+});
+
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
   app: z.literal(BACKUP_APP, { message: 'Keine Fitnesstracker-Sicherung' }),
@@ -195,6 +222,8 @@ export const backupSchema = z.object({
     habits: z.array(habitSchema).default([]),
     habitChecks: z.array(habitCheckSchema).default([]),
     todos: z.array(todoSchema).default([]),
+    supplements: z.array(supplementSchema).default([]),
+    supplementIntakes: z.array(supplementIntakeSchema).default([]),
   }),
 });
 
@@ -216,6 +245,8 @@ export const TABLE_LABELS: Record<TableName, string> = {
   habits: 'Gewohnheiten',
   habitChecks: 'Erledigte Gewohnheiten',
   todos: 'To-dos',
+  supplements: 'Supplements',
+  supplementIntakes: 'Supplement-Einnahmen',
 };
 
 export async function createBackup(): Promise<Backup> {

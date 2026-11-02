@@ -19,6 +19,7 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   activity: { name: 'Trainingstage', hint: 'Heatmap der letzten 3 Monate' },
   nextTraining: { name: 'Nächstes Training', hint: 'Vorschlag aus deinem Plan mit Startknopf' },
   daily: { name: 'Heute', hint: 'Schritte, Wasser, Schlaf und Gewicht' },
+  supplements: { name: 'Supplements', hint: 'Heutige Einnahmen abhaken, Bestand im Blick' },
 };
 
 export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: string }> = {
@@ -28,6 +29,7 @@ export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: stri
   steps: { name: 'Schritte', icon: '👣' },
   todo: { name: 'To-do', icon: '✅' },
   measurements: { name: 'Körpermaße', icon: '📏' },
+  supplements: { name: 'Supplements', icon: '💊' },
 };
 
 export const BODY_MEASURE_LABELS: Record<BodyMeasure, string> = {

@@ -373,7 +373,45 @@ describe('AppDatabase-Migration', () => {
       quickActions: [...DEFAULT_QUICK_ACTIONS],
     });
     expect(await v14.todos.count()).toBe(0);
-    expect(v14.verno).toBe(14);
+    expect(v14.verno).toBeGreaterThanOrEqual(14);
     await v14.delete();
+  });
+
+  it('Version 15 ergänzt Supplements und ihre Einstellungen', async () => {
+    const name = 'migration-test-v15';
+    const v14 = new Dexie(name);
+    v14.version(14).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+    });
+    await v14.table('settings').add({ id: 'app-settings', name: 'Alex', quickActions: ['water'] });
+    await v14.table('todos').add({ id: 't1', title: 'Einkaufen', date: '2026-10-30' });
+    v14.close();
+
+    const v15 = new AppDatabase(name);
+    expect(await v15.todos.get('t1')).toMatchObject({ title: 'Einkaufen' });
+    expect(await v15.settings.get('app-settings')).toMatchObject({
+      name: 'Alex',
+      quickActions: ['water'],
+      supplementLowStockDays: 7,
+      supplementRemindersEnabled: true,
+      supplementNotificationsEnabled: false,
+    });
+    expect(await v15.supplements.count()).toBe(0);
+    expect(await v15.supplementIntakes.count()).toBe(0);
+    expect(v15.verno).toBe(15);
+    await v15.delete();
   });
 });

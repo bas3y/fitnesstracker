@@ -9,6 +9,8 @@ import { hoursToSeconds, formatSleep, secondsToHours } from '../../domain/daily'
 import { formatDecimal } from '../../domain/format';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { useSettings } from '../settings/useSettings';
+import { SUPPLEMENTS_PATH } from '../supplements/paths';
+import { SupplementChecklist } from '../supplements/SupplementChecklist';
 import { DayNavigator } from './DayNavigator';
 import { GoalBar } from './GoalBar';
 import { HabitChecklist } from './HabitChecklist';
@@ -37,6 +39,7 @@ export function DailyPage() {
       <DayNavigator date={date} today={today} onChange={setDate} />
       {date === today && <TodoCard today={today} />}
       <HabitChecklist date={date} today={today} />
+      {settings && <SupplementChecklist date={date} today={today} settings={settings} />}
       {settings && log !== undefined && (
         <DayForm key={date} date={date} log={log} settings={settings} />
       )}
@@ -51,6 +54,11 @@ export function DailyPage() {
         hint="Anlegen, sortieren, pausieren, Kalender"
       />
       <LinkRow to={TODOS_PATH} label="To-dos" hint="Alle Aufgaben, geplant und erledigt" />
+      <LinkRow
+        to={SUPPLEMENTS_PATH}
+        label="Supplements"
+        hint="Dosis, Uhrzeiten, Bestand und Erinnerungen"
+      />
       <LinkRow to="/daily/measurements" label="Körpermaße" hint="Brust, Taille, Arme und mehr" />
       <LinkRow to="/daily/foods" label="Lebensmittel" hint="Nährwertdatenbank durchsuchen" />
     </Page>

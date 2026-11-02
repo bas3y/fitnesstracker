@@ -3,12 +3,13 @@ import { Card, LinkRow, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Stepper } from '../../components/Stepper';
 import { setCurrentBodyWeight } from '../../db/daily';
-import { MAX_STEPS, MAX_WATER_ML } from '../../db/schemas';
+import { MAX_LOW_STOCK_DAYS, MAX_STEPS, MAX_WATER_ML } from '../../db/schemas';
 import { updateSettings } from '../../db/settings';
 import type { Settings } from '../../db/types';
 import { setRestTimerEnabled } from '../../db/workouts';
 import { hoursToSeconds, secondsToHours } from '../../domain/daily';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
+import { notificationState, requestNotifications } from '../supplements/notifications';
 import { BackupSection } from './BackupSection';
 import { ExportSection } from './ExportSection';
 import { StorageSection } from './StorageSection';
@@ -46,6 +47,7 @@ export function SettingsPage() {
           </Card>
           <TrainingCard settings={settings} />
           <DailyGoalsCard settings={settings} />
+          <SupplementSettingsCard settings={settings} />
           <Card title="Darstellung">
             <SegmentedControl
               label="Theme"
@@ -177,6 +179,75 @@ function DailyGoalsCard({ settings }: { settings: Settings }) {
             hours !== null && void updateSettings({ sleepGoalSeconds: hoursToSeconds(hours) })
           }
         />
+      </div>
+    </Card>
+  );
+}
+
+function SupplementSettingsCard({ settings }: { settings: Settings }) {
+  const checkbox = 'h-5 w-5 accent-emerald-600';
+  const [permission, setPermission] = useState(notificationState);
+  const toggleNotifications = async (enabled: boolean) => {
+    if (enabled && permission !== 'granted') {
+      const result = await requestNotifications();
+      setPermission(result);
+      if (result !== 'granted') return;
+    }
+    await updateSettings({ supplementNotificationsEnabled: enabled });
+  };
+  const hint = 'text-sm text-slate-500 dark:text-slate-400';
+
+  return (
+    <Card title="Supplements">
+      <div className="flex flex-col gap-2">
+        <Stepper
+          label="Warnung ab Restbestand für"
+          value={settings.supplementLowStockDays}
+          unit="Tage"
+          step={1}
+          min={1}
+          max={MAX_LOW_STOCK_DAYS}
+          decimals={0}
+          onChange={(days) =>
+            days !== null && void updateSettings({ supplementLowStockDays: days })
+          }
+        />
+        <label className="flex min-h-11 items-center gap-3">
+          <input
+            type="checkbox"
+            className={checkbox}
+            checked={settings.supplementRemindersEnabled}
+            onChange={(event) =>
+              void updateSettings({ supplementRemindersEnabled: event.target.checked })
+            }
+          />
+          Erinnerungen
+        </label>
+        {settings.supplementRemindersEnabled && (
+          <>
+            <label className="flex min-h-11 items-center gap-3">
+              <input
+                type="checkbox"
+                className={checkbox}
+                disabled={permission === 'unsupported' || permission === 'denied'}
+                checked={settings.supplementNotificationsEnabled && permission === 'granted'}
+                onChange={(event) => void toggleNotifications(event.target.checked)}
+              />
+              Auch als Mitteilung, wenn die App im Hintergrund ist
+            </label>
+            {permission === 'denied' && (
+              <p className={hint}>Mitteilungen sind für diese App im Browser blockiert.</p>
+            )}
+            {permission === 'unsupported' && (
+              <p className={hint}>Dieser Browser unterstützt keine Mitteilungen.</p>
+            )}
+          </>
+        )}
+        <p className={hint}>
+          Ohne Server gibt es keine echten Push-Nachrichten: Erinnerungen kommen nur, solange die
+          App geöffnet ist oder noch im Hintergrund läuft. Ist sie geschlossen, siehst du offene
+          Einnahmen beim nächsten Öffnen. Auf dem iPhone kommen sie nur in der geöffneten App.
+        </p>
       </div>
     </Card>
   );

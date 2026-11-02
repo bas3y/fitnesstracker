@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
-import { CheckIcon } from '../../components/icons';
+import { CheckButton, StatusCircle } from '../../components/CheckButton';
+import { CHECK_HINT as HINT, checkNameClass as nameClass } from '../../components/checkStyles';
 import { Card } from '../../components/Page';
 import {
   addHabitAmount,
@@ -26,7 +27,6 @@ import {
 import { GoalBar } from './GoalBar';
 import { HABITS_PATH, useHabits } from './useHabits';
 
-const HINT = 'block text-sm text-slate-500 dark:text-slate-400';
 const ROUND_BUTTON =
   'flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 px-2 text-sm font-semibold tabular-nums active:bg-slate-200 dark:bg-slate-700 dark:active:bg-slate-600';
 
@@ -325,63 +325,6 @@ function SubItemRow({
 
 function join(...parts: Array<string | null>): string {
   return parts.filter(Boolean).join(' · ');
-}
-
-function nameClass(done: boolean) {
-  return `block font-medium ${done ? 'text-slate-500 line-through dark:text-slate-400' : ''}`;
-}
-
-function StatusCircle({ done, warn = false }: { done: boolean; warn?: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${
-        warn
-          ? 'border-orange-600 bg-orange-600 text-white'
-          : done
-            ? 'border-emerald-700 bg-emerald-700 text-white'
-            : 'border-slate-300 dark:border-slate-600'
-      }`}
-    >
-      {warn ? '!' : done && <CheckIcon className="h-5 w-5" />}
-    </span>
-  );
-}
-
-function CheckButton({
-  label,
-  icon,
-  checked,
-  hint,
-  onChange,
-}: {
-  label: string;
-  icon?: string;
-  checked: boolean;
-  hint: string | null;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      aria-label={label}
-      className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 text-left"
-      onClick={() => onChange(!checked)}
-    >
-      <StatusCircle done={checked} />
-      {icon && (
-        <span aria-hidden="true" className="text-xl">
-          {icon}
-        </span>
-      )}
-      <span className="min-w-0">
-        <span className={nameClass(checked)}>{label}</span>
-        {hint && <span className={HINT}>{hint}</span>}
-      </span>
-    </button>
-  );
 }
 
 /** Menge mit − und +Schritt; bei `quit` ist `done` = im Limit (kein Durchstreichen) */

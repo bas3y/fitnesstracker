@@ -32,6 +32,22 @@ const PlanDayPage = lazyPage(() => import('./features/plans/PlanDayPage'), 'Plan
 const PlanDetailPage = lazyPage(() => import('./features/plans/PlanDetailPage'), 'PlanDetailPage');
 const PlanListPage = lazyPage(() => import('./features/plans/PlanListPage'), 'PlanListPage');
 const PlanNewPage = lazyPage(() => import('./features/plans/PlanNewPage'), 'PlanNewPage');
+const SupplementCreatePage = lazyPage(
+  () => import('./features/supplements/SupplementEditPage'),
+  'SupplementCreatePage',
+);
+const SupplementDetailPage = lazyPage(
+  () => import('./features/supplements/SupplementDetailPage'),
+  'SupplementDetailPage',
+);
+const SupplementEditPage = lazyPage(
+  () => import('./features/supplements/SupplementEditPage'),
+  'SupplementEditPage',
+);
+const SupplementsPage = lazyPage(
+  () => import('./features/supplements/SupplementsPage'),
+  'SupplementsPage',
+);
 const AboutPage = lazyPage(() => import('./features/settings/AboutPage'), 'AboutPage');
 const SettingsPage = lazyPage(() => import('./features/settings/SettingsPage'), 'SettingsPage');
 const StatsPage = lazyPage(() => import('./features/stats/StatsPage'), 'StatsPage');
@@ -94,6 +110,10 @@ export function App() {
           <Route path="daily/habits/:id" element={<HabitDetailPage />} />
           <Route path="daily/habits/:id/edit" element={<HabitEditPage />} />
           <Route path="daily/todos" element={<TodoPage />} />
+          <Route path="daily/supplements" element={<SupplementsPage />} />
+          <Route path="daily/supplements/new" element={<SupplementCreatePage />} />
+          <Route path="daily/supplements/:id" element={<SupplementDetailPage />} />
+          <Route path="daily/supplements/:id/edit" element={<SupplementEditPage />} />
           <Route path="daily/foods" element={<FoodSearchPage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="settings" element={<SettingsPage />} />

@@ -40,6 +40,7 @@ import { TodayCard } from '../daily/TodayCard';
 import { TodoCard } from '../daily/TodoCard';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from '../stats/ActivityCard';
+import { SupplementChecklist } from '../supplements/SupplementChecklist';
 import { HISTORY_PATH } from '../training/paths';
 import { TrainingStartCard } from '../training/TrainingStartCard';
 import { useNow, useWorkoutHistory } from '../training/useWorkouts';
@@ -96,6 +97,10 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
       return <TrainingStartCard compact />;
     case 'daily':
       return <TodayCard settings={settings} now={now} />;
+    case 'supplements':
+      return (
+        <SupplementChecklist variant="widget" date={today} today={today} settings={settings} />
+      );
   }
 }
 

@@ -13,6 +13,7 @@ import { DASHBOARD_WIDGET_LABELS, QUICK_ACTION_LABELS } from '../../domain/label
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { TodoAddForm } from '../daily/TodoParts';
 import { useDailyLog } from '../daily/useDaily';
+import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { useActiveWorkout } from '../training/useWorkouts';
 
 const WATER_ML = 250;
@@ -75,6 +76,12 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
       case 'measurements':
         return (
           <Link to="/daily/measurements" state={FROM_DASHBOARD} className={TILE}>
+            {tile(action)}
+          </Link>
+        );
+      case 'supplements':
+        return (
+          <Link to={SUPPLEMENTS_PATH} state={FROM_DASHBOARD} className={TILE}>
             {tile(action)}
           </Link>
         );

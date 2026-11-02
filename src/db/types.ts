@@ -40,6 +40,13 @@ export interface Settings extends BaseEntity {
   stepsGoal: number;
   waterGoalMl: number;
   sleepGoalSeconds: number;
+  // Supplements
+  /** Warnung, wenn der Bestand nur noch so viele Tage reicht */
+  supplementLowStockDays: number;
+  /** Hinweis in der App, wenn eine Einnahme fällig ist */
+  supplementRemindersEnabled: boolean;
+  /** Zusätzlich Mitteilung des Systems, solange die App im Hintergrund noch läuft */
+  supplementNotificationsEnabled: boolean;
 }
 
 export const DASHBOARD_WIDGETS = [
@@ -53,6 +60,7 @@ export const DASHBOARD_WIDGETS = [
   'activity',
   'nextTraining',
   'daily',
+  'supplements',
 ] as const;
 export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
 /** Standardaufbau seit DB-Version 14 (bestehende Startseiten wurden einmalig umgestellt) */
@@ -79,6 +87,7 @@ export const QUICK_ACTIONS = [
   'steps',
   'todo',
   'measurements',
+  'supplements',
 ] as const;
 export type QuickAction = (typeof QUICK_ACTIONS)[number];
 export const DEFAULT_QUICK_ACTIONS: readonly QuickAction[] = [
@@ -353,6 +362,63 @@ export interface Todo extends BaseEntity {
   priority: TodoPriority;
   date: DayKey;
   completedAt: Timestamp | null;
+}
+
+export const SUPPLEMENT_TIMINGS = ['time', 'period', 'beforeTraining', 'afterTraining'] as const;
+/** Zeitpunkt einer Dosis: feste Uhrzeit, Tageszeit oder rund ums Training */
+export type SupplementTiming = (typeof SUPPLEMENT_TIMINGS)[number];
+
+export const SUPPLEMENT_PERIODS = ['morning', 'noon', 'evening', 'night'] as const;
+export type SupplementPeriod = (typeof SUPPLEMENT_PERIODS)[number];
+
+export const SUPPLEMENT_SCHEDULES = ['daily', 'weekdays', 'training'] as const;
+/** `training` = nur an Tagen mit passendem Training (`Supplement.trainingKind`) */
+export type SupplementSchedule = (typeof SUPPLEMENT_SCHEDULES)[number];
+
+export const TRAINING_KINDS = ['any', 'strength', 'endurance'] as const;
+export type TrainingKind = (typeof TRAINING_KINDS)[number];
+
+export interface SupplementDose {
+  id: string;
+  /** In der Einheit des Supplements */
+  amount: number;
+  timing: SupplementTiming;
+  /** `HH:MM`, nur bei `timing: 'time'` */
+  time: string | null;
+  /** Nur bei `timing: 'period'` */
+  period: SupplementPeriod | null;
+}
+
+export interface Supplement extends BaseEntity {
+  name: string;
+  /** z. B. „g“, „Kapseln“ */
+  unit: string;
+  /** Einnahmen pro fälligem Tag */
+  doses: SupplementDose[];
+  schedule: SupplementSchedule;
+  /** Wie `Date.getDay()`; nur bei `schedule: 'weekdays'` wirksam */
+  weekdays: number[];
+  /** Nur bei `schedule: 'training'` wirksam */
+  trainingKind: TrainingKind;
+  /** Aktueller Bestand in `unit`; `null` = wird nicht erfasst */
+  stock: number | null;
+  /** Menge einer Packung („Neue Packung“ addiert sie) */
+  packageSize: number | null;
+  notes: string;
+  order: number;
+  /** Archiviert = nicht mehr in Liste und Checkliste, Verlauf bleibt */
+  archivedAt: Timestamp | null;
+}
+
+/** Einnahme einer Dosis an einem Tag; höchstens ein aktiver Eintrag je Dosis und Tag */
+export interface SupplementIntake extends BaseEntity {
+  supplementId: string;
+  doseId: string;
+  date: DayKey;
+  amount: number;
+  takenAt: Timestamp;
+  /** Vom Bestand abgezogene Menge (wird beim Zurücknehmen wieder gutgeschrieben) */
+  stockDeducted: number;
 }
 
 export const FOOD_CATEGORIES = [

@@ -19,7 +19,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 9 – Tägliches Tracking
 - [x] Schritt 10 – Habit-Tracker
 - [x] Schritt 10b – Anpassungen nach dem Testen & Handytest
-- [ ] Schritt 11 – Supplements
+- [x] Schritt 11 – Supplements
 - [ ] Schritt 12 – Ernährung (MVP 2 fertig)
 - [ ] Schritt 13 – Ausdauer manuell
 - [ ] Schritt 14 – FIT/GPX/TCX-Import
@@ -536,10 +536,32 @@ Danach veröffentlichen und testen:
 - Abhaken pro Tag/Uhrzeit, Bestand automatisch reduzieren, Warnung bei niedrigem Bestand
 - Erinnerung nur bei geöffneter App (Notification API, falls erlaubt) – Einschränkung in der UI erklären
 
+Mit dem Nutzer beim Start abgestimmt: Bestehende Supplement-Gewohnheiten **per Button übernehmen** (nichts automatisch). Zeitpunkt je Einnahme: **Uhrzeit, Tageszeit oder vor/nach dem Training**. Rhythmus: täglich, Wochentage oder **Trainingstage (jedes Training, Kraft oder Ausdauer)**. Warnung, wenn der Bestand **nur noch X Tage reicht** (Standard 7).
+
 **Notizen:**
 - Gebaut:
+  - Dexie v15: Tabellen `supplements` (`name`, `unit`, `doses` mit `amount`/`timing`/`time`/`period`, `schedule: 'daily' | 'weekdays' | 'training'`, `weekdays`, `trainingKind: 'any' | 'strength' | 'endurance'`, `stock`, `packageSize`, `notes`, `order`, `archivedAt`) und `supplementIntakes` (`supplementId`, `doseId`, `date`, `amount`, `takenAt`, `stockDeducted`; ein aktiver Eintrag je Dosis und Tag). Einstellungen `supplementLowStockDays` (7), `supplementRemindersEnabled` (an), `supplementNotificationsEnabled` (aus). Backup-Defaults, Sicherungen aus v1–v14 bleiben importierbar.
+  - `src/db/supplements.ts`: anlegen/ändern/sortieren/archivieren/löschen (Soft-Delete kaskadiert), `setSupplementTaken` (Zielzustand, zieht vom Bestand ab, nie unter 0; Zurücknehmen bucht genau `stockDeducted` zurück), `refillSupplement` („Neue Packung“), `setSupplementStock`, `loadTrainingDays`, `loadSupplementOverview`, `listSupplementHabitCandidates`/`importSupplementsFromHabit`. `src/domain/supplements.ts`: Fälligkeit (`isSupplementDueOn`, `supplementDayStatus`), Tagesliste nach Zeitpunkt (`supplementDay`, `doseDueAt`, `isDoseOverdue`), Bestand (`trainingRate`, `dailyUse`, `stockDaysLeft`, `isLowStock`), Verlauf (`supplementAdherence`, `intakePercentByDay`), Übernahme (`supplementsFromHabit`), Formatierung.
+  - UI in `src/features/supplements/`: `SupplementChecklist` (Varianten `card` auf der Alltag-Seite, `widget` auf der Startseite, `page`; „n von m genommen“, „fällig“ in Orange, Abschnitt „Nur an Trainingstagen“, Bestandswarnungen mit Link), `SupplementsPage` (`/daily/supplements`: Tag wählen, Einnahmen, Liste sortieren, ✕, Archiv, „Aus Gewohnheit übernehmen“), `SupplementDetailPage` (Einnahmen, Bestand mit „Reicht noch n Tage“, Verbrauch, „Neue Packung“, Korrigieren, Verlauf als Heatmap + Quote der letzten 30 Tage, Archivieren, Löschen), `SupplementForm`/`SupplementEditPage`, `SupplementReminder` (im Layout), `notifications.ts`. Einstellungen: Karte „Supplements“ (Warnschwelle, Erinnerungen, Mitteilungen mit Berechtigungsabfrage, Erklärung der Grenzen). Startseite: Widget „Supplements“ und Schnellzugriff-Button „💊 Supplements“.
+  - Gemeinsam: `CheckButton`/`StatusCircle` aus der Gewohnheiten-Checkliste nach `src/components/CheckButton.tsx` verschoben (Klassen in `checkStyles.ts`), `Heatmap` hat die optionale Prop `level`.
+  - Tests: `src/domain/supplements.test.ts`, `src/db/supplements.test.ts`, Migration v14→v15, Backup (Wiederherstellung, aus v14, ungültiger Zeitpunkt). E2E `e2e/supplements.spec.ts` offline in beiden Viewports (anlegen, Bestand, Abhaken + Neuladen, Neue Packung, Erinnerung beim Workout-Start, Trainingstage, Vortag, Widget, Schnellzugriff, Einstellung, Übernahme aus Gewohnheit). `e2e/mvp1.spec.ts`: ein Widget mehr unter „Weitere Widgets“.
 - Abweichungen:
+  - **Trainingstage** = Tag mit laufendem oder beendetem Workout. Kraft = Workout mit Kraftübung oder noch ohne Übung, Ausdauer = Workout mit Ausdauerübung, reine Beweglichkeit zählt nur für „Jedes Training“. Ausdauer-Einheiten aus Schritt 13 kommen dort dazu (`loadTrainingDays` erweitern).
+  - Supplements mit Rhythmus „Trainingstage“ stehen **heute** schon vor dem Training unter „Nur an Trainingstagen“ und sind abhakbar (sonst ließe sich ein Pre-Workout erst nach dem Start eintragen). An früheren Tagen ohne Training erscheinen sie nur, wenn sie genommen wurden.
+  - „Vor dem Training“ wird mit dem Start des ersten Workouts des Tages fällig, „Nach dem Training“ mit dem Ende des letzten beendeten. Bei täglichem Rhythmus ohne Training an dem Tag steht die Einnahme ohne Uhrzeit am Ende der Liste und erinnert nicht.
+  - Tageszeiten haben feste Startzeiten für Sortierung und Erinnerung: morgens 7:00, mittags 12:00, abends 18:00, vor dem Schlafen 22:00.
+  - Reichweite = Bestand / Durchschnittsverbrauch pro Kalendertag (abgerundet). Trainingstage: Anteil der Trainingstage der letzten 4 Wochen, ohne Training 3 pro Woche. Warnung bis **einschließlich** der Schwelle.
+  - Eine Einnahme hat immer die volle Dosis (kein Teilmengen-Zählen wie bei Gewohnheiten). Die Menge wird beim Abhaken in die Einnahme kopiert, spätere Dosisänderungen ändern alte Einnahmen nicht. Einnahmen gelöschter Dosen bleiben gespeichert, zählen aber nicht.
+  - Bestand im Formular überschreibt beim Speichern den aktuellen Bestand. Wird der Bestand erst später erfasst, bucht das Zurücknehmen älterer Einnahmen nichts zurück (`stockDeducted = 0`).
+  - **Erinnerungen:** einmal je fälliger Einnahme und Tag (gemerkt in `localStorage`, `supplementReminders`), gesammelt in einem Hinweis. Keine Erinnerung an Zeiten, die vor dem Anlegen des Supplements lagen. Ist die App beim Fälligwerden zu, kommt der Hinweis beim nächsten Öffnen. Systemmitteilung nur, wenn eingeschaltet, erlaubt und die App im Hintergrund ist (über die Service-Worker-Registrierung), sonst Hinweis in der App.
+  - **Übernahme:** Gewohnheiten der Art „Unterpunkte“ (je Unterpunkt ein Supplement) oder „Zählen“ (ein Supplement). Zeitpunkt aus der Gruppe (Abend → abends, sonst morgens), „x-mal pro Woche“ wird täglich, Bestand wird nicht erfasst. Alle bisherigen Mengen werden zu Einnahmen (auch Teilmengen), die Gewohnheit wird archiviert.
+  - Verlauf: Quote ohne heute (bis gestern, ab Anlage), Heatmap 17 Wochen mit Anteil genommener Einnahmen je Tag. Kein Kalender wie bei Gewohnheiten.
+  - Kein Pausieren (Archivieren reicht), kein Symbol je Supplement (immer 💊). Widget und Schnellzugriff-Button sind nicht in den Standards, bei allen Nutzern unter „Anpassen“ wählbar.
 - Offene Punkte:
+  - Auf dem echten Handy prüfen: `input type="time"`, Hinweis beim Öffnen, Mitteilungen auf Android (Berechtigung, Anzeige im Hintergrund). Auf dem iPhone sind lokale Mitteilungen ohne Push nicht zuverlässig, die Einstellung erklärt das.
+  - Schritt 13: Ausdauer-Einheiten in `loadTrainingDays` als `endurance` ergänzen.
+  - Supplements fehlen im Alltag-Verlauf (`DailyHistoryCard`) und im CSV-Export. Bei Bedarf eine Kennzahl „Supplements (Einnahmequote)“ ergänzen.
+  - Lighthouse wurde nicht erneut ausgeführt.
 
 ### Schritt 12 – Ernährung (MVP 2 fertig)
 - `meals` / `mealEntries` (Lebensmittel aus `foods` + Menge in g oder Portion), Mahlzeiten-Typen (Frühstück, Mittag, Abend, Snack)
