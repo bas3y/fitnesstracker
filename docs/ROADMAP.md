@@ -21,6 +21,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 10b – Anpassungen nach dem Testen & Handytest
 - [x] Schritt 11 – Supplements
 - [x] Schritt 12 – Ernährung (MVP 2 fertig)
+- [ ] Schritt 12b – Alltag übersichtlicher (Kacheln + Unterseiten)
 - [ ] Schritt 13 – Ausdauer manuell
 - [ ] Schritt 14 – FIT/GPX/TCX-Import
 - [ ] Schritt 15 – Ausdauer-Statistiken
@@ -598,6 +599,30 @@ Mit dem Nutzer beim Start abgestimmt: Ernährung liegt **unter Alltag** (keine s
   - Kein Ernährungs-Verlauf (Graph über Tage) im Alltag-Verlauf, kein CSV-Export der Ernährung. Barcode-Scanner erst mit Server (Phase 6).
   - Seed-Lebensmittel mit Portionen prüfen; Zahlenfelder und Picker auf dem echten Handy ansehen. Lighthouse wurde nicht erneut ausgeführt.
   - Schritt 13: Ausdauer-Einheiten in `loadTrainingDays` ergänzen, dann zählen sie auch für die Ernährungsziele.
+
+### Schritt 12b – Alltag übersichtlicher (Kacheln + Unterseiten)
+**Ziel:** Die Alltag-Seite ist mit To-dos, Gewohnheiten, Supplements, Ernährung, Tageswerten, Verlauf und Links zu voll und wächst mit Schritt 17 weiter. Sie wird eine Übersicht aus Kacheln, die Details liegen auf Unterseiten. Keine neuen Daten, keine Dexie-Version.
+
+Mit dem Nutzer abgestimmt (nach Schritt 12):
+- **Alltag = Übersicht:** oben die Tagauswahl (`DayNavigator`/`useDayParam`), der gewählte Tag gilt auch auf allen Unterseiten (`?date=` mitgeben). Darunter **Kacheln im 2er-Raster**, jede mit Symbol, Name und kurzem Tagesstand; Antippen öffnet die Unterseite.
+- **Kacheln und Unterseiten:**
+  - **Gewohnheiten:** Stand „3 von 5“; Unterseite = Checkliste des Tages + bisherige Gewohnheiten-Liste/Kalender (`HabitChecklist`, `HabitListPage`).
+  - **To-dos:** Stand „2 offen“; Unterseite = bestehende `TodoPage`.
+  - **Ernährung:** Stand kcal + Balken zum Ziel; Unterseite = bestehende `NutritionPage` (mit Lebensmitteln & Rezepten).
+  - **Supplements:** Stand „1 von 3“ + Hinweis bei niedrigem Bestand; Unterseite = bestehende `SupplementsPage`.
+  - **Körper & Befinden:** Stand z. B. Wasser/Schlaf; **neue** Unterseite mit Wasser, Schritten, Schlaf, Gewicht, Stimmung/Energie (bisher `DayForm` auf `DailyPage`) und Körpermaßen.
+  - **Verlauf:** **eine zentrale Verlauf-Seite** (bisherige `DailyHistoryCard` als eigene Seite, Recharts weiter lazy).
+- **Kein direktes Abhaken auf der Übersicht:** Schnelles Eintragen bleibt Aufgabe der Startseite (Widgets, Schnellzugriff).
+- Zurück-Links: Unterseiten führen zur Alltag-Übersicht mit demselben Tag; Links von der Startseite behalten ihre Herkunft (`useFromHere`/`useBackTo`).
+- Schritt 17 (Journal, Lesen, Meditation, Fotos) ergänzt später eigene Kacheln. Ausdauer (13–15) gehört zu Training, Ziele/Rückblicke (16) zur Statistik.
+- E2E anpassen (`daily`, `habits`, `supplements`, `todos`, `nutrition`, `mvp1`), neuer E2E für Übersicht → Unterseite → zurück mit gewähltem Tag, offline in beiden Viewports.
+
+**Fertig wenn:** Alltag zeigt nur noch Tagauswahl und Kacheln, alle bisherigen Funktionen sind über die Unterseiten erreichbar, Definition of Done erfüllt.
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
+- Offene Punkte:
 
 ---
 
