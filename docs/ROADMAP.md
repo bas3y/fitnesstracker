@@ -725,9 +725,15 @@ Mit dem Nutzer abgestimmt (nach Schritt 12b):
   - Sportart einer Einheit ist nachträglich nicht änderbar (auch vorher nicht); bei Bedarf im Formular ergänzen.
   - Große Exporte: Alle Einheiten werden vor der Vorschau gelesen und im Speicher gehalten; bei Hunderten Einheiten auf dem Handy testen. Liste auf der Aktivitätsseite hat weiterhin keine Monatsgruppen/Filter (offener Punkt aus 13).
   - Schritt 15: Bestleistungen aus `enduranceTracks` (`time`/`distance`), Rekord-Toast nach `applyEnduranceImport`, Teilen-Bild aus `route`.
+- **Zwischenstand (Nutzer konnte noch nicht testen):** Schritt 14 ist fertig, getestet (Unit + E2E) und lokal committet, aber **nicht gepusht** und **nicht vom Nutzer geprüft**. Zu Beginn des nächsten Chats (vor oder zusammen mit Schritt 14b) nachfragen:
+  1. Testen am PC (`npm run dev`) oder erst pushen fürs Handy? Vor dem Push an ein Backup auf dem Handy erinnern (DB-Version 18).
+  2. Testliste: Garmin-ZIP („Original exportieren“) und Strava-GPX importieren; optional kompletter Strava-Konto-Export (Dauer, Speicher); iPhone-Dateiauswahl (`.fit` antippbar?); max. Puls eintragen → Pulszonen; Android-Teilen-Ziel (ggf. App neu installieren).
+  3. Rückmeldungen als Korrekturen einarbeiten (ggf. als Schritt 14a/Nachtrag hier notieren).
 
 ### Schritt 14b – Import von Gesundheitsdaten
 **Ziel:** Schlaf, Schritte, Ruhepuls, HRV usw. aus Uhr/Handy in den Alltag übernehmen.
+
+> **Vorher:** Nutzertest von Schritt 14 steht noch aus (siehe „Zwischenstand“ in den Notizen von Schritt 14). Zuerst nachfragen, ob getestet wurde bzw. jetzt getestet werden soll.
 - **Quellen:** Apple-Health-Export (`export.zip` mit `export.xml`, groß → streamend parsen; enthält auch Garmin-Daten, wenn Garmin Connect mit Apple Health synchronisiert), Garmin-Datenexport (ZIP mit JSON: Schlaf, Tageswerte, HRV). Strava liefert keine Gesundheitsdaten.
 - **Nur Tageswerte:** Schritte, Schlafdauer + Phasen, Ruhepuls, HRV (Nacht-Ø), ggf. Stress. Schritte/Schlaf füllen die bestehenden `dailyLogs`-Felder (manuelle Werte bleiben), Ruhepuls/HRV/Schlafphasen als neue Felder (Dexie-Version, Backup).
 - Anzeige auf „Körper & Befinden“ und im Verlauf (`DailyHistoryPage`, Recharts lazy). Optional: Einheiten aus dem Apple-Health-Export mit übernehmen (Duplikat-Erkennung aus Schritt 14).
