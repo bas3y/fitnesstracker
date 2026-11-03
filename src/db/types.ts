@@ -51,6 +51,10 @@ export interface Settings extends BaseEntity {
   nutritionGoals: NutritionGoals;
   /** Sichtbare Aktivitäts-Kacheln auf der Trainingsseite, in Anzeigereihenfolge */
   trainingTiles: EnduranceSport[];
+  /** Für die Pulszonen; `null` = nicht eingetragen */
+  maxHeartRate: number | null;
+  /** Mit Ruhepuls werden die Zonen nach Karvonen (Herzfrequenzreserve) berechnet */
+  restingHeartRate: number | null;
 }
 
 export const DASHBOARD_WIDGETS = [
@@ -597,6 +601,34 @@ export interface EnduranceSession extends BaseEntity {
   swolf: number | null;
   source: EnduranceSource;
   importInfo: EnduranceImportInfo | null;
+}
+
+/** Runde bzw. Intervall laut Uhr */
+export interface TrackLap {
+  /** Sekunden ab Beginn der Einheit */
+  startSeconds: number;
+  durationSeconds: number;
+  distanceMeters: number | null;
+  avgHeartRate: number | null;
+  maxHeartRate: number | null;
+}
+
+/**
+ * Verlauf einer importierten Einheit, getrennt gespeichert (Listen laden nur die Einheiten).
+ * Messwerte spaltenweise, gleich lang wie `time`.
+ */
+export interface EnduranceTrack extends BaseEntity {
+  sessionId: string;
+  /** Sekunden ab Beginn (Uhrzeit, Pausen sind Lücken) */
+  time: number[];
+  /** Zurückgelegte Strecke in m */
+  distance: (number | null)[];
+  heartRate: (number | null)[];
+  /** Höhe in m */
+  altitude: (number | null)[];
+  /** Vereinfachte Strecke als [Breite, Länge] in Grad, leer ohne GPS */
+  route: [number, number][];
+  laps: TrackLap[];
 }
 
 /** Ausrüstung (z. B. Laufschuhe) mit Kilometerstand */

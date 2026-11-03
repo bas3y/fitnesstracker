@@ -109,6 +109,7 @@ describe('parseBackup', () => {
         savedMeals: 0,
         enduranceSessions: 0,
         gear: 0,
+        enduranceTracks: 0,
       });
   });
 
@@ -490,6 +491,21 @@ describe('Ernährung im Backup', () => {
     expect(result.backup.tables.enduranceSessions).toEqual([]);
     expect(result.backup.tables.gear).toEqual([]);
     expect(result.backup.tables.settings[0]!.trainingTiles).toEqual([...ENDURANCE_SPORTS]);
+  });
+
+  it('ergänzt in Sicherungen aus DB-Version 17 Verläufe und Pulswerte', async () => {
+    const data = await validBackup();
+    data.dbVersion = 17;
+    delete data.tables.enduranceTracks;
+    delete data.tables.settings[0].maxHeartRate;
+    delete data.tables.settings[0].restingHeartRate;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.enduranceTracks).toEqual([]);
+    expect(result.backup.tables.settings[0]).toMatchObject({
+      maxHeartRate: null,
+      restingHeartRate: null,
+    });
   });
 
   it('lehnt unbekannte Sportarten ab', async () => {

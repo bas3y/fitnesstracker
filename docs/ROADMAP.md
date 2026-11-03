@@ -23,7 +23,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 12 – Ernährung (MVP 2 fertig)
 - [x] Schritt 12b – Alltag übersichtlicher (Kacheln + Unterseiten)
 - [x] Schritt 13 – Training-Kacheln & Ausdauer manuell
-- [ ] Schritt 14 – Import von Einheiten (Uhr, Strava)
+- [x] Schritt 14 – Import von Einheiten (Uhr, Strava)
 - [ ] Schritt 14b – Import von Gesundheitsdaten
 - [ ] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
 - [ ] Schritt 16 – Ziele & Rückblicke
@@ -702,8 +702,29 @@ Mit dem Nutzer abgestimmt (nach Schritt 12b):
 
 **Notizen:**
 - Gebaut:
+  - **Parser ohne neue Pakete** in `src/domain/import/` (per dynamischem Import nur auf der Import-Seite geladen, eigener Chunk ~11 KB): `fit.ts` (FIT-Binärformat: Definitions-/Datennachrichten, Little/Big Endian, komprimierte Zeitstempel, Entwicklerfelder übersprungen, ungültige Werte → `null`; liest `file_id`, `session`, `lap`, `record`; Multisport = je `session` eine Einheit), `xml.ts` (GPX/TCX über `DOMParser`, Namensräume egal; Sportart aus Text `sportFromText`), `zip.ts` (Inhaltsverzeichnis am Ende, Zip64, Einträge einzeln per `Blob.slice`, Entpacken über `DecompressionStream`), `readFiles.ts` (`readImportFiles`: Format am Inhalt erkannt, verschachtelte ZIPs bis Tiefe 3, `.gz`, nur `.fit/.gpx/.tcx/.zip/.gz`-Einträge, Probleme je Datei statt Abbruch). Gegen echte Garmin-FIT-Beispieldateien (python-fitparse) geprüft, Tests nutzen selbst erzeugte Dateien (`src/test/importFiles.ts`: `encodeFit`, `sampleFitRun`, `sampleGpx`, `createZip`, `gzip`).
+  - `src/domain/import/activity.ts`: `buildCandidate` (fehlende Kennzahlen aus dem Verlauf: Strecke per Haversine, Bewegungszeit ohne Lücken > 30 s, zeitgewichteter Ø-Puls, Höhenmeter mit 3-m-Schwelle; Grenzwerte wie im Formular), Verlauf auf ≤ 1500 Punkte ausgedünnt, Strecke per Douglas-Peucker auf ≤ 500 Punkte (5 Nachkommastellen) → ca. 30–50 KB je Einheit. Duplikate `isSameActivity` (Start ±2 min, Dauer ±10 %/mind. 2 min, Bewegungs- **oder** Gesamtzeit), `planImport` (neu / ergänzen / schon vorhanden; bei Duplikaten in derselben Auswahl gewinnt FIT vor TCX vor GPX), `mergeSessionValues`.
+  - Dexie v18: Tabelle `enduranceTracks` (`sessionId`, spaltenweise `time`/`distance`/`heartRate`/`altitude`, `route`, `laps`) getrennt von `enduranceSessions`, damit Listen leicht bleiben; Löschen einer Einheit löscht den Verlauf mit. `Settings.maxHeartRate`/`restingHeartRate`. Backup-Schema + Defaults (Sicherungen aus v1–v17 importierbar).
+  - `src/db/enduranceImport.ts`: `planEnduranceImport`, `applyEnduranceImport` (eine Transaktion; Rückgabe `created/merged/skipped/sessionIds`). `loadEnduranceTrack` in `src/db/endurance.ts`.
+  - **Import-Seite** `/training/import` (`ImportPage`, Einstieg: Trainingsseite „Importieren“ und Button auf jeder Aktivitätsseite): Dateien wählen (ohne `accept`, sonst graut iOS `.fit` aus) → Fortschritt → Vorschau („1 neu · 1 ergänzt · 1 schon vorhanden“, je Einheit Haken und Sportart wählbar, Duplikate und nicht lesbare Dateien aufklappbar) → Zusammenfassung („✓ Import abgeschlossen: 5 neu, 1 ergänzt, 2 übersprungen“, bei einer Einheit „Einheit ansehen“). Anleitung je Quelle (Garmin Connect, Strava einzeln, Strava-Konto-Export, Garmin-Datenexport, Teilen).
+  - **Teilen-Ziel (Android):** `share_target` im Manifest (POST, `files`), `public/share-target.js` per `workbox.importScripts` legt die Dateien in den Cache `shared-files` und leitet auf `#/training/import?shared=1`, die Seite holt sie über `takeSharedFiles()` ab.
+  - **Detailseite:** Herkunft („importiert · Garmin · FIT“ bzw. „ergänzt aus …“), Strecke als SVG-Linie ohne Karte (`projectRoute`/`svgPath`), Puls- und Höhenverlauf (`SessionCharts`, lazy, `SeriesChart` in `charts.tsx`), Zeit in 5 Pulszonen (`src/domain/track.ts`: `heartRateZoneBounds` – mit Ruhepuls nach Karvonen –, `zoneSeconds`), Runden der Uhr bzw. km-/Meilen-Splits (`distanceSplits`), lange Tabellen mit „Alle n anzeigen“.
+  - Einstellungen → Training: „Max. Puls“ und „Ruhepuls“. Backup-Bereich: aufklappbare Info **„Wo liegen meine Daten?“** inkl. Status „dauerhafter Speicher“.
+  - Tests: `fit`/`xml`/`readFiles`/`activity`-Tests, `src/domain/track.test.ts`, `src/db/enduranceImport.test.ts` (Speichern, Sportart, Duplikate, Ergänzen, Ausrüstung, Backup), Migration v17→v18, Backup aus v17. E2E `e2e/import.spec.ts` (offline in beiden Viewports: FIT + GPX + ZIP + kaputte Datei, Vorschau, Sportart ändern, Ergänzen einer manuellen Einheit, Detailseite mit Strecke/Diagrammen/Zonen/Splits, zweiter Import = alles vorhanden; Teilen-Ziel per POST an den Service Worker; Daten-Info). 76/76 E2E grün.
 - Abweichungen:
+  - Statt `fit-file-parser` ein eigener FIT-Leser (kein `npm install`, kein Node-`Buffer`, nur die benötigten Felder).
+  - **Ergänzen statt überspringen:** Passt eine Datei zu einer *manuell* erfassten Einheit ohne bisherigen Import, werden nur leere Felder (Distanz, Puls, Höhenmeter, Kalorien, Bahnen, Titel) gefüllt und der Verlauf angehängt; Sportart, Zeiten, Bewertung und Notiz bleiben. Danach (oder bei importierten Einheiten) gilt sie als „schon vorhanden“.
+  - Dauer = Bewegungszeit (Timer der Uhr bzw. Verlauf ohne Pausen), deshalb vergleicht die Duplikat-Erkennung auch die Gesamtzeit.
+  - Ausrüstung wird importierten Einheiten nur zugeordnet (wie beim manuellen Erfassen vorgeschlagen), wenn sie vor der Einheit angelegt wurde: alte Strava-Läufe landen nicht auf dem aktuellen Schuh.
+  - Pulszonen werden nicht gespeichert, sondern bei der Anzeige aus Verlauf und Einstellungen berechnet (ändern sich mit dem max. Puls). Zonen: 50/60/70/80/90 % von max. Puls bzw. Herzfrequenzreserve.
+  - Aus FIT werden Schwimmstil und SWOLF nicht übernommen (nur Bahnlänge + Anzahl Bahnen). Rundentabelle zeigt Pausen beim Schwimmen als „Pause“.
+  - Strava-GPX mit Zahlen als Typ: 1 = Rad, 9 = Laufen, 4/10 = Wandern (Annahme); in der Vorschau korrigierbar.
 - Offene Punkte:
+  - **Auf echten Geräten prüfen:** Garmin-/Strava-Dateien des Nutzers, Strava-Konto-Export (Größe, Dauer), Dateiauswahl auf dem iPhone, Teilen-Ziel auf Android (nur bei installierter App, Manifest-Änderung braucht ggf. Neuinstallation).
+  - FIT-Dateien aus dem Strava-Konto-Export haben keinen Namen (Strava speichert ihn in `activities.csv`, wird nicht gelesen) → Titel = Sportart. Ggf. später `activities.csv` auswerten.
+  - Sportart einer Einheit ist nachträglich nicht änderbar (auch vorher nicht); bei Bedarf im Formular ergänzen.
+  - Große Exporte: Alle Einheiten werden vor der Vorschau gelesen und im Speicher gehalten; bei Hunderten Einheiten auf dem Handy testen. Liste auf der Aktivitätsseite hat weiterhin keine Monatsgruppen/Filter (offener Punkt aus 13).
+  - Schritt 15: Bestleistungen aus `enduranceTracks` (`time`/`distance`), Rekord-Toast nach `applyEnduranceImport`, Teilen-Bild aus `route`.
 
 ### Schritt 14b – Import von Gesundheitsdaten
 **Ziel:** Schlaf, Schritte, Ruhepuls, HRV usw. aus Uhr/Handy in den Alltag übernehmen.

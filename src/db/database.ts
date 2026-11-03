@@ -12,6 +12,7 @@ import {
   type BodyMeasurement,
   type DailyLog,
   type EnduranceSession,
+  type EnduranceTrack,
   type Exercise,
   type Food,
   type Gear,
@@ -55,6 +56,7 @@ export class AppDatabase extends Dexie {
   savedMeals!: Table<SavedMeal, string>;
   enduranceSessions!: Table<EnduranceSession, string>;
   gear!: Table<Gear, string>;
+  enduranceTracks!: Table<EnduranceTrack, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -326,6 +328,20 @@ export class AppDatabase extends Dexie {
           .toCollection()
           .modify((settings) => {
             settings.trainingTiles ??= [...ENDURANCE_SPORTS];
+          }),
+      );
+    // Import von Einheiten: Verläufe, Pulszonen
+    this.version(18)
+      .stores({
+        enduranceTracks: 'id, sessionId, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.maxHeartRate ??= null;
+            settings.restingHeartRate ??= null;
           }),
       );
   }

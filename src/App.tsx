@@ -40,6 +40,7 @@ const GearDetailPage = lazyPage(
 );
 const GearEditPage = lazyPage(() => import('./features/endurance/GearEditPage'), 'GearEditPage');
 const GearListPage = lazyPage(() => import('./features/endurance/GearListPage'), 'GearListPage');
+const ImportPage = lazyPage(() => import('./features/endurance/ImportPage'), 'ImportPage');
 const SessionCreatePage = lazyPage(
   () => import('./features/endurance/SessionEditPage'),
   'SessionCreatePage',
@@ -148,6 +149,7 @@ export function App() {
           <Route path="training/gear/new" element={<GearCreatePage />} />
           <Route path="training/gear/:id" element={<GearDetailPage />} />
           <Route path="training/gear/:id/edit" element={<GearEditPage />} />
+          <Route path="training/import" element={<ImportPage />} />
           <Route path="daily" element={<DailyPage />} />
           <Route path="daily/history" element={<DailyHistoryPage />} />
           <Route path="daily/body" element={<BodyPage />} />

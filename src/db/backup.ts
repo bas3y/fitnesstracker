@@ -11,6 +11,7 @@ import {
   gearFieldsSchema,
   foodFieldsSchema,
   habitFieldsSchema,
+  heartRateSettingSchema,
   mealAmountSchema,
   NUTRITION_GOAL_DEFAULTS,
   nutrientsSchema,
@@ -23,6 +24,7 @@ import {
   SUPPLEMENT_SETTING_DEFAULTS,
   supplementFieldsSchema,
   todoInputSchema,
+  trackFieldsSchema,
   weekdaysSchema,
 } from './schemas';
 import { ensureSeeded } from './seed';
@@ -94,6 +96,9 @@ const settingsSchema = baseEntitySchema.extend({
   nutritionGoals: nutritionGoalsSchema.default(NUTRITION_GOAL_DEFAULTS),
   // Seit DB-Version 17
   trainingTiles: z.array(z.enum(ENDURANCE_SPORTS)).default([...ENDURANCE_SPORTS]),
+  // Seit DB-Version 18
+  maxHeartRate: heartRateSettingSchema.default(null),
+  restingHeartRate: heartRateSettingSchema.default(null),
 });
 
 const catalogEntryFields = {
@@ -241,6 +246,9 @@ const enduranceSessionSchema = baseEntitySchema.extend(enduranceSessionFieldsSch
 const gearSchema = baseEntitySchema.extend(gearFieldsSchema.shape).extend({
   archivedAt: timestamp.nullable(),
 });
+const enduranceTrackSchema = baseEntitySchema.extend(trackFieldsSchema.shape).extend({
+  sessionId: z.string().min(1),
+});
 
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
@@ -273,6 +281,7 @@ export const backupSchema = z.object({
     savedMeals: z.array(savedMealSchema).default([]),
     enduranceSessions: z.array(enduranceSessionSchema).default([]),
     gear: z.array(gearSchema).default([]),
+    enduranceTracks: z.array(enduranceTrackSchema).default([]),
   }),
 });
 
@@ -300,6 +309,7 @@ export const TABLE_LABELS: Record<TableName, string> = {
   savedMeals: 'Lieblingsmahlzeiten',
   enduranceSessions: 'Ausdauer-Einheiten',
   gear: 'Ausrüstung',
+  enduranceTracks: 'Verläufe von Einheiten',
 };
 
 export async function createBackup(): Promise<Backup> {

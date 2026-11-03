@@ -1,6 +1,6 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useBackTo, useFromHere } from '../../components/backNavigation';
-import { primaryButton } from '../../components/buttons';
+import { primaryButton, secondaryButton } from '../../components/buttons';
 import { Card, LinkRow, Page } from '../../components/Page';
 import type { EnduranceSport } from '../../db/types';
 import { dayKey } from '../../domain/daily';
@@ -22,7 +22,7 @@ import { formatWorkoutDate } from '../../domain/workout';
 import { useSettings } from '../settings/useSettings';
 import { TRAINING_PATH } from '../training/paths';
 import { useNow } from '../training/useWorkouts';
-import { GEAR_PATH, gearPath, newSessionPath, sessionPath } from './paths';
+import { GEAR_PATH, gearPath, IMPORT_PATH, newSessionPath, sessionPath } from './paths';
 import { parseSport, useEnduranceSessions, useGearList } from './useEndurance';
 
 const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
@@ -86,9 +86,14 @@ function Activity({ sport }: { sport: EnduranceSport }) {
           Ausrüstung?
         </Link>
       ))}
-      <Link to={newSessionPath(sport)} state={from} className={`${primaryButton} mb-4`}>
-        + Einheit erfassen
-      </Link>
+      <div className="mb-4 grid grid-cols-[3fr_2fr] gap-2">
+        <Link to={newSessionPath(sport)} state={from} className={primaryButton}>
+          + Einheit erfassen
+        </Link>
+        <Link to={IMPORT_PATH} state={from} className={secondaryButton}>
+          Importieren
+        </Link>
+      </div>
 
       <section className="mb-4">
         <h2 className="mb-3 text-lg font-semibold">Einheiten</h2>

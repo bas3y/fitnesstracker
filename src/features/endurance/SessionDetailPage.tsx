@@ -5,7 +5,7 @@ import { dangerButton, secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card, Page } from '../../components/Page';
 import { deleteEnduranceSession } from '../../db/endurance';
-import type { DistanceUnit, EnduranceSession, Gear } from '../../db/types';
+import type { DistanceUnit, EnduranceSession, Gear, Settings } from '../../db/types';
 import { formatDistance, formatPace, paceLabel, sessionTitle } from '../../domain/endurance';
 import { formatDecimal } from '../../domain/format';
 import { ENDURANCE_SPORT_LABELS, SWIM_STROKE_LABELS } from '../../domain/labels';
@@ -13,7 +13,8 @@ import { formatClock, formatTime, formatWorkoutDate } from '../../domain/workout
 import { useSettings } from '../settings/useSettings';
 import { TRAINING_PATH } from '../training/paths';
 import { activityPath, gearPath, sessionPath } from './paths';
-import { useEnduranceSession, useGearList } from './useEndurance';
+import { SessionTrack } from './SessionTrack';
+import { useEnduranceSession, useEnduranceTrack, useGearList } from './useEndurance';
 
 const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
 
@@ -44,10 +45,18 @@ export function SessionDetailPage() {
     <SessionDetail
       session={session}
       gear={gear.find((item) => item.id === session.gearId) ?? null}
-      unit={settings.distanceUnit}
+      settings={settings}
       backTo={backTo}
     />
   );
+}
+
+/** z. B. „importiert · Garmin · FIT“ bzw. „ergänzt aus GPX“ */
+function originText(session: EnduranceSession): string | null {
+  const info = session.importInfo;
+  if (!info) return null;
+  const details = [info.device, info.format.toUpperCase()].filter(Boolean).join(' · ');
+  return session.source === 'import' ? `importiert · ${details}` : `ergänzt aus ${details}`;
 }
 
 function sessionFacts(session: EnduranceSession, unit: DistanceUnit) {
@@ -99,14 +108,17 @@ function sessionFacts(session: EnduranceSession, unit: DistanceUnit) {
 function SessionDetail({
   session,
   gear,
-  unit,
+  settings,
   backTo,
 }: {
   session: EnduranceSession;
   gear: Gear | null;
-  unit: DistanceUnit;
+  settings: Settings;
   backTo: string;
 }) {
+  const unit = settings.distanceUnit;
+  const track = useEnduranceTrack(session.id);
+  const origin = originText(session);
   const navigate = useNavigate();
   const { state } = useLocation();
   const from = useFromHere();
@@ -117,7 +129,7 @@ function SessionDetail({
     <Page title={`${icon} ${sessionTitle(session)}`} backTo={backTo}>
       <p className={`-mt-2 mb-4 ${MUTED}`}>
         {formatWorkoutDate(session.startedAt)}, {formatTime(session.startedAt)} Uhr
-        {session.source === 'import' && ' · importiert'}
+        {origin && ` · ${origin}`}
       </p>
       <Card>
         <dl data-testid="session-facts" className="grid grid-cols-2 gap-3">
@@ -142,6 +154,7 @@ function SessionDetail({
         )}
         {session.notes && <p className="mt-3 whitespace-pre-line">{session.notes}</p>}
       </Card>
+      {track && <SessionTrack track={track} sport={session.sport} settings={settings} />}
 
       <div className="mb-4 flex flex-col gap-2">
         <Link to={`${sessionPath(session.id)}/edit`} state={state} className={secondaryButton}>

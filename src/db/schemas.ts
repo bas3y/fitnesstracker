@@ -547,6 +547,34 @@ export const gearFieldsSchema = z.object({
   notes: z.string().trim().max(500, 'Notiz höchstens 500 Zeichen'),
 });
 
+/** Max. Puls bzw. Ruhepuls in den Einstellungen */
+export const heartRateSettingSchema = z
+  .number()
+  .int()
+  .min(MIN_HEART_RATE)
+  .max(MAX_HEART_RATE)
+  .nullable();
+
+const optionalNumber = z.number().nullable();
+
+/** Verlauf einer importierten Einheit (ohne Metadaten) */
+export const trackFieldsSchema = z.object({
+  time: z.array(z.number()),
+  distance: z.array(optionalNumber),
+  heartRate: z.array(optionalNumber),
+  altitude: z.array(optionalNumber),
+  route: z.array(z.tuple([z.number(), z.number()])),
+  laps: z.array(
+    z.object({
+      startSeconds: z.number(),
+      durationSeconds: z.number(),
+      distanceMeters: optionalNumber,
+      avgHeartRate: optionalNumber,
+      maxHeartRate: optionalNumber,
+    }),
+  ),
+});
+
 export type GearInput = z.input<typeof gearFieldsSchema>;
 export type GearValues = z.output<typeof gearFieldsSchema>;
 

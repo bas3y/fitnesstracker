@@ -37,9 +37,38 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
+        // Android: Dateien aus Garmin Connect, Strava … per „Teilen“ an die App (Import)
+        share_target: {
+          action: 'share-target',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            files: [
+              {
+                name: 'files',
+                accept: [
+                  '.fit',
+                  '.gpx',
+                  '.tcx',
+                  '.zip',
+                  '.gz',
+                  'application/octet-stream',
+                  'application/zip',
+                  'application/gzip',
+                  'application/gpx+xml',
+                  'application/vnd.garmin.tcx+xml',
+                  'application/xml',
+                  'text/xml',
+                ],
+              },
+            ],
+          },
+        },
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,json,webmanifest,woff2}'],
+        globIgnores: ['share-target.js'],
+        importScripts: ['share-target.js'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
       },

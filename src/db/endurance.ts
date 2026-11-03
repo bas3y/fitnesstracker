@@ -7,7 +7,13 @@ import {
   type EnduranceSessionInput,
   type GearInput,
 } from './schemas';
-import type { EnduranceImportInfo, EnduranceSession, EnduranceSource, Gear } from './types';
+import type {
+  EnduranceImportInfo,
+  EnduranceSession,
+  EnduranceSource,
+  EnduranceTrack,
+  Gear,
+} from './types';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
 
@@ -42,8 +48,19 @@ export async function updateEnduranceSession(
   await update(db.enduranceSessions, id, enduranceSessionInputSchema.parse(input));
 }
 
+/** Verlauf einer importierten Einheit, `null` = keiner */
+export async function loadEnduranceTrack(sessionId: string): Promise<EnduranceTrack | null> {
+  const tracks = await db.enduranceTracks.where('sessionId').equals(sessionId).toArray();
+  return tracks.find(isActive) ?? null;
+}
+
+/** Löscht auch den Verlauf */
 export function deleteEnduranceSession(id: string): Promise<void> {
-  return softDelete(db.enduranceSessions, id);
+  return db.transaction('rw', db.enduranceSessions, db.enduranceTracks, async () => {
+    await softDelete(db.enduranceSessions, id);
+    const tracks = await db.enduranceTracks.where('sessionId').equals(id).toArray();
+    for (const track of tracks.filter(isActive)) await softDelete(db.enduranceTracks, track.id);
+  });
 }
 
 // ---------- Ausrüstung ----------

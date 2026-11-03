@@ -4,11 +4,13 @@ import { SegmentedControl } from '../../components/SegmentedControl';
 import { Stepper } from '../../components/Stepper';
 import { setCurrentBodyWeight } from '../../db/daily';
 import {
+  MAX_HEART_RATE,
   MAX_KCAL_GOAL,
   MAX_LOW_STOCK_DAYS,
   MAX_MACRO_GOAL_G,
   MAX_STEPS,
   MAX_WATER_ML,
+  MIN_HEART_RATE,
 } from '../../db/schemas';
 import { getSettings, updateSettings } from '../../db/settings';
 import type { NutritionGoal, NutritionGoals, Settings } from '../../db/types';
@@ -134,6 +136,35 @@ function TrainingCard({ settings }: { settings: Settings }) {
             </p>
           </>
         )}
+        <h3 className="mt-2 font-semibold">Puls</h3>
+        <Stepper
+          label="Max. Puls"
+          value={settings.maxHeartRate}
+          unit="bpm"
+          step={1}
+          min={MIN_HEART_RATE}
+          max={MAX_HEART_RATE}
+          decimals={0}
+          startValue={190}
+          allowEmpty
+          onChange={(maxHeartRate) => void updateSettings({ maxHeartRate })}
+        />
+        <Stepper
+          label="Ruhepuls"
+          value={settings.restingHeartRate}
+          unit="bpm"
+          step={1}
+          min={MIN_HEART_RATE}
+          max={MAX_HEART_RATE}
+          decimals={0}
+          startValue={60}
+          allowEmpty
+          onChange={(restingHeartRate) => void updateSettings({ restingHeartRate })}
+        />
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Für die Pulszonen importierter Einheiten. Mit Ruhepuls rechnet die App nach
+          Herzfrequenzreserve (Karvonen), sonst in % des max. Pulses.
+        </p>
         <h3 className="mt-2 font-semibold">Erweitert</h3>
         <label className="flex min-h-11 items-center gap-3">
           <input

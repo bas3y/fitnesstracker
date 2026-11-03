@@ -3,6 +3,7 @@ import {
   listEnduranceSessions,
   listGear,
   loadEnduranceSession,
+  loadEnduranceTrack,
   loadGear,
 } from '../../db/endurance';
 import { ENDURANCE_SPORTS, type EnduranceSport } from '../../db/types';
@@ -14,6 +15,11 @@ export function useEnduranceSessions() {
 /** `undefined` = lädt, `null` = gibt es nicht (mehr) */
 export function useEnduranceSession(id: string | undefined) {
   return useLiveQuery(async () => (id ? loadEnduranceSession(id) : null), [id]);
+}
+
+/** `undefined` = lädt, `null` = kein Verlauf (z. B. manuell erfasst) */
+export function useEnduranceTrack(sessionId: string) {
+  return useLiveQuery(() => loadEnduranceTrack(sessionId), [sessionId]);
 }
 
 export function useGearList() {

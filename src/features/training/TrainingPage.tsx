@@ -19,7 +19,7 @@ import {
   weekRange,
 } from '../../domain/endurance';
 import { ENDURANCE_SPORT_LABELS } from '../../domain/labels';
-import { activityPath, GEAR_PATH } from '../endurance/paths';
+import { activityPath, GEAR_PATH, IMPORT_PATH } from '../endurance/paths';
 import { useEnduranceSessions } from '../endurance/useEndurance';
 import { useSettings } from '../settings/useSettings';
 import { HISTORY_PATH, PLANS_PATH } from './paths';
@@ -76,6 +76,11 @@ export function TrainingPage() {
         hint="Durchsuchen, Favoriten, eigene Übungen"
       />
       <LinkRow to={GEAR_PATH} label="Ausrüstung" hint="Schuhe, Rad, Kilometerstand" />
+      <LinkRow
+        to={IMPORT_PATH}
+        label="Importieren"
+        hint="Von Sportuhr oder Strava (FIT, GPX, TCX)"
+      />
     </Page>
   );
 }

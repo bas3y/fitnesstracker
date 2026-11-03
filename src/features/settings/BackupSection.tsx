@@ -17,6 +17,7 @@ import type { Settings } from '../../db/types';
 import { daysSince } from '../../domain/backupReminder';
 import { formatDaysAgo } from '../../domain/format';
 import { shareOrDownload } from './shareOrDownload';
+import { useStorageInfo } from './storage';
 
 type Status = { kind: 'success' | 'error'; text: string } | null;
 
@@ -93,6 +94,8 @@ export function BackupSection({ settings }: { settings: Settings }) {
         </label>
       </div>
 
+      <DataLocationInfo />
+
       {pending && (
         <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/40">
           <p className="font-semibold">
@@ -137,5 +140,48 @@ export function BackupSection({ settings }: { settings: Settings }) {
         </p>
       )}
     </Card>
+  );
+}
+
+function DataLocationInfo() {
+  const storage = useStorageInfo();
+  const persisted =
+    storage?.persisted == null
+      ? null
+      : storage.persisted
+        ? 'Dieser Browser hat den Speicher als dauerhaft markiert: Er löscht die Daten nicht von sich aus bei Platzmangel.'
+        : 'Der Speicher ist nicht als dauerhaft markiert: Der Browser darf die Daten bei Platzmangel löschen.';
+  return (
+    <details className="mt-3 text-sm">
+      <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-emerald-700 dark:text-emerald-400">
+        Wo liegen meine Daten?
+      </summary>
+      <ul className="flex list-disc flex-col gap-2 pl-5 text-slate-700 dark:text-slate-300">
+        <li>
+          Nur im Browser-Speicher dieses Geräts. Es gibt kein automatisches Backup und keine
+          Synchronisierung mit anderen Geräten.
+        </li>
+        <li>
+          Browserdaten löschen: Nur Verlauf oder Cache zu löschen ist unbedenklich. „Cookies und
+          Websitedaten“ (Chrome) bzw. „Verlauf und Websitedaten“ (Safari, dort ist es <em>ein</em>{' '}
+          Knopf) löscht aber alles.
+        </li>
+        <li>
+          Android: Die installierte App teilt sich den Speicher mit Chrome. iPhone: Die App auf dem
+          Startbildschirm hat einen eigenen Speicher. Wird sie vom Startbildschirm entfernt, sind
+          die Daten weg; iOS kann Daten länger nicht genutzter Web-Apps auch selbst entfernen.
+        </li>
+        <li>
+          Privatmodus/Inkognito: Beim Schließen des Fensters ist alles weg. Die App dort nicht
+          verwenden.
+        </li>
+        <li>
+          Empfehlung: App zum Startbildschirm hinzufügen, regelmäßig „Backup exportieren“ und die
+          Datei außerhalb des Handys ablegen (Cloud, PC). Bei Verlust hier importieren; was nach dem
+          letzten Export eingetragen wurde, fehlt dann.
+        </li>
+        {persisted && <li data-testid="storage-persisted">{persisted}</li>}
+      </ul>
+    </details>
   );
 }

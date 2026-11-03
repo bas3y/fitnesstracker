@@ -498,7 +498,49 @@ describe('AppDatabase-Migration', () => {
     expect(await v17.workouts.get('w1')).toMatchObject({ startedAt: '2026-11-01T10:00:00.000Z' });
     expect(await v17.enduranceSessions.count()).toBe(0);
     expect(await v17.gear.count()).toBe(0);
-    expect(v17.verno).toBe(17);
+    expect(v17.verno).toBeGreaterThanOrEqual(17);
     await v17.delete();
+  });
+
+  it('Version 18 ergänzt Verläufe und Pulswerte, Einheiten bleiben', async () => {
+    const name = 'migration-test-v18';
+    const v17 = new Dexie(name);
+    v17.version(17).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+    });
+    await v17.table('settings').add({ id: 'app-settings', name: 'Alex', trainingTiles: ['run'] });
+    await v17.table('enduranceSessions').add({ id: 'e1', sport: 'run', distanceMeters: 5000 });
+    v17.close();
+
+    const v18 = new AppDatabase(name);
+    expect(await v18.settings.get('app-settings')).toMatchObject({
+      name: 'Alex',
+      trainingTiles: ['run'],
+      maxHeartRate: null,
+      restingHeartRate: null,
+    });
+    expect(await v18.enduranceSessions.get('e1')).toMatchObject({ distanceMeters: 5000 });
+    expect(await v18.enduranceTracks.count()).toBe(0);
+    expect(v18.verno).toBe(18);
+    await v18.delete();
   });
 });

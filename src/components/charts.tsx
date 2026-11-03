@@ -93,6 +93,57 @@ export function ProgressChart({
   );
 }
 
+export interface SeriesPoint {
+  x: number;
+  value: number | null;
+}
+
+/** Verlauf innerhalb einer Einheit (x = Strecke oder Minuten), Lücken bleiben offen */
+export function SeriesChart({
+  label,
+  points,
+  formatX,
+  formatValue,
+  color = LINE_COLOR,
+}: {
+  label: string;
+  points: SeriesPoint[];
+  formatX: (x: number) => string;
+  formatValue: (value: number) => string;
+  color?: string;
+}) {
+  return (
+    <ChartFrame label={label}>
+      <LineChart data={points} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+        <CartesianGrid {...grid} />
+        <XAxis
+          dataKey="x"
+          type="number"
+          domain={['dataMin', 'dataMax']}
+          tick={tick}
+          tickFormatter={formatX}
+          minTickGap={32}
+        />
+        <YAxis width={44} domain={['auto', 'auto']} tick={tick} />
+        <Tooltip
+          content={({ active, payload }) => {
+            const point = payload?.[0]?.payload as SeriesPoint | undefined;
+            if (!active || !point || point.value === null) return null;
+            return <ChartTooltip title={formatX(point.x)} value={formatValue(point.value)} />;
+          }}
+        />
+        <Line
+          dataKey="value"
+          stroke={color}
+          strokeWidth={2}
+          dot={false}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    </ChartFrame>
+  );
+}
+
 export interface ChartBar {
   name: string;
   value: number;
