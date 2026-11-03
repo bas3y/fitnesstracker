@@ -5,6 +5,7 @@ export function Page({
   title,
   backTo,
   backState,
+  action,
   children,
 }: {
   title: string;
@@ -12,6 +13,8 @@ export function Page({
   backTo?: string;
   /** Reicht die Herkunft an die übergeordnete Seite weiter (siehe `useBackTo`) */
   backState?: unknown;
+  /** Schaltfläche rechts neben der Überschrift (z. B. „Anpassen“) */
+  action?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -25,7 +28,14 @@ export function Page({
           ‹ Zurück
         </Link>
       )}
-      <h1 className="mb-4 text-2xl font-bold">{title}</h1>
+      {action ? (
+        <div className="mb-4 flex items-center gap-3">
+          <h1 className="min-w-0 flex-1 text-2xl font-bold">{title}</h1>
+          {action}
+        </div>
+      ) : (
+        <h1 className="mb-4 text-2xl font-bold">{title}</h1>
+      )}
       {children}
     </div>
   );

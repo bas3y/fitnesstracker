@@ -176,8 +176,8 @@ export function SupplementForm({
                 onChange={(trainingKind) => change({ trainingKind })}
               />
               <p className={HINT}>
-                Trainingstag = an dem Tag gibt es ein Workout. Ausdauer zählt, wenn es eine
-                Ausdauerübung enthält.
+                Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit. Ausdauer
+                zählt bei einer Einheit (außer Mobility) oder einem Workout mit Ausdauerübung.
               </p>
             </>
           )}

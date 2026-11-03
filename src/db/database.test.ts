@@ -458,7 +458,47 @@ describe('AppDatabase-Migration', () => {
     });
     expect(await v16.mealEntries.count()).toBe(0);
     expect(await v16.savedMeals.count()).toBe(0);
-    expect(v16.verno).toBe(16);
+    expect(v16.verno).toBeGreaterThanOrEqual(16);
     await v16.delete();
+  });
+
+  it('Version 17 ergänzt Ausdauer, Ausrüstung und die Kacheln der Trainingsseite', async () => {
+    const name = 'migration-test-v17';
+    const v16 = new Dexie(name);
+    v16.version(16).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+    });
+    await v16.table('settings').add({ id: 'app-settings', name: 'Alex', distanceUnit: 'mi' });
+    await v16.table('workouts').add({ id: 'w1', startedAt: '2026-11-01T10:00:00.000Z' });
+    v16.close();
+
+    const v17 = new AppDatabase(name);
+    expect(await v17.settings.get('app-settings')).toMatchObject({
+      name: 'Alex',
+      distanceUnit: 'mi',
+      trainingTiles: ['run', 'ride', 'swim', 'hike', 'mobility', 'other'],
+    });
+    expect(await v17.workouts.get('w1')).toMatchObject({ startedAt: '2026-11-01T10:00:00.000Z' });
+    expect(await v17.enduranceSessions.count()).toBe(0);
+    expect(await v17.gear.count()).toBe(0);
+    expect(v17.verno).toBe(17);
+    await v17.delete();
   });
 });

@@ -8,6 +8,7 @@ import {
 } from './backup';
 import { getBodyMeasurement, getDailyLog, setBodyMeasure, updateDailyLog } from './daily';
 import { db } from './database';
+import { createEnduranceSession, createGear, loadEnduranceSession, loadGear } from './endurance';
 import { createUserExercise } from './exercises';
 import { createRecipe, createUserFood, setFoodFavorite } from './foods';
 import { addMealEntry, listMealEntries, listSavedMeals, saveMeal } from './nutrition';
@@ -21,13 +22,19 @@ import {
   EMPTY_HABIT_INPUT,
   EMPTY_SUPPLEMENT_INPUT,
   NUTRITION_GOAL_DEFAULTS,
+  type EnduranceSessionInput,
 } from './schemas';
 import { createSupplement, loadSupplement, setSupplementTaken } from './supplements';
 import { applySeed, SEED_VERSION } from './seed';
 import { getSettings, updateSettings } from './settings';
 import { resetDatabase } from './testUtils';
 import { createTodo, listTodos } from './todos';
-import { DEFAULT_DASHBOARD_WIDGETS, DEFAULT_QUICK_ACTIONS, type Exercise } from './types';
+import {
+  DEFAULT_DASHBOARD_WIDGETS,
+  DEFAULT_QUICK_ACTIONS,
+  ENDURANCE_SPORTS,
+  type Exercise,
+} from './types';
 import {
   addWorkoutExercise,
   completeSet,
@@ -40,6 +47,24 @@ import {
 beforeEach(resetDatabase);
 
 const EXERCISE = { ...EMPTY_EXERCISE_INPUT, name: 'Testübung', primaryMuscles: ['chest' as const] };
+const RUN_INPUT: EnduranceSessionInput = {
+  sport: 'run',
+  title: '',
+  startedAt: '2026-11-03T17:00:00.000Z',
+  durationSeconds: 1800,
+  distanceMeters: 6000,
+  avgHeartRate: null,
+  maxHeartRate: null,
+  elevationGainMeters: null,
+  calories: null,
+  rating: null,
+  notes: '',
+  gearId: null,
+  poolLengthMeters: null,
+  laps: null,
+  swimStroke: null,
+  swolf: null,
+};
 
 async function validBackup() {
   await updateSettings({ name: 'Alex', bodyWeightKg: 80 });
@@ -82,6 +107,8 @@ describe('parseBackup', () => {
         supplementIntakes: 0,
         mealEntries: 0,
         savedMeals: 0,
+        enduranceSessions: 0,
+        gear: 0,
       });
   });
 
@@ -424,6 +451,51 @@ describe('Ernährung im Backup', () => {
     await addMealEntry('2026-11-02', 'snack', food.id, { grams: 100, portion: null });
     const data = await validBackup();
     data.tables.mealEntries[0].meal = 'brunch';
+    expect(parseBackup(data).ok).toBe(false);
+  });
+
+  it('stellt Ausdauer-Einheiten, Ausrüstung und Kacheln wieder her', async () => {
+    const shoe = await createGear({
+      name: 'Pegasus',
+      sports: ['run'],
+      initialDistanceMeters: 50_000,
+      warnDistanceMeters: 700_000,
+      notes: '',
+    });
+    const session = await createEnduranceSession({ ...RUN_INPUT, gearId: shoe.id });
+    await updateSettings({ trainingTiles: ['swim', 'run'] });
+    const data = await validBackup();
+    await resetDatabase();
+
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    await restoreBackup(result.backup);
+    expect(await loadEnduranceSession(session.id)).toMatchObject({
+      distanceMeters: 6000,
+      gearId: shoe.id,
+      source: 'manual',
+    });
+    expect(await loadGear(shoe.id)).toMatchObject({ initialDistanceMeters: 50_000 });
+    expect((await getSettings())?.trainingTiles).toEqual(['swim', 'run']);
+  });
+
+  it('ergänzt in Sicherungen aus DB-Version 16 Tabellen und Kacheln', async () => {
+    const data = await validBackup();
+    data.dbVersion = 16;
+    delete data.tables.enduranceSessions;
+    delete data.tables.gear;
+    delete data.tables.settings[0].trainingTiles;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.enduranceSessions).toEqual([]);
+    expect(result.backup.tables.gear).toEqual([]);
+    expect(result.backup.tables.settings[0]!.trainingTiles).toEqual([...ENDURANCE_SPORTS]);
+  });
+
+  it('lehnt unbekannte Sportarten ab', async () => {
+    await createEnduranceSession(RUN_INPUT);
+    const data = await validBackup();
+    data.tables.enduranceSessions[0].sport = 'curling';
     expect(parseBackup(data).ok).toBe(false);
   });
 });

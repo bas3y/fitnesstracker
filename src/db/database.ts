@@ -7,11 +7,14 @@ import {
 import {
   DEFAULT_DASHBOARD_WIDGETS,
   DEFAULT_QUICK_ACTIONS,
+  ENDURANCE_SPORTS,
   LEGACY_DASHBOARD_WIDGETS,
   type BodyMeasurement,
   type DailyLog,
+  type EnduranceSession,
   type Exercise,
   type Food,
+  type Gear,
   type Habit,
   type HabitCheck,
   type MealEntry,
@@ -50,6 +53,8 @@ export class AppDatabase extends Dexie {
   supplementIntakes!: Table<SupplementIntake, string>;
   mealEntries!: Table<MealEntry, string>;
   savedMeals!: Table<SavedMeal, string>;
+  enduranceSessions!: Table<EnduranceSession, string>;
+  gear!: Table<Gear, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -309,6 +314,20 @@ export class AppDatabase extends Dexie {
             };
           });
       });
+    // Ausdauer-Einheiten, Ausrüstung, Kacheln der Trainingsseite
+    this.version(17)
+      .stores({
+        enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+        gear: 'id, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.trainingTiles ??= [...ENDURANCE_SPORTS];
+          }),
+      );
   }
 }
 

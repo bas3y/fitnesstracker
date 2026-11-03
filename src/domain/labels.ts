@@ -1,13 +1,32 @@
 import type {
   BodyMeasure,
   DashboardWidget,
+  EnduranceSport,
   Equipment,
   ExerciseCategory,
   FoodCategory,
   MealType,
   MuscleGroup,
   QuickAction,
+  SwimStroke,
 } from '../db/types';
+
+export const ENDURANCE_SPORT_LABELS: Record<EnduranceSport, { name: string; icon: string }> = {
+  run: { name: 'Laufen', icon: '🏃' },
+  ride: { name: 'Radfahren', icon: '🚴' },
+  swim: { name: 'Schwimmen', icon: '🏊' },
+  hike: { name: 'Wandern', icon: '🥾' },
+  mobility: { name: 'Mobility & Yoga', icon: '🧘' },
+  other: { name: 'Sonstiges', icon: '⏱️' },
+};
+
+export const SWIM_STROKE_LABELS: Record<SwimStroke, string> = {
+  freestyle: 'Kraul',
+  breaststroke: 'Brust',
+  backstroke: 'Rücken',
+  butterfly: 'Delfin',
+  mixed: 'Gemischt',
+};
 
 export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hint: string }> = {
   quickActions: { name: 'Schnellzugriff', hint: 'Buttons für Training, Wasser, Gewicht und mehr' },
@@ -40,6 +59,7 @@ export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: stri
   measurements: { name: 'Körpermaße', icon: '📏' },
   supplements: { name: 'Supplements', icon: '💊' },
   meal: { name: 'Mahlzeit', icon: '🍽️' },
+  endurance: { name: 'Ausdauer', icon: '🏃' },
 };
 
 export const BODY_MEASURE_LABELS: Record<BodyMeasure, string> = {

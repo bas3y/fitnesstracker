@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  ENDURANCE_SPORTS,
   EQUIPMENT,
   EXERCISE_CATEGORIES,
   FOOD_CATEGORIES,
@@ -10,8 +11,10 @@ import {
   SUPPLEMENT_PERIODS,
   SUPPLEMENT_SCHEDULES,
   SUPPLEMENT_TIMINGS,
+  SWIM_STROKES,
   TODO_PRIORITIES,
   TRAINING_KINDS,
+  type EnduranceSport,
   type NutritionGoals,
 } from './types';
 
@@ -463,6 +466,89 @@ export const savedMealNameSchema = z
   .trim()
   .min(1, 'Bitte einen Namen eingeben')
   .max(80, 'Höchstens 80 Zeichen');
+
+// ---------- Ausdauer ----------
+
+export const MAX_SESSION_SECONDS = 48 * 3600;
+export const MAX_SESSION_METERS = 1_000_000;
+export const MIN_HEART_RATE = 30;
+export const MAX_HEART_RATE = 250;
+export const MAX_ELEVATION_METERS = 20_000;
+export const MAX_SESSION_KCAL = 20_000;
+export const MAX_POOL_METERS = 100;
+export const MAX_LAPS = 10_000;
+export const MAX_SWOLF = 300;
+export const MAX_GEAR_METERS = 100_000_000;
+
+/** Sportarten mit Strecke (Mobility nur mit Dauer) */
+export const DISTANCE_SPORTS: readonly EnduranceSport[] = ['run', 'ride', 'swim', 'hike', 'other'];
+
+const heartRate = z.number().int().min(MIN_HEART_RATE).max(MAX_HEART_RATE).nullable();
+
+/** Felder einer Einheit ohne Metadaten und Herkunft – für Formular und Backup */
+export const enduranceSessionFieldsSchema = z.object({
+  sport: z.enum(ENDURANCE_SPORTS),
+  title: z.string().trim().max(80, 'Titel höchstens 80 Zeichen'),
+  startedAt: z.iso.datetime({ message: 'Ungültiger Beginn' }),
+  durationSeconds: z
+    .number()
+    .int()
+    .min(1, 'Bitte eine Dauer eingeben')
+    .max(MAX_SESSION_SECONDS, 'Höchstens 48 Stunden'),
+  distanceMeters: z.number().positive().max(MAX_SESSION_METERS).nullable(),
+  avgHeartRate: heartRate,
+  maxHeartRate: heartRate,
+  elevationGainMeters: z.number().min(0).max(MAX_ELEVATION_METERS).nullable(),
+  calories: z.number().int().min(0).max(MAX_SESSION_KCAL).nullable(),
+  rating: rating.nullable(),
+  notes: z.string().trim().max(1000, 'Notiz höchstens 1000 Zeichen'),
+  gearId: z.string().min(1).nullable(),
+  poolLengthMeters: z.number().positive().max(MAX_POOL_METERS).nullable(),
+  laps: z.number().int().min(1).max(MAX_LAPS).nullable(),
+  swimStroke: z.enum(SWIM_STROKES).nullable(),
+  swolf: z.number().int().min(1).max(MAX_SWOLF).nullable(),
+});
+
+/** Felder, die zur Sportart nicht passen, werden geleert; Schwimmen: Bahnen × Bahnlänge = Distanz */
+export const enduranceSessionInputSchema = enduranceSessionFieldsSchema
+  .refine(
+    (input) =>
+      input.avgHeartRate === null ||
+      input.maxHeartRate === null ||
+      input.maxHeartRate >= input.avgHeartRate,
+    { path: ['maxHeartRate'], message: 'Max-Puls kann nicht unter dem Durchschnitt liegen' },
+  )
+  .transform((input) => {
+    const swim = input.sport === 'swim';
+    const hasDistance = DISTANCE_SPORTS.includes(input.sport);
+    const laps = swim ? input.laps : null;
+    const poolLengthMeters = swim ? input.poolLengthMeters : null;
+    const lapDistance = laps !== null && poolLengthMeters !== null ? laps * poolLengthMeters : null;
+    return {
+      ...input,
+      distanceMeters: hasDistance ? (lapDistance ?? input.distanceMeters) : null,
+      elevationGainMeters: hasDistance && !swim ? input.elevationGainMeters : null,
+      gearId: hasDistance ? input.gearId : null,
+      poolLengthMeters,
+      laps,
+      swimStroke: swim ? input.swimStroke : null,
+      swolf: swim ? input.swolf : null,
+    };
+  });
+
+export type EnduranceSessionInput = z.input<typeof enduranceSessionInputSchema>;
+export type EnduranceSessionValues = z.output<typeof enduranceSessionInputSchema>;
+
+export const gearFieldsSchema = z.object({
+  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(80, 'Höchstens 80 Zeichen'),
+  sports: z.array(z.enum(ENDURANCE_SPORTS)).min(1, 'Mindestens eine Sportart wählen'),
+  initialDistanceMeters: z.number().min(0).max(MAX_GEAR_METERS),
+  warnDistanceMeters: z.number().positive().max(MAX_GEAR_METERS).nullable(),
+  notes: z.string().trim().max(500, 'Notiz höchstens 500 Zeichen'),
+});
+
+export type GearInput = z.input<typeof gearFieldsSchema>;
+export type GearValues = z.output<typeof gearFieldsSchema>;
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 

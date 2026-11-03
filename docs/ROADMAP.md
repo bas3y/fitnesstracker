@@ -22,7 +22,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 11 – Supplements
 - [x] Schritt 12 – Ernährung (MVP 2 fertig)
 - [x] Schritt 12b – Alltag übersichtlicher (Kacheln + Unterseiten)
-- [ ] Schritt 13 – Training-Kacheln & Ausdauer manuell
+- [x] Schritt 13 – Training-Kacheln & Ausdauer manuell
 - [ ] Schritt 14 – Import von Einheiten (Uhr, Strava)
 - [ ] Schritt 14b – Import von Gesundheitsdaten
 - [ ] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
@@ -662,8 +662,27 @@ Mit dem Nutzer abgestimmt (nach Schritt 12b):
 
 **Notizen:**
 - Gebaut:
+  - Dexie v17: Tabellen `enduranceSessions` (`sport`, `title`, `startedAt`, `durationSeconds`, `distanceMeters`, `avgHeartRate`/`maxHeartRate`, `elevationGainMeters`, `calories`, `rating`, `notes`, `gearId`, Schwimmen `poolLengthMeters`/`laps`/`swimStroke`/`swolf`, `source: 'manual' | 'import'`, `importInfo` für Schritt 14) und `gear` (`name`, `sports`, `initialDistanceMeters`, `warnDistanceMeters`, `notes`, `archivedAt`). `Settings.trainingTiles` (Standard alle 6). Backup-Defaults, Sicherungen aus v1–v16 bleiben importierbar.
+  - `src/db/schemas.ts`: `enduranceSessionInputSchema` (leert Felder, die zur Sportart nicht passen; Schwimmen: Distanz = Bahnen × Bahnlänge), `gearFieldsSchema`, `DISTANCE_SPORTS`. `src/db/endurance.ts`: Einheiten anlegen/ändern/löschen (`createEnduranceSession(input, origin)` nimmt für Schritt 14 schon `source`/`importInfo`), Ausrüstung anlegen/ändern/ausmustern/löschen (Löschen entfernt die Zuordnung in den Einheiten).
+  - `src/domain/endurance.ts`: Pace/Geschwindigkeit je Sportart (`PACE_KINDS`, `formatPace`), `formatDistance`, Zeiträume (`weekRange`, `monthRange`, `sessionsInRange`, `sportWeekTotals`), Dauer-Eingabe (`splitDuration`/`joinDuration`), Ausrüstung (`gearUsage`, `isGearWorn`, `gearOptions`, `suggestGearId`, `wornGear`). Labels `ENDURANCE_SPORT_LABELS`, `SWIM_STROKE_LABELS`.
+  - **Trainingsseite als Übersicht:** „🏋️ Krafttraining“ (n Workouts diese Woche + `TrainingStartCard`), darunter Kacheln im 2er-Raster (Liste „Aktivitäten“) für Laufen, Radfahren, Schwimmen, Wandern, Mobility & Yoga, Sonstiges mit Wochenstand, darunter Pläne/Verlauf/Übungen/Ausrüstung. „Anpassen“: Kacheln ziehen, ✕ ausblenden, „Weitere Kacheln“ (atomar über `updateSettingsFrom`). `Tile` liegt jetzt in `src/components/` (auch Alltag), `Page` hat die Prop `action`.
+  - UI in `src/features/endurance/`: `ActivityPage` (`/training/activity/:sport`: Woche/Monat, Warnung bei abgelaufener Ausrüstung, Liste), `SessionForm` + `SessionEditPage` (`/training/activity/:sport/new`, `/training/sessions/:id/edit`; Dauer als h/min/s, Distanz in km/mi, Pace live, Schwimmen mit Bahnlänge/Bahnen/Stil/SWOLF, Puls, Höhenmeter, Kalorien, Bewertung, Ausrüstung, Notiz), `SessionDetailPage` (`/training/sessions/:id`), `GearListPage`/`GearDetailPage`/`GearEditPage`/`GearForm` (`/training/gear[...]`, Kilometerstand mit Balken bis zur Warnung, letzte Einheiten, Ausmustern, Löschen).
+  - `loadTrainingDays` zählt Ausdauer-Einheiten mit (offene Punkte aus Schritt 11/12 erledigt): für Supplements („Ausdauer“, „Vor/Nach dem Training“) und als Trainingstag für die Ernährungsziele.
+  - Schnellzugriff „🏃 Ausdauer“ (Dialog mit den Sportarten, danach zurück zur Startseite mit Hinweis). Hinweis an Ausdauerübungen im Krafttraining auf die neue Erfassung.
+  - Tests: `src/domain/endurance.test.ts`, `src/db/endurance.test.ts` (inkl. Trainingstage und Ernährung), Migration v16→v17, Backup (Wiederherstellung, aus v16, unbekannte Sportart). E2E `e2e/endurance.spec.ts` offline in beiden Viewports (Kacheln, Schuh mit Warnschwelle, Lauf erfassen/bearbeiten/löschen, Neuladen, Schwimmen, Wochenstand, Anpassen mit Ziehen, Schnellzugriff, Trainingstag in der Ernährung). 70/70 E2E grün.
 - Abweichungen:
+  - Pace: Laufen/Wandern Zeit pro km bzw. Meile, Radfahren/Sonstiges km/h bzw. mph, Schwimmen Zeit pro 100 m. Mobility & Yoga hat nur Dauer (keine Strecke, Höhenmeter, Ausrüstung).
+  - Schwimmen immer in Metern (auch bei Meilen als Einheit), Höhenmeter immer in m. SWOLF wird von der Uhr abgelesen und eingetragen (Züge pro Bahn werden nicht erfasst).
+  - Trainingstag: Ende einer Einheit = Beginn + Dauer. Mobility & Yoga zählt nur für „Jedes Training“, nicht als Ausdauer (wie reine Beweglichkeit im Workout).
+  - Neue Einheit: Beginn vor 30 min (auf 5 min abgerundet), Dauer 30 min. Vorausgewählt ist die zuletzt bei der Sportart genutzte aktive Ausrüstung, sonst die einzige passende. Neue Ausrüstung: Warnung 700 km für Laufschuhe vorbelegt.
+  - Titel ist optional (leer = Name der Sportart), damit importierte Einheiten in Schritt 14 ihren Namen behalten können.
+  - Ausrüstung hat keine Art (Schuh/Rad), sondern Sportarten, bei denen sie zur Auswahl steht. Ausmustern statt Archiv-Wort, weil es bei Ausrüstung üblich ist; ausgemusterte bleibt an alten Einheiten sichtbar.
+  - Krafttraining ist keine verschiebbare Kachel, sondern steht immer oben. Das Hauptbundle bleibt bei ~293 KB (Ausdauer-Seiten je eigener Chunk).
 - Offene Punkte:
+  - Dashboard-Widget, Heatmap und `weekSummary` kennen Ausdauer noch nicht (Schritt 15). CSV-Export enthält keine Ausdauer-Einheiten.
+  - Einheiten lassen sich nur einzeln öffnen, die Liste auf der Aktivitätsseite hat keinen Filter/keine Monatsgruppen (bei vielen Einheiten nach Schritt 14 ergänzen).
+  - Kalorien der Einheit fließen noch nicht in die Ernährung (Schritt 15).
+  - Dauer-Felder (`inputMode="numeric"`), Datums-/Zeitfelder und Kacheln auf dem echten Handy prüfen.
 
 ### Schritt 14 – Import von Einheiten (Uhr, Strava)
 **Ziel:** Einheiten aller Sportarten aus Sportuhr oder Strava übernehmen, komplett lokal geparst.

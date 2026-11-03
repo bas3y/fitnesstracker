@@ -29,6 +29,29 @@ const HabitDetailPage = lazyPage(
 const HabitEditPage = lazyPage(() => import('./features/daily/HabitEditPage'), 'HabitEditPage');
 const HabitListPage = lazyPage(() => import('./features/daily/HabitListPage'), 'HabitListPage');
 const TodoPage = lazyPage(() => import('./features/daily/TodoPage'), 'TodoPage');
+const ActivityPage = lazyPage(() => import('./features/endurance/ActivityPage'), 'ActivityPage');
+const GearCreatePage = lazyPage(
+  () => import('./features/endurance/GearEditPage'),
+  'GearCreatePage',
+);
+const GearDetailPage = lazyPage(
+  () => import('./features/endurance/GearDetailPage'),
+  'GearDetailPage',
+);
+const GearEditPage = lazyPage(() => import('./features/endurance/GearEditPage'), 'GearEditPage');
+const GearListPage = lazyPage(() => import('./features/endurance/GearListPage'), 'GearListPage');
+const SessionCreatePage = lazyPage(
+  () => import('./features/endurance/SessionEditPage'),
+  'SessionCreatePage',
+);
+const SessionDetailPage = lazyPage(
+  () => import('./features/endurance/SessionDetailPage'),
+  'SessionDetailPage',
+);
+const SessionEditPage = lazyPage(
+  () => import('./features/endurance/SessionEditPage'),
+  'SessionEditPage',
+);
 const FoodCreatePage = lazyPage(
   () => import('./features/nutrition/FoodEditPage'),
   'FoodCreatePage',
@@ -117,6 +140,14 @@ export function App() {
           <Route path="training/plans/new" element={<PlanNewPage />} />
           <Route path="training/plans/:id" element={<PlanDetailPage />} />
           <Route path="training/plans/:id/days/:dayId" element={<PlanDayPage />} />
+          <Route path="training/activity/:sport" element={<ActivityPage />} />
+          <Route path="training/activity/:sport/new" element={<SessionCreatePage />} />
+          <Route path="training/sessions/:id" element={<SessionDetailPage />} />
+          <Route path="training/sessions/:id/edit" element={<SessionEditPage />} />
+          <Route path="training/gear" element={<GearListPage />} />
+          <Route path="training/gear/new" element={<GearCreatePage />} />
+          <Route path="training/gear/:id" element={<GearDetailPage />} />
+          <Route path="training/gear/:id/edit" element={<GearEditPage />} />
           <Route path="daily" element={<DailyPage />} />
           <Route path="daily/history" element={<DailyHistoryPage />} />
           <Route path="daily/body" element={<BodyPage />} />

@@ -7,13 +7,18 @@ import { Stepper } from '../../components/Stepper';
 import { showToast } from '../../components/toastStore';
 import { addWater, updateDailyLog } from '../../db/daily';
 import { MAX_BODY_WEIGHT_KG, MAX_STEPS, MIN_BODY_WEIGHT_KG } from '../../db/schemas';
-import type { DayKey, QuickAction, Settings } from '../../db/types';
+import { ENDURANCE_SPORTS, type DayKey, type QuickAction, type Settings } from '../../db/types';
 import { formatDecimal } from '../../domain/format';
-import { DASHBOARD_WIDGET_LABELS, QUICK_ACTION_LABELS } from '../../domain/labels';
+import {
+  DASHBOARD_WIDGET_LABELS,
+  ENDURANCE_SPORT_LABELS,
+  QUICK_ACTION_LABELS,
+} from '../../domain/labels';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { MEASUREMENTS_PATH } from '../daily/paths';
 import { TodoAddForm } from '../daily/TodoParts';
 import { useDailyLog } from '../daily/useDaily';
+import { newSessionPath } from '../endurance/paths';
 import { NUTRITION_PATH } from '../nutrition/paths';
 import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { useActiveWorkout } from '../training/useWorkouts';
@@ -23,7 +28,7 @@ const FROM_DASHBOARD: BackState = { from: '/' };
 const TILE =
   'flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl bg-slate-100 px-2 py-2 text-center text-sm font-semibold active:bg-slate-200 dark:bg-slate-700 dark:active:bg-slate-600';
 
-type OpenDialog = 'weight' | 'steps' | 'todo' | null;
+type OpenDialog = 'weight' | 'steps' | 'todo' | 'endurance' | null;
 
 /** Widget „Schnellzugriff“: Buttons laut `Settings.quickActions` */
 export function QuickActions({ settings, today }: { settings: Settings; today: DayKey }) {
@@ -96,6 +101,7 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
       case 'weight':
       case 'steps':
       case 'todo':
+      case 'endurance':
         return (
           <button type="button" className={TILE} onClick={() => setOpen(action)}>
             {tile(action)}
@@ -157,6 +163,22 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
       {open === 'todo' && (
         <Dialog title="Neue Aufgabe" onClose={() => setOpen(null)}>
           <TodoAddForm today={today} withPicker onAdded={() => setOpen(null)} />
+        </Dialog>
+      )}
+      {open === 'endurance' && (
+        <Dialog title="Ausdauer erfassen" onClose={() => setOpen(null)}>
+          <ul aria-label="Sportarten" className="grid grid-cols-2 gap-2">
+            {ENDURANCE_SPORTS.map((sport) => (
+              <li key={sport} className="grid">
+                <Link to={newSessionPath(sport)} state={FROM_DASHBOARD} className={TILE}>
+                  <span aria-hidden="true" className="text-2xl">
+                    {ENDURANCE_SPORT_LABELS[sport].icon}
+                  </span>
+                  <span>{ENDURANCE_SPORT_LABELS[sport].name}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </Dialog>
       )}
     </Card>

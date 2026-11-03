@@ -145,6 +145,11 @@ export function WorkoutExerciseCard({
       {header}
 
       {target && <p className="text-sm text-slate-500 dark:text-slate-400">{target}</p>}
+      {exercise?.category === 'cardio' && (
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Tipp: Mit Distanz, Pace und Puls erfasst du das unter Training → Ausdauer-Kacheln.
+        </p>
+      )}
 
       {exercise && (
         <LastTime

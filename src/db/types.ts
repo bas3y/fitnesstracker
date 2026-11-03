@@ -49,6 +49,8 @@ export interface Settings extends BaseEntity {
   supplementNotificationsEnabled: boolean;
   /** Tagesziele Ernährung, getrennt nach Trainings- und Ruhetag */
   nutritionGoals: NutritionGoals;
+  /** Sichtbare Aktivitäts-Kacheln auf der Trainingsseite, in Anzeigereihenfolge */
+  trainingTiles: EnduranceSport[];
 }
 
 export const DASHBOARD_WIDGETS = [
@@ -92,6 +94,7 @@ export const QUICK_ACTIONS = [
   'measurements',
   'supplements',
   'meal',
+  'endurance',
 ] as const;
 export type QuickAction = (typeof QUICK_ACTIONS)[number];
 export const DEFAULT_QUICK_ACTIONS: readonly QuickAction[] = [
@@ -546,4 +549,66 @@ export interface NutritionGoals {
   /** Tage mit Workout */
   training: NutritionGoal;
   rest: NutritionGoal;
+}
+
+export const ENDURANCE_SPORTS = ['run', 'ride', 'swim', 'hike', 'mobility', 'other'] as const;
+export type EnduranceSport = (typeof ENDURANCE_SPORTS)[number];
+
+export const SWIM_STROKES = [
+  'freestyle',
+  'breaststroke',
+  'backstroke',
+  'butterfly',
+  'mixed',
+] as const;
+export type SwimStroke = (typeof SWIM_STROKES)[number];
+
+export const ENDURANCE_SOURCES = ['manual', 'import'] as const;
+export type EnduranceSource = (typeof ENDURANCE_SOURCES)[number];
+
+/** Herkunft einer importierten Einheit (Schritt 14) */
+export interface EnduranceImportInfo {
+  /** z. B. `fit`, `gpx`, `tcx` */
+  format: string;
+  fileName: string | null;
+  device: string | null;
+}
+
+/** Ausdauer-Einheit (Laufen, Rad …); Werte intern in Metern/Sekunden */
+export interface EnduranceSession extends BaseEntity {
+  sport: EnduranceSport;
+  /** Leer = Name der Sportart */
+  title: string;
+  startedAt: Timestamp;
+  durationSeconds: number;
+  distanceMeters: number | null;
+  avgHeartRate: number | null;
+  maxHeartRate: number | null;
+  elevationGainMeters: number | null;
+  calories: number | null;
+  /** 1–5 */
+  rating: number | null;
+  notes: string;
+  gearId: string | null;
+  // Nur Schwimmen
+  poolLengthMeters: number | null;
+  laps: number | null;
+  swimStroke: SwimStroke | null;
+  swolf: number | null;
+  source: EnduranceSource;
+  importInfo: EnduranceImportInfo | null;
+}
+
+/** Ausrüstung (z. B. Laufschuhe) mit Kilometerstand */
+export interface Gear extends BaseEntity {
+  name: string;
+  /** Sportarten, bei denen die Ausrüstung zur Auswahl steht */
+  sports: EnduranceSport[];
+  /** Strecke vor dem Erfassen in der App */
+  initialDistanceMeters: number;
+  /** Warnung ab dieser Gesamtstrecke; `null` = keine */
+  warnDistanceMeters: number | null;
+  notes: string;
+  /** Ausgemustert = nicht mehr zur Auswahl, Einheiten behalten sie */
+  archivedAt: Timestamp | null;
 }

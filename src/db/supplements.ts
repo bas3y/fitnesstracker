@@ -1,4 +1,5 @@
 import { dayKey } from '../domain/daily';
+import { sessionEnd } from '../domain/endurance';
 import {
   isSupplementHabitCandidate,
   supplementsFromHabit,
@@ -60,13 +61,15 @@ export async function loadSupplement(id: string): Promise<LoadedSupplement | nul
 }
 
 /**
- * Tage mit Training (laufende und beendete Workouts). Ausdauer = Workout mit Ausdauerübung,
- * Kraft = Workout mit Kraftübung oder noch ohne Übung. Schritt 13 ergänzt Ausdauer-Einheiten.
+ * Tage mit Training: laufende und beendete Workouts sowie Ausdauer-Einheiten. Kraft = Workout mit
+ * Kraftübung oder noch ohne Übung, Ausdauer = Workout mit Ausdauerübung oder Einheit außer Mobility
+ * (zählt nur für „Jedes Training“).
  */
 export async function loadTrainingDays(): Promise<Map<DayKey, TrainingDay>> {
-  const workouts = (await listActive(db.workouts)).sort((a, b) =>
-    a.startedAt.localeCompare(b.startedAt),
-  );
+  const [workouts, sessions] = await Promise.all([
+    listActive(db.workouts),
+    listActive(db.enduranceSessions),
+  ]);
   const items = await db.workoutExercises
     .where('workoutId')
     .anyOf(workouts.map((workout) => workout.id))
@@ -74,18 +77,34 @@ export async function loadTrainingDays(): Promise<Map<DayKey, TrainingDay>> {
     .toArray();
   const exercises = await db.exercises.bulkGet([...new Set(items.map((i) => i.exerciseId))]);
   const categories = new Map(exercises.filter((e) => !!e).map((e) => [e.id, e.category]));
+  const trainings = [
+    ...workouts.map((workout) => {
+      const kinds = items
+        .filter((item) => item.workoutId === workout.id)
+        .map((item) => categories.get(item.exerciseId));
+      return {
+        strength: kinds.length === 0 || kinds.includes('strength'),
+        endurance: kinds.includes('cardio'),
+        startedAt: workout.startedAt,
+        endedAt: workout.endedAt,
+      };
+    }),
+    ...sessions.map((session) => ({
+      strength: false,
+      endurance: session.sport !== 'mobility',
+      startedAt: session.startedAt,
+      endedAt: sessionEnd(session),
+    })),
+  ].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
   const days = new Map<DayKey, TrainingDay>();
-  for (const workout of workouts) {
-    const kinds = items
-      .filter((item) => item.workoutId === workout.id)
-      .map((item) => categories.get(item.exerciseId));
-    const date = dayKey(new Date(workout.startedAt));
+  for (const training of trainings) {
+    const date = dayKey(new Date(training.startedAt));
     const day = days.get(date);
     days.set(date, {
-      strength: !!day?.strength || kinds.length === 0 || kinds.includes('strength'),
-      endurance: !!day?.endurance || kinds.includes('cardio'),
-      startedAt: day?.startedAt ?? workout.startedAt,
-      endedAt: workout.endedAt ?? day?.endedAt ?? null,
+      strength: !!day?.strength || training.strength,
+      endurance: !!day?.endurance || training.endurance,
+      startedAt: day?.startedAt ?? training.startedAt,
+      endedAt: training.endedAt ?? day?.endedAt ?? null,
     });
   }
   return days;

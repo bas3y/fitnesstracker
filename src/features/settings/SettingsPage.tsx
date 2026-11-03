@@ -210,8 +210,8 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
     <Card title="Ernährung">
       <div className="flex flex-col gap-3">
         <p className={hint}>
-          Trainingstag = an dem Tag gibt es ein Workout. Kohlenhydrate und Fett sind optional (leer
-          = kein Ziel).
+          Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit. Kohlenhydrate
+          und Fett sind optional (leer = kein Ziel).
         </p>
         {DAY_TYPES.map(({ key, label }) => {
           const goal = settings.nutritionGoals[key];

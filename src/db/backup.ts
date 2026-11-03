@@ -6,7 +6,9 @@ import {
   DAILY_GOAL_DEFAULTS,
   dailyLogValuesSchema,
   dayKeySchema,
+  enduranceSessionFieldsSchema,
   exerciseFieldsSchema,
+  gearFieldsSchema,
   foodFieldsSchema,
   habitFieldsSchema,
   mealAmountSchema,
@@ -30,6 +32,8 @@ import {
   DASHBOARD_WIDGETS,
   DEFAULT_DASHBOARD_WIDGETS,
   DEFAULT_QUICK_ACTIONS,
+  ENDURANCE_SOURCES,
+  ENDURANCE_SPORTS,
   LOAD_TYPES,
   MEAL_TYPES,
   PLAN_SCHEDULES,
@@ -88,6 +92,8 @@ const settingsSchema = baseEntitySchema.extend({
     .default(SUPPLEMENT_SETTING_DEFAULTS.supplementNotificationsEnabled),
   // Seit DB-Version 16
   nutritionGoals: nutritionGoalsSchema.default(NUTRITION_GOAL_DEFAULTS),
+  // Seit DB-Version 17
+  trainingTiles: z.array(z.enum(ENDURANCE_SPORTS)).default([...ENDURANCE_SPORTS]),
 });
 
 const catalogEntryFields = {
@@ -226,6 +232,16 @@ const supplementIntakeSchema = baseEntitySchema.extend({
   stockDeducted: z.number().nonnegative(),
 });
 
+const enduranceSessionSchema = baseEntitySchema.extend(enduranceSessionFieldsSchema.shape).extend({
+  source: z.enum(ENDURANCE_SOURCES),
+  importInfo: z
+    .object({ format: z.string(), fileName: z.string().nullable(), device: z.string().nullable() })
+    .nullable(),
+});
+const gearSchema = baseEntitySchema.extend(gearFieldsSchema.shape).extend({
+  archivedAt: timestamp.nullable(),
+});
+
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
   app: z.literal(BACKUP_APP, { message: 'Keine Fitnesstracker-Sicherung' }),
@@ -255,6 +271,8 @@ export const backupSchema = z.object({
     supplementIntakes: z.array(supplementIntakeSchema).default([]),
     mealEntries: z.array(mealEntrySchema).default([]),
     savedMeals: z.array(savedMealSchema).default([]),
+    enduranceSessions: z.array(enduranceSessionSchema).default([]),
+    gear: z.array(gearSchema).default([]),
   }),
 });
 
@@ -280,6 +298,8 @@ export const TABLE_LABELS: Record<TableName, string> = {
   supplementIntakes: 'Supplement-Einnahmen',
   mealEntries: 'Einträge in Mahlzeiten',
   savedMeals: 'Lieblingsmahlzeiten',
+  enduranceSessions: 'Ausdauer-Einheiten',
+  gear: 'Ausrüstung',
 };
 
 export async function createBackup(): Promise<Backup> {

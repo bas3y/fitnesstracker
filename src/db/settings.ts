@@ -5,7 +5,12 @@ import {
   NUTRITION_GOAL_DEFAULTS,
   SUPPLEMENT_SETTING_DEFAULTS,
 } from './schemas';
-import { DEFAULT_DASHBOARD_WIDGETS, DEFAULT_QUICK_ACTIONS, type Settings } from './types';
+import {
+  DEFAULT_DASHBOARD_WIDGETS,
+  DEFAULT_QUICK_ACTIONS,
+  ENDURANCE_SPORTS,
+  type Settings,
+} from './types';
 
 // Feste ID statt UUID: Es gibt genau einen Einstellungs-Datensatz pro Gerät
 export const SETTINGS_ID = 'app-settings';
@@ -39,6 +44,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
     training: { ...NUTRITION_GOAL_DEFAULTS.training },
     rest: { ...NUTRITION_GOAL_DEFAULTS.rest },
   },
+  trainingTiles: [...ENDURANCE_SPORTS],
 };
 
 export function getSettings(): Promise<Settings | undefined> {

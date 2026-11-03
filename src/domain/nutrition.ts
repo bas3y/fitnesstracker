@@ -84,7 +84,7 @@ export function nutritionDay<
   return { total: sumNutrients(MEAL_TYPES.map((meal) => meals[meal].total)), meals };
 }
 
-/** Trainingstag = an dem Tag gibt es ein Workout */
+/** Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit */
 export function goalForDay(goals: NutritionGoals, isTrainingDay: boolean): NutritionGoal {
   return isTrainingDay ? goals.training : goals.rest;
 }
