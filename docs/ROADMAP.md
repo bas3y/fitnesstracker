@@ -693,6 +693,12 @@ Mit dem Nutzer abgestimmt (nach Schritt 12b):
 - **HF-Zonen:** max. HF (und ggf. Ruhepuls) in den Einstellungen, Zeit in Zonen je Einheit.
 - **Duplikate** über Startzeit + Dauer erkennen und überspringen; Import-Zusammenfassung („5 neu, 2 übersprungen“).
 - Speicherbedarf beachten (ca. 50–100 KB je Einheit mit Verlauf); Backup enthält die Verläufe.
+- **Nebenbei (Nutzerwunsch): Info „Wo liegen meine Daten?“ im Backup-Bereich der Einstellungen** (`BackupSection`), z. B. aufklappbar, kurz und verständlich:
+  - Daten liegen nur im Browser-Speicher dieses Geräts, kein automatisches Backup, keine Synchronisierung.
+  - Browserdaten löschen: nur Verlauf oder Cache ist unbedenklich, aber „Cookies und Websitedaten“ (Chrome) bzw. „Verlauf und Websitedaten“ (Safari, *ein* Knopf) löscht alles. Android: Die installierte App teilt sich den Speicher mit Chrome. iPhone: Die Startbildschirm-App hat einen eigenen Speicher, App vom Startbildschirm entfernen löscht die Daten, iOS kann Daten länger nicht genutzter Web-Apps entfernen.
+  - Privatmodus/Inkognito: Alles ist beim Schließen des Fensters weg → nicht verwenden.
+  - Empfehlung: zum Startbildschirm hinzufügen, regelmäßig exportieren und die Datei außerhalb des Handys ablegen (Cloud/PC), bei Verlust in der App importieren. Was nach dem letzten Export eingetragen wurde, fehlt dann.
+  - Status „dauerhafter Speicher“ (`navigator.storage.persisted()`) dort mit anzeigen, falls noch nicht sichtbar.
 
 **Notizen:**
 - Gebaut:
