@@ -22,9 +22,10 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 11 – Supplements
 - [x] Schritt 12 – Ernährung (MVP 2 fertig)
 - [x] Schritt 12b – Alltag übersichtlicher (Kacheln + Unterseiten)
-- [ ] Schritt 13 – Ausdauer manuell
-- [ ] Schritt 14 – FIT/GPX/TCX-Import
-- [ ] Schritt 15 – Ausdauer-Statistiken
+- [ ] Schritt 13 – Training-Kacheln & Ausdauer manuell
+- [ ] Schritt 14 – Import von Einheiten (Uhr, Strava)
+- [ ] Schritt 14b – Import von Gesundheitsdaten
+- [ ] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
 - [ ] Schritt 16 – Ziele & Rückblicke
 - [ ] Schritt 17 – Self-Improvement
 - [ ] Schritt 18 – Motivation & Trainingsblöcke
@@ -640,26 +641,61 @@ Mit dem Nutzer abgestimmt (nach Schritt 12):
 
 ---
 
-## Phase 3 – Ausdauer (grob, wird zu Beginn des Schritts detailliert)
+## Phase 3 – Ausdauer & Import
 
-### Schritt 13 – Ausdauer manuell
-Aktivitäten Laufen, Rad, Schwimmen, Wandern, Mobility/Yoga, Sonstiges: Distanz, Zeit, Pace/Geschwindigkeit, Ø-/Max-HF, Höhenmeter. Schwimmen: Bahnlänge, Bahnen, Stil, SWOLF. Schuhe mit Kilometerstand.
+Mit dem Nutzer abgestimmt (nach Schritt 12b):
+- **Kein GPS-Tracking und keine Karten in der App.** Strecken kommen ausschließlich per Import (Sportuhr, Strava). Grund: Eine PWA kann im Hintergrund kein GPS aufzeichnen (iPhone stoppt bei gesperrtem Bildschirm sofort), Karten und Routing bräuchten Internet. Beides steht im Ideen-Parkplatz.
+- **Geräte:** Nutzer hat iPhone + Garmin, es soll aber geräteunabhängig funktionieren (Standardformate FIT/GPX/TCX, Strava-Export, Apple-Health-Export).
+- **Konflikte:** Manuell eingetragene Werte bleiben, der Import füllt nur leere Felder. **Doppelte Einheiten** (z. B. dieselbe Einheit aus Garmin und Strava) werden über Startzeit + Dauer erkannt und übersprungen.
+- Gespeichert werden nur Tageswerte und Einheiten (mit Puls-/Streckenverlauf), keine minutengenauen Ganztages-Kurven. Parser werden lazy geladen, das Hauptbundle bleibt gleich.
+
+### Schritt 13 – Training-Kacheln & Ausdauer manuell
+**Ziel:** Die Trainingsseite wird wie Alltag eine Kachel-Übersicht (anpassbar), Ausdauer-Einheiten lassen sich manuell erfassen.
+- **Training-Übersicht:** oben eine **große Kachel „Krafttraining“** (laufendes Workout bzw. nächster Plantag, Start-Button, vgl. `TrainingStartCard`), darunter **Kacheln im 2er-Raster** je Aktivität: Laufen, Rad, Schwimmen, Wandern, Mobility/Yoga, Sonstiges, mit Wochenstand (z. B. „12,4 km diese Woche“). Pläne, Übungen, Verlauf als Links darunter.
+- **Anpassbar** wie die Startseiten-Widgets (`SortableList`, `updateSettingsFrom`): Aktivitäts-Kacheln ausblenden und sortieren; sind alle ausgeblendet, steht nur Krafttraining da. Neue Einstellung mit Standard „alle sichtbar“.
+- **Aktivitäts-Unterseite:** manuell erfassen, Liste der Einheiten, Detail/Bearbeiten/Löschen.
+- **Felder:** Datum/Start, Dauer, Distanz, Pace bzw. Geschwindigkeit (berechnet, je nach Sportart), Ø-/Max-HF, Höhenmeter, Kalorien (optional), Notiz, Bewertung. Schwimmen: Bahnlänge, Bahnen, Stil, SWOLF.
+- **Schuhe** (bzw. Ausrüstung) mit Kilometerstand und Warnschwelle, einer Einheit zuordenbar, ausmustern über Archiv.
+- Neue Tabellen per Dexie-Version (Einheiten mit Feld `source: 'manual' | 'import'` und Platz für Import-Daten aus Schritt 14), Backup ergänzen.
+- `loadTrainingDays` um Ausdauer-Einheiten ergänzen (zählt für Supplements und Ernährungsziele, siehe offene Punkte Schritt 11/12).
+- Ausdauerübungen im Krafttraining (nur Dauer, siehe Schritt 4) bleiben, wie sie sind; ggf. Hinweis auf die neue Erfassung.
 
 **Notizen:**
 - Gebaut:
 - Abweichungen:
 - Offene Punkte:
 
-### Schritt 14 – FIT/GPX/TCX-Import
-Dateien vom Handy auswählen (Garmin-Export), lokal parsen (z. B. `fit-file-parser`, eigener GPX/TCX-Parser), Laps/Intervalle, HF-Zonen (max. HF in Einstellungen), Strecke als Linienzeichnung ohne Online-Karte.
+### Schritt 14 – Import von Einheiten (Uhr, Strava)
+**Ziel:** Einheiten aller Sportarten aus Sportuhr oder Strava übernehmen, komplett lokal geparst.
+- **Formate:** FIT (z. B. `fit-file-parser`), GPX, TCX, ZIP mit mehreren Dateien (Strava-Konto-Export, Garmin-Datenexport). Sportart aus der Datei auf die Aktivitäten aus Schritt 13 abbilden, Unbekanntes → Sonstiges.
+- **Wege dorthin:** Datei auswählen (überall); auf Android zusätzlich **Teilen-Ziel** im Manifest (Web Share Target, z. B. aus Garmin Connect „Exportieren → Teilen“). Kurze Anleitung in der App je Quelle (Garmin Connect Web „Original exportieren“, Strava „GPX exportieren“/Konto-Export).
+- **Inhalt:** Kennzahlen wie bei manueller Erfassung, Runden/Intervalle, Puls- und Höhenverlauf, Strecke als **Linienzeichnung ohne Karte** (SVG, kompakt gespeichert).
+- **HF-Zonen:** max. HF (und ggf. Ruhepuls) in den Einstellungen, Zeit in Zonen je Einheit.
+- **Duplikate** über Startzeit + Dauer erkennen und überspringen; Import-Zusammenfassung („5 neu, 2 übersprungen“).
+- Speicherbedarf beachten (ca. 50–100 KB je Einheit mit Verlauf); Backup enthält die Verläufe.
 
 **Notizen:**
 - Gebaut:
 - Abweichungen:
 - Offene Punkte:
 
-### Schritt 15 – Ausdauer-Statistiken
-Wochenkilometer, Pace-Entwicklung, Zeit in HF-Zonen, Integration in Dashboard und Heatmap.
+### Schritt 14b – Import von Gesundheitsdaten
+**Ziel:** Schlaf, Schritte, Ruhepuls, HRV usw. aus Uhr/Handy in den Alltag übernehmen.
+- **Quellen:** Apple-Health-Export (`export.zip` mit `export.xml`, groß → streamend parsen; enthält auch Garmin-Daten, wenn Garmin Connect mit Apple Health synchronisiert), Garmin-Datenexport (ZIP mit JSON: Schlaf, Tageswerte, HRV). Strava liefert keine Gesundheitsdaten.
+- **Nur Tageswerte:** Schritte, Schlafdauer + Phasen, Ruhepuls, HRV (Nacht-Ø), ggf. Stress. Schritte/Schlaf füllen die bestehenden `dailyLogs`-Felder (manuelle Werte bleiben), Ruhepuls/HRV/Schlafphasen als neue Felder (Dexie-Version, Backup).
+- Anzeige auf „Körper & Befinden“ und im Verlauf (`DailyHistoryPage`, Recharts lazy). Optional: Einheiten aus dem Apple-Health-Export mit übernehmen (Duplikat-Erkennung aus Schritt 14).
+- Import gedacht für „ab und zu“ (z. B. monatlich), mehrfacher Import desselben Zeitraums ist unschädlich.
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
+- Offene Punkte:
+
+### Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
+- Wochenkilometer, Pace-Entwicklung, Zeit in HF-Zonen, Integration in Dashboard (Widget) und Heatmap.
+- **Bestleistungen innerhalb von Einheiten** (schnellster 1 km/5 km/10 km/Halbmarathon aus dem Verlauf), Rekord-Toast beim Import.
+- **Teilen-Bild** (wie bei Strava): lokal per Canvas erzeugt, Strecke als Linie + Distanz/Zeit/Pace/Höhenmeter, auch als transparenter Sticker für Instagram-Stories; Teilen über Web Share API, sonst Download. Optional auch für Kraft-Workouts (Volumen, Rekorde).
+- Kalorien der Einheit für die Ernährung berücksichtigen (falls vorhanden).
 
 **Notizen:**
 - Gebaut:
@@ -740,3 +776,6 @@ Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.
 Ideen, die während der Umsetzung entstehen und keinem Schritt zugeordnet sind:
 - ~~**Exzentrik (Negativ mit mehr Gewicht)**~~ – umgesetzt in Schritt 5 (siehe Notizen dort). Ursprüngliche Idee: Manche Maschinen geben in der negativen Phase mehr Gewicht als in der positiven. Umsetzungsidee: optionaler Wert pro Satz „Negativ“ (`eccentricWeight` in kg bzw. `eccentricLevel` bei Stufe), im Satz-Editor hinter einem Chip „Exzentrik“ wie RPE/RIR; wird wie das normale Gewicht in neue Sätze übernommen und an der Übung gemerkt. Anzeige z. B. „80 kg (neg. 100 kg) × 8“. Volumen/1RM/PRs (Schritt 5/7) rechnen mit dem positiven Gewicht, Exzentrik-Gewicht nur als eigener Verlauf/PR. Dexie-Version + Backup-Defaults nötig. Passt als kleiner Zusatz zu Schritt 5 oder 6. Sonstige Geräteeinstellungen (Sitz, Polster) bleiben in der Übungsnotiz.
 - **Haptisches Feedback auf dem iPhone** (Nutzerwunsch, beim Feinschliff des Designs): iOS-Safari kann nicht vibrieren (`navigator.vibrate` fehlt). Ab iOS 18 gibt es einen Trick über einen versteckten `<input type="checkbox" switch>`, der beim Antippen ein haptisches Tick auslöst – **nur direkt bei einem Tipp** (z. B. Satz abhaken, Stepper), nicht automatisch am Ende der Pause. Eine **Mitteilung** am Pausenende wäre auf dem iPhone nur per Web-Push möglich (installierte PWA + Server), weil iOS die App im Hintergrund anhält → erst mit Server (Phase 6). Bis dahin: Ton + gut sichtbare Pausenleiste bei geöffneter App.
+- **GPS-Tracking mit dem Handy** (beim Planen von Phase 3 verworfen): Eine PWA zeichnet nur bei eingeschaltetem Bildschirm auf (Wake Lock, Tastensperre, Lücken erkennen wären möglich). Echtes Hintergrund-Tracking nur als native App (z. B. Capacitor, App Store 99 €/Jahr). Bis dahin per Import (Schritt 14).
+- **Karten, Routenplaner, Rennsimulation** (beim Planen von Phase 3 verworfen): Karte über MapLibre + OpenFreeMap (nur online), Routing über BRouter, GPX der Rennstrecke importieren, Pace-Plan mit Steigungsanpassung, Pace-Band, GPX-Export für die Uhr, Heatmap aller Strecken. Bräuchte eine Ausnahme vom Offline-Prinzip.
+- **Intervalltraining mit Ansagen** (z. B. 6 × 400 m), nur sinnvoll zusammen mit GPS-Tracking.
