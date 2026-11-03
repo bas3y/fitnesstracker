@@ -683,6 +683,7 @@ Mit dem Nutzer abgestimmt (nach Schritt 12b):
   - Einheiten lassen sich nur einzeln öffnen, die Liste auf der Aktivitätsseite hat keinen Filter/keine Monatsgruppen (bei vielen Einheiten nach Schritt 14 ergänzen).
   - Kalorien der Einheit fließen noch nicht in die Ernährung (Schritt 15).
   - Dauer-Felder (`inputMode="numeric"`), Datums-/Zeitfelder und Kacheln auf dem echten Handy prüfen.
+- **Zwischenpush nach Schritt 13 (Nutzerwunsch):** Stand gepusht, damit der Nutzer auf dem Handy schon echte Trainings- und Tageswerte sammelt und die Übersichten mit Daten bewerten kann. Ab jetzt liegen **echte Daten auf dem Handy**: Schemaänderungen nur per Dexie-Version mit Upgrade (wie bisher), vor größeren Updates an ein Backup erinnern. Rückmeldungen aus dem Gebrauch ggf. als eigener Zwischenschritt (z. B. 13b) einplanen.
 
 ### Schritt 14 – Import von Einheiten (Uhr, Strava)
 **Ziel:** Einheiten aller Sportarten aus Sportuhr oder Strava übernehmen, komplett lokal geparst.
