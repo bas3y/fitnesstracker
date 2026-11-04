@@ -6,7 +6,7 @@ import type { NutritionDayData } from '../../db/nutrition';
 import type { DayKey, NutritionGoal, Settings } from '../../db/types';
 import { formatDecimal } from '../../domain/format';
 import { DASHBOARD_WIDGET_LABELS } from '../../domain/labels';
-import { formatKcal, goalForDay, nutritionDay, proteinPerKg } from '../../domain/nutrition';
+import { dayGoal, formatKcal, nutritionDay, proteinPerKg } from '../../domain/nutrition';
 import { GoalBar } from '../daily/GoalBar';
 import { withDate } from '../daily/paths';
 import { NUTRITION_PATH } from './paths';
@@ -33,7 +33,7 @@ export function NutritionSummary({
   children?: ReactNode;
 }) {
   const { total } = nutritionDay(data.entries);
-  const goal: NutritionGoal = goalForDay(settings.nutritionGoals, data.isTrainingDay);
+  const goal: NutritionGoal = dayGoal(settings, data);
   const perKg = proteinPerKg(total.protein, settings.bodyWeightKg);
   const rows = [
     { label: 'Kalorien', value: total.kcal, goal: goal.kcal, unit: 'kcal' },
@@ -47,6 +47,12 @@ export function NutritionSummary({
       <p className={`mb-3 ${MUTED}`}>
         {data.isTrainingDay ? 'Trainingstag' : 'Ruhetag'} · {remainingText(total.kcal, goal.kcal)}
       </p>
+      {data.burnedKcal > 0 && (
+        <p data-testid="burned-kcal" className={`-mt-2 mb-3 ${MUTED}`}>
+          🔥 Beim Training verbrannt: {formatKcal(data.burnedKcal)}
+          {settings.addBurnedCalories ? ' (im Ziel enthalten)' : ''}
+        </p>
+      )}
       <dl data-testid="nutrition-summary" className="flex flex-col gap-3">
         {rows.map(({ label, value, goal: target, unit }) => (
           <div key={label}>

@@ -44,6 +44,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
     training: { ...NUTRITION_GOAL_DEFAULTS.training },
     rest: { ...NUTRITION_GOAL_DEFAULTS.rest },
   },
+  addBurnedCalories: false,
   trainingTiles: [...ENDURANCE_SPORTS],
   maxHeartRate: null,
   restingHeartRate: null,

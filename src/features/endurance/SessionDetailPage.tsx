@@ -1,20 +1,39 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useBackTo, useFromHere } from '../../components/backNavigation';
-import { dangerButton, secondaryButton } from '../../components/buttons';
+import { dangerButton, primaryButton, secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { TrophyIcon } from '../../components/icons';
 import { Card, Page } from '../../components/Page';
 import { deleteEnduranceSession } from '../../db/endurance';
-import type { DistanceUnit, EnduranceSession, Gear, Settings } from '../../db/types';
+import type {
+  DistanceUnit,
+  EnduranceSession,
+  EnduranceSport,
+  Gear,
+  Settings,
+} from '../../db/types';
 import { formatDistance, formatPace, paceLabel, sessionTitle } from '../../domain/endurance';
+import {
+  formatEffortDistance,
+  sessionEfforts,
+  type SessionEffort,
+} from '../../domain/enduranceStats';
 import { formatDecimal } from '../../domain/format';
 import { ENDURANCE_SPORT_LABELS, SWIM_STROKE_LABELS } from '../../domain/labels';
+import { enduranceShareContent } from '../../domain/shareCard';
 import { formatClock, formatTime, formatWorkoutDate } from '../../domain/workout';
 import { useSettings } from '../settings/useSettings';
+import { ShareImageDialog } from '../share/ShareImageDialog';
 import { TRAINING_PATH } from '../training/paths';
 import { activityPath, gearPath, sessionPath } from './paths';
 import { SessionTrack } from './SessionTrack';
-import { useEnduranceSession, useEnduranceTrack, useGearList } from './useEndurance';
+import {
+  useEnduranceSession,
+  useEnduranceSessions,
+  useEnduranceTrack,
+  useGearList,
+} from './useEndurance';
 
 const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
 
@@ -105,6 +124,43 @@ function sessionFacts(session: EnduranceSession, unit: DistanceUnit) {
   return facts.filter((fact): fact is { label: string; value: string } => fact.value !== null);
 }
 
+function SessionEffortsCard({
+  efforts,
+  sport,
+  unit,
+}: {
+  efforts: SessionEffort[];
+  sport: EnduranceSport;
+  unit: DistanceUnit;
+}) {
+  if (efforts.length === 0) return null;
+  return (
+    <Card title="Bestzeiten in dieser Einheit">
+      <ul aria-label="Bestzeiten in dieser Einheit" className="flex flex-col gap-2">
+        {efforts.map(({ meters, seconds, isBest }) => (
+          <li key={meters} className="flex items-center justify-between gap-3 tabular-nums">
+            <span className="flex items-center gap-2 font-medium">
+              {formatEffortDistance(meters)}
+              {isBest && (
+                <TrophyIcon
+                  role="img"
+                  aria-hidden={false}
+                  aria-label="Bestzeit"
+                  className="h-5 w-5 text-amber-500"
+                />
+              )}
+            </span>
+            <span>
+              <span className="font-semibold">{formatClock(seconds)}</span>{' '}
+              <span className={MUTED}>{formatPace(sport, meters, seconds, unit)}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 function SessionDetail({
   session,
   gear,
@@ -118,12 +174,22 @@ function SessionDetail({
 }) {
   const unit = settings.distanceUnit;
   const track = useEnduranceTrack(session.id);
+  const sessions = useEnduranceSessions();
   const origin = originText(session);
   const navigate = useNavigate();
   const { state } = useLocation();
   const from = useFromHere();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const { icon } = ENDURANCE_SPORT_LABELS[session.sport];
+  const efforts = useMemo(
+    () => (sessions ? sessionEfforts(session, sessions) : []),
+    [session, sessions],
+  );
+  const shareContent = useMemo(
+    () => enduranceShareContent(session, track?.route ?? null, efforts, unit),
+    [session, track, efforts, unit],
+  );
 
   return (
     <Page title={`${icon} ${sessionTitle(session)}`} backTo={backTo}>
@@ -154,9 +220,18 @@ function SessionDetail({
         )}
         {session.notes && <p className="mt-3 whitespace-pre-line">{session.notes}</p>}
       </Card>
+      <SessionEffortsCard efforts={efforts} sport={session.sport} unit={unit} />
       {track && <SessionTrack track={track} sport={session.sport} settings={settings} />}
 
       <div className="mb-4 flex flex-col gap-2">
+        <button
+          type="button"
+          className={primaryButton}
+          disabled={track === undefined}
+          onClick={() => setSharing(true)}
+        >
+          Teilen-Bild
+        </button>
         <Link to={`${sessionPath(session.id)}/edit`} state={state} className={secondaryButton}>
           Bearbeiten
         </Link>
@@ -176,6 +251,13 @@ function SessionDetail({
         >
           „{sessionTitle(session)}“ vom {formatWorkoutDate(session.startedAt)} wird entfernt.
         </ConfirmDialog>
+      )}
+      {sharing && (
+        <ShareImageDialog
+          content={shareContent}
+          startedAt={session.startedAt}
+          onClose={() => setSharing(false)}
+        />
       )}
     </Page>
   );

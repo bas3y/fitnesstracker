@@ -25,8 +25,10 @@ import {
   supplementFieldsSchema,
   todoInputSchema,
   trackFieldsSchema,
+  trackSummarySchema,
   weekdaysSchema,
 } from './schemas';
+import { ensureTrackSummaries } from './endurance';
 import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
 import {
@@ -100,6 +102,8 @@ const settingsSchema = baseEntitySchema.extend({
   // Seit DB-Version 18
   maxHeartRate: heartRateSettingSchema.default(null),
   restingHeartRate: heartRateSettingSchema.default(null),
+  // Seit DB-Version 20
+  addBurnedCalories: z.boolean().default(false),
 });
 
 const catalogEntryFields = {
@@ -248,6 +252,8 @@ const enduranceSessionSchema = baseEntitySchema.extend(enduranceSessionFieldsSch
   importInfo: z
     .object({ format: z.string(), fileName: z.string().nullable(), device: z.string().nullable() })
     .nullable(),
+  // Seit DB-Version 20; fehlt sie, wird sie nach dem Import aus dem Verlauf berechnet
+  trackSummary: trackSummarySchema.nullable().default(null),
 });
 const gearSchema = baseEntitySchema.extend(gearFieldsSchema.shape).extend({
   archivedAt: timestamp.nullable(),
@@ -383,6 +389,7 @@ export async function restoreBackup(backup: Backup): Promise<void> {
     }
   });
   await ensureSeeded();
+  await ensureTrackSummaries();
 }
 
 export function backupFileName(date: Date): string {

@@ -4,7 +4,7 @@ import type { DayKey, Settings } from '../../db/types';
 import { formatSleep } from '../../domain/daily';
 import { formatDecimal } from '../../domain/format';
 import { habitDayProgress } from '../../domain/habits';
-import { goalForDay, nutritionDay } from '../../domain/nutrition';
+import { dayGoal, nutritionDay } from '../../domain/nutrition';
 import { lowStockSupplements, supplementDay } from '../../domain/supplements';
 import { doneOn, todayTodos } from '../../domain/todos';
 import { NUTRITION_PATH } from '../nutrition/paths';
@@ -100,7 +100,7 @@ function TodosTile({ date, today }: TileProps) {
 function NutritionTile({ date, today, settings }: TileProps & { settings: Settings }) {
   const data = useNutritionDay(date);
   const kcal = data && nutritionDay(data.entries).total.kcal;
-  const goal = data && goalForDay(settings.nutritionGoals, data.isTrainingDay).kcal;
+  const goal = data && dayGoal(settings, data).kcal;
   return (
     <Tile to={withDate(NUTRITION_PATH, date, today)} icon="🍽️" name="Ernährung">
       {kcal != null && goal != null && (

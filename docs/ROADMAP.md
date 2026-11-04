@@ -25,7 +25,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 13 – Training-Kacheln & Ausdauer manuell
 - [x] Schritt 14 – Import von Einheiten (Uhr, Strava)
 - [x] Schritt 14b – Import von Gesundheitsdaten
-- [ ] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
+- [x] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
 - [ ] Schritt 16 – Ziele & Rückblicke
 - [ ] Schritt 17 – Self-Improvement
 - [ ] Schritt 18 – Motivation & Trainingsblöcke
@@ -767,10 +767,32 @@ Mit dem Nutzer abgestimmt: Quellen Apple Health **und** Garmin-Datenexport; Wert
 - **Teilen-Bild** (wie bei Strava): lokal per Canvas erzeugt, Strecke als Linie + Distanz/Zeit/Pace/Höhenmeter, auch als transparenter Sticker für Instagram-Stories; Teilen über Web Share API, sonst Download. Optional auch für Kraft-Workouts (Volumen, Rekorde).
 - Kalorien der Einheit für die Ernährung berücksichtigen (falls vorhanden).
 
+Mit dem Nutzer beim Start abgestimmt: Statistik-Seite mit Umschalter **„Kraft | Ausdauer“** plus Kurzfassung (Bestzeiten) auf jeder Aktivitätsseite; Kalorien **immer anzeigen, Addieren zum Ziel per Schalter (Standard aus)**; Teilen-Bild **auch für Kraft-Workouts**.
+
 **Notizen:**
 - Gebaut:
+  - Dexie v20: `EnduranceSession.trackSummary` (`bestEfforts` = schnellste Zeit je Strecke, `heartRateSeconds` = Sekunden je bpm) wird beim Import/Ergänzen aus dem Verlauf berechnet, damit Statistiken keine Verläufe laden müssen. Das Upgrade berechnet sie für vorhandene Verläufe, nach einem Backup-Import füllt `ensureTrackSummaries()` fehlende nach (`summaryFor` in `database.ts`). `Settings.addBurnedCalories` (Standard aus). Backup-Defaults, Sicherungen bis v19 importierbar.
+  - `src/domain/track.ts`: `fastestSeconds` (gleitendes Fenster, Anfang interpoliert, Rücksprünge übersprungen), `bestEfforts`/`BEST_EFFORT_METERS` (Laufen 1/5/10 km, Halbmarathon, Marathon; Rad 10/20/50/100 km; unrealistisch schnelle Abschnitte verworfen), `heartRateSeconds`, `zoneSecondsOf`, `trackSummary`. `MAX_SAMPLE_GAP_SECONDS` liegt jetzt hier (sonst zöge `database.ts` den Import-Code ins Hauptbundle).
+  - `src/domain/enduranceStats.ts`: `bestEffortsOf`, `newEffortRecords` (Rekord nur gegenüber früheren Zeiten), `sessionEfforts`, `periodTotals`, `weeklyTotals`, `pacePoints`/`formatPaceValue`, `sumHeartRateSeconds`, `enduranceDays`/`enduranceHeatLevel`, `weekBySport`.
+  - **Statistik:** Umschalter „Kraft | Ausdauer“ (`view`, `sport` in der URL, `ENDURANCE_STATS_PATH`). Ausdauer: Zeitraum + Sportart, „Im Zeitraum“ (Einheiten, Dauer, Strecke, Höhenmeter), Trainingstage, „Pro Woche“ (Strecke oder Dauer), Pace-Entwicklung (`ProgressChart` mit `formatTick`/`reversed`, schneller = oben), Pulszonen über den Zeitraum, Bestzeiten.
+  - Aktivitätsseite: Karte „Bestzeiten“ (`BestEffortsCard`) + Link „Statistik“. Detailseite einer Einheit: „Bestzeiten in dieser Einheit“ mit 🏆 bei Allzeit-Bestzeit. Pulszonen-Karte als `HeartRateZonesCard` (Einheit und Zeitraum).
+  - **Rekord-Toast** nach dem Import („Neue Bestzeiten: 🏃 5 km: 26:03“), `ImportSummary.records`.
+  - **Heatmap/Dashboard:** `ActivityCard` nimmt `endurance` (Farbe = Maximum aus Sätzen und Ausdauer-Dauer, Tag antippen öffnet Workout oder Einheit), `Heatmap` reicht `key` an `describe`/`level`. Neues Widget „Ausdauer“ (`EnduranceWidget`: Woche je Sportart, letzte Einheit), „Diese Woche“ zeigt eine Zeile Ausdauer; beide Trainings-Widgets erscheinen auch ohne Krafttraining.
+  - **Teilen-Bild:** Inhalt in `src/domain/shareCard.ts` (`enduranceShareContent`, `workoutShareContent`, `shareFileName`), gezeichnet per Canvas in `src/features/share/renderShareImage.ts`; `ShareImageDialog` mit „Bild“ (1080 × 1920, dunkler Verlauf) und „Sticker“ (1080 breit, transparent, Höhe nach Inhalt, Schrift mit Schatten), Teilen über `shareOrDownload`. Button „Teilen-Bild“ auf der Detailseite einer Einheit und eines Workouts.
+  - **Kalorien:** `loadNutritionDay` liefert `burnedKcal`, `dayGoal` (`src/domain/nutrition.ts`) erhöht das kcal-Ziel nur mit `addBurnedCalories`. Ernährung zeigt „🔥 Beim Training verbrannt: … (im Ziel enthalten)“, Kachel auf der Alltag-Übersicht rechnet mit. Schalter in Einstellungen → Ernährung.
+  - Tests: `enduranceStats.test.ts`, `shareCard.test.ts`, Bestzeiten/Puls in `track.test.ts`, `dayGoal`, Import (Zusammenfassung, Rekorde, Ergänzen, Backup aus v19), verbrannte Kalorien, Migration v19→v20. E2E `e2e/enduranceStats.spec.ts` offline in beiden Viewports (Import → Toast → Bestzeiten → Teilen-Bild als PNG mit Größe prüfen → Statistik → Widgets/Heatmap → Ernährung; Kraft-Workout teilen). 624 Unit-Tests, 82/82 E2E grün.
 - Abweichungen:
+  - Bestzeiten nur aus **importierten Verläufen** (manuelle Einheiten haben keinen Abschnitt). Rad über Strecken statt Leistung/Zeit, Schwimmen/Wandern ohne Bestzeiten. Rennstrecken heißen auch bei Meilen „5 km“ usw.
+  - Bestzeit-Rekorde wie beim Krafttraining erst, wenn es schon eine frühere Zeit über die Strecke gab. Ein Import alter Läufe kann eine „neue“ Bestzeit von früher melden (Datum steht auf der Detailseite).
+  - Statistik-Bestzeiten ignorieren den Zeitraum (wie die Bestwerte bei Kraft). „Alle Sportarten“ zählt Strecken zusammen, Schwimmen dabei in km; Pace erst mit gewählter Sportart. Pulszonen werden aus der gespeicherten Verteilung bei jeder Anzeige mit den aktuellen Einstellungen berechnet.
+  - Teilen-Bild ohne Karte (nur Linie), Schrift = Systemschrift des Geräts (offline), Emojis je nach Gerät. Kraft-Bild: bester Satz je Übung (höchstens 7 Zeilen), Volumen mit dem aktuellen Körpergewicht aus den Einstellungen.
+  - Kraft-Statistik und Kraft-Heatmap bleiben ohne Ausdauer; die gemeinsame Heatmap gibt es auf der Startseite (Widget „Trainingstage“).
+  - Hauptbundle 294 → 310 KB (Ausdauer-Widget und Heatmap auf der Startseite).
 - Offene Punkte:
+  - Teilen-Dialog (Web Share mit Bild) und Einfügen des Stickers in Instagram nur auf echten Geräten prüfbar (E2E testet den Download). Emoji-Darstellung im Bild auf iPhone/Android ansehen.
+  - Keine Bestzeiten für manuell erfasste Einheiten, keine Monatsgruppen/Filter in der Einheitenliste (offen aus 13/14). CSV-Export enthält weiterhin keine Ausdauer-Einheiten.
+  - Ruhepuls aus dem Gesundheitsimport schlägt weiterhin nicht `Settings.restingHeartRate` vor (offen aus 14b).
+  - Schritt 16 (Ziele & Rückblicke) kann `weeklyTotals`, `periodTotals` und `bestEffortsOf` für Ausdauer-Ziele („10 km unter 50 min“) nutzen.
 
 ---
 

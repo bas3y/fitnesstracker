@@ -50,6 +50,7 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   daily: { name: 'Heute', hint: 'Schritte, Wasser, Schlaf und Gewicht' },
   supplements: { name: 'Supplements', hint: 'Heutige Einnahmen abhaken, Bestand im Blick' },
   nutrition: { name: 'Ernährung', hint: 'Kalorien und Protein heute' },
+  endurance: { name: 'Ausdauer', hint: 'Strecke dieser Woche, letzte Einheit, Bestzeiten' },
 };
 
 export const MEAL_TYPE_LABELS: Record<MealType, string> = {

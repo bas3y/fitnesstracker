@@ -38,7 +38,8 @@ import {
 } from '../../domain/stats';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from './ActivityCard';
-import { exerciseStatsPath, useStatsFilter } from './statsFilter';
+import { EnduranceStats } from './EnduranceStats';
+import { exerciseStatsPath, useStatsFilter, type StatsView } from './statsFilter';
 
 const HINT = 'text-sm text-slate-500 dark:text-slate-400';
 
@@ -48,13 +49,30 @@ const SORT_OPTIONS: Array<{ value: ExerciseSort; label: string }> = [
   { value: 'name', label: 'Name' },
 ];
 
+const VIEW_OPTIONS: Array<{ value: StatsView; label: string }> = [
+  { value: 'strength', label: 'Kraft' },
+  { value: 'endurance', label: 'Ausdauer' },
+];
+
 export function StatsPage() {
+  const { view, setView } = useStatsFilter();
+  return (
+    <Page title="Statistik">
+      <div className="mb-4">
+        <SegmentedControl label="Bereich" options={VIEW_OPTIONS} value={view} onChange={setView} />
+      </div>
+      {view === 'strength' ? <StrengthStats /> : <EnduranceStats />}
+    </Page>
+  );
+}
+
+function StrengthStats() {
   const sessions = useLiveQuery(loadStatsSessions);
   const settings = useSettings();
   const { range, muscle, setRange, setMuscle } = useStatsFilter();
 
   return (
-    <Page title="Statistik">
+    <>
       {sessions?.length === 0 && (
         <Card>
           <p className="text-slate-600 dark:text-slate-400">
@@ -95,7 +113,7 @@ export function StatsPage() {
           />
         </>
       )}
-    </Page>
+    </>
   );
 }
 

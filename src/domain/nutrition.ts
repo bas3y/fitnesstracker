@@ -7,6 +7,7 @@ import type {
   NutritionGoal,
   NutritionGoals,
   Recipe,
+  Settings,
 } from '../db/types';
 import { MEAL_TYPES } from '../db/types';
 import { formatDecimal } from './format';
@@ -87,6 +88,22 @@ export function nutritionDay<
 /** Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit */
 export function goalForDay(goals: NutritionGoals, isTrainingDay: boolean): NutritionGoal {
   return isTrainingDay ? goals.training : goals.rest;
+}
+
+/** Ziel des Tages; mit `addBurnedCalories` steigt das kcal-Ziel um die verbrannten Kalorien */
+export function dayGoal(
+  settings: Pick<Settings, 'nutritionGoals' | 'addBurnedCalories'>,
+  day: { isTrainingDay: boolean; burnedKcal: number },
+): NutritionGoal {
+  const goal = goalForDay(settings.nutritionGoals, day.isTrainingDay);
+  return settings.addBurnedCalories && day.burnedKcal > 0
+    ? { ...goal, kcal: goal.kcal + day.burnedKcal }
+    : goal;
+}
+
+/** Kalorien der Ausdauer-Einheiten (laut Uhr oder eingetragen) */
+export function burnedCalories(sessions: readonly { calories: number | null }[]): number {
+  return sessions.reduce((sum, session) => sum + (session.calories ?? 0), 0);
 }
 
 /** Protein in g pro kg Körpergewicht; `null` ohne Körpergewicht */

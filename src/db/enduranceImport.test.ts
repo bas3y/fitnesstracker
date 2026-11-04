@@ -15,11 +15,11 @@ import { resetDatabase } from './testUtils';
 
 beforeEach(resetDatabase);
 
-const run = (start: string) => ({
+const run = (start: string, speed = 2.8) => ({
   start: Date.parse(start),
   step: 5,
   count: 361,
-  speed: 2.8,
+  speed,
   heartRate: () => 150,
 });
 
@@ -29,7 +29,8 @@ async function candidatesFrom(...files: File[]) {
   return candidates;
 }
 
-const fitFile = (start: string) => new File([sampleFitRun(run(start)) as BlobPart], `${start}.fit`);
+const fitFile = (start: string, speed?: number) =>
+  new File([sampleFitRun(run(start, speed)) as BlobPart], `${start}.fit`);
 
 async function importAll(files: File[]) {
   const planned = await planEnduranceImport(await candidatesFrom(...files));
@@ -152,5 +153,65 @@ describe('Import von Einheiten', () => {
     if (parsed.ok) await restoreBackup(parsed.backup);
     const [session] = await listEnduranceSessions();
     expect((await loadEnduranceTrack(session!.id))!.time).toHaveLength(361);
+  });
+
+  it('speichert Bestzeiten und Pulsverteilung an der Einheit', async () => {
+    await importAll([fitFile('2026-10-01T06:00:00Z')]);
+    const [session] = await listEnduranceSessions();
+    // 2,8 m/s: 1 km in 357 s, 5 km in 1786 s; 360 Abstände à 5 s mit Puls 150
+    expect(session!.trackSummary).toEqual({
+      bestEfforts: [
+        { meters: 1000, seconds: 357 },
+        { meters: 5000, seconds: 1786 },
+      ],
+      heartRateSeconds: [[150, 1800]],
+    });
+  });
+
+  it('meldet neue Bestzeiten erst gegenüber früheren Einheiten', async () => {
+    const first = await importAll([fitFile('2026-10-01T06:00:00Z')]);
+    expect(first.summary.records).toEqual([]);
+    const slower = await importAll([fitFile('2026-10-03T06:00:00Z', 2.5)]);
+    expect(slower.summary.records).toEqual([]);
+    const faster = await importAll([fitFile('2026-10-05T06:00:00Z', 3.2)]);
+    expect(faster.summary.records.map(({ meters, seconds }) => [meters, seconds])).toEqual([
+      [1000, 313],
+      [5000, 1563],
+    ]);
+    expect(faster.summary.records[0]!.sessionId).toBe(faster.summary.sessionIds[0]);
+  });
+
+  it('ergänzt die Zusammenfassung beim Ergänzen und nach einer älteren Sicherung', async () => {
+    const manual = await createEnduranceSession({
+      sport: 'run',
+      title: '',
+      startedAt: '2026-10-01T06:00:00.000Z',
+      durationSeconds: 1800,
+      distanceMeters: null,
+      avgHeartRate: null,
+      maxHeartRate: null,
+      elevationGainMeters: null,
+      calories: null,
+      rating: null,
+      notes: '',
+      gearId: null,
+      poolLengthMeters: null,
+      laps: null,
+      swimStroke: null,
+      swolf: null,
+    });
+    expect(manual.trackSummary).toBeNull();
+    await importAll([fitFile('2026-10-01T06:00:00Z')]);
+    const merged = await loadEnduranceSession(manual.id);
+    expect(merged!.trackSummary!.bestEfforts).toHaveLength(2);
+
+    // Sicherung aus DB-Version 19 kennt das Feld nicht
+    const backup = JSON.parse(JSON.stringify(await createBackup()));
+    backup.dbVersion = 19;
+    for (const session of backup.tables.enduranceSessions) delete session.trackSummary;
+    const parsed = parseBackup(backup);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) await restoreBackup(parsed.backup);
+    expect((await loadEnduranceSession(manual.id))!.trackSummary).toEqual(merged!.trackSummary);
   });
 });

@@ -230,6 +230,7 @@ function stored(
     gearId: null,
     source: 'manual',
     importInfo: null,
+    trackSummary: null,
     ...values,
   };
 }

@@ -51,10 +51,16 @@ export function ProgressChart({
   label,
   points,
   formatValue,
+  formatTick,
+  reversed = false,
 }: {
   label: string;
   points: ChartPoint[];
   formatValue: (value: number) => string;
+  /** Beschriftung der y-Achse, Standard = Zahl */
+  formatTick?: (value: number) => string;
+  /** Kleinere Werte oben (z. B. Pace) */
+  reversed?: boolean;
 }) {
   const first = points[0]?.time ?? 0;
   const last = points.at(-1)?.time ?? 0;
@@ -73,7 +79,13 @@ export function ProgressChart({
           tickFormatter={shortDate}
           minTickGap={32}
         />
-        <YAxis width={44} domain={['auto', 'auto']} tick={tick} />
+        <YAxis
+          width={44}
+          domain={['auto', 'auto']}
+          tick={tick}
+          tickFormatter={formatTick}
+          reversed={reversed}
+        />
         <Tooltip
           content={({ active, payload }) => {
             const point = payload?.[0]?.payload as ChartPoint | undefined;

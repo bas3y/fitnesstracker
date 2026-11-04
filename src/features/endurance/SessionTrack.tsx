@@ -1,20 +1,17 @@
 import { lazy, Suspense, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useFromHere } from '../../components/backNavigation';
 import { Card } from '../../components/Page';
 import type { DistanceUnit, EnduranceSport, EnduranceTrack, Settings } from '../../db/types';
 import { formatDistance, formatPace, hasDistance, paceLabel } from '../../domain/endurance';
 import {
   distanceSplits,
-  HEART_RATE_ZONE_LABELS,
   hasValues,
-  heartRateZoneBounds,
+  heartRateSeconds,
   projectRoute,
   svgPath,
-  zoneSeconds,
 } from '../../domain/track';
 import { METERS_PER_MILE } from '../../domain/units';
 import { formatClock } from '../../domain/workout';
+import { HeartRateZonesCard } from './HeartRateZones';
 
 // Eigener Chunk wegen Recharts
 const SessionCharts = lazy(() =>
@@ -43,7 +40,9 @@ export function SessionTrack({
       <Suspense fallback={null}>
         <SessionCharts track={track} sport={sport} unit={settings.distanceUnit} />
       </Suspense>
-      {hasValues(track.heartRate) && <ZonesCard track={track} settings={settings} />}
+      {hasValues(track.heartRate) && (
+        <HeartRateZonesCard histogram={heartRateSeconds(track)} settings={settings} />
+      )}
       <SectionsCard track={track} sport={sport} unit={settings.distanceUnit} />
     </>
   );
@@ -74,67 +73,6 @@ function RouteCard({ route }: { route: EnduranceTrack['route'] }) {
         <circle cx={startX} cy={startY} r={5} fill="#10b981" stroke="white" strokeWidth={2} />
       </svg>
       <p className={`mt-1 ${MUTED}`}>Strecke ohne Karte · grün = Start</p>
-    </Card>
-  );
-}
-
-function ZonesCard({ track, settings }: { track: EnduranceTrack; settings: Settings }) {
-  const from = useFromHere();
-  if (settings.maxHeartRate === null) {
-    return (
-      <Card title="Pulszonen">
-        <p className={MUTED}>
-          Trage deinen max. Puls in den{' '}
-          <Link
-            to="/settings"
-            state={from}
-            className="font-semibold text-emerald-700 dark:text-emerald-400"
-          >
-            Einstellungen
-          </Link>{' '}
-          ein, um die Zeit in den Pulszonen zu sehen.
-        </p>
-      </Card>
-    );
-  }
-  const bounds = heartRateZoneBounds(settings.maxHeartRate, settings.restingHeartRate);
-  const seconds = zoneSeconds(track, bounds);
-  const total = seconds.reduce((sum, value) => sum + value, 0);
-  return (
-    <Card title="Pulszonen">
-      <ul data-testid="hr-zones" className="flex flex-col gap-2">
-        {bounds.map((bound, index) => {
-          const share = total > 0 ? seconds[index]! / total : 0;
-          const upper = bounds[index + 1];
-          return (
-            <li key={index}>
-              <div className="flex justify-between text-sm">
-                <span>
-                  <span className="font-semibold">Z{index + 1}</span>{' '}
-                  {HEART_RATE_ZONE_LABELS[index]}{' '}
-                  <span className={MUTED}>
-                    {upper === undefined ? `ab ${bound}` : `${bound}–${upper - 1}`} bpm
-                  </span>
-                </span>
-                <span className="tabular-nums">
-                  {formatClock(seconds[index]!)} · {Math.round(share * 100)} %
-                </span>
-              </div>
-              <div className="mt-1 h-2 rounded-full bg-slate-200 dark:bg-slate-700">
-                <div
-                  className="h-2 rounded-full bg-rose-500"
-                  style={{ width: `${share * 100}%` }}
-                />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <p className={`mt-2 ${MUTED}`}>
-        {settings.restingHeartRate === null
-          ? 'Zonen in % des max. Pulses.'
-          : 'Zonen nach Herzfrequenzreserve (mit Ruhepuls).'}
-      </p>
     </Card>
   );
 }

@@ -20,7 +20,9 @@ import {
 import { ENDURANCE_SPORT_LABELS } from '../../domain/labels';
 import { formatWorkoutDate } from '../../domain/workout';
 import { useSettings } from '../settings/useSettings';
+import { ENDURANCE_STATS_PATH } from '../stats/statsFilter';
 import { TRAINING_PATH } from '../training/paths';
+import { BestEffortsCard } from './BestEfforts';
 import { useNow } from '../training/useWorkouts';
 import { GEAR_PATH, gearPath, IMPORT_PATH, newSessionPath, sessionPath } from './paths';
 import { parseSport, useEnduranceSessions, useGearList } from './useEndurance';
@@ -94,6 +96,15 @@ function Activity({ sport }: { sport: EnduranceSport }) {
           Importieren
         </Link>
       </div>
+
+      <BestEffortsCard sessions={sessions} sport={sport} unit={unit} />
+      {sessions.length > 0 && (
+        <LinkRow
+          to={`${ENDURANCE_STATS_PATH}&sport=${sport}`}
+          label="Statistik"
+          hint="Pro Woche, Pace-Entwicklung, Pulszonen"
+        />
+      )}
 
       <section className="mb-4">
         <h2 className="mb-3 text-lg font-semibold">Einheiten</h2>

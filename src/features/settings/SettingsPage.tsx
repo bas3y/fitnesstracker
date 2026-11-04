@@ -297,6 +297,20 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
             </div>
           );
         })}
+        <label className="mt-1 flex min-h-11 items-center gap-3">
+          <input
+            type="checkbox"
+            className="h-5 w-5 accent-emerald-600"
+            checked={settings.addBurnedCalories}
+            onChange={(event) => void updateSettings({ addBurnedCalories: event.target.checked })}
+          />
+          Verbrannte Kalorien zum Ziel addieren
+        </label>
+        <p className={hint}>
+          Kalorien aus Ausdauer-Einheiten (von der Uhr oder eingetragen) erhöhen das Kalorienziel
+          des Tages. Am besten dann für Trainings- und Ruhetag dasselbe Ziel wählen, sonst zählt das
+          Training doppelt.
+        </p>
       </div>
     </Card>
   );

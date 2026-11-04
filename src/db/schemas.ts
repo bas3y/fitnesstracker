@@ -594,6 +594,11 @@ export const trackFieldsSchema = z.object({
   ),
 });
 
+export const trackSummarySchema = z.object({
+  bestEfforts: z.array(z.object({ meters: z.number().positive(), seconds: z.number().positive() })),
+  heartRateSeconds: z.array(z.tuple([z.number(), z.number()])),
+});
+
 export type GearInput = z.input<typeof gearFieldsSchema>;
 export type GearValues = z.output<typeof gearFieldsSchema>;
 

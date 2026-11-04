@@ -1,4 +1,4 @@
-import { dayKey } from '../domain/daily';
+import { dayKey, shiftDay } from '../domain/daily';
 import { db } from './database';
 import {
   createEnduranceSession,
@@ -193,5 +193,16 @@ describe('Trainingstage mit Ausdauer-Einheiten', () => {
     expect((await loadNutritionDay(key)).isTrainingDay).toBe(false);
     await createEnduranceSession(RUN);
     expect((await loadNutritionDay(key)).isTrainingDay).toBe(true);
+  });
+
+  it('summiert die verbrannten Kalorien des Tages', async () => {
+    const key = dayKey(new Date(START));
+    await createEnduranceSession({ ...RUN, calories: 450 });
+    await createEnduranceSession({ ...RUN, calories: null });
+    const other = await createEnduranceSession({ ...RUN, calories: 300 });
+    expect((await loadNutritionDay(key)).burnedKcal).toBe(750);
+    await deleteEnduranceSession(other.id);
+    expect((await loadNutritionDay(key)).burnedKcal).toBe(450);
+    expect((await loadNutritionDay(shiftDay(key, 1))).burnedKcal).toBe(0);
   });
 });

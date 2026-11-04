@@ -1,11 +1,88 @@
 import {
+  bestEfforts,
   distanceSplits,
+  fastestSeconds,
+  heartRateSeconds,
   heartRateZoneBounds,
   projectRoute,
   svgPath,
   trackChartPoints,
+  trackSummary,
   zoneSeconds,
+  zoneSecondsOf,
 } from './track';
+
+describe('Puls je bpm', () => {
+  it('summiert Sekunden je gerundetem Puls, Lücken höchstens 30 s', () => {
+    const track = { time: [0, 10, 20, 320, 330], heartRate: [140.4, 140, null, 150, 160] };
+    expect(heartRateSeconds(track)).toEqual([
+      [140, 20],
+      [150, 10],
+    ]);
+    expect(
+      zoneSecondsOf(
+        [
+          [99, 5],
+          [140, 20],
+          [150, 10],
+        ],
+        [100, 120, 140, 160, 180],
+      ),
+    ).toEqual([0, 0, 30, 0, 0]);
+  });
+});
+
+describe('Bestzeiten', () => {
+  // 5 km in 25 min gleichmäßig, dazwischen ein schneller Kilometer (3:30)
+  const steady = {
+    time: [0, 300, 600, 810, 1110, 1410],
+    distance: [0, 1000, 2000, 3000, 4000, 5000],
+  };
+
+  it('findet den schnellsten Abschnitt und interpoliert den Anfang', () => {
+    expect(fastestSeconds(steady, 1000)).toBe(210);
+    expect(fastestSeconds(steady, 5000)).toBe(1410);
+    expect(fastestSeconds(steady, 1500)).toBe(360);
+    expect(fastestSeconds(steady, 10_000)).toBeNull();
+  });
+
+  it('überspringt fehlende Strecken und Rücksprünge', () => {
+    const track = {
+      time: [0, 100, 200, 300, 400],
+      distance: [0, null, 1000, 900, 2000],
+    };
+    expect(fastestSeconds(track, 1000)).toBe(200);
+  });
+
+  it('nimmt die Strecken der Sportart und verwirft GPS-Sprünge', () => {
+    expect(bestEfforts(steady, 'run')).toEqual([
+      { meters: 1000, seconds: 210 },
+      { meters: 5000, seconds: 1410 },
+    ]);
+    expect(bestEfforts(steady, 'swim')).toEqual([]);
+    // 1 km in 60 s ist zu schnell für einen Lauf
+    expect(bestEfforts({ time: [0, 60], distance: [0, 1000] }, 'run')).toEqual([]);
+  });
+
+  it('fasst Bestzeiten und Puls zusammen', () => {
+    const summary = trackSummary(
+      {
+        ...steady,
+        heartRate: [150, 150, 150, 170, 150, 150],
+        altitude: [],
+        route: [],
+        laps: [],
+      },
+      'run',
+    );
+    expect(summary.bestEfforts).toHaveLength(2);
+    // Abstände über 30 s zählen je 30 s
+    expect(summary.heartRateSeconds).toEqual([
+      [150, 120],
+      [170, 30],
+    ]);
+  });
+});
 
 describe('Pulszonen', () => {
   it('rechnet mit max. Puls oder nach Karvonen', () => {

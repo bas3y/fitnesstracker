@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useBackTo } from '../../components/backNavigation';
-import { dangerButton, secondaryButton } from '../../components/buttons';
+import { dangerButton, primaryButton, secondaryButton } from '../../components/buttons';
 import { TrophyIcon } from '../../components/icons';
 import { Card, Page } from '../../components/Page';
 import { deleteWorkout, type WorkoutDetail } from '../../db/workouts';
+import { workoutShareContent } from '../../domain/shareCard';
 import { formatRecord } from '../../domain/strength';
 import {
   formatSetSummary,
@@ -14,6 +15,7 @@ import {
   workoutDurationSeconds,
 } from '../../domain/workout';
 import { useSettings } from '../settings/useSettings';
+import { ShareImageDialog } from '../share/ShareImageDialog';
 import { HISTORY_PATH, WORKOUT_PATH } from './paths';
 import { useWorkoutDetail, useWorkoutRecords } from './useWorkouts';
 
@@ -47,10 +49,26 @@ export function WorkoutNotFound() {
 
 function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
   const { workout, planDayName, items } = detail;
-  const unit = useSettings()?.weightUnit ?? 'kg';
+  const settings = useSettings();
+  const unit = settings?.weightUnit ?? 'kg';
+  const bodyWeightKg = settings?.bodyWeightKg ?? null;
   const records = useWorkoutRecords(workout.id);
   const { state } = useLocation();
   const backTo = useBackTo(HISTORY_PATH);
+  const [sharing, setSharing] = useState(false);
+  const shareContent = useMemo(
+    () =>
+      workoutShareContent({
+        title: planDayName,
+        startedAt: workout.startedAt,
+        durationSeconds: workoutDurationSeconds(workout, new Date()),
+        items,
+        recordCount: [...(records?.values() ?? [])].reduce((sum, list) => sum + list.length, 0),
+        bodyWeightKg,
+        unit,
+      }),
+    [workout, planDayName, items, records, bodyWeightKg, unit],
+  );
 
   return (
     <Page title={formatWorkoutDate(workout.startedAt)} backTo={backTo}>
@@ -115,12 +133,27 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
       })}
       <Card>
         <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            className={primaryButton}
+            disabled={records === undefined}
+            onClick={() => setSharing(true)}
+          >
+            Teilen-Bild
+          </button>
           <Link to={`${HISTORY_PATH}/${workout.id}/edit`} state={state} className={secondaryButton}>
             Bearbeiten
           </Link>
           <DeleteWorkoutButton id={workout.id} />
         </div>
       </Card>
+      {sharing && (
+        <ShareImageDialog
+          content={shareContent}
+          startedAt={workout.startedAt}
+          onClose={() => setSharing(false)}
+        />
+      )}
     </Page>
   );
 }

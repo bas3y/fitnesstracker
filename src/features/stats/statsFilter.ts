@@ -1,8 +1,20 @@
 import { useSearchParams } from 'react-router-dom';
-import { MUSCLE_GROUPS, type MuscleGroup } from '../../db/types';
+import {
+  ENDURANCE_SPORTS,
+  MUSCLE_GROUPS,
+  type EnduranceSport,
+  type MuscleGroup,
+} from '../../db/types';
 import { DEFAULT_STATS_RANGE, STATS_RANGES, type StatsRange } from '../../domain/stats';
 
 const STATS_PATH = '/stats';
+export const ENDURANCE_STATS_PATH = `${STATS_PATH}?view=endurance`;
+
+export type StatsView = 'strength' | 'endurance';
+
+function parseSport(value: string | null): EnduranceSport | null {
+  return ENDURANCE_SPORTS.find((sport) => sport === value) ?? null;
+}
 
 function parseRange(value: string | null): StatsRange {
   return STATS_RANGES.find((range) => range === value) ?? DEFAULT_STATS_RANGE;
@@ -26,10 +38,14 @@ export function useStatsFilter() {
       { replace: true },
     );
   return {
+    view: (params.get('view') === 'endurance' ? 'endurance' : 'strength') as StatsView,
     range: parseRange(params.get('range')),
     muscle: parseMuscle(params.get('muscle')),
+    sport: parseSport(params.get('sport')),
+    setView: (view: StatsView) => change('view', view === 'strength' ? null : view),
     setRange: (range: StatsRange) => change('range', range),
     setMuscle: (muscle: MuscleGroup | null) => change('muscle', muscle),
+    setSport: (sport: EnduranceSport | null) => change('sport', sport),
   };
 }
 

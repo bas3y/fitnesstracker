@@ -49,6 +49,8 @@ export interface Settings extends BaseEntity {
   supplementNotificationsEnabled: boolean;
   /** Tagesziele Ernährung, getrennt nach Trainings- und Ruhetag */
   nutritionGoals: NutritionGoals;
+  /** Kalorien der Ausdauer-Einheiten erhöhen das kcal-Ziel des Tages */
+  addBurnedCalories: boolean;
   /** Sichtbare Aktivitäts-Kacheln auf der Trainingsseite, in Anzeigereihenfolge */
   trainingTiles: EnduranceSport[];
   /** Für die Pulszonen; `null` = nicht eingetragen */
@@ -70,6 +72,7 @@ export const DASHBOARD_WIDGETS = [
   'daily',
   'supplements',
   'nutrition',
+  'endurance',
 ] as const;
 export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
 /** Standardaufbau seit DB-Version 14 (bestehende Startseiten wurden einmalig umgestellt) */
@@ -620,6 +623,22 @@ export interface EnduranceSession extends BaseEntity {
   swolf: number | null;
   source: EnduranceSource;
   importInfo: EnduranceImportInfo | null;
+  /** Aus dem Verlauf berechnet (seit DB-Version 20), `null` = kein Verlauf */
+  trackSummary: TrackSummary | null;
+}
+
+/** Schnellste Zeit über eine Strecke innerhalb einer Einheit */
+export interface BestEffort {
+  meters: number;
+  seconds: number;
+}
+
+/** [Puls in bpm, Sekunden], aufsteigend nach Puls */
+export type HeartRateSeconds = [number, number][];
+
+export interface TrackSummary {
+  bestEfforts: BestEffort[];
+  heartRateSeconds: HeartRateSeconds;
 }
 
 /** Runde bzw. Intervall laut Uhr */

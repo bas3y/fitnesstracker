@@ -15,14 +15,13 @@ import type {
   EnduranceTrack,
   TrackLap,
 } from '../../db/types';
+import { MAX_SAMPLE_GAP_SECONDS } from '../track';
 import { ImportFileError, type ImportFormat, type ParsedActivity, type TrackPoint } from './types';
 
 /** Höchstens so viele Messpunkte je Einheit (ca. 50 KB) */
 export const MAX_TRACK_SAMPLES = 1500;
 /** Höchstens so viele Punkte für die Streckenlinie */
 export const MAX_ROUTE_POINTS = 500;
-/** Längere Lücken zwischen zwei Punkten gelten als Pause */
-export const MAX_SAMPLE_GAP_SECONDS = 30;
 /** Höhenrauschen unterhalb dieser Schwelle zählt nicht als Anstieg */
 const ELEVATION_THRESHOLD_METERS = 3;
 const EARTH_RADIUS_METERS = 6_371_000;

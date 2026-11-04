@@ -1,5 +1,7 @@
 import { shiftDay } from '../domain/daily';
+import { sessionDay } from '../domain/endurance';
 import {
+  burnedCalories,
   FREQUENT_DAYS,
   frequentFoodIds,
   pickNutrients,
@@ -9,7 +11,7 @@ import {
 } from '../domain/nutrition';
 import { db } from './database';
 import { loadFoodMap } from './foods';
-import { create, softDelete, update } from './repository';
+import { create, listActive, softDelete, update } from './repository';
 import { dayKeySchema, mealAmountSchema, savedMealNameSchema, type MealAmount } from './schemas';
 import { loadTrainingDays } from './supplements';
 import type { DayKey, MealEntry, MealType, Nutrients, SavedMeal } from './types';
@@ -25,15 +27,23 @@ export interface NutritionDayData {
   /** Für „Wie gestern“ */
   previous: MealEntry[];
   isTrainingDay: boolean;
+  /** Kalorien der Ausdauer-Einheiten an dem Tag */
+  burnedKcal: number;
 }
 
 export async function loadNutritionDay(date: DayKey): Promise<NutritionDayData> {
-  const [entries, previous, trainingDays] = await Promise.all([
+  const [entries, previous, trainingDays, sessions] = await Promise.all([
     listMealEntries(date),
     listMealEntries(shiftDay(date, -1)),
     loadTrainingDays(),
+    listActive(db.enduranceSessions),
   ]);
-  return { entries, previous, isTrainingDay: trainingDays.has(date) };
+  return {
+    entries,
+    previous,
+    isTrainingDay: trainingDays.has(date),
+    burnedKcal: burnedCalories(sessions.filter((session) => sessionDay(session) === date)),
+  };
 }
 
 /** Name und Nährwerte werden kopiert; spätere Änderungen am Lebensmittel ändern den Eintrag nicht */

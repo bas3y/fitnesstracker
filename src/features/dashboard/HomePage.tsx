@@ -12,13 +12,20 @@ import {
   DASHBOARD_WIDGETS,
   QUICK_ACTIONS,
   type DashboardWidget,
+  type EnduranceSession,
   type QuickAction,
   type Settings,
   type WeightUnit,
 } from '../../db/types';
 import type { WorkoutSummary } from '../../db/workouts';
 import { formatDecimal } from '../../domain/format';
-import { DASHBOARD_WIDGET_LABELS, QUICK_ACTION_LABELS } from '../../domain/labels';
+import { formatTotals } from '../../domain/endurance';
+import { weekBySport } from '../../domain/enduranceStats';
+import {
+  DASHBOARD_WIDGET_LABELS,
+  ENDURANCE_SPORT_LABELS,
+  QUICK_ACTION_LABELS,
+} from '../../domain/labels';
 import { dayKey } from '../../domain/daily';
 import {
   formatPercent,
@@ -36,6 +43,8 @@ import {
   workoutDurationSeconds,
 } from '../../domain/workout';
 import { HabitChecklist } from '../daily/HabitChecklist';
+import { EnduranceWidget } from '../endurance/EnduranceWidget';
+import { useEnduranceSessions } from '../endurance/useEndurance';
 import { TodayCard } from '../daily/TodayCard';
 import { TodoCard } from '../daily/TodoCard';
 import { NutritionDayCard } from '../nutrition/NutritionSummary';
@@ -56,6 +65,8 @@ const MUTED = 'text-slate-600 dark:text-slate-400';
 interface WidgetData {
   settings: Settings;
   sessions: StatsSession[];
+  /** Ausdauer-Einheiten, neueste zuerst */
+  endurance: EnduranceSession[];
   history: WorkoutSummary[];
   records: RecentRecords[];
   now: Date;
@@ -63,7 +74,8 @@ interface WidgetData {
 
 /** `null` = das Widget hat noch nichts zu zeigen */
 function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
-  const { settings, sessions, history, records, now } = data;
+  const { settings, sessions, endurance, history, records, now } = data;
+  const trained = sessions.length > 0 || endurance.length > 0;
   const last = history[0];
   const today = dayKey(now);
   switch (id) {
@@ -78,11 +90,12 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
         <ProgressCard sessions={sessions} bodyWeightKg={settings.bodyWeightKg} now={now} />
       ) : null;
     case 'week':
-      return sessions.length > 0 ? (
+      return trained ? (
         <WeekCard
           sessions={sessions}
+          endurance={endurance}
           bodyWeightKg={settings.bodyWeightKg}
-          unit={settings.weightUnit}
+          settings={settings}
           now={now}
         />
       ) : null;
@@ -93,7 +106,9 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
         <RecentRecordsSection rows={records} unit={settings.weightUnit} />
       ) : null;
     case 'activity':
-      return sessions.length > 0 ? <ActivityCard sessions={sessions} now={now} span="3m" /> : null;
+      return trained ? (
+        <ActivityCard sessions={sessions} endurance={endurance} now={now} span="3m" />
+      ) : null;
     case 'nextTraining':
       return <TrainingStartCard compact />;
     case 'daily':
@@ -104,12 +119,17 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
       );
     case 'nutrition':
       return <NutritionDayCard date={today} today={today} settings={settings} />;
+    case 'endurance':
+      return endurance.length > 0 ? (
+        <EnduranceWidget sessions={endurance} today={today} unit={settings.distanceUnit} />
+      ) : null;
   }
 }
 
 export function HomePage() {
   const settings = useSettings();
   const sessions = useLiveQuery(loadStatsSessions);
+  const endurance = useEnduranceSessions();
   const history = useWorkoutHistory();
   const now = useNow(true, 60_000);
   const [editing, setEditing] = useState(false);
@@ -118,7 +138,10 @@ export function HomePage() {
     () => recentRecords(sessions ?? [], bodyWeightKg, RECENT_RECORD_ROWS),
     [sessions, bodyWeightKg],
   );
-  const data = settings && sessions && history && { settings, sessions, history, records, now };
+  const data = settings &&
+    sessions &&
+    endurance &&
+    history && { settings, sessions, endurance, history, records, now };
 
   return (
     <div className="mx-auto max-w-md px-4 pt-[calc(1.5rem+env(safe-area-inset-top))]">
@@ -314,16 +337,20 @@ function ProgressCard({
 
 function WeekCard({
   sessions,
+  endurance,
   bodyWeightKg,
-  unit,
+  settings,
   now,
 }: {
   sessions: StatsSession[];
+  endurance: EnduranceSession[];
   bodyWeightKg: number | null;
-  unit: WeightUnit;
+  settings: Settings;
   now: Date;
 }) {
+  const unit = settings.weightUnit;
   const { workouts, sets, volumeKg } = weekSummary(sessions, bodyWeightKg, now);
+  const cardio = weekBySport(endurance, dayKey(now));
   const tiles = [
     { label: 'Workouts', value: String(workouts) },
     { label: 'Sätze', value: String(sets) },
@@ -339,6 +366,17 @@ function WeekCard({
           </div>
         ))}
       </dl>
+      {cardio.length > 0 && (
+        <p data-testid="week-endurance" className="mt-3 text-sm">
+          <span className="font-medium">Ausdauer:</span>{' '}
+          {cardio
+            .map(
+              ({ sport, totals }) =>
+                `${ENDURANCE_SPORT_LABELS[sport].icon} ${formatTotals(totals, sport, settings.distanceUnit)}`,
+            )
+            .join(' · ')}
+        </p>
+      )}
       <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         Ohne Aufwärmsätze; Stufen und Halteübungen zählen nicht zum Volumen.
       </p>

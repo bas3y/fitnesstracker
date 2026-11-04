@@ -50,6 +50,7 @@ function session(overrides: Partial<EnduranceSession> = {}): EnduranceSession {
     swolf: null,
     source: 'manual',
     importInfo: null,
+    trackSummary: null,
     ...overrides,
   };
 }

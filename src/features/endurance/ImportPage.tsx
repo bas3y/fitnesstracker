@@ -4,6 +4,7 @@ import { useBackTo, useFromHere } from '../../components/backNavigation';
 import { primaryButton, secondaryButton } from '../../components/buttons';
 import { Details } from '../../components/Details';
 import { Card, Page } from '../../components/Page';
+import { showToast } from '../../components/toastStore';
 import {
   applyEnduranceImport,
   planEnduranceImport,
@@ -11,6 +12,7 @@ import {
 } from '../../db/enduranceImport';
 import { ENDURANCE_SPORTS, type DistanceUnit, type EnduranceSport } from '../../db/types';
 import { formatDistance, formatPace, sessionTitle } from '../../domain/endurance';
+import { formatEffortDistance } from '../../domain/enduranceStats';
 import type {
   ImportedSessionValues,
   ImportStatus,
@@ -94,6 +96,15 @@ export function ImportPage() {
         .map(({ planned, sport }) => ({ planned, sport })),
     );
     setState({ step: 'done', summary });
+    if (summary.records.length > 0) {
+      showToast({
+        title: summary.records.length === 1 ? 'Neue Bestzeit' : 'Neue Bestzeiten',
+        lines: summary.records.map(
+          ({ sport, meters, seconds }) =>
+            `${ENDURANCE_SPORT_LABELS[sport].icon} ${formatEffortDistance(meters)}: ${formatClock(seconds)}`,
+        ),
+      });
+    }
   };
 
   const reset = () => setState({ step: 'idle', message: null });

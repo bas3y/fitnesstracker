@@ -1,6 +1,8 @@
 import { NUTRITION_GOAL_DEFAULTS } from '../db/schemas';
 import type { MealEntry, Nutrients } from '../db/types';
 import {
+  burnedCalories,
+  dayGoal,
   defaultMealAmount,
   formatMealAmount,
   formatNutrientLine,
@@ -86,6 +88,23 @@ describe('Ziele', () => {
   it('wählt die Ziele für Trainings- und Ruhetag', () => {
     expect(goalForDay(NUTRITION_GOAL_DEFAULTS, true)).toBe(NUTRITION_GOAL_DEFAULTS.training);
     expect(goalForDay(NUTRITION_GOAL_DEFAULTS, false)).toBe(NUTRITION_GOAL_DEFAULTS.rest);
+  });
+
+  it('addiert verbrannte Kalorien nur, wenn eingeschaltet', () => {
+    const settings = { nutritionGoals: NUTRITION_GOAL_DEFAULTS, addBurnedCalories: false };
+    const day = {
+      isTrainingDay: true,
+      burnedKcal: burnedCalories([{ calories: 400 }, { calories: null }]),
+    };
+    expect(day.burnedKcal).toBe(400);
+    expect(dayGoal(settings, day)).toBe(NUTRITION_GOAL_DEFAULTS.training);
+    expect(dayGoal({ ...settings, addBurnedCalories: true }, day)).toEqual({
+      ...NUTRITION_GOAL_DEFAULTS.training,
+      kcal: NUTRITION_GOAL_DEFAULTS.training.kcal + 400,
+    });
+    expect(
+      dayGoal({ ...settings, addBurnedCalories: true }, { isTrainingDay: false, burnedKcal: 0 }),
+    ).toBe(NUTRITION_GOAL_DEFAULTS.rest);
   });
 
   it('rechnet Protein in g pro kg Körpergewicht', () => {

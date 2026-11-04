@@ -1,5 +1,13 @@
-import type { EnduranceTrack } from '../db/types';
-import { MAX_SAMPLE_GAP_SECONDS } from './import/activity';
+import type {
+  BestEffort,
+  EnduranceSport,
+  EnduranceTrack,
+  HeartRateSeconds,
+  TrackSummary,
+} from '../db/types';
+
+/** Längere Lücken zwischen zwei Punkten gelten als Pause */
+export const MAX_SAMPLE_GAP_SECONDS = 30;
 
 type Track = Pick<
   EnduranceTrack,
@@ -28,23 +36,98 @@ export function heartRateZoneBounds(
   return HEART_RATE_ZONE_SHARES.map((share) => Math.round(rest + share * (maxHeartRate - rest)));
 }
 
-/** Sekunden je Zone (unterhalb Zone 1 zählt nicht); Pausen-Lücken zählen höchstens 30 s */
-export function zoneSeconds(
-  track: Pick<Track, 'time' | 'heartRate'>,
-  bounds: readonly number[],
-): number[] {
-  const seconds = bounds.map(() => 0);
+/** Sekunden je Puls (bpm), aufsteigend; Pausen-Lücken zählen höchstens 30 s */
+export function heartRateSeconds(track: Pick<Track, 'time' | 'heartRate'>): HeartRateSeconds {
+  const seconds = new Map<number, number>();
   for (let i = 0; i < track.time.length - 1; i++) {
     const hr = track.heartRate[i];
     if (hr === null || hr === undefined) continue;
     const gap = Math.min(track.time[i + 1]! - track.time[i]!, MAX_SAMPLE_GAP_SECONDS);
+    if (gap <= 0) continue;
+    const bpm = Math.round(hr);
+    seconds.set(bpm, (seconds.get(bpm) ?? 0) + gap);
+  }
+  return [...seconds].sort(([a], [b]) => a - b);
+}
+
+/** Sekunden je Zone (unterhalb Zone 1 zählt nicht) */
+export function zoneSecondsOf(histogram: HeartRateSeconds, bounds: readonly number[]): number[] {
+  const seconds = bounds.map(() => 0);
+  for (const [bpm, value] of histogram) {
     let zone = -1;
     bounds.forEach((bound, index) => {
-      if (hr >= bound) zone = index;
+      if (bpm >= bound) zone = index;
     });
-    if (zone >= 0 && gap > 0) seconds[zone]! += gap;
+    if (zone >= 0) seconds[zone]! += value;
   }
   return seconds;
+}
+
+export function zoneSeconds(
+  track: Pick<Track, 'time' | 'heartRate'>,
+  bounds: readonly number[],
+): number[] {
+  return zoneSecondsOf(heartRateSeconds(track), bounds);
+}
+
+// ---------- Bestzeiten ----------
+
+/** Strecken, für die Bestzeiten aus dem Verlauf gesucht werden */
+export const BEST_EFFORT_METERS: Partial<Record<EnduranceSport, readonly number[]>> = {
+  run: [1000, 5000, 10_000, 21_097.5, 42_195],
+  ride: [10_000, 20_000, 50_000, 100_000],
+};
+
+/** Schneller (m/s) ist ein GPS-Fehler */
+const MAX_EFFORT_SPEED: Partial<Record<EnduranceSport, number>> = { run: 7, ride: 25 };
+
+/** Schnellste Zeit über `meters` innerhalb des Verlaufs (Anfang interpoliert), `null` = zu kurz */
+export function fastestSeconds(
+  track: Pick<Track, 'time' | 'distance'>,
+  meters: number,
+): number | null {
+  const times: number[] = [];
+  const distances: number[] = [];
+  for (let i = 0; i < track.time.length; i++) {
+    const distance = track.distance[i];
+    if (distance === null || distance === undefined) continue;
+    // Strecke wächst nur; Rücksprünge (GPS) überspringen
+    if (distances.length > 0 && distance <= distances.at(-1)!) continue;
+    times.push(track.time[i]!);
+    distances.push(distance);
+  }
+  let best: number | null = null;
+  let start = 0;
+  for (let end = 1; end < distances.length; end++) {
+    const target = distances[end]! - meters;
+    if (target < distances[0]!) continue;
+    while (distances[start + 1]! <= target) start++;
+    const d0 = distances[start]!;
+    const d1 = distances[start + 1]!;
+    const t0 = times[start]!;
+    const startTime = t0 + ((target - d0) / (d1 - d0)) * (times[start + 1]! - t0);
+    const seconds = times[end]! - startTime;
+    if (best === null || seconds < best) best = seconds;
+  }
+  return best === null ? null : Math.round(best);
+}
+
+export function bestEfforts(
+  track: Pick<Track, 'time' | 'distance'>,
+  sport: EnduranceSport,
+): BestEffort[] {
+  const maxSpeed = MAX_EFFORT_SPEED[sport] ?? Infinity;
+  return (BEST_EFFORT_METERS[sport] ?? []).flatMap((meters) => {
+    const seconds = fastestSeconds(track, meters);
+    return seconds !== null && seconds > 0 && meters / seconds <= maxSpeed
+      ? [{ meters, seconds }]
+      : [];
+  });
+}
+
+/** Gespeichert an der Einheit, damit Statistiken die Verläufe nicht laden müssen */
+export function trackSummary(track: Track, sport: EnduranceSport): TrackSummary {
+  return { bestEfforts: bestEfforts(track, sport), heartRateSeconds: heartRateSeconds(track) };
 }
 
 // ---------- Abschnitte ----------

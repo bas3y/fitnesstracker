@@ -585,7 +585,71 @@ describe('AppDatabase-Migration', () => {
       sleepPhases: null,
       importedFields: [],
     });
-    expect(v19.verno).toBe(19);
+    expect(v19.verno).toBeGreaterThanOrEqual(19);
     await v19.delete();
+  });
+
+  it('Version 20 berechnet Bestzeiten und Puls aus vorhandenen Verläufen', async () => {
+    const name = 'migration-test-v20';
+    const v19 = new Dexie(name);
+    v19.version(19).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+    });
+    await v19.table('settings').add({ id: 'app-settings', name: 'Alex' });
+    await v19.table('enduranceSessions').bulkAdd([
+      { id: 'e1', sport: 'run', distanceMeters: 2000, deletedAt: null },
+      { id: 'e2', sport: 'run', distanceMeters: 5000, deletedAt: null },
+    ]);
+    await v19.table('enduranceTracks').add({
+      id: 't1',
+      sessionId: 'e1',
+      deletedAt: null,
+      time: [0, 300, 600],
+      distance: [0, 1000, 2000],
+      heartRate: [140, 150, null],
+      altitude: [],
+      route: [],
+      laps: [],
+    });
+    v19.close();
+
+    const v20 = new AppDatabase(name);
+    expect(await v20.settings.get('app-settings')).toMatchObject({
+      name: 'Alex',
+      addBurnedCalories: false,
+    });
+    expect(await v20.enduranceSessions.get('e1')).toMatchObject({
+      distanceMeters: 2000,
+      trackSummary: {
+        bestEfforts: [{ meters: 1000, seconds: 300 }],
+        heartRateSeconds: [
+          [140, 30],
+          [150, 30],
+        ],
+      },
+    });
+    expect(await v20.enduranceSessions.get('e2')).toMatchObject({ trackSummary: null });
+    expect(v20.verno).toBe(20);
+    await v20.delete();
   });
 });

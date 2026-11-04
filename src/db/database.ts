@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { trackSummary } from '../domain/track';
 import {
   DAILY_GOAL_DEFAULTS,
   NUTRITION_GOAL_DEFAULTS,
@@ -27,12 +28,22 @@ import {
   type Supplement,
   type SupplementIntake,
   type Todo,
+  type TrackSummary,
   type Workout,
   type WorkoutExercise,
   type WorkoutSet,
 } from './types';
 
 export const DB_NAME = 'fitnesstracker';
+
+/** Zusammenfassung aus dem aktiven Verlauf der Einheit, `null` = keiner */
+export function summaryFor(
+  session: Pick<EnduranceSession, 'id' | 'sport'>,
+  tracks: readonly EnduranceTrack[],
+): TrackSummary | null {
+  const track = tracks.find((item) => item.sessionId === session.id && item.deletedAt === null);
+  return track ? trackSummary(track, session.sport) : null;
+}
 
 // Schemaänderungen nur über eine neue `version(n)` mit Upgrade-Funktion – alte Versionen nie entfernen
 export class AppDatabase extends Dexie {
@@ -358,6 +369,24 @@ export class AppDatabase extends Dexie {
             log.importedFields ??= [];
           }),
       );
+    // Ausdauer-Statistiken: Bestzeiten und Puls je Einheit, verbrannte Kalorien in der Ernährung
+    this.version(20)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.addBurnedCalories ??= false;
+          });
+        const tracks = await tx.table<EnduranceTrack, string>('enduranceTracks').toArray();
+        await tx
+          .table<EnduranceSession, string>('enduranceSessions')
+          .toCollection()
+          .modify((session) => {
+            session.trackSummary ??= summaryFor(session, tracks);
+          });
+      });
   }
 }
 

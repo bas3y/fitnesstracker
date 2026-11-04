@@ -1,5 +1,5 @@
 import { sortSessions } from '../domain/endurance';
-import { db } from './database';
+import { db, summaryFor } from './database';
 import { create, listActive, nowIso, softDelete, update } from './repository';
 import {
   enduranceSessionInputSchema,
@@ -38,6 +38,22 @@ export async function createEnduranceSession(
   return create<EnduranceSession>(db.enduranceSessions, {
     ...enduranceSessionInputSchema.parse(input),
     ...origin,
+    trackSummary: null,
+  });
+}
+
+/** Für Einheiten mit Verlauf ohne Zusammenfassung (z. B. aus einer älteren Sicherung) */
+export function ensureTrackSummaries(): Promise<void> {
+  return db.transaction('rw', db.enduranceSessions, db.enduranceTracks, async () => {
+    const missing = await db.enduranceSessions
+      .filter((session) => session.deletedAt === null && session.trackSummary === null)
+      .toArray();
+    if (missing.length === 0) return;
+    const tracks = await listActive(db.enduranceTracks);
+    for (const session of missing) {
+      const trackSummary = summaryFor(session, tracks);
+      if (trackSummary) await db.enduranceSessions.update(session.id, { trackSummary });
+    }
   });
 }
 

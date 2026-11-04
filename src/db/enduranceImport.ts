@@ -5,6 +5,8 @@ import {
   type PlannedImport,
 } from '../domain/import/activity';
 import { suggestGearId } from '../domain/endurance';
+import { newEffortRecords, type EffortRecord } from '../domain/enduranceStats';
+import { trackSummary } from '../domain/track';
 import { db } from './database';
 import { listEnduranceSessions, loadEnduranceTrack } from './endurance';
 import { create, listActive, update } from './repository';
@@ -34,6 +36,8 @@ export interface ImportSummary {
   skipped: number;
   /** Neue und ergänzte Einheiten */
   sessionIds: string[];
+  /** Bestzeiten der importierten Einheiten, die alle bisherigen schlagen */
+  records: EffortRecord[];
 }
 
 function sessionValues(session: EnduranceSession): EnduranceSessionValues {
@@ -46,13 +50,28 @@ export async function applyEnduranceImport(
   choices: readonly ImportChoice[],
 ): Promise<ImportSummary> {
   return db.transaction('rw', db.enduranceSessions, db.enduranceTracks, db.gear, async () => {
-    const summary: ImportSummary = { created: 0, merged: 0, skipped: 0, sessionIds: [] };
+    const summary: ImportSummary = {
+      created: 0,
+      merged: 0,
+      skipped: 0,
+      sessionIds: [],
+      records: [],
+    };
     const sessions = await listActive(db.enduranceSessions);
     const gear = await listActive(db.gear);
 
-    const addTrack = async (sessionId: string, candidate: ImportCandidate) => {
-      if (!candidate.track || (await loadEnduranceTrack(sessionId))) return;
-      await create<EnduranceTrack>(db.enduranceTracks, { ...candidate.track, sessionId });
+    const addTrack = async (
+      session: Pick<EnduranceSession, 'id' | 'sport'>,
+      candidate: ImportCandidate,
+    ) => {
+      if (!candidate.track || (await loadEnduranceTrack(session.id))) return;
+      await create<EnduranceTrack>(db.enduranceTracks, {
+        ...candidate.track,
+        sessionId: session.id,
+      });
+      await update(db.enduranceSessions, session.id, {
+        trackSummary: trackSummary(candidate.track, session.sport),
+      });
     };
 
     for (const { planned, sport } of choices) {
@@ -70,7 +89,7 @@ export async function applyEnduranceImport(
           ...values,
           importInfo: candidate.importInfo,
         });
-        await addTrack(match.id, candidate);
+        await addTrack(match, candidate);
         summary.merged++;
         summary.sessionIds.push(match.id);
         continue;
@@ -87,12 +106,14 @@ export async function applyEnduranceImport(
         ...enduranceSessionInputSchema.parse({ ...candidate.session, sport, gearId }),
         source: 'import',
         importInfo: candidate.importInfo,
+        trackSummary: null,
       });
       sessions.push(session);
-      await addTrack(session.id, candidate);
+      await addTrack(session, candidate);
       summary.created++;
       summary.sessionIds.push(session.id);
     }
+    summary.records = newEffortRecords(await listActive(db.enduranceSessions), summary.sessionIds);
     return summary;
   });
 }
