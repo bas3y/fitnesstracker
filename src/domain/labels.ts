@@ -1,5 +1,6 @@
 import type {
   BodyMeasure,
+  DailyImportField,
   DashboardWidget,
   EnduranceSport,
   Equipment,
@@ -10,6 +11,14 @@ import type {
   QuickAction,
   SwimStroke,
 } from '../db/types';
+
+export const DAILY_IMPORT_FIELD_LABELS: Record<DailyImportField, string> = {
+  steps: 'Schritte',
+  sleep: 'Schlaf',
+  weight: 'Gewicht',
+  restingHeartRate: 'Ruhepuls',
+  hrv: 'HRV',
+};
 
 export const ENDURANCE_SPORT_LABELS: Record<EnduranceSport, { name: string; icon: string }> = {
   run: { name: 'Laufen', icon: '🏃' },

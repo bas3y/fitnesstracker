@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useBackTo, useFromHere } from '../../components/backNavigation';
 import { primaryButton, secondaryButton } from '../../components/buttons';
+import { Details } from '../../components/Details';
 import { Card, Page } from '../../components/Page';
 import {
   applyEnduranceImport,
@@ -340,15 +341,6 @@ function PreviewRow({
   );
 }
 
-function Details({ summary, children }: { summary: string; children: ReactNode }) {
-  return (
-    <details className="mb-4 rounded-xl bg-white p-3 shadow-sm dark:bg-slate-800">
-      <summary className="flex min-h-11 cursor-pointer items-center font-medium">{summary}</summary>
-      <div className="mt-2">{children}</div>
-    </details>
-  );
-}
-
 function Done({ summary, onMore }: { summary: ImportSummary; onMore: () => void }) {
   const from = useFromHere();
   const parts = [
@@ -415,7 +407,7 @@ const HELP: { title: string; steps: string[] }[] = [
   {
     title: 'Teilen (Android)',
     steps: [
-      'Ist die App installiert, erscheint sie im „Teilen“-Menü, z. B. beim Export einer Datei aus Garmin Connect oder einem Dateimanager.',
+      'Ist die App installiert, erscheint sie im „Teilen“-Menü, wenn eine Datei geteilt wird (z. B. aus „Downloads“ oder einem Dateimanager). Die Garmin-Connect-App teilt keine Dateien, dort den Weg über den Browser nehmen.',
       'Auf dem iPhone geht das nicht: Datei in „Dateien“ sichern und hier auswählen.',
     ],
   },

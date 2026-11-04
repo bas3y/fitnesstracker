@@ -124,6 +124,9 @@ export const MIN_BODY_WEIGHT_KG = 20;
 export const MAX_BODY_WEIGHT_KG = 400;
 export const MIN_BODY_MEASURE_M = 0.05;
 export const MAX_BODY_MEASURE_M = 3;
+export const MIN_RESTING_HEART_RATE = 25;
+export const MAX_RESTING_HEART_RATE = 150;
+export const MAX_HRV_MS = 300;
 
 export const DAILY_GOAL_DEFAULTS = {
   stepsGoal: 10_000,
@@ -132,6 +135,14 @@ export const DAILY_GOAL_DEFAULTS = {
 };
 
 const rating = z.number().int().min(1).max(5);
+
+const phaseSeconds = z.number().int().min(0).max(MAX_SLEEP_SECONDS);
+export const sleepPhasesSchema = z.object({
+  deep: phaseSeconds,
+  light: phaseSeconds,
+  rem: phaseSeconds,
+  awake: phaseSeconds,
+});
 
 /** Tageswerte (intern kg/Sekunden/ml); `null` = nicht erfasst */
 export const dailyLogValuesSchema = z.object({
@@ -142,6 +153,14 @@ export const dailyLogValuesSchema = z.object({
   weightKg: z.number().min(MIN_BODY_WEIGHT_KG).max(MAX_BODY_WEIGHT_KG).nullable(),
   mood: rating.nullable(),
   energy: rating.nullable(),
+  restingHeartRate: z
+    .number()
+    .int()
+    .min(MIN_RESTING_HEART_RATE)
+    .max(MAX_RESTING_HEART_RATE)
+    .nullable(),
+  hrvMs: z.number().int().min(1).max(MAX_HRV_MS).nullable(),
+  sleepPhases: sleepPhasesSchema.nullable(),
 });
 
 export type DailyLogValues = z.infer<typeof dailyLogValuesSchema>;

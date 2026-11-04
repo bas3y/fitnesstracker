@@ -24,7 +24,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 12b – Alltag übersichtlicher (Kacheln + Unterseiten)
 - [x] Schritt 13 – Training-Kacheln & Ausdauer manuell
 - [x] Schritt 14 – Import von Einheiten (Uhr, Strava)
-- [ ] Schritt 14b – Import von Gesundheitsdaten
+- [x] Schritt 14b – Import von Gesundheitsdaten
 - [ ] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
 - [ ] Schritt 16 – Ziele & Rückblicke
 - [ ] Schritt 17 – Self-Improvement
@@ -729,20 +729,36 @@ Mit dem Nutzer abgestimmt (nach Schritt 12b):
   1. Testen am PC (`npm run dev`) oder erst pushen fürs Handy? Vor dem Push an ein Backup auf dem Handy erinnern (DB-Version 18).
   2. Testliste: Garmin-ZIP („Original exportieren“) und Strava-GPX importieren; optional kompletter Strava-Konto-Export (Dauer, Speicher); iPhone-Dateiauswahl (`.fit` antippbar?); max. Puls eintragen → Pulszonen; Android-Teilen-Ziel (ggf. App neu installieren).
   3. Rückmeldungen als Korrekturen einarbeiten (ggf. als Schritt 14a/Nachtrag hier notieren).
+  - **Erledigt (Chat zu 14b):** Nutzer hat am PC (`npm run dev`) getestet → „klappt“. Die Garmin-Connect-*App* exportiert keine Dateien (nur über connect.garmin.com im Browser, auch am Handy per Desktop-Ansicht); Hinweis „Teilen (Android)“ auf der Import-Seite entsprechend korrigiert. iPhone-Dateiauswahl und Android-Teilen-Ziel weiterhin erst nach einem Push prüfbar.
 
 ### Schritt 14b – Import von Gesundheitsdaten
 **Ziel:** Schlaf, Schritte, Ruhepuls, HRV usw. aus Uhr/Handy in den Alltag übernehmen.
 
-> **Vorher:** Nutzertest von Schritt 14 steht noch aus (siehe „Zwischenstand“ in den Notizen von Schritt 14). Zuerst nachfragen, ob getestet wurde bzw. jetzt getestet werden soll.
 - **Quellen:** Apple-Health-Export (`export.zip` mit `export.xml`, groß → streamend parsen; enthält auch Garmin-Daten, wenn Garmin Connect mit Apple Health synchronisiert), Garmin-Datenexport (ZIP mit JSON: Schlaf, Tageswerte, HRV). Strava liefert keine Gesundheitsdaten.
 - **Nur Tageswerte:** Schritte, Schlafdauer + Phasen, Ruhepuls, HRV (Nacht-Ø), ggf. Stress. Schritte/Schlaf füllen die bestehenden `dailyLogs`-Felder (manuelle Werte bleiben), Ruhepuls/HRV/Schlafphasen als neue Felder (Dexie-Version, Backup).
 - Anzeige auf „Körper & Befinden“ und im Verlauf (`DailyHistoryPage`, Recharts lazy). Optional: Einheiten aus dem Apple-Health-Export mit übernehmen (Duplikat-Erkennung aus Schritt 14).
 - Import gedacht für „ab und zu“ (z. B. monatlich), mehrfacher Import desselben Zeitraums ist unschädlich.
 
+Mit dem Nutzer abgestimmt: Quellen Apple Health **und** Garmin-Datenexport; Werte Schritte, Schlaf (mit Phasen), Körpergewicht, Ruhepuls, HRV; **keine** Einheiten aus Apple Health (kommen weiter per FIT/GPX).
+
 **Notizen:**
 - Gebaut:
+  - Dexie v19: `DailyLog.restingHeartRate`, `hrvMs`, `sleepPhases` (`{ deep, light, rem, awake }` in Sekunden) und `importedFields` (`DAILY_IMPORT_FIELDS`: `steps`, `sleep`, `weight`, `restingHeartRate`, `hrv`). Backup-Defaults (Sicherungen bis v18 importierbar), Migration füllt `null`/`[]`.
+  - **Herkunft je Wert:** Import füllt leere Werte und aktualisiert früher importierte; eigene Einträge bleiben. Eine eigene Eingabe (`updateDailyLog`) nimmt das Feld aus `importedFields`; eine neue Schlafdauer verwirft die importierten Phasen. Import schreibt über `writeImportedDailyLog`, Gewicht gleicht `Settings.bodyWeightKg` ab (`syncBodyWeight`).
+  - Parser ohne Pakete in `src/domain/import/` (lazy, eigener Chunk): `appleHealth.ts` (`HealthXmlScanner` liest `export.xml` stückweise, nur `<Record>`-Start-Tags der 5 Typen; `AppleHealthCollector`: Schritte = Quelle mit den meisten Schritten am Tag, Schlaf zählt zum Tag des Aufwachens – endet er nach 18 Uhr, zur nächsten Nacht –, Quelle mit Phasen bzw. längstem Schlaf, Überlappungen per Vereinigung; nur „Im Bett“ gilt als Schlaf, wenn sonst nichts da ist; Gewicht = letzte Messung, kg/lb/g; Ruhepuls/HRV = Tagesmittel), `garminHealth.ts` (`*_sleepData.json`, `UDSFile_*.json`, tolerant auch HRV `lastNightAvg`/`hrvSummary` und Gewicht in Gramm aus `*bioMetrics*`), `readHealthFiles.ts` (ZIP/XML/JSON am Inhalt erkannt, `openZipEntry` entpackt als Stream mit Fortschritt in %), `health.ts` (`healthDay` verwirft unplausible Werte, `mergeHealthDays` – Garmin vor Apple –, `planHealthImport` mit Zählung je Wert: neu/aktualisiert/unverändert/eigener Eintrag bleibt; Tage nach heute ignoriert). Speichern: `applyHealthImport` (`src/db/healthImport.ts`, eine Transaktion).
+  - UI: `HealthImportPage` (`/daily/import`, `HEALTH_IMPORT_PATH`, Einstieg „Gesundheitsdaten importieren“ auf Körper & Befinden): Export wählen → Fortschritt → Vorschau (Zeitraum, Quellen, je Wert Haken + Zählung, nicht lesbare Dateien) → „n Tage übernehmen“ → Zusammenfassung mit Links. Anleitung für Apple Health und Garmin-Datenexport.
+  - Körper & Befinden: Schlafphasen-Balken (`SleepPhasesBar`), Karte „Erholung“ (Ruhepuls, HRV, auch manuell), Hinweis „Aus dem Import: …“. Verlauf: Kennzahlen „Ruhepuls“ und „HRV“, bei Schlaf zusätzlich Ø-Schlafphasen (`averageSleepPhases`).
+  - `Details` (aufklappbare Karte) liegt jetzt in `src/components/`.
+  - Tests: `health`/`appleHealth`/`garminHealth`/`readHealthFiles`-Tests (Stückgrenzen, Quellen, Nachtzuordnung, Plan inkl. zweitem Import), `src/db/healthImport.test.ts`, Migration v18→v19, Backup aus v18, `daily.test.ts` erweitert. Testdateien: `sampleAppleHealthXml`/`healthDate` in `src/test/importFiles.ts`, `dailyLogOf` in `src/test/dailyLog.ts`. E2E `e2e/health.spec.ts` offline in beiden Viewports (Apple-ZIP + Garmin-ZIP + kaputte Datei, eigener Wert bleibt, Wert abwählen, Zurück zum Tag, Phasen, eigene Änderung, zweiter Import, Verlauf). 597 Unit-Tests, 78/78 E2E grün. Hauptbundle unverändert (~294 KB), Import-Seite und Parser je eigener Chunk (10 bzw. 7 KB).
 - Abweichungen:
+  - HRV: Apple Watch misst **SDNN** (mehrmals täglich, Tagesmittel), Garmin **RMSSD** (Nacht-Ø). Beides landet in einem Feld `hrvMs`; Garmin hat Vorrang, wenn beide denselben Tag liefern. Werte beider Quellen sind nicht direkt vergleichbar.
+  - Ruhepuls/HRV sind auch manuell eintragbar (Karte „Erholung“), damit die Werte ohne Uhr nutzbar sind. Stress/Body Battery nicht übernommen (nicht gewählt).
+  - Keine Auswahl des Zeitraums: Ein Import vergleicht alles, schreibt aber nur geänderte Tage („unverändert“ zählt mit, `updatedAt` bleibt). Kachel „Körper & Befinden“ auf der Übersicht unverändert.
 - Offene Punkte:
+  - **Garmin-Format ungeprüft:** Schlaf (`sleepData`) und Tageswerte (`UDSFile`: `totalSteps`, `restingHeartRate`) laut öffentlichen Beispielen; HRV- und Gewichtsdateien sind geraten. Mit einem echten Garmin-Export des Nutzers prüfen.
+  - Großer Apple-Export auf dem echten iPhone testen (Dauer, Speicher; mehrere GB `export.xml`). Die Datei bleibt dabei gepackt, gelesen wird stückweise.
+  - Ruhepuls aus dem Import könnte `Settings.restingHeartRate` (Pulszonen) vorschlagen – bisher nicht verknüpft.
+  - Kein Graph der Schlafphasen über die Zeit, nur Ø im Verlauf.
 
 ### Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
 - Wochenkilometer, Pace-Entwicklung, Zeit in HF-Zonen, Integration in Dashboard (Widget) und Heatmap.

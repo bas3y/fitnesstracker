@@ -540,7 +540,52 @@ describe('AppDatabase-Migration', () => {
     });
     expect(await v18.enduranceSessions.get('e1')).toMatchObject({ distanceMeters: 5000 });
     expect(await v18.enduranceTracks.count()).toBe(0);
-    expect(v18.verno).toBe(18);
+    expect(v18.verno).toBeGreaterThanOrEqual(18);
     await v18.delete();
+  });
+
+  it('Version 19 ergänzt Gesundheitswerte an Tageseinträgen, Werte bleiben', async () => {
+    const name = 'migration-test-v19';
+    const v18 = new Dexie(name);
+    v18.version(18).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+    });
+    await v18
+      .table('dailyLogs')
+      .add({ id: 'd1', date: '2026-11-01', steps: 8000, sleepSeconds: 25_200, weightKg: 80 });
+    v18.close();
+
+    const v19 = new AppDatabase(name);
+    expect(await v19.dailyLogs.get('d1')).toMatchObject({
+      steps: 8000,
+      sleepSeconds: 25_200,
+      weightKg: 80,
+      restingHeartRate: null,
+      hrvMs: null,
+      sleepPhases: null,
+      importedFields: [],
+    });
+    expect(v19.verno).toBe(19);
+    await v19.delete();
   });
 });

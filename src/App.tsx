@@ -21,6 +21,10 @@ const DailyHistoryPage = lazyPage(
   'DailyHistoryPage',
 );
 const DailyPage = lazyPage(() => import('./features/daily/DailyPage'), 'DailyPage');
+const HealthImportPage = lazyPage(
+  () => import('./features/daily/HealthImportPage'),
+  'HealthImportPage',
+);
 const HabitCreatePage = lazyPage(() => import('./features/daily/HabitEditPage'), 'HabitCreatePage');
 const HabitDetailPage = lazyPage(
   () => import('./features/daily/HabitDetailPage'),
@@ -153,6 +157,7 @@ export function App() {
           <Route path="daily" element={<DailyPage />} />
           <Route path="daily/history" element={<DailyHistoryPage />} />
           <Route path="daily/body" element={<BodyPage />} />
+          <Route path="daily/import" element={<HealthImportPage />} />
           <Route path="daily/measurements" element={<BodyMeasurementsPage />} />
           <Route path="daily/habits" element={<HabitListPage />} />
           <Route path="daily/habits/new" element={<HabitCreatePage />} />

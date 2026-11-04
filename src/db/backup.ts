@@ -31,6 +31,7 @@ import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
 import {
   BODY_MEASURES,
+  DAILY_IMPORT_FIELDS,
   DASHBOARD_WIDGETS,
   DEFAULT_DASHBOARD_WIDGETS,
   DEFAULT_QUICK_ACTIONS,
@@ -193,9 +194,14 @@ const planExerciseSchema = baseEntitySchema.extend(planExerciseValuesSchema.shap
   order: z.number(),
 });
 
-const dailyLogSchema = baseEntitySchema
-  .extend(dailyLogValuesSchema.shape)
-  .extend({ date: dayKeySchema });
+const dailyLogSchema = baseEntitySchema.extend(dailyLogValuesSchema.shape).extend({
+  date: dayKeySchema,
+  // Seit DB-Version 19
+  restingHeartRate: dailyLogValuesSchema.shape.restingHeartRate.default(null),
+  hrvMs: dailyLogValuesSchema.shape.hrvMs.default(null),
+  sleepPhases: dailyLogValuesSchema.shape.sleepPhases.default(null),
+  importedFields: z.array(z.enum(DAILY_IMPORT_FIELDS)).default([]),
+});
 const bodyMeasurementSchema = baseEntitySchema.extend({
   date: dayKeySchema,
   values: z.partialRecord(z.enum(BODY_MEASURES), bodyMeasureSchema),

@@ -285,7 +285,26 @@ export interface DailyLog extends BaseEntity {
   mood: number | null;
   /** 1–5 */
   energy: number | null;
+  /** Schläge pro Minute (seit DB-Version 19) */
+  restingHeartRate: number | null;
+  /** Millisekunden; Apple Watch misst SDNN, Garmin RMSSD (Nacht-Ø) */
+  hrvMs: number | null;
+  /** Nur aus dem Import; gehört zu `sleepSeconds` */
+  sleepPhases: SleepPhases | null;
+  /** Werte aus dem Import: ein neuer Import darf sie überschreiben, eigene Einträge nie */
+  importedFields: DailyImportField[];
 }
+
+/** Sekunden je Schlafphase */
+export interface SleepPhases {
+  deep: number;
+  light: number;
+  rem: number;
+  awake: number;
+}
+
+export const DAILY_IMPORT_FIELDS = ['steps', 'sleep', 'weight', 'restingHeartRate', 'hrv'] as const;
+export type DailyImportField = (typeof DAILY_IMPORT_FIELDS)[number];
 
 export const BODY_MEASURES = ['neck', 'chest', 'waist', 'hips', 'arm', 'thigh', 'calf'] as const;
 export type BodyMeasure = (typeof BODY_MEASURES)[number];

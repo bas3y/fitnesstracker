@@ -4,8 +4,9 @@ import { Chip } from '../../components/Chip';
 import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import type { HabitWithChecks } from '../../db/habits';
-import type { DailyLog, DayKey, Settings } from '../../db/types';
+import type { DailyLog, DayKey, Settings, SleepPhases } from '../../db/types';
 import {
+  averageSleepPhases,
   averageValue,
   DAILY_METRIC_LABELS,
   DAILY_METRICS,
@@ -32,6 +33,7 @@ import {
   STATS_RANGES,
 } from '../../domain/stats';
 import { useStatsFilter } from '../stats/statsFilter';
+import { SleepPhasesBar } from './SleepPhasesBar';
 import { useHabits } from './useHabits';
 import { useDailyLogs } from './useDaily';
 
@@ -48,6 +50,7 @@ interface MetricView {
   points: DailyPoint[];
   format: (value: number) => string;
   summary: string | null;
+  sleepPhases?: SleepPhases | null;
 }
 
 function toPoints(values: DayValue[]): DailyPoint[] {
@@ -141,6 +144,7 @@ function History({
       points,
       format,
       summary: base && (goal ? `${base} · Ziel an ${goal.reached} von ${goal.total} Tagen` : base),
+      sleepPhases: selected === 'sleep' ? averageSleepPhases(ranged) : null,
     };
   })();
 
@@ -173,6 +177,9 @@ function History({
               <p className={HINT} data-testid="daily-summary">
                 {view.summary}
               </p>
+            )}
+            {view.sleepPhases && (
+              <SleepPhasesBar phases={view.sleepPhases} label="Ø Schlafphasen pro Nacht" />
             )}
           </>
         )}

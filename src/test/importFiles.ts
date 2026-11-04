@@ -174,6 +174,50 @@ ${points.join('\n')}
 </gpx>`;
 }
 
+const pad2 = (n: number) => String(Math.abs(n)).padStart(2, '0');
+
+/** Ortszeit wie im Apple-Export: `2024-01-31 22:15:00 +0100` */
+export function healthDate(ms: number): string {
+  const d = new Date(ms);
+  const offset = -d.getTimezoneOffset();
+  const sign = offset >= 0 ? '+' : '-';
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())} ${sign}${pad2(Math.trunc(offset / 60))}${pad2(offset % 60)}`;
+}
+
+export interface HealthRecordInput {
+  type: string;
+  start: number;
+  end?: number;
+  value: string | number;
+  unit?: string;
+  source?: string;
+}
+
+/** `export.xml` wie aus der Health-App (mit DTD-Kopf, Metadaten und anderen Einträgen) */
+export function sampleAppleHealthXml(records: HealthRecordInput[]): string {
+  const lines = records.map((record) => {
+    const attributes = `type="${record.type}" sourceName="${record.source ?? 'Apple Watch von Test'}" sourceVersion="10.0" unit="${record.unit ?? 'count'}" creationDate="${healthDate(record.end ?? record.start)}" startDate="${healthDate(record.start)}" endDate="${healthDate(record.end ?? record.start)}" value="${record.value}"`;
+    return record.type.includes('HeartRateVariability')
+      ? ` <Record ${attributes}>\n  <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>\n </Record>`
+      : ` <Record ${attributes}/>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HealthData [
+<!ELEMENT HealthData (ExportDate,Me,(Record|Correlation|Workout|ActivitySummary)*)>
+<!ATTLIST Record
+  type          CDATA #REQUIRED
+>
+]>
+<HealthData locale="de_DE">
+ <ExportDate value="${healthDate(Date.now())}"/>
+ <Me HKCharacteristicTypeIdentifierBiologicalSex="HKBiologicalSexNotSet"/>
+ <Record type="HKQuantityTypeIdentifierHeartRate" sourceName="Apple Watch von Test" unit="count/min" startDate="${healthDate(Date.now())}" endDate="${healthDate(Date.now())}" value="72"/>
+${lines.join('\n')}
+ <ActivitySummary dateComponents="2026-10-01" activeEnergyBurned="500"/>
+</HealthData>
+`;
+}
+
 const crcTable = Array.from({ length: 256 }, (_, n) => {
   let c = n;
   for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;

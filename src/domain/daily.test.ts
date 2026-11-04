@@ -1,5 +1,7 @@
 import type { BodyMeasurement, DailyLog } from '../db/types';
+import { dailyLogOf } from '../test/dailyLog';
 import {
+  averageSleepPhases,
   averageValue,
   bodyWeightOn,
   dailyPoints,
@@ -11,6 +13,7 @@ import {
   goalDays,
   goalPercent,
   hoursToSeconds,
+  importFieldsOf,
   isDayKey,
   latestMeasures,
   measurePoints,
@@ -18,21 +21,7 @@ import {
   shiftDay,
 } from './daily';
 
-const log = (date: string, values: Partial<DailyLog>): DailyLog => ({
-  id: date,
-  createdAt: '',
-  updatedAt: '',
-  deletedAt: null,
-  date,
-  steps: null,
-  waterMl: null,
-  sleepSeconds: null,
-  sleepQuality: null,
-  weightKg: null,
-  mood: null,
-  energy: null,
-  ...values,
-});
+const log = (date: string, values: Partial<DailyLog>): DailyLog => dailyLogOf(date, values);
 
 const measurement = (date: string, values: BodyMeasurement['values']): BodyMeasurement => ({
   id: date,
@@ -158,5 +147,29 @@ describe('Körpermaße', () => {
 
   it('merkt sich je Stelle den neuesten Wert', () => {
     expect(latestMeasures(entries)).toEqual({ waist: 0.885, arm: 0.38 });
+  });
+});
+
+describe('Gesundheitswerte', () => {
+  it('formatiert Ruhepuls und HRV', () => {
+    expect(formatDailyMetric('restingHeartRate', 52, 'kg')).toBe('52 bpm');
+    expect(formatDailyMetric('hrv', 48, 'kg')).toBe('48 ms');
+    expect(dailyPoints([log('2026-10-01', { hrvMs: 48 })], 'hrv', 'kg')[0]!.value).toBe(48);
+  });
+
+  it('mittelt Schlafphasen nur über Nächte mit Phasen', () => {
+    expect(averageSleepPhases([log('2026-10-01', { sleepSeconds: 7 * 3600 })])).toBeNull();
+    expect(
+      averageSleepPhases([
+        log('2026-10-01', { sleepPhases: { deep: 3600, light: 14_400, rem: 5400, awake: 600 } }),
+        log('2026-10-02', { sleepPhases: { deep: 5400, light: 12_600, rem: 7200, awake: 0 } }),
+        log('2026-10-03', { sleepSeconds: 7 * 3600 }),
+      ]),
+    ).toEqual({ deep: 4500, light: 13_500, rem: 6300, awake: 300 });
+  });
+
+  it('ordnet Änderungen den Import-Feldern zu', () => {
+    expect(importFieldsOf({ sleepSeconds: 1, sleepPhases: null, mood: 3 })).toEqual(['sleep']);
+    expect(importFieldsOf({ weightKg: 80, hrvMs: 40, waterMl: 500 })).toEqual(['weight', 'hrv']);
   });
 });

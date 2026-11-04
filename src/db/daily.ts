@@ -1,4 +1,4 @@
-import { dayKey, type DatedWeight } from '../domain/daily';
+import { dayKey, importFieldsOf, type DatedWeight } from '../domain/daily';
 import { db } from './database';
 import { create, softDelete, update } from './repository';
 import {
@@ -9,7 +9,7 @@ import {
   type DailyLogValues,
 } from './schemas';
 import { ensureSettings, updateSettings } from './settings';
-import type { BodyMeasure, BodyMeasurement, DailyLog, DayKey } from './types';
+import type { BodyMeasure, BodyMeasurement, DailyImportField, DailyLog, DayKey } from './types';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
 
@@ -21,6 +21,9 @@ const EMPTY_DAILY_VALUES: DailyLogValues = {
   weightKg: null,
   mood: null,
   energy: null,
+  restingHeartRate: null,
+  hrvMs: null,
+  sleepPhases: null,
 };
 
 export function getDailyLog(date: DayKey): Promise<DailyLog | undefined> {
@@ -38,14 +41,42 @@ export async function loadBodyWeights(): Promise<DatedWeight[]> {
   return logs.flatMap(({ date, weightKg }) => (weightKg === null ? [] : [{ date, weightKg }]));
 }
 
+/**
+ * Eigene Eingabe: Die geänderten Werte gelten danach nicht mehr als importiert, eine neue
+ * Schlafdauer verwirft die importierten Phasen.
+ */
 async function writeDailyLog(date: DayKey, values: Partial<DailyLogValues>): Promise<void> {
+  const changes =
+    'sleepSeconds' in values && !('sleepPhases' in values)
+      ? { ...values, sleepPhases: null }
+      : values;
   const existing = await getDailyLog(date);
-  if (existing) await update(db.dailyLogs, existing.id, values);
-  else await create(db.dailyLogs, { ...EMPTY_DAILY_VALUES, ...values, date });
+  if (existing) {
+    const touched = importFieldsOf(changes);
+    await update(db.dailyLogs, existing.id, {
+      ...changes,
+      importedFields: existing.importedFields.filter((field) => !touched.includes(field)),
+    });
+  } else {
+    await create(db.dailyLogs, { ...EMPTY_DAILY_VALUES, ...changes, date, importedFields: [] });
+  }
+}
+
+/** Import: Werte und Herkunft genau so übernehmen */
+export async function writeImportedDailyLog(
+  date: DayKey,
+  values: Partial<DailyLogValues>,
+  importedFields: DailyImportField[],
+): Promise<void> {
+  const key = dayKeySchema.parse(date);
+  const parsed = dailyLogValuesSchema.partial().parse(values);
+  const existing = await getDailyLog(key);
+  if (existing) await update(db.dailyLogs, existing.id, { ...parsed, importedFields });
+  else await create(db.dailyLogs, { ...EMPTY_DAILY_VALUES, ...parsed, date: key, importedFields });
 }
 
 /** Das neueste Gewicht ist zugleich das aktuelle Körpergewicht */
-async function syncBodyWeight(): Promise<void> {
+export async function syncBodyWeight(): Promise<void> {
   const latest = (await loadBodyWeights()).at(-1);
   if (!latest) return;
   const settings = await ensureSettings();

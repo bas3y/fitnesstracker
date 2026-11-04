@@ -1,10 +1,13 @@
+import type { DailyLogValues } from '../db/schemas';
 import type {
   BodyMeasure,
   BodyMeasurement,
+  DailyImportField,
   DailyLog,
   DayKey,
   DistanceUnit,
   Settings,
+  SleepPhases,
   WeightUnit,
 } from '../db/types';
 import { formatDecimal } from './format';
@@ -78,6 +81,8 @@ export const DAILY_METRICS = [
   'sleepQuality',
   'mood',
   'energy',
+  'restingHeartRate',
+  'hrv',
 ] as const;
 export type DailyMetric = (typeof DAILY_METRICS)[number];
 
@@ -89,6 +94,8 @@ export const DAILY_METRIC_LABELS: Record<DailyMetric, string> = {
   sleepQuality: 'Schlafqualität',
   mood: 'Stimmung',
   energy: 'Energie',
+  restingHeartRate: 'Ruhepuls',
+  hrv: 'HRV',
 };
 
 export type DailyGoals = Pick<Settings, 'stepsGoal' | 'waterGoalMl' | 'sleepGoalSeconds'>;
@@ -109,6 +116,10 @@ function rawValue(log: DailyLog, metric: DailyMetric): number | null {
       return log.mood;
     case 'energy':
       return log.energy;
+    case 'restingHeartRate':
+      return log.restingHeartRate;
+    case 'hrv':
+      return log.hrvMs;
   }
 }
 
@@ -129,6 +140,10 @@ export function formatDailyMetric(metric: DailyMetric, value: number, unit: Weig
       return `${formatDecimal(value, 0)} ml`;
     case 'sleep':
       return `${formatDecimal(value, 1)} h`;
+    case 'restingHeartRate':
+      return `${formatDecimal(value, 0)} bpm`;
+    case 'hrv':
+      return `${formatDecimal(value, 0)} ms`;
     default:
       return `${formatDecimal(value, 1)} von 5`;
   }
@@ -188,6 +203,55 @@ export function secondsToHours(seconds: number): number {
 
 export function hoursToSeconds(hours: number): number {
   return Math.round(hours * SECONDS_PER_HOUR);
+}
+
+// ---------- Schlafphasen ----------
+
+export const SLEEP_PHASES = [
+  'deep',
+  'light',
+  'rem',
+  'awake',
+] as const satisfies readonly (keyof SleepPhases)[];
+
+export const SLEEP_PHASE_LABELS: Record<keyof SleepPhases, string> = {
+  deep: 'Tiefschlaf',
+  light: 'Leichtschlaf',
+  rem: 'REM',
+  awake: 'Wach',
+};
+
+/** Ø je Phase über alle Nächte mit Phasen; `null` = keine */
+export function averageSleepPhases(logs: DailyLog[]): SleepPhases | null {
+  const nights = logs.flatMap((log) => (log.sleepPhases ? [log.sleepPhases] : []));
+  if (nights.length === 0) return null;
+  const average = (phase: keyof SleepPhases) =>
+    Math.round(nights.reduce((sum, night) => sum + night[phase], 0) / nights.length);
+  return {
+    deep: average('deep'),
+    light: average('light'),
+    rem: average('rem'),
+    awake: average('awake'),
+  };
+}
+
+// ---------- Herkunft (Import) ----------
+
+const IMPORT_FIELD_OF: Partial<Record<keyof DailyLogValues, DailyImportField>> = {
+  steps: 'steps',
+  sleepSeconds: 'sleep',
+  sleepPhases: 'sleep',
+  weightKg: 'weight',
+  restingHeartRate: 'restingHeartRate',
+  hrvMs: 'hrv',
+};
+
+/** Import-Felder, die eine Änderung berührt */
+export function importFieldsOf(values: Partial<DailyLogValues>): DailyImportField[] {
+  const fields = Object.keys(values).flatMap(
+    (key) => IMPORT_FIELD_OF[key as keyof DailyLogValues] ?? [],
+  );
+  return [...new Set(fields)];
 }
 
 // ---------- Körpermaße ----------

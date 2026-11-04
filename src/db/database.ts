@@ -344,6 +344,20 @@ export class AppDatabase extends Dexie {
             settings.restingHeartRate ??= null;
           }),
       );
+    // Import von Gesundheitsdaten: Ruhepuls, HRV, Schlafphasen, Herkunft der Tageswerte
+    this.version(19)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<DailyLog, string>('dailyLogs')
+          .toCollection()
+          .modify((log) => {
+            log.restingHeartRate ??= null;
+            log.hrvMs ??= null;
+            log.sleepPhases ??= null;
+            log.importedFields ??= [];
+          }),
+      );
   }
 }
 

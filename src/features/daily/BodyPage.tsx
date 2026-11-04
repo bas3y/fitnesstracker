@@ -1,17 +1,28 @@
+import { useFromHere } from '../../components/backNavigation';
 import { secondaryButton } from '../../components/buttons';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { Stepper } from '../../components/Stepper';
 import { addWater, updateDailyLog } from '../../db/daily';
-import { MAX_BODY_WEIGHT_KG, MAX_STEPS, MAX_WATER_ML, MIN_BODY_WEIGHT_KG } from '../../db/schemas';
+import {
+  MAX_BODY_WEIGHT_KG,
+  MAX_HRV_MS,
+  MAX_RESTING_HEART_RATE,
+  MAX_STEPS,
+  MAX_WATER_ML,
+  MIN_BODY_WEIGHT_KG,
+  MIN_RESTING_HEART_RATE,
+} from '../../db/schemas';
 import type { DailyLog, DayKey, Settings } from '../../db/types';
 import { hoursToSeconds, formatSleep, secondsToHours } from '../../domain/daily';
 import { formatDecimal } from '../../domain/format';
+import { DAILY_IMPORT_FIELD_LABELS } from '../../domain/labels';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { useSettings } from '../settings/useSettings';
 import { DayNavigator } from './DayNavigator';
 import { GoalBar } from './GoalBar';
-import { MEASUREMENTS_PATH, withDate } from './paths';
+import { HEALTH_IMPORT_PATH, MEASUREMENTS_PATH, withDate } from './paths';
 import { RatingPicker } from './RatingPicker';
+import { SleepPhasesBar } from './SleepPhasesBar';
 import { useBodyMeasurement, useDailyLog, useDayBackTo, useDayParam } from './useDaily';
 
 const WATER_STEP_ML = 250;
@@ -26,6 +37,7 @@ export function BodyPage() {
   const measurement = useBodyMeasurement(date);
   const backTo = useDayBackTo(date, today);
   const measured = measurement ? Object.keys(measurement.values).length : 0;
+  const from = useFromHere();
 
   return (
     <Page title="Körper & Befinden" backTo={backTo}>
@@ -41,6 +53,12 @@ export function BodyPage() {
             ? `${measured} ${measured === 1 ? 'Maß' : 'Maße'} an diesem Tag`
             : 'Brust, Taille, Arme und mehr'
         }
+      />
+      <LinkRow
+        to={HEALTH_IMPORT_PATH}
+        state={from}
+        label="Gesundheitsdaten importieren"
+        hint="Apple Health, Garmin: Schlaf, Schritte, Ruhepuls, HRV"
       />
     </Page>
   );
@@ -62,8 +80,16 @@ function DayForm({
   const unit = settings.weightUnit;
   const toDisplay = (kg: number) => roundTo(kgToDisplay(kg, unit), 1);
 
+  const imported = log?.importedFields ?? [];
+
   return (
     <>
+      {imported.length > 0 && (
+        <p className={`mb-3 ${HINT}`} data-testid="imported-fields">
+          Aus dem Import: {imported.map((field) => DAILY_IMPORT_FIELD_LABELS[field]).join(', ')}.
+          Änderst du einen Wert, bleibt er beim nächsten Import erhalten.
+        </p>
+      )}
       <Card title="Wasser">
         <div className="flex flex-col gap-3">
           <p className="tabular-nums">
@@ -129,6 +155,7 @@ function DayForm({
               change({ sleepSeconds: hours === null ? null : hoursToSeconds(hours) })
             }
           />
+          {log?.sleepPhases && <SleepPhasesBar phases={log.sleepPhases} />}
           <RatingPicker
             label="Schlafqualität"
             low="schlecht"
@@ -153,6 +180,35 @@ function DayForm({
             change({ weightKg: value === null ? null : displayToKg(value, unit) })
           }
         />
+      </Card>
+
+      <Card title="Erholung">
+        <div className="flex flex-col gap-3">
+          <Stepper
+            label="Ruhepuls"
+            value={log?.restingHeartRate ?? null}
+            unit="bpm"
+            step={1}
+            min={MIN_RESTING_HEART_RATE}
+            max={MAX_RESTING_HEART_RATE}
+            decimals={0}
+            startValue={settings.restingHeartRate ?? 60}
+            allowEmpty
+            onChange={(restingHeartRate) => change({ restingHeartRate })}
+          />
+          <Stepper
+            label="HRV"
+            value={log?.hrvMs ?? null}
+            unit="ms"
+            step={1}
+            min={1}
+            max={MAX_HRV_MS}
+            decimals={0}
+            startValue={50}
+            allowEmpty
+            onChange={(hrvMs) => change({ hrvMs })}
+          />
+        </div>
       </Card>
 
       <Card title="Befinden">

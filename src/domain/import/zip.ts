@@ -129,14 +129,31 @@ export async function decompress(blob: Blob, format: 'deflate-raw' | 'gzip'): Pr
   return new Blob([await new Response(stream).arrayBuffer()]);
 }
 
-export async function readZipEntry(blob: Blob, entry: ZipEntry): Promise<Blob> {
+async function entryData(blob: Blob, entry: ZipEntry): Promise<Blob> {
   const header = await readBytes(blob, entry.localHeaderOffset, entry.localHeaderOffset + 30);
   if (header.getUint32(0, true) !== LOCAL_HEADER)
     throw new ImportFileError('ZIP-Datei ist beschädigt');
+  if (entry.method !== 0 && entry.method !== 8) {
+    throw new ImportFileError(`Packverfahren ${entry.method} wird nicht unterstützt`);
+  }
   const start =
     entry.localHeaderOffset + 30 + header.getUint16(26, true) + header.getUint16(28, true);
-  const data = blob.slice(start, start + entry.compressedSize);
-  if (entry.method === 0) return data;
-  if (entry.method === 8) return decompress(data, 'deflate-raw');
-  throw new ImportFileError(`Packverfahren ${entry.method} wird nicht unterstützt`);
+  return blob.slice(start, start + entry.compressedSize);
+}
+
+export async function readZipEntry(blob: Blob, entry: ZipEntry): Promise<Blob> {
+  const data = await entryData(blob, entry);
+  return entry.method === 0 ? data : decompress(data, 'deflate-raw');
+}
+
+/** Entpackt stückweise, ohne den ganzen Inhalt im Speicher zu halten (z. B. `export.xml`) */
+export async function openZipEntry(
+  blob: Blob,
+  entry: ZipEntry,
+): Promise<ReadableStream<Uint8Array>> {
+  const data = await entryData(blob, entry);
+  const stream = await blobStream(data);
+  return entry.method === 0
+    ? (stream as ReadableStream<Uint8Array>)
+    : stream.pipeThrough(new DecompressionStream('deflate-raw'));
 }

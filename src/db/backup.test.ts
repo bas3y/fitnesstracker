@@ -508,6 +508,24 @@ describe('Ernährung im Backup', () => {
     });
   });
 
+  it('ergänzt in Sicherungen aus DB-Version 18 die Gesundheitswerte der Tageseinträge', async () => {
+    await updateDailyLog('2026-10-30', { steps: 8000 });
+    const data = await validBackup();
+    data.dbVersion = 18;
+    for (const key of ['restingHeartRate', 'hrvMs', 'sleepPhases', 'importedFields']) {
+      delete data.tables.dailyLogs[0][key];
+    }
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.dailyLogs[0]).toMatchObject({
+      steps: 8000,
+      restingHeartRate: null,
+      hrvMs: null,
+      sleepPhases: null,
+      importedFields: [],
+    });
+  });
+
   it('lehnt unbekannte Sportarten ab', async () => {
     await createEnduranceSession(RUN_INPUT);
     const data = await validBackup();
