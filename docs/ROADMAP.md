@@ -759,6 +759,7 @@ Mit dem Nutzer abgestimmt: Quellen Apple Health **und** Garmin-Datenexport; Wert
   - Großer Apple-Export auf dem echten iPhone testen (Dauer, Speicher; mehrere GB `export.xml`). Die Datei bleibt dabei gepackt, gelesen wird stückweise.
   - Ruhepuls aus dem Import könnte `Settings.restingHeartRate` (Pulszonen) vorschlagen – bisher nicht verknüpft.
   - Kein Graph der Schlafphasen über die Zeit, nur Ø im Verlauf.
+- **Zwischenstand (Nutzertest offen):** Nutzer hat kurz geprüft, dass sich etwas importieren lässt; der eigentliche Test (echter Apple-Health-Export auf dem iPhone, Garmin-Export) folgt **beim nächsten Push**. Dann mit abfragen: Werte plausibel (Schritte ohne Doppelzählung, Schlaf am richtigen Tag, Phasen), Dauer bei großem Export, Garmin-HRV/Gewicht erkannt? Vor dem Push an ein Backup erinnern (DB-Version 19).
 
 ### Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
 - Wochenkilometer, Pace-Entwicklung, Zeit in HF-Zonen, Integration in Dashboard (Widget) und Heatmap.
