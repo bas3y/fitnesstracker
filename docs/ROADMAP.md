@@ -847,7 +847,7 @@ Mit dem Nutzer beim Start abgestimmt: Statistik-Seite mit Umschalter **„Kraft 
   - Werte aus Open Food Facts sind Nutzerdaten und teils lückenhaft; US-Produkte zählen Ballaststoffe zu den KH (nicht korrigiert).
   - Mitgelieferte Lebensmittel haben keinen Strichcode; ein Scan legt immer ein eigenes Lebensmittel an.
   - Kein Taschenlampen-Schalter, kein Zoom.
-- **Zwischenstand Push & Handytest:** Code lokal committet. Push (Schritte 14–15c, DB-Version 17 → 22) erst, nachdem der Nutzer bestätigt hat, dass er ein **Backup auf dem Handy** gemacht hat (Nutzerwunsch: vor dem Push ausdrücklich nachfragen). Danach Handytest laut Liste oben.
+- **Push (05.11.2026):** Nutzer hat das Backup auf dem Handy bestätigt (Nutzerwunsch: vor jedem Push ausdrücklich nachfragen), Schritte 14–15c gepusht (DB-Version 17 → 22). Der erste Deploy scheiterte an `npm test` in der CI: Zwei Tests aus Schritt 12 (`nutrition.test.ts`) sortierten Einträge aus derselben Millisekunde nach `createdAt` – auf dem schnellen Server zufällig. Auch in der App betroffen (Reihenfolge nach „Wie gestern“/Lieblingsmahlzeit). Behoben: `nowIso()` (`src/db/repository.ts`) zählt in derselben Millisekunde um 1 ms weiter (bei Rücksprüngen der Uhr > 50 ms echte Zeit). Handytest laut Liste oben steht noch aus.
 
 ### Schritt 16 – Ziele & Rückblicke
 Ziele (z. B. „Bankdrücken 100 kg bis Dezember“) mit Fortschrittsbalken, Wochen-/Monats-/Jahresrückblick, Vergleich von Zeiträumen.

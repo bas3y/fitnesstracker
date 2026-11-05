@@ -4,8 +4,18 @@ import type { BaseEntity, Timestamp } from './types';
 export type NewEntity<T extends BaseEntity> = Omit<T, keyof BaseEntity> & { id?: string };
 export type EntityChanges<T extends BaseEntity> = Partial<Omit<T, keyof BaseEntity>>;
 
+/** Größerer Rücksprung der Uhr (Systemzeit gestellt) → echte Zeit statt Weiterzählen */
+const MAX_CLOCK_BACKSTEP_MS = 50;
+let lastMs = 0;
+
+/**
+ * Aktuelle Zeit; mehrere Aufrufe in derselben Millisekunde zählen um je 1 ms weiter, damit die
+ * Reihenfolge nach `createdAt` eindeutig bleibt (z. B. „Wie gestern“ kopiert mehrere Einträge).
+ */
 export function nowIso(): Timestamp {
-  return new Date().toISOString();
+  const now = Date.now();
+  lastMs = now <= lastMs && lastMs - now < MAX_CLOCK_BACKSTEP_MS ? lastMs + 1 : now;
+  return new Date(lastMs).toISOString();
 }
 
 export async function create<T extends BaseEntity>(
