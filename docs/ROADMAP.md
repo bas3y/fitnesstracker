@@ -26,7 +26,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 14 – Import von Einheiten (Uhr, Strava)
 - [x] Schritt 14b – Import von Gesundheitsdaten
 - [x] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
-- [ ] Schritt 15b – Verbesserungen aus dem Gebrauch (Nachtragen, Ziehen, Protein, Weitergeben)
+- [x] Schritt 15b – Verbesserungen aus dem Gebrauch (Nachtragen, Ziehen, Protein, Weitergeben)
 - [ ] Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest 14–15c
 - [ ] Schritt 16 – Ziele & Rückblicke
 - [ ] Schritt 17 – Self-Improvement
@@ -805,8 +805,20 @@ Mit dem Nutzer beim Start abgestimmt: Statistik-Seite mit Umschalter **„Kraft 
 
 **Notizen:**
 - Gebaut:
+  - **Training nachtragen:** `createPastWorkout({ startedAt, durationSeconds })` (`src/db/workouts.ts`) legt ein bereits beendetes, leeres Workout an (lehnt Zukunft/Dauer 0 ab). Seite `WorkoutLogPage` (`/training/history/new`, `LOG_WORKOUT_PATH`): Datum, Beginn, Dauer (Vorschlag: gerade zu Ende, 60 min, `pastWorkoutStart`/`pastWorkoutError` in `src/domain/workout.ts`) → weiter in die bestehende Bearbeiten-Ansicht (`WorkoutEditor` Modus `edit`, Sätze sind über `addSet` direkt erledigt, kein Pausen-Timer). Einstieg: Trainingsseite „Training nachtragen“ und Button „Nachtragen“ im Verlauf. „Fertig“ ohne Übungen verwirft das Workout. Vorbefüllung kommt aus dem letzten Training **vor** dem nachgetragenen Datum. Ein laufendes Workout bleibt unberührt.
+  - **Ziehen mit Inhalt überall:** `compact` aus `SortableList` entfernt (Workout-Karten, Plan-Übungen behalten Sätze/Einstellungen beim Ziehen). Tausch jetzt über Kanten statt Mitten (nach oben: Oberkante über die Mitte des Vorgängers, nach unten: Unterkante), damit hohe Karten nicht übers halbe Display gezogen werden müssen. Behoben: Chrome-„Scroll Anchoring“ verschob nach dem Tausch hoher Zeilen die Seite, die Zeile sprang zurück (`overflow-anchor: none` an der Liste). E2E-Helfer `dragTo` rechnet mit der Zeile statt dem Griff.
+  - **Nur Protein erfassen:** Dexie v21: `DailyLog.proteinGrams` (Protein ohne Lebensmittel, wie Wasser: `addProtein` addiert/zieht ab, 0–1000 g) und `Settings.proteinOnly`. Zählt immer zum Protein des Tages, nie zu den Kalorien (`dayNutrients(entries, quickProteinGrams)`, `NutritionDayData.quickProteinGrams`). UI `ProteinQuickAdd` (+10/+20/+30 g, „Rückgängig“, Summe korrigieren). Modus an: Ernährung zeigt nur Protein (keine Mahlzeiten/Lebensmittel), Alltag-Kachel „45 von 120 g Protein“, Startseiten-Widget mit Buttons, Einstellungen nur Protein-Ziele. Modus aus: Karte „Protein schnell eintragen“ unter den Mahlzeiten, Übersicht nennt „davon … g Protein ohne Lebensmittel“. Neuer Schnellzugriff „🥤 +20 g Protein“.
+  - **Weitergeben:** Seite `ShareAppPage` (`/settings/app`, `SHARE_APP_PATH`, Link „App weitergeben & installieren“ in den Einstellungen): Link anzeigen, „App weitergeben“ (Web Share, sonst Zwischenablage, `src/features/settings/shareApp.ts`), Anleitung Android/iPhone, Backup-Hinweis, Hinweis bei installierter App. Willkommens-Karte auf der Startseite (`Settings.welcomeDismissed`, „Los geht’s“ / „Installieren“); bestehende Nutzer (Upgrade, ältere Backups) sehen sie nicht. README mit fester Adresse und Abschnitt „An andere weitergeben“.
+  - Tests: Migration v20→v21, Backup aus v20 + Wiederherstellung, `createPastWorkout` (beendet, Sätze erledigt, laufendes bleibt, Vorbefüllung vor dem Datum, Fehler), `addProtein`, `quickProteinGrams`, `dayNutrients`, `pastWorkoutStart`/`pastWorkoutError`. E2E `e2e/usage.spec.ts` offline in beiden Viewports (Nachtragen mit Zukunft-Fehler, Ziehen mit sichtbarem Inhalt + Umsortieren, Verlauf, leeres verworfen; Protein-Modus in Ernährung/Kachel/Widget und zurück; Willkommen → Weitergeben mit gestubbtem `navigator.share`). `mvp1` schließt den Willkommens-Hinweis zuerst. 635 Unit-Tests, 88/88 E2E grün. Hauptbundle ~306 KB, neue Seiten je eigener Chunk (2–3 KB).
 - Abweichungen:
+  - Protein ohne Lebensmittel liegt am Tageseintrag (`dailyLogs`) statt als Mahlzeiten-Eintrag ohne Lebensmittel: so bleiben „Wie gestern“, Lieblingsmahlzeiten und die Lebensmittel-Statistik unberührt. Ein Wert je Tag (Summe), Rückgängig nur für den letzten Button.
+  - Nachtragen ohne Plan-Auswahl (Übungen einzeln hinzufügen). Keine Rekord-Toasts beim Nachtragen (wie beim Bearbeiten); Rekorde erscheinen im Verlauf/Statistik.
+  - Willkommens-Hinweis ist eine Karte über den Widgets, kein Dialog (blockiert nichts).
 - Offene Punkte:
+  - Nachtragen „aus Plan“ (Plantag wählen, Übungen vorbefüllt) wäre ein naheliegender Ausbau.
+  - Protein ohne Lebensmittel erscheint nicht im Ernährungs-Verlauf (es gibt noch keinen, offen aus 12).
+  - Web Share mit Link und Kopieren auf echten Geräten prüfen (E2E stubbt `navigator.share`); bei `npm run dev` zeigt der Link `localhost`.
+  - Ziehen hoher Workout-Karten auf dem echten Handy ausprobieren (Touch, automatisches Scrollen).
 
 ### Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest
 **Ziel:** Lebensmittel per Strichcode (EAN auf der Verpackung) scannen und als eigenes Lebensmittel speichern. **Erste mit dem Nutzer abgestimmte Ausnahme vom Offline-Prinzip** (siehe CLAUDE.md).
@@ -814,7 +826,7 @@ Mit dem Nutzer beim Start abgestimmt: Statistik-Seite mit Umschalter **„Kraft 
 - Nährwerte von **Open Food Facts** (`world.openfoodfacts.org/api/v2/product/<ean>`), gesendet wird nur die Nummer. Vorschau mit Werten pro 100 g (Kohlenhydrate ohne Ballaststoffe), vor dem Speichern bearbeitbar → `createUserFood` mit `source: 'user'` und gespeichertem Strichcode. Danach offline nutzbar; schon gespeicherter Strichcode wird ohne Internet gefunden.
 - **Offline:** Scan-Button ausgegraut mit Hinweis „Nur mit Internet“ (`navigator.onLine` + Fehlerbehandlung bei Abbruch). Service Worker darf die API-Aufrufe nicht cachen.
 - Einstieg im `FoodPicker` und auf der Lebensmittelseite.
-- **Danach Push** (Schritte 14–15c zusammen, vorher Nutzer an ein Backup auf dem Handy erinnern, DB-Version seit dem letzten Push 17 → ≥ 20) und Handytest: offene Punkte aus 14, 14b, 15 (iPhone-Dateiauswahl, Android-Teilen-Ziel, echter Apple-Health- und Garmin-Export, Teilen-Bild/Sticker in Instagram, Emojis), dazu 15b (Weitergeben an eine zweite Person, Nachtragen, Protein) und 15c (Kamera auf iPhone und Android).
+- **Danach Push** (Schritte 14–15c zusammen, vorher Nutzer an ein Backup auf dem Handy erinnern, DB-Version seit dem letzten Push 17 → ≥ 21) und Handytest: offene Punkte aus 14, 14b, 15 (iPhone-Dateiauswahl, Android-Teilen-Ziel, echter Apple-Health- und Garmin-Export, Teilen-Bild/Sticker in Instagram, Emojis), dazu 15b (Weitergeben an eine zweite Person, Nachtragen, Protein) und 15c (Kamera auf iPhone und Android).
 
 **Notizen:**
 - Gebaut:

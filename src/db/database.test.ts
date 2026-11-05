@@ -649,7 +649,49 @@ describe('AppDatabase-Migration', () => {
       },
     });
     expect(await v20.enduranceSessions.get('e2')).toMatchObject({ trackSummary: null });
-    expect(v20.verno).toBe(20);
+    expect(v20.verno).toBeGreaterThanOrEqual(20);
     await v20.delete();
+  });
+
+  it('Version 21 ergänzt Protein ohne Lebensmittel und blendet den Willkommens-Hinweis aus', async () => {
+    const name = 'migration-test-v21';
+    const v20 = new Dexie(name);
+    v20.version(20).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+    });
+    await v20.table('settings').add({ id: 'app-settings', name: 'Alex', addBurnedCalories: true });
+    await v20.table('dailyLogs').add({ id: 'd1', date: '2026-11-01', waterMl: 500 });
+    v20.close();
+
+    const v21 = new AppDatabase(name);
+    expect(await v21.settings.get('app-settings')).toMatchObject({
+      name: 'Alex',
+      addBurnedCalories: true,
+      proteinOnly: false,
+      welcomeDismissed: true,
+    });
+    expect(await v21.dailyLogs.get('d1')).toMatchObject({ waterMl: 500, proteinGrams: null });
+    expect(v21.verno).toBe(21);
+    await v21.delete();
   });
 });

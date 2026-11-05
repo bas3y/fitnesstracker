@@ -1,5 +1,6 @@
 import { dayKey } from '../domain/daily';
 import {
+  addProtein,
   addWater,
   deleteBodyMeasurement,
   getBodyMeasurement,
@@ -12,10 +13,28 @@ import {
   updateDailyLog,
 } from './daily';
 import { db } from './database';
+import { MAX_QUICK_PROTEIN_G } from './schemas';
 import { getSettings, updateSettings } from './settings';
 import { resetDatabase } from './testUtils';
 
 beforeEach(resetDatabase);
+
+describe('addProtein', () => {
+  it('addiert, nimmt zurück und bleibt zwischen 0 und dem Maximum', async () => {
+    await addProtein('2026-10-30', 20);
+    await addProtein('2026-10-30', 30);
+    expect(await getDailyLog('2026-10-30')).toMatchObject({ proteinGrams: 50, waterMl: null });
+    await addProtein('2026-10-30', -30);
+    expect((await getDailyLog('2026-10-30'))?.proteinGrams).toBe(20);
+    await addProtein('2026-10-30', -100);
+    expect((await getDailyLog('2026-10-30'))?.proteinGrams).toBe(0);
+    await addProtein('2026-10-30', 5000);
+    expect((await getDailyLog('2026-10-30'))?.proteinGrams).toBe(MAX_QUICK_PROTEIN_G);
+    await updateDailyLog('2026-10-30', { proteinGrams: 35 });
+    expect((await getDailyLog('2026-10-30'))?.proteinGrams).toBe(35);
+    expect(await db.dailyLogs.count()).toBe(1);
+  });
+});
 
 describe('updateDailyLog', () => {
   it('legt je Tag genau einen Eintrag an und ergänzt ihn', async () => {

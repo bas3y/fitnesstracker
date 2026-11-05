@@ -5,6 +5,8 @@ import {
   formatWorkoutDuration,
   fromDateTimeInput,
   moveItem,
+  pastWorkoutError,
+  pastWorkoutStart,
   restRemainingSeconds,
   suggestSetValues,
   toDateInput,
@@ -203,5 +205,24 @@ describe('Datum/Uhrzeit-Eingaben', () => {
   it('lehnt ungültige Eingaben ab', () => {
     expect(fromDateTimeInput('', '07:45')).toBeNull();
     expect(fromDateTimeInput('2026-10-29', '7 Uhr')).toBeNull();
+  });
+});
+
+describe('Training nachtragen', () => {
+  it('schlägt einen Beginn vor, der gerade zu Ende ist, auf 5 Minuten abgerundet', () => {
+    const now = new Date('2026-11-05T18:07:30.000Z');
+    expect(pastWorkoutStart(now, 3600)).toBe('2026-11-05T17:05:00.000Z');
+    expect(pastWorkoutStart(new Date('2026-11-05T18:00:00.000Z'), 1800)).toBe(
+      '2026-11-05T17:30:00.000Z',
+    );
+  });
+
+  it('prüft Beginn und Dauer', () => {
+    const now = new Date('2026-11-05T18:00:00.000Z');
+    expect(pastWorkoutError('2026-11-05T17:00:00.000Z', 60, now)).toBeNull();
+    expect(pastWorkoutError(null, 60, now)).toMatch('Datum');
+    expect(pastWorkoutError('2026-11-05T17:00:00.000Z', null, now)).toMatch('Dauer');
+    expect(pastWorkoutError('2026-11-05T17:00:00.000Z', 0, now)).toMatch('Dauer');
+    expect(pastWorkoutError('2026-11-05T18:30:00.000Z', 60, now)).toMatch('Zukunft');
   });
 });

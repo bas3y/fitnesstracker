@@ -22,7 +22,7 @@ import { ENDURANCE_SPORT_LABELS } from '../../domain/labels';
 import { activityPath, GEAR_PATH, IMPORT_PATH } from '../endurance/paths';
 import { useEnduranceSessions } from '../endurance/useEndurance';
 import { useSettings } from '../settings/useSettings';
-import { HISTORY_PATH, PLANS_PATH } from './paths';
+import { HISTORY_PATH, LOG_WORKOUT_PATH, PLANS_PATH } from './paths';
 import { TrainingStartCard } from './TrainingStartCard';
 import { useNow, useWorkoutHistory } from './useWorkouts';
 
@@ -70,6 +70,11 @@ export function TrainingPage() {
         ))}
       <LinkRow to={PLANS_PATH} label="Trainingspläne" hint="Vorlagen, eigene Pläne, aktiver Plan" />
       <LinkRow to={HISTORY_PATH} label="Verlauf" hint="Beendete Workouts ansehen und bearbeiten" />
+      <LinkRow
+        to={LOG_WORKOUT_PATH}
+        label="Training nachtragen"
+        hint="Krafttraining von Papier oder von früher eintragen"
+      />
       <LinkRow
         to="/training/exercises"
         label="Übungen"

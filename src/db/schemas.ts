@@ -127,6 +127,7 @@ export const MAX_BODY_MEASURE_M = 3;
 export const MIN_RESTING_HEART_RATE = 25;
 export const MAX_RESTING_HEART_RATE = 150;
 export const MAX_HRV_MS = 300;
+export const MAX_QUICK_PROTEIN_G = 1000;
 
 export const DAILY_GOAL_DEFAULTS = {
   stepsGoal: 10_000,
@@ -161,6 +162,7 @@ export const dailyLogValuesSchema = z.object({
     .nullable(),
   hrvMs: z.number().int().min(1).max(MAX_HRV_MS).nullable(),
   sleepPhases: sleepPhasesSchema.nullable(),
+  proteinGrams: z.number().min(0).max(MAX_QUICK_PROTEIN_G).nullable(),
 });
 
 export type DailyLogValues = z.infer<typeof dailyLogValuesSchema>;

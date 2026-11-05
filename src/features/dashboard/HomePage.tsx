@@ -48,6 +48,7 @@ import { useEnduranceSessions } from '../endurance/useEndurance';
 import { TodayCard } from '../daily/TodayCard';
 import { TodoCard } from '../daily/TodoCard';
 import { NutritionDayCard } from '../nutrition/NutritionSummary';
+import { SHARE_APP_PATH } from '../settings/paths';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from '../stats/ActivityCard';
 import { SupplementChecklist } from '../supplements/SupplementChecklist';
@@ -159,8 +160,44 @@ export function HomePage() {
           {editing ? 'Fertig' : 'Anpassen'}
         </button>
       </div>
+      {settings && !settings.welcomeDismissed && !editing && <WelcomeCard />}
       {data && (editing ? <WidgetEditor data={data} /> : <WidgetList data={data} />)}
     </div>
+  );
+}
+
+/** Beim ersten Öffnen: Was die App ist und wo die Daten liegen */
+function WelcomeCard() {
+  return (
+    <section
+      aria-labelledby="welcome-heading"
+      className="mb-4 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/40"
+    >
+      <h2 id="welcome-heading" className="mb-2 text-lg font-semibold">
+        👋 Willkommen!
+      </h2>
+      <ul className="mb-3 flex list-disc flex-col gap-1 pl-5 text-sm">
+        <li>Die App ist leer und gehört ganz dir: Training, Ernährung und Alltag an einem Ort.</li>
+        <li>Alles bleibt nur auf diesem Gerät – ohne Konto, ohne Server, auch ohne Internet.</li>
+        <li>Tipp: Zum Startbildschirm hinzufügen und ab und zu ein Backup exportieren.</li>
+      </ul>
+      <div className="flex gap-2">
+        <Link
+          to={SHARE_APP_PATH}
+          state={FROM_DASHBOARD}
+          className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-emerald-700 px-3 text-sm font-semibold text-emerald-800 dark:border-emerald-500 dark:text-emerald-300"
+        >
+          Installieren
+        </Link>
+        <button
+          type="button"
+          className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-emerald-700 px-3 text-sm font-semibold text-white active:bg-emerald-800"
+          onClick={() => void updateSettings({ welcomeDismissed: true })}
+        >
+          Los geht’s
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -198,7 +235,6 @@ function WidgetEditor({ data }: { data: WidgetData }) {
         label="Widgets"
         items={dashboardWidgets.map((id) => ({ id, name: DASHBOARD_WIDGET_LABELS[id].name }))}
         onReorder={(ids) => save(ids as DashboardWidget[])}
-        // Bewusst ohne `compact`: Widgets werden samt Inhalt gezogen
         renderItem={({ id, name }, { handle }) => (
           <div className="mb-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-900">
             <div className="flex min-h-14 items-center">

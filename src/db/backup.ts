@@ -104,6 +104,9 @@ const settingsSchema = baseEntitySchema.extend({
   restingHeartRate: heartRateSettingSchema.default(null),
   // Seit DB-Version 20
   addBurnedCalories: z.boolean().default(false),
+  // Seit DB-Version 21; wer eine ältere Sicherung einspielt, kennt die App schon
+  proteinOnly: z.boolean().default(false),
+  welcomeDismissed: z.boolean().default(true),
 });
 
 const catalogEntryFields = {
@@ -204,6 +207,8 @@ const dailyLogSchema = baseEntitySchema.extend(dailyLogValuesSchema.shape).exten
   restingHeartRate: dailyLogValuesSchema.shape.restingHeartRate.default(null),
   hrvMs: dailyLogValuesSchema.shape.hrvMs.default(null),
   sleepPhases: dailyLogValuesSchema.shape.sleepPhases.default(null),
+  // Seit DB-Version 21
+  proteinGrams: dailyLogValuesSchema.shape.proteinGrams.default(null),
   importedFields: z.array(z.enum(DAILY_IMPORT_FIELDS)).default([]),
 });
 const bodyMeasurementSchema = baseEntitySchema.extend({

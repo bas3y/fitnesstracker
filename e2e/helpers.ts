@@ -16,22 +16,22 @@ export async function confirmStart(page: Page): Promise<void> {
   await page.getByRole('alertdialog').getByRole('button', { name: 'Starten' }).click();
 }
 
-/** Griff per Maus auf die Mitte der Zielzeile ziehen */
+/** Zeile am Griff per Maus auf die Position der Zielzeile ziehen */
 export async function dragTo(page: Page, handle: Locator, target: Locator): Promise<void> {
   // Mittig, damit die fixierte Navigation den Griff nicht verdeckt
   await handle.evaluate((element) => element.scrollIntoView({ block: 'center' }));
   const from = (await handle.boundingBox())!;
   const x = from.x + from.width / 2;
-  await page.mouse.move(x, from.y + from.height / 2);
-  await page.mouse.down();
-  // Beim Ziehen kann das Layout zusammenklappen, Griff und Ziel also erst danach messen
-  const start = from.y + from.height / 2 + 2;
-  await page.mouse.move(x, start);
-  const current = (await handle.boundingBox())!;
+  const start = from.y + from.height / 2;
+  const row = (await handle.locator('xpath=ancestor::li[@data-sort-id][1]').boundingBox())!;
   const to = (await target.boundingBox())!;
-  // Die Zeile bewegt sich um die Strecke des Zeigers, ihre Mitte muss über die Mitte des Ziels
-  const goal = to.y + to.height * (to.y > current.y ? 0.75 : 0.25);
-  await page.mouse.move(x, start + goal - (current.y + current.height / 2), { steps: 10 });
+  await page.mouse.move(x, start);
+  await page.mouse.down();
+  // Die Zeile bewegt sich um die Strecke des Zeigers; getauscht wird, sobald ihre Kante die Mitte
+  // des Ziels überquert (nach oben die Oberkante, nach unten die Unterkante)
+  const delta =
+    to.y > row.y ? to.y + to.height * 0.75 - (row.y + row.height) : to.y + to.height * 0.25 - row.y;
+  await page.mouse.move(x, start + delta, { steps: 10 });
   await page.mouse.up();
 }
 

@@ -17,6 +17,7 @@ export const dailyLogOf = (date: string, values: Partial<DailyLog> = {}): DailyL
   restingHeartRate: null,
   hrvMs: null,
   sleepPhases: null,
+  proteinGrams: null,
   importedFields: [],
   ...values,
 });

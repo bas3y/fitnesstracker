@@ -93,6 +93,36 @@ export function startWorkout(): Promise<Workout> {
   });
 }
 
+/**
+ * Training nachtragen (z. B. von Papier): legt ein bereits beendetes, leeres Workout an. Übungen
+ * und Sätze kommen danach über die Bearbeiten-Ansicht dazu und gelten direkt als abgehakt. Ein
+ * laufendes Workout bleibt davon unberührt.
+ */
+export async function createPastWorkout({
+  startedAt,
+  durationSeconds,
+  notes = '',
+}: {
+  startedAt: string;
+  durationSeconds: number;
+  notes?: string;
+}): Promise<Workout> {
+  const start = Date.parse(startedAt);
+  if (Number.isNaN(start)) throw new Error('Ungültiger Beginn');
+  if (!Number.isInteger(durationSeconds) || durationSeconds <= 0) {
+    throw new Error('Dauer muss größer als 0 sein');
+  }
+  if (start > Date.now()) throw new Error('Beginn liegt in der Zukunft');
+  return create<Workout>(db.workouts, {
+    startedAt: new Date(start).toISOString(),
+    endedAt: new Date(start + durationSeconds * 1000).toISOString(),
+    notes: notes.trim(),
+    restEndsAt: null,
+    planId: null,
+    planDayId: null,
+  });
+}
+
 /** Zielwerte einer Übung im Workout – bleiben beim Ersetzen der Übung erhalten */
 export type WorkoutExerciseTargets = Pick<
   WorkoutExercise,

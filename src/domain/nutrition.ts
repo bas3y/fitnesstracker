@@ -85,6 +85,15 @@ export function nutritionDay<
   return { total: sumNutrients(MEAL_TYPES.map((meal) => meals[meal].total)), meals };
 }
 
+/** Summe des Tages: Mahlzeiten plus schnell erfasstes Protein (zählt nicht zu den Kalorien) */
+export function dayNutrients(
+  entries: Pick<MealEntry, 'meal' | 'grams' | 'nutrients' | 'createdAt'>[],
+  quickProteinGrams: number,
+): Nutrients {
+  const { total } = nutritionDay(entries);
+  return { ...total, protein: total.protein + quickProteinGrams };
+}
+
 /** Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit */
 export function goalForDay(goals: NutritionGoals, isTrainingDay: boolean): NutritionGoal {
   return isTrainingDay ? goals.training : goals.rest;

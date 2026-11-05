@@ -69,6 +69,7 @@ export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: stri
   measurements: { name: 'Körpermaße', icon: '📏' },
   supplements: { name: 'Supplements', icon: '💊' },
   meal: { name: 'Mahlzeit', icon: '🍽️' },
+  protein: { name: '+20 g Protein', icon: '🥤' },
   endurance: { name: 'Ausdauer', icon: '🏃' },
 };
 

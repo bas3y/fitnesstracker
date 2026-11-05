@@ -526,6 +526,33 @@ describe('Ernährung im Backup', () => {
     });
   });
 
+  it('ergänzt in Sicherungen aus DB-Version 20 Protein und Willkommens-Hinweis', async () => {
+    await updateDailyLog('2026-10-30', { steps: 8000 });
+    const data = await validBackup();
+    data.dbVersion = 20;
+    delete data.tables.dailyLogs[0].proteinGrams;
+    delete data.tables.settings[0].proteinOnly;
+    delete data.tables.settings[0].welcomeDismissed;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.dailyLogs[0]).toMatchObject({ steps: 8000, proteinGrams: null });
+    expect(result.backup.tables.settings[0]).toMatchObject({
+      proteinOnly: false,
+      welcomeDismissed: true,
+    });
+  });
+
+  it('stellt Protein ohne Lebensmittel und den Protein-Modus wieder her', async () => {
+    await updateDailyLog('2026-10-30', { proteinGrams: 40 });
+    await updateSettings({ proteinOnly: true });
+    const backup = parseBackup(await validBackup());
+    if (!backup.ok) throw new Error(backup.error);
+    await resetDatabase();
+    await restoreBackup(backup.backup);
+    expect(await getDailyLog('2026-10-30')).toMatchObject({ proteinGrams: 40 });
+    expect(await getSettings()).toMatchObject({ proteinOnly: true, welcomeDismissed: false });
+  });
+
   it('lehnt unbekannte Sportarten ab', async () => {
     await createEnduranceSession(RUN_INPUT);
     const data = await validBackup();

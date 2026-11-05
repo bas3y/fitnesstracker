@@ -5,7 +5,9 @@ import { Dialog } from '../../components/Dialog';
 import { Card } from '../../components/Page';
 import { Stepper } from '../../components/Stepper';
 import { showToast } from '../../components/toastStore';
-import { addWater, updateDailyLog } from '../../db/daily';
+import { addProtein, addWater, updateDailyLog } from '../../db/daily';
+import { loadNutritionDay } from '../../db/nutrition';
+import { dayGoal, dayNutrients } from '../../domain/nutrition';
 import { MAX_BODY_WEIGHT_KG, MAX_STEPS, MIN_BODY_WEIGHT_KG } from '../../db/schemas';
 import { ENDURANCE_SPORTS, type DayKey, type QuickAction, type Settings } from '../../db/types';
 import { formatDecimal } from '../../domain/format';
@@ -24,6 +26,7 @@ import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { useActiveWorkout } from '../training/useWorkouts';
 
 const WATER_ML = 250;
+const PROTEIN_G = 20;
 const FROM_DASHBOARD: BackState = { from: '/' };
 const TILE =
   'flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl bg-slate-100 px-2 py-2 text-center text-sm font-semibold active:bg-slate-200 dark:bg-slate-700 dark:active:bg-slate-600';
@@ -73,6 +76,27 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
                 title: `+${WATER_ML} ml Wasser`,
                 lines: [
                   `${formatDecimal(water + WATER_ML, 0)} von ${formatDecimal(settings.waterGoalMl, 0)} ml`,
+                ],
+              });
+            }}
+          >
+            {tile(action)}
+          </button>
+        );
+      case 'protein':
+        return (
+          <button
+            type="button"
+            className={TILE}
+            onClick={async () => {
+              await addProtein(today, PROTEIN_G);
+              const day = await loadNutritionDay(today);
+              const total = dayNutrients(day.entries, day.quickProteinGrams).protein;
+              showToast({
+                variant: 'info',
+                title: `+${PROTEIN_G} g Protein`,
+                lines: [
+                  `${formatDecimal(Math.round(total), 0)} von ${formatDecimal(dayGoal(settings, day).protein, 0)} g heute`,
                 ],
               });
             }}

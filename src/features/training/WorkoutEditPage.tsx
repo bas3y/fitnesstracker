@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { inputField, primaryButton } from '../../components/buttons';
 import { Card, Page } from '../../components/Page';
 import { Stepper } from '../../components/Stepper';
-import { updateWorkoutInfo, type WorkoutDetail } from '../../db/workouts';
+import { deleteWorkout, updateWorkoutInfo, type WorkoutDetail } from '../../db/workouts';
 import type { Workout } from '../../db/types';
 import {
   fromDateTimeInput,
@@ -36,13 +36,33 @@ export function WorkoutEditPage() {
 function EditWorkout({ detail }: { detail: WorkoutDetail }) {
   const detailPath = `${HISTORY_PATH}/${detail.workout.id}`;
   const { state } = useLocation();
+  const navigate = useNavigate();
+  const empty = detail.items.length === 0;
   return (
     <Page title="Workout bearbeiten" backTo={detailPath} backState={state}>
       <InfoCard workout={detail.workout} />
       <WorkoutEditor detail={detail} mode="edit" />
-      <Link to={detailPath} state={state} className={`${primaryButton} mb-4`}>
-        Fertig
-      </Link>
+      {empty ? (
+        <>
+          <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+            Ohne Übungen wird das Workout nicht gespeichert.
+          </p>
+          <button
+            type="button"
+            className={`${primaryButton} mb-4`}
+            onClick={async () => {
+              await deleteWorkout(detail.workout.id);
+              navigate(HISTORY_PATH, { replace: true });
+            }}
+          >
+            Fertig
+          </button>
+        </>
+      ) : (
+        <Link to={detailPath} state={state} className={`${primaryButton} mb-4`}>
+          Fertig
+        </Link>
+      )}
     </Page>
   );
 }

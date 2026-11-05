@@ -12,7 +12,7 @@ import {
   formatWorkoutDuration,
   workoutDurationSeconds,
 } from '../../domain/workout';
-import { HISTORY_PATH, TRAINING_PATH } from './paths';
+import { HISTORY_PATH, LOG_WORKOUT_PATH, TRAINING_PATH } from './paths';
 import { useWorkoutHistory, useWorkoutRecordCounts } from './useWorkouts';
 
 export function WorkoutHistoryPage() {
@@ -21,7 +21,19 @@ export function WorkoutHistoryPage() {
   const [deleting, setDeleting] = useState<Workout | null>(null);
 
   return (
-    <Page title="Verlauf" backTo={TRAINING_PATH}>
+    <Page
+      title="Verlauf"
+      backTo={TRAINING_PATH}
+      action={
+        <Link
+          to={LOG_WORKOUT_PATH}
+          state={{ from: HISTORY_PATH }}
+          className="flex min-h-11 shrink-0 items-center rounded-xl border border-slate-300 px-3 text-sm font-semibold dark:border-slate-600"
+        >
+          Nachtragen
+        </Link>
+      }
+    >
       {history?.length === 0 && (
         <Card>
           <p className="text-slate-600 dark:text-slate-400">Noch keine Workouts beendet.</p>

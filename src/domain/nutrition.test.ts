@@ -3,6 +3,7 @@ import type { MealEntry, Nutrients } from '../db/types';
 import {
   burnedCalories,
   dayGoal,
+  dayNutrients,
   defaultMealAmount,
   formatMealAmount,
   formatNutrientLine,
@@ -81,6 +82,13 @@ describe('nutritionDay', () => {
     const later = entry('snack', milk, 100, '2026-11-02T10:00:00.000Z');
     const earlier = entry('snack', egg, 60, '2026-11-02T09:00:00.000Z');
     expect(nutritionDay([later, earlier]).meals.snack.entries).toEqual([earlier, later]);
+  });
+
+  it('zählt Protein ohne Lebensmittel nur zum Protein, nicht zu den Kalorien', () => {
+    const total = dayNutrients([entry('lunch', egg, 100)], 30);
+    expect(total.protein).toBeCloseTo(42.6);
+    expect(total.kcal).toBe(143);
+    expect(dayNutrients([], 25)).toEqual({ ...ZERO_NUTRIENTS, protein: 25 });
   });
 });
 

@@ -387,6 +387,24 @@ export class AppDatabase extends Dexie {
             session.trackSummary ??= summaryFor(session, tracks);
           });
       });
+    // Nur Protein erfassen, Willkommens-Hinweis (wer schon Daten hat, kennt die App)
+    this.version(21)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx
+          .table<DailyLog, string>('dailyLogs')
+          .toCollection()
+          .modify((log) => {
+            log.proteinGrams ??= null;
+          });
+        await tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.proteinOnly ??= false;
+            settings.welcomeDismissed ??= true;
+          });
+      });
   }
 }
 

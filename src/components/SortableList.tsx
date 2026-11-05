@@ -31,25 +31,24 @@ export interface SortableItem {
 export interface SortableRowProps {
   /** Griff zum Ziehen; `null`, solange es nichts zu sortieren gibt */
   handle: ReactNode;
-  /** Gerade wird gezogen: Zeilen möglichst kompakt darstellen, damit lange Listen hinpassen */
-  compact: boolean;
 }
 
 interface Drag {
   id: string;
   startY: number;
   pointerY: number;
-  /** Abstand Zeilenmitte–Zeiger; erst nach dem Zusammenklappen messbar */
-  offset: number | null;
+  /** Abstand Zeilenmitte–Zeiger beim Greifen */
+  offset: number;
   /** Aktuelle Reihenfolge – Zeigerereignisse können schneller kommen als gerendert wird */
   order: string[];
 }
 
 /**
  * Liste, deren Zeilen sich direkt am Griff ziehen lassen (Pfeiltasten am Griff gehen auch).
- * `renderItem` baut den Griff in die Zeile ein. Die gezogene Zeile bewegt sich um die Strecke des
- * Zeigers (kein Sprung, wenn die Liste beim Ziehen zusammenklappt). Positionen kommen aus dem DOM –
- * Zeilen dürfen also unterschiedlich hoch sein. Am Bildschirmrand scrollt die Seite mit.
+ * `renderItem` baut den Griff in die Zeile ein. Zeilen werden samt Inhalt gezogen und bewegen sich
+ * um die Strecke des Zeigers. Positionen kommen aus dem DOM – Zeilen dürfen also unterschiedlich
+ * hoch sein. Am Bildschirmrand scrollt die Seite mit (auch bei Zeilen, die höher als der
+ * Bildschirm sind).
  */
 export function SortableList<T extends SortableItem>({
   label,
@@ -65,7 +64,6 @@ export function SortableList<T extends SortableItem>({
 }) {
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [droppedId, setDroppedId] = useState<string | null>(null);
   const drag = useRef<Drag | null>(null);
   const saving = useRef(false);
   const list = useRef<HTMLUListElement>(null);
@@ -79,29 +77,30 @@ export function SortableList<T extends SortableItem>({
     const current = drag.current;
     const row = current && rowOf(current.id);
     if (!current || !row) return;
-    if (current.offset === null) {
-      row.scrollIntoView?.({ block: 'nearest' });
-      current.offset = middleOf(row) - current.pointerY;
-    }
     row.style.transform = `translateY(${current.pointerY + current.offset - middleOf(row)}px)`;
   };
 
+  // Getauscht wird, sobald die Kante der gezogenen Zeile die Mitte des Nachbarn überquert –
+  // so reicht auch bei hohen Karten (Workout-Übungen) eine halbe Nachbarhöhe
   const swapAtPointer = () => {
     const current = drag.current;
-    if (!current) return;
-    const middle = current.pointerY + (current.offset ?? 0);
+    const row = current && rowOf(current.id);
+    if (!current || !row) return;
+    const middle = current.pointerY + current.offset;
+    const top = middle - row.offsetHeight / 2;
+    const bottom = middle + row.offsetHeight / 2;
     const index = current.order.indexOf(current.id);
     const next = rowOf(current.order[index + 1] ?? '');
     const previous = rowOf(current.order[index - 1] ?? '');
     const direction =
-      next && middle > middleOf(next) ? 1 : previous && middle < middleOf(previous) ? -1 : 0;
+      next && bottom > middleOf(next) ? 1 : previous && top < middleOf(previous) ? -1 : 0;
     if (direction) {
       current.order = moveItem(current.order, index, direction);
       setLocalOrder(current.order);
     }
   };
 
-  // Auch nach dem Zusammenklappen und nach jedem Tausch, weil sich dann das Layout ändert
+  // Nach jedem Tausch, weil sich dann das Layout ändert
   useLayoutEffect(followPointer, [draggingId, localOrder]);
 
   // Läuft bildweise weiter, weil ein ruhender Finger am Rand keine Zeigerereignisse auslöst
@@ -124,11 +123,6 @@ export function SortableList<T extends SortableItem>({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- arbeitet nur mit Refs
   }, [draggingId]);
 
-  // Nach dem Aufklappen die abgelegte Zeile wieder in den sichtbaren Bereich holen
-  useLayoutEffect(() => {
-    if (droppedId) rowOf(droppedId)?.scrollIntoView?.({ block: 'nearest' });
-  }, [droppedId]);
-
   const save = async (ids: string[]) => {
     saving.current = true;
     setLocalOrder(ids);
@@ -141,10 +135,16 @@ export function SortableList<T extends SortableItem>({
   };
 
   const onPointerDown = (event: PointerEvent<HTMLButtonElement>, id: string) => {
-    if (saving.current) return;
+    const row = rowOf(id);
+    if (saving.current || !row) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    drag.current = { id, startY: event.clientY, pointerY: event.clientY, offset: null, order };
-    setDroppedId(null);
+    drag.current = {
+      id,
+      startY: event.clientY,
+      pointerY: event.clientY,
+      offset: middleOf(row) - event.clientY,
+      order,
+    };
     setLocalOrder(order);
     setDraggingId(id);
   };
@@ -164,7 +164,6 @@ export function SortableList<T extends SortableItem>({
     if (row) row.style.transform = '';
     drag.current = null;
     setDraggingId(null);
-    setDroppedId(id);
     const initial = items.map((item) => item.id);
     if (dropped.join() !== initial.join()) void save(dropped);
     else setLocalOrder(null);
@@ -179,8 +178,9 @@ export function SortableList<T extends SortableItem>({
   };
 
   return (
-    // Reihenfolge per CSS: Würde die gezogene Zeile im DOM wandern, ginge die Pointer-Capture verloren
-    <ul ref={list} aria-label={label} className="relative flex flex-col">
+    // Reihenfolge per CSS: Würde die gezogene Zeile im DOM wandern, ginge die Pointer-Capture verloren.
+    // Ohne Scroll-Anker: Sonst verschiebt der Browser nach einem Tausch hoher Zeilen die Seite.
+    <ul ref={list} aria-label={label} className="relative flex flex-col [overflow-anchor:none]">
       {items.map((item) => {
         const { id } = item;
         const handle =
@@ -205,7 +205,7 @@ export function SortableList<T extends SortableItem>({
             style={{ order: order.indexOf(id) }}
             className={draggingId === id ? 'relative z-10 rounded-2xl shadow-lg' : undefined}
           >
-            {renderItem(item, { handle, compact: draggingId !== null })}
+            {renderItem(item, { handle })}
           </li>
         );
       })}

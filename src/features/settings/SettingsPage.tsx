@@ -22,6 +22,7 @@ import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { notificationState, requestNotifications } from '../supplements/notifications';
 import { BackupSection } from './BackupSection';
 import { ExportSection } from './ExportSection';
+import { SHARE_APP_PATH } from './paths';
 import { StorageSection } from './StorageSection';
 import { useSettings } from './useSettings';
 
@@ -76,6 +77,11 @@ export function SettingsPage() {
           <StorageSection />
         </>
       )}
+      <LinkRow
+        to={SHARE_APP_PATH}
+        label="App weitergeben & installieren"
+        hint="Link teilen, Anleitung für Android und iPhone"
+      />
       <LinkRow to="/settings/about" label="Über & Lizenzen" hint="Datenquellen und Software" />
     </Page>
   );
@@ -240,9 +246,23 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
   return (
     <Card title="Ernährung">
       <div className="flex flex-col gap-3">
+        <label className="flex min-h-11 items-center gap-3">
+          <input
+            type="checkbox"
+            className="h-5 w-5 accent-emerald-600"
+            checked={settings.proteinOnly}
+            onChange={(event) => void updateSettings({ proteinOnly: event.target.checked })}
+          />
+          Nur Protein erfassen
+        </label>
         <p className={hint}>
-          Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit. Kohlenhydrate
-          und Fett sind optional (leer = kein Ziel).
+          {settings.proteinOnly
+            ? 'Die Ernährung zeigt nur ein Protein-Feld mit Buttons wie beim Wasser, ohne Lebensmittel und Kalorien. Bisherige Mahlzeiten bleiben gespeichert.'
+            : 'Statt Mahlzeiten nur die Protein-Menge des Tages eintragen (ohne Lebensmittel und Kalorien).'}
+        </p>
+        <p className={hint}>
+          Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit.
+          {!settings.proteinOnly && ' Kohlenhydrate und Fett sind optional (leer = kein Ziel).'}
         </p>
         {DAY_TYPES.map(({ key, label }) => {
           const goal = settings.nutritionGoals[key];
@@ -250,16 +270,18 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
           return (
             <div key={key} className="flex flex-col gap-3">
               <h3 className="mt-1 font-semibold">{label}</h3>
-              <Stepper
-                label={`Kalorien (${label})`}
-                value={goal.kcal}
-                unit="kcal"
-                step={50}
-                min={500}
-                max={MAX_KCAL_GOAL}
-                decimals={0}
-                onChange={(kcal) => kcal !== null && void change(key, { kcal })}
-              />
+              {!settings.proteinOnly && (
+                <Stepper
+                  label={`Kalorien (${label})`}
+                  value={goal.kcal}
+                  unit="kcal"
+                  step={50}
+                  min={500}
+                  max={MAX_KCAL_GOAL}
+                  decimals={0}
+                  onChange={(kcal) => kcal !== null && void change(key, { kcal })}
+                />
+              )}
               <Stepper
                 label={`Protein (${label})`}
                 value={goal.protein}
@@ -272,45 +294,55 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
               {perKg !== null && (
                 <p className={hint}>≈ {formatDecimal(perKg, 1)} g pro kg Körpergewicht</p>
               )}
-              <Stepper
-                label={`Kohlenhydrate (${label})`}
-                value={goal.carbs}
-                unit="g"
-                step={10}
-                max={MAX_MACRO_GOAL_G}
-                decimals={0}
-                startValue={250}
-                allowEmpty
-                onChange={(carbs) => void change(key, { carbs })}
-              />
-              <Stepper
-                label={`Fett (${label})`}
-                value={goal.fat}
-                unit="g"
-                step={5}
-                max={MAX_MACRO_GOAL_G}
-                decimals={0}
-                startValue={70}
-                allowEmpty
-                onChange={(fat) => void change(key, { fat })}
-              />
+              {!settings.proteinOnly && (
+                <>
+                  <Stepper
+                    label={`Kohlenhydrate (${label})`}
+                    value={goal.carbs}
+                    unit="g"
+                    step={10}
+                    max={MAX_MACRO_GOAL_G}
+                    decimals={0}
+                    startValue={250}
+                    allowEmpty
+                    onChange={(carbs) => void change(key, { carbs })}
+                  />
+                  <Stepper
+                    label={`Fett (${label})`}
+                    value={goal.fat}
+                    unit="g"
+                    step={5}
+                    max={MAX_MACRO_GOAL_G}
+                    decimals={0}
+                    startValue={70}
+                    allowEmpty
+                    onChange={(fat) => void change(key, { fat })}
+                  />
+                </>
+              )}
             </div>
           );
         })}
-        <label className="mt-1 flex min-h-11 items-center gap-3">
-          <input
-            type="checkbox"
-            className="h-5 w-5 accent-emerald-600"
-            checked={settings.addBurnedCalories}
-            onChange={(event) => void updateSettings({ addBurnedCalories: event.target.checked })}
-          />
-          Verbrannte Kalorien zum Ziel addieren
-        </label>
-        <p className={hint}>
-          Kalorien aus Ausdauer-Einheiten (von der Uhr oder eingetragen) erhöhen das Kalorienziel
-          des Tages. Am besten dann für Trainings- und Ruhetag dasselbe Ziel wählen, sonst zählt das
-          Training doppelt.
-        </p>
+        {!settings.proteinOnly && (
+          <>
+            <label className="mt-1 flex min-h-11 items-center gap-3">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-emerald-600"
+                checked={settings.addBurnedCalories}
+                onChange={(event) =>
+                  void updateSettings({ addBurnedCalories: event.target.checked })
+                }
+              />
+              Verbrannte Kalorien zum Ziel addieren
+            </label>
+            <p className={hint}>
+              Kalorien aus Ausdauer-Einheiten (von der Uhr oder eingetragen) erhöhen das
+              Kalorienziel des Tages. Am besten dann für Trainings- und Ruhetag dasselbe Ziel
+              wählen, sonst zählt das Training doppelt.
+            </p>
+          </>
+        )}
       </div>
     </Card>
   );

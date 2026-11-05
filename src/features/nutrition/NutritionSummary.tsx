@@ -6,10 +6,11 @@ import type { NutritionDayData } from '../../db/nutrition';
 import type { DayKey, NutritionGoal, Settings } from '../../db/types';
 import { formatDecimal } from '../../domain/format';
 import { DASHBOARD_WIDGET_LABELS } from '../../domain/labels';
-import { dayGoal, formatKcal, nutritionDay, proteinPerKg } from '../../domain/nutrition';
+import { dayGoal, dayNutrients, formatKcal, proteinPerKg } from '../../domain/nutrition';
 import { GoalBar } from '../daily/GoalBar';
 import { withDate } from '../daily/paths';
 import { NUTRITION_PATH } from './paths';
+import { ProteinQuickAdd } from './ProteinQuickAdd';
 import { useNutritionDay } from './useNutrition';
 
 const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
@@ -20,7 +21,12 @@ function remainingText(kcal: number, goal: number): string {
   return diff === 0 ? 'Ziel genau erreicht' : `${formatKcal(-diff)} über dem Ziel`;
 }
 
-/** Summen des Tages gegen die Ziele (Trainings- oder Ruhetag) */
+function proteinRemainingText(grams: number, goal: number): string {
+  const diff = Math.round(goal - grams);
+  return diff > 0 ? `Noch ${formatDecimal(diff, 0)} g Protein` : 'Proteinziel erreicht';
+}
+
+/** Summen des Tages gegen die Ziele (Trainings- oder Ruhetag); mit `proteinOnly` nur Protein */
 export function NutritionSummary({
   data,
   settings,
@@ -32,22 +38,38 @@ export function NutritionSummary({
   title: string;
   children?: ReactNode;
 }) {
-  const { total } = nutritionDay(data.entries);
+  const total = dayNutrients(data.entries, data.quickProteinGrams);
   const goal: NutritionGoal = dayGoal(settings, data);
   const perKg = proteinPerKg(total.protein, settings.bodyWeightKg);
-  const rows = [
-    { label: 'Kalorien', value: total.kcal, goal: goal.kcal, unit: 'kcal' },
-    { label: 'Protein', value: total.protein, goal: goal.protein, unit: 'g' },
-    { label: 'Kohlenhydrate', value: total.carbs, goal: goal.carbs, unit: 'g' },
-    { label: 'Fett', value: total.fat, goal: goal.fat, unit: 'g' },
-  ];
+  const protein = { label: 'Protein', value: total.protein, goal: goal.protein, unit: 'g' };
+  const rows: { label: string; value: number; goal: number | null; unit: string }[] =
+    settings.proteinOnly
+      ? [protein]
+      : [
+          { label: 'Kalorien', value: total.kcal, goal: goal.kcal, unit: 'kcal' },
+          protein,
+          { label: 'Kohlenhydrate', value: total.carbs, goal: goal.carbs, unit: 'g' },
+          { label: 'Fett', value: total.fat, goal: goal.fat, unit: 'g' },
+        ];
+  const dayType = data.isTrainingDay ? 'Trainingstag' : 'Ruhetag';
+  const quick =
+    data.quickProteinGrams > 0 && !settings.proteinOnly
+      ? ` · davon ${formatDecimal(Math.round(data.quickProteinGrams), 0)} g Protein ohne Lebensmittel`
+      : '';
+  const footer = settings.proteinOnly
+    ? perKg !== null && `${formatDecimal(perKg, 1)} g pro kg Körpergewicht`
+    : `Ballaststoffe ${formatDecimal(Math.round(total.fiber), 0)} g${
+        perKg !== null ? ` · Protein ${formatDecimal(perKg, 1)} g/kg Körpergewicht` : ''
+      }${quick}`;
 
   return (
     <Card title={title}>
       <p className={`mb-3 ${MUTED}`}>
-        {data.isTrainingDay ? 'Trainingstag' : 'Ruhetag'} · {remainingText(total.kcal, goal.kcal)}
+        {settings.proteinOnly
+          ? `${dayType} · ${proteinRemainingText(total.protein, goal.protein)}`
+          : `${dayType} · ${remainingText(total.kcal, goal.kcal)}`}
       </p>
-      {data.burnedKcal > 0 && (
+      {data.burnedKcal > 0 && !settings.proteinOnly && (
         <p data-testid="burned-kcal" className={`-mt-2 mb-3 ${MUTED}`}>
           🔥 Beim Training verbrannt: {formatKcal(data.burnedKcal)}
           {settings.addBurnedCalories ? ' (im Ziel enthalten)' : ''}
@@ -67,10 +89,7 @@ export function NutritionSummary({
           </div>
         ))}
       </dl>
-      <p className={`mt-3 ${MUTED}`}>
-        Ballaststoffe {formatDecimal(Math.round(total.fiber), 0)} g
-        {perKg !== null && ` · Protein ${formatDecimal(perKg, 1)} g/kg Körpergewicht`}
-      </p>
+      {footer && <p className={`mt-3 ${MUTED}`}>{footer}</p>}
       {children}
     </Card>
   );
@@ -96,12 +115,21 @@ export function NutritionDayCard({
       settings={settings}
       title={DASHBOARD_WIDGET_LABELS.nutrition.name}
     >
+      {settings.proteinOnly && (
+        <div className="mt-3">
+          <ProteinQuickAdd date={date} grams={data.quickProteinGrams} withTotal={false} />
+        </div>
+      )}
       <Link
         to={to}
         state={from}
         className="mt-1 flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
       >
-        {data.entries.length === 0 ? 'Mahlzeit eintragen ›' : 'Mahlzeiten ansehen ›'}
+        {settings.proteinOnly
+          ? 'Protein korrigieren ›'
+          : data.entries.length === 0
+            ? 'Mahlzeit eintragen ›'
+            : 'Mahlzeiten ansehen ›'}
       </Link>
     </NutritionSummary>
   );

@@ -147,6 +147,26 @@ export function fromDateTimeInput(date: string, time: string): string | null {
   return Number.isNaN(result.getTime()) ? null : result.toISOString();
 }
 
+const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
+/** Vorschlag für ein nachgetragenes Training: gerade zu Ende, Beginn auf 5 Minuten abgerundet */
+export function pastWorkoutStart(now: Date, durationSeconds: number): string {
+  const start = now.getTime() - durationSeconds * 1000;
+  return new Date(Math.floor(start / FIVE_MINUTES_MS) * FIVE_MINUTES_MS).toISOString();
+}
+
+/** Fehlermeldung für die Eingabe eines nachgetragenen Trainings, `null` = in Ordnung */
+export function pastWorkoutError(
+  startedAt: string | null,
+  durationMinutes: number | null,
+  now: Date,
+): string | null {
+  if (!startedAt) return 'Bitte Datum und Beginn angeben.';
+  if (!durationMinutes || durationMinutes <= 0) return 'Bitte eine Dauer angeben.';
+  if (Date.parse(startedAt) > now.getTime()) return 'Der Beginn liegt in der Zukunft.';
+  return null;
+}
+
 export function formatWorkoutDate(iso: string): string {
   return new Date(iso).toLocaleDateString('de-DE', {
     weekday: 'short',

@@ -51,6 +51,10 @@ export interface Settings extends BaseEntity {
   nutritionGoals: NutritionGoals;
   /** Kalorien der Ausdauer-Einheiten erhöhen das kcal-Ziel des Tages */
   addBurnedCalories: boolean;
+  /** Ernährung nur als Protein-Menge erfassen (ohne Lebensmittel und Kalorien, seit DB-Version 21) */
+  proteinOnly: boolean;
+  /** Willkommens-Hinweis auf der Startseite gesehen (seit DB-Version 21) */
+  welcomeDismissed: boolean;
   /** Sichtbare Aktivitäts-Kacheln auf der Trainingsseite, in Anzeigereihenfolge */
   trainingTiles: EnduranceSport[];
   /** Für die Pulszonen; `null` = nicht eingetragen */
@@ -101,6 +105,7 @@ export const QUICK_ACTIONS = [
   'measurements',
   'supplements',
   'meal',
+  'protein',
   'endurance',
 ] as const;
 export type QuickAction = (typeof QUICK_ACTIONS)[number];
@@ -294,6 +299,11 @@ export interface DailyLog extends BaseEntity {
   hrvMs: number | null;
   /** Nur aus dem Import; gehört zu `sleepSeconds` */
   sleepPhases: SleepPhases | null;
+  /**
+   * Schnell erfasstes Protein in Gramm (ohne Lebensmittel, seit DB-Version 21); zählt zusätzlich
+   * zu den Mahlzeiten zum Protein des Tages, nicht zu den Kalorien
+   */
+  proteinGrams: number | null;
   /** Werte aus dem Import: ein neuer Import darf sie überschreiben, eigene Einträge nie */
   importedFields: DailyImportField[];
 }

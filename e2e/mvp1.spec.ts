@@ -261,6 +261,7 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
   await logWorkout(page, '60');
   await logWorkout(page, '62,5');
   await openNav(page, 'Dashboard');
+  await page.getByRole('button', { name: 'Los geht’s' }).click();
 
   const headings = page.getByRole('main').getByRole('heading', { level: 2 });
   await expect(headings).toHaveText([

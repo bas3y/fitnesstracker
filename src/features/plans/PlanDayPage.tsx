@@ -116,11 +116,11 @@ function DayEditor({
           name: item.exercise?.name ?? 'Unbekannte Übung',
         }))}
         onReorder={(ids) => reorderPlanExercises(day.id, ids)}
-        renderItem={(item, { handle, compact }) => (
+        renderItem={(item, { handle }) => (
           <PlanExerciseRow
             item={item}
             handle={handle}
-            expanded={!compact && expanded === item.id}
+            expanded={expanded === item.id}
             onToggle={() => setExpanded(expanded === item.id ? null : item.id)}
           />
         )}

@@ -4,7 +4,7 @@ import type { DayKey, Settings } from '../../db/types';
 import { formatSleep } from '../../domain/daily';
 import { formatDecimal } from '../../domain/format';
 import { habitDayProgress } from '../../domain/habits';
-import { dayGoal, nutritionDay } from '../../domain/nutrition';
+import { dayGoal, dayNutrients } from '../../domain/nutrition';
 import { lowStockSupplements, supplementDay } from '../../domain/supplements';
 import { doneOn, todayTodos } from '../../domain/todos';
 import { NUTRITION_PATH } from '../nutrition/paths';
@@ -99,16 +99,19 @@ function TodosTile({ date, today }: TileProps) {
 
 function NutritionTile({ date, today, settings }: TileProps & { settings: Settings }) {
   const data = useNutritionDay(date);
-  const kcal = data && nutritionDay(data.entries).total.kcal;
-  const goal = data && dayGoal(settings, data).kcal;
+  const total = data && dayNutrients(data.entries, data.quickProteinGrams);
+  const goal = data && dayGoal(settings, data);
+  const [value, target, unit, label] = settings.proteinOnly
+    ? [total?.protein, goal?.protein, 'g Protein', 'Proteinziel']
+    : [total?.kcal, goal?.kcal, 'kcal', 'Kalorienziel'];
   return (
     <Tile to={withDate(NUTRITION_PATH, date, today)} icon="🍽️" name="Ernährung">
-      {kcal != null && goal != null && (
+      {value != null && target != null && (
         <>
           <span className={`tabular-nums ${MUTED}`}>
-            {formatDecimal(Math.round(kcal), 0)} von {formatDecimal(goal, 0)} kcal
+            {formatDecimal(Math.round(value), 0)} von {formatDecimal(target, 0)} {unit}
           </span>
-          <GoalBar label="Kalorienziel" value={kcal} goal={goal} />
+          <GoalBar label={label} value={value} goal={target} />
         </>
       )}
     </Tile>

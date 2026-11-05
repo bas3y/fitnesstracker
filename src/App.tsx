@@ -94,6 +94,7 @@ const SupplementsPage = lazyPage(
 );
 const AboutPage = lazyPage(() => import('./features/settings/AboutPage'), 'AboutPage');
 const SettingsPage = lazyPage(() => import('./features/settings/SettingsPage'), 'SettingsPage');
+const ShareAppPage = lazyPage(() => import('./features/settings/ShareAppPage'), 'ShareAppPage');
 const StatsPage = lazyPage(() => import('./features/stats/StatsPage'), 'StatsPage');
 const ExerciseDetailPage = lazyPage(
   () => import('./features/training/ExerciseDetailPage'),
@@ -124,6 +125,10 @@ const WorkoutHistoryPage = lazyPage(
   () => import('./features/training/WorkoutHistoryPage'),
   'WorkoutHistoryPage',
 );
+const WorkoutLogPage = lazyPage(
+  () => import('./features/training/WorkoutLogPage'),
+  'WorkoutLogPage',
+);
 const WorkoutPage = lazyPage(() => import('./features/training/WorkoutPage'), 'WorkoutPage');
 
 export function App() {
@@ -139,6 +144,7 @@ export function App() {
           <Route path="training/exercises/:id/edit" element={<ExerciseEditPage />} />
           <Route path="training/workout" element={<WorkoutPage />} />
           <Route path="training/history" element={<WorkoutHistoryPage />} />
+          <Route path="training/history/new" element={<WorkoutLogPage />} />
           <Route path="training/history/:id" element={<WorkoutDetailPage />} />
           <Route path="training/history/:id/edit" element={<WorkoutEditPage />} />
           <Route path="training/plans" element={<PlanListPage />} />
@@ -177,6 +183,7 @@ export function App() {
           <Route path="stats" element={<StatsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/about" element={<AboutPage />} />
+          <Route path="settings/app" element={<ShareAppPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

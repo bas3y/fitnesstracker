@@ -10,6 +10,7 @@ import {
   adjustRest,
   applyToOpenSets,
   completeSet,
+  createPastWorkout,
   deleteWorkout,
   finishWorkout,
   getActiveWorkout,
@@ -332,5 +333,61 @@ describe('Letztes Mal und Historie', () => {
         notes: '',
       }),
     ).rejects.toThrow('Dauer');
+  });
+});
+
+describe('Training nachtragen', () => {
+  it('legt ein beendetes Workout an, dessen Sätze direkt erledigt sind', async () => {
+    const running = await startWorkout();
+    const past = await createPastWorkout({
+      startedAt: '2026-01-05T17:30:00.000Z',
+      durationSeconds: 3600,
+      notes: ' Papier ',
+    });
+    expect(past).toMatchObject({
+      startedAt: '2026-01-05T17:30:00.000Z',
+      endedAt: '2026-01-05T18:30:00.000Z',
+      notes: 'Papier',
+      restEndsAt: null,
+      planId: null,
+    });
+    expect(await getActiveWorkout()).toMatchObject({ id: running.id });
+
+    const item = await addWorkoutExercise(past.id, bench.id);
+    const [set] = await setsOf(item.id);
+    expect(set?.completedAt).toBe(past.endedAt);
+    const history = await listWorkoutHistory();
+    expect(history.map((h) => h.workout.id)).toEqual([past.id]);
+    expect(history[0]).toMatchObject({ setCount: 1 });
+  });
+
+  it('befüllt Sätze mit dem letzten Training vor dem nachgetragenen Datum', async () => {
+    const older = await loggedWorkout(bench, [[60, 10]]);
+    await updateWorkoutInfo(older.id, {
+      startedAt: '2026-01-01T10:00:00.000Z',
+      durationSeconds: 3600,
+      notes: '',
+    });
+    await loggedWorkout(bench, [[90, 5]]);
+    const past = await createPastWorkout({
+      startedAt: '2026-01-03T10:00:00.000Z',
+      durationSeconds: 3600,
+    });
+    const item = await addWorkoutExercise(past.id, bench.id);
+    const [set] = await setsOf(item.id);
+    expect(set).toMatchObject({ weight: 60, reps: 10 });
+  });
+
+  it('lehnt Zeitpunkte in der Zukunft und Dauer 0 ab', async () => {
+    const future = new Date(Date.now() + 3_600_000).toISOString();
+    await expect(createPastWorkout({ startedAt: future, durationSeconds: 60 })).rejects.toThrow(
+      'Zukunft',
+    );
+    await expect(
+      createPastWorkout({ startedAt: '2026-01-01T10:00:00.000Z', durationSeconds: 0 }),
+    ).rejects.toThrow('Dauer');
+    await expect(createPastWorkout({ startedAt: 'gestern', durationSeconds: 60 })).rejects.toThrow(
+      'Beginn',
+    );
   });
 });

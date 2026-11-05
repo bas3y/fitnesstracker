@@ -5,6 +5,7 @@ import {
   bodyMeasureSchema,
   dailyLogValuesSchema,
   dayKeySchema,
+  MAX_QUICK_PROTEIN_G,
   MAX_WATER_ML,
   type DailyLogValues,
 } from './schemas';
@@ -24,6 +25,7 @@ const EMPTY_DAILY_VALUES: DailyLogValues = {
   restingHeartRate: null,
   hrvMs: null,
   sleepPhases: null,
+  proteinGrams: null,
 };
 
 export function getDailyLog(date: DayKey): Promise<DailyLog | undefined> {
@@ -105,6 +107,16 @@ export async function addWater(date: DayKey, ml: number): Promise<void> {
     const current = (await getDailyLog(key))?.waterMl ?? 0;
     const waterMl = Math.min(MAX_WATER_ML, Math.max(0, current + ml));
     await writeDailyLog(key, dailyLogValuesSchema.partial().parse({ waterMl }));
+  });
+}
+
+/** Schnell erfasstes Protein addieren (negativ = zurücknehmen), wie beim Wasser in einem Schreibvorgang */
+export async function addProtein(date: DayKey, grams: number): Promise<void> {
+  const key = dayKeySchema.parse(date);
+  await db.transaction('rw', db.dailyLogs, async () => {
+    const current = (await getDailyLog(key))?.proteinGrams ?? 0;
+    const proteinGrams = Math.min(MAX_QUICK_PROTEIN_G, Math.max(0, current + grams));
+    await writeDailyLog(key, dailyLogValuesSchema.partial().parse({ proteinGrams }));
   });
 }
 

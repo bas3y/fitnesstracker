@@ -5,15 +5,22 @@ Nach dem ersten Laden läuft die App komplett ohne Internet, alle Daten bleiben 
 
 ## Installation aufs Handy
 
-Die App wird über GitHub Pages ausgeliefert (Adresse: `https://<benutzername>.github.io/<repo-name>/`).
+Adresse: **https://niklasbesarab.github.io/fitnesstracker/**
 Einmal mit Internet öffnen und installieren, danach funktioniert sie im Flugmodus.
 
 - **Android (Chrome):** Adresse öffnen → Menü ⋮ → „App installieren“ (bzw. „Zum Startbildschirm hinzufügen“).
 - **iPhone (Safari):** Adresse in **Safari** öffnen → Teilen-Symbol → „Zum Home-Bildschirm“. Nur die
   installierte App vom Home-Bildschirm aus nutzen, nicht den Safari-Tab (eigener Speicher).
 
-**Wichtig:** Alle Daten liegen nur auf dem Gerät. Regelmäßig unter Einstellungen → Datensicherung ein
-Backup exportieren (iOS kann Daten von Web-Apps nach längerer Nichtnutzung löschen).
+**Wichtig:** Alle Daten liegen nur auf dem Gerät, ohne Konto und ohne Server. Regelmäßig unter
+Einstellungen → Datensicherung ein Backup exportieren und die Datei außerhalb des Handys ablegen
+(iOS kann Daten von Web-Apps nach längerer Nichtnutzung löschen). Nicht im Privat-/Inkognito-Modus nutzen.
+
+### An andere weitergeben
+
+Jeder, der den Link öffnet, bekommt eine eigene, leere App mit seinen Daten auf seinem Gerät – es
+werden keine Daten geteilt. In der App: Einstellungen → „App weitergeben & installieren“ (teilt den
+Link oder kopiert ihn, dort steht auch diese Anleitung).
 
 Updates: Bei geöffneter App mit Internet erscheint „Neue Version verfügbar – Neu laden“.
 

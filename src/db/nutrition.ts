@@ -9,6 +9,7 @@ import {
   scaleNutrients,
   sumNutrients,
 } from '../domain/nutrition';
+import { getDailyLog } from './daily';
 import { db } from './database';
 import { loadFoodMap } from './foods';
 import { create, listActive, softDelete, update } from './repository';
@@ -29,20 +30,24 @@ export interface NutritionDayData {
   isTrainingDay: boolean;
   /** Kalorien der Ausdauer-Einheiten an dem Tag */
   burnedKcal: number;
+  /** Schnell erfasstes Protein ohne Lebensmittel (`DailyLog.proteinGrams`) */
+  quickProteinGrams: number;
 }
 
 export async function loadNutritionDay(date: DayKey): Promise<NutritionDayData> {
-  const [entries, previous, trainingDays, sessions] = await Promise.all([
+  const [entries, previous, trainingDays, sessions, log] = await Promise.all([
     listMealEntries(date),
     listMealEntries(shiftDay(date, -1)),
     loadTrainingDays(),
     listActive(db.enduranceSessions),
+    getDailyLog(date),
   ]);
   return {
     entries,
     previous,
     isTrainingDay: trainingDays.has(date),
     burnedKcal: burnedCalories(sessions.filter((session) => sessionDay(session) === date)),
+    quickProteinGrams: log?.proteinGrams ?? 0,
   };
 }
 

@@ -1,4 +1,5 @@
 import { dayKey } from '../domain/daily';
+import { addProtein } from './daily';
 import { db } from './database';
 import {
   createRecipe,
@@ -231,6 +232,14 @@ describe('Mahlzeiten', () => {
     });
     await startWorkout();
     expect((await loadNutritionDay(today)).isTrainingDay).toBe(true);
+  });
+
+  it('liefert schnell erfasstes Protein des Tages mit', async () => {
+    expect((await loadNutritionDay('2026-11-02')).quickProteinGrams).toBe(0);
+    await addProtein('2026-11-02', 30);
+    await addProtein('2026-11-02', 20);
+    await addProtein('2026-11-03', 10);
+    expect((await loadNutritionDay('2026-11-02')).quickProteinGrams).toBe(50);
   });
 
   it('kopiert eine Mahlzeit vom Vortag („Wie gestern“)', async () => {

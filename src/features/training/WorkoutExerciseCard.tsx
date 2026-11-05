@@ -59,8 +59,6 @@ interface WorkoutExerciseCardProps {
   otherExerciseIds: string[];
   /** Griff zum Umsortieren */
   handle: ReactNode;
-  /** Beim Ziehen nur die Kopfzeile zeigen */
-  compact: boolean;
 }
 
 interface SetFormat {
@@ -80,7 +78,6 @@ export function WorkoutExerciseCard({
   records,
   otherExerciseIds,
   handle,
-  compact,
 }: WorkoutExerciseCardProps) {
   const { workoutExercise, exercise, sets } = item;
   const name = exercise?.name ?? 'Unbekannte Übung';
@@ -104,16 +101,14 @@ export function WorkoutExerciseCard({
   const iconButton =
     'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg text-slate-600 active:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:active:bg-slate-700';
 
-  // Die Kopfzeile bleibt beim Ziehen dieselbe, sonst ginge der Griff samt Zeiger verloren
-  const header = (
-    <div className="-ml-3 flex items-center gap-1">
-      {handle}
-      <h2 className="mr-auto min-w-0 text-lg leading-tight font-semibold">{name}</h2>
-      {compact ? (
-        <span className="shrink-0 text-sm text-slate-500 dark:text-slate-400">
-          {sets.length === 1 ? '1 Satz' : `${sets.length} Sätze`}
-        </span>
-      ) : (
+  return (
+    <section
+      aria-label={name}
+      className="mb-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800"
+    >
+      <div className="-ml-3 flex items-center gap-1">
+        {handle}
+        <h2 className="mr-auto min-w-0 text-lg leading-tight font-semibold">{name}</h2>
         <button
           type="button"
           className={iconButton}
@@ -122,27 +117,7 @@ export function WorkoutExerciseCard({
         >
           ✕
         </button>
-      )}
-    </div>
-  );
-
-  if (compact) {
-    return (
-      <section
-        aria-label={name}
-        className="mb-2 rounded-2xl bg-white px-4 shadow-sm dark:bg-slate-800"
-      >
-        {header}
-      </section>
-    );
-  }
-
-  return (
-    <section
-      aria-label={name}
-      className="mb-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800"
-    >
-      {header}
+      </div>
 
       {target && <p className="text-sm text-slate-500 dark:text-slate-400">{target}</p>}
       {exercise?.category === 'cardio' && (
