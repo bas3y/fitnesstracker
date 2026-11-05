@@ -819,6 +819,7 @@ Mit dem Nutzer beim Start abgestimmt: Statistik-Seite mit Umschalter **„Kraft 
   - Protein ohne Lebensmittel erscheint nicht im Ernährungs-Verlauf (es gibt noch keinen, offen aus 12).
   - Web Share mit Link und Kopieren auf echten Geräten prüfen (E2E stubbt `navigator.share`); bei `npm run dev` zeigt der Link `localhost`.
   - Ziehen hoher Workout-Karten auf dem echten Handy ausprobieren (Touch, automatisches Scrollen).
+- **Nutzertest am PC:** „klappt alles bisher“. Handytest (Teilen-Menü, Touch-Ziehen, Weitergeben an eine zweite Person) folgt mit dem Push in 15c.
 
 ### Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest
 **Ziel:** Lebensmittel per Strichcode (EAN auf der Verpackung) scannen und als eigenes Lebensmittel speichern. **Erste mit dem Nutzer abgestimmte Ausnahme vom Offline-Prinzip** (siehe CLAUDE.md).
