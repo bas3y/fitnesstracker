@@ -6,9 +6,11 @@ import { StarIcon } from '../../components/icons';
 import { Page } from '../../components/Page';
 import { SearchInput } from '../../components/SearchInput';
 import type { Food } from '../../db/types';
+import { findByBarcode } from '../../domain/barcode';
 import { createSearch } from '../../domain/search';
+import { ScanButton } from './barcode/ScanButton';
 import { FoodFavoriteButton, FoodList, FoodSummary, MUTED } from './FoodParts';
-import { foodPath, NEW_FOOD_PATH, NEW_RECIPE_PATH, NUTRITION_PATH } from './paths';
+import { foodPath, NEW_FOOD_PATH, NEW_RECIPE_PATH, NUTRITION_PATH, SCAN_FOOD_PATH } from './paths';
 import { useActiveFoods } from './useNutrition';
 
 const MAX_RESULTS = 50;
@@ -45,6 +47,8 @@ export function FoodListPage() {
   const results = useMemo(() => {
     // Ausgeblendete nur mit dem passenden Filter
     const test = filter ? FILTERS[filter].test : (food: Food) => food.hiddenAt === null;
+    const byBarcode = findByBarcode(foods ?? [], query);
+    if (byBarcode) return [byBarcode];
     if (query.trim()) return search(query).filter(test);
     if (!filter) return [];
     return (foods ?? []).filter(test).sort((a, b) => a.name.localeCompare(b.name, 'de'));
@@ -61,9 +65,10 @@ export function FoodListPage() {
           + Rezept
         </Link>
       </div>
+      <ScanButton to={SCAN_FOOD_PATH} />
       <SearchInput
         label="Lebensmittel suchen"
-        placeholder="z. B. Haferflocken, Quark …"
+        placeholder="Name oder Strichcode-Nummer"
         value={query}
         onChange={(value) => setParam('q', value)}
       />

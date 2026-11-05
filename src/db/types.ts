@@ -531,6 +531,8 @@ export interface Food extends BaseEntity, Nutrients {
   hiddenAt: Timestamp | null;
   /** Nur eigene Rezepte; Nährwerte und Portion werden aus den Zutaten berechnet */
   recipe: Recipe | null;
+  /** Strichcode (GTIN, normalisiert über `normalizeBarcode`), nur eigene Lebensmittel */
+  barcode: string | null;
 }
 
 export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;

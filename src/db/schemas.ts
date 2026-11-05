@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidBarcode, normalizeBarcode } from '../domain/barcode';
 import {
   ENDURANCE_SPORTS,
   EQUIPMENT,
@@ -418,6 +419,15 @@ export const foodInputSchema = z
     portions: z
       .array(z.object({ label: portionLabel, grams: foodGrams }))
       .max(MAX_FOOD_PORTIONS, `Höchstens ${MAX_FOOD_PORTIONS} Portionen`),
+    // Leer = kein Strichcode; UPC-A wird zu EAN-13
+    barcode: z
+      .string()
+      .nullable()
+      .default(null)
+      .transform((value) => (value === null ? null : normalizeBarcode(value) || null))
+      .refine((value) => value === null || isValidBarcode(value), {
+        message: 'Strichcode ungültig (8 oder 13 Ziffern, Prüfziffer prüfen)',
+      }),
   })
   .refine((input) => input.sugar <= input.carbs, {
     path: ['sugar'],

@@ -67,6 +67,10 @@ const FoodDetailPage = lazyPage(
 );
 const FoodEditPage = lazyPage(() => import('./features/nutrition/FoodEditPage'), 'FoodEditPage');
 const FoodListPage = lazyPage(() => import('./features/nutrition/FoodListPage'), 'FoodListPage');
+const ScanFoodPage = lazyPage(
+  () => import('./features/nutrition/barcode/ScanFoodPage'),
+  'ScanFoodPage',
+);
 const NutritionPage = lazyPage(() => import('./features/nutrition/NutritionPage'), 'NutritionPage');
 const RecipeCreatePage = lazyPage(
   () => import('./features/nutrition/FoodEditPage'),
@@ -178,6 +182,7 @@ export function App() {
           <Route path="daily/foods" element={<FoodListPage />} />
           <Route path="daily/foods/new" element={<FoodCreatePage />} />
           <Route path="daily/foods/new-recipe" element={<RecipeCreatePage />} />
+          <Route path="daily/foods/scan" element={<ScanFoodPage />} />
           <Route path="daily/foods/:id" element={<FoodDetailPage />} />
           <Route path="daily/foods/:id/edit" element={<FoodEditPage />} />
           <Route path="stats" element={<StatsPage />} />

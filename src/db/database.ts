@@ -405,6 +405,19 @@ export class AppDatabase extends Dexie {
             settings.welcomeDismissed ??= true;
           });
       });
+    // Strichcode-Scanner: Lebensmittel über den Strichcode finden (auch ohne Internet)
+    this.version(22)
+      .stores({
+        foods: 'id, builtinKey, source, category, barcode, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Food, string>('foods')
+          .toCollection()
+          .modify((food) => {
+            food.barcode ??= null;
+          }),
+      );
   }
 }
 

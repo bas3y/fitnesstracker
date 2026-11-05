@@ -5,6 +5,7 @@ import {
   createRecipe,
   createUserFood,
   deleteUserFood,
+  findFoodByBarcode,
   setFoodFavorite,
   setFoodHidden,
   updateRecipe,
@@ -52,6 +53,52 @@ const MILK: FoodInput = {
   fat: 3.5,
   sugar: 4.8,
 };
+
+describe('Strichcodes', () => {
+  const CODE = '4006381333931';
+
+  it('speichert normalisiert, findet ohne Internet und verhindert doppelte', async () => {
+    const skyr = await createUserFood(
+      { ...MILK, name: 'Skyr', barcode: '4 006381 333931' },
+      { sourceRef: `off:${CODE}` },
+    );
+    expect(skyr).toMatchObject({ barcode: CODE, sourceRef: `off:${CODE}`, source: 'user' });
+    expect((await findFoodByBarcode(CODE))?.id).toBe(skyr.id);
+    await expect(createUserFood({ ...OATS, barcode: CODE })).rejects.toThrow(
+      'Der Strichcode gehört schon zu „Skyr“',
+    );
+    await expect(createUserFood({ ...OATS, barcode: '4006381333932' })).rejects.toThrow();
+
+    const oats = await createUserFood({ ...OATS, barcode: '' });
+    expect(oats.barcode).toBeNull();
+    await expect(updateUserFood(oats.id, { ...OATS, barcode: CODE })).rejects.toThrow('Skyr');
+    await updateUserFood(skyr.id, { ...MILK, name: 'Skyr', barcode: '96385074' });
+    expect(await findFoodByBarcode(CODE)).toBeUndefined();
+
+    await deleteUserFood(skyr.id);
+    expect(await findFoodByBarcode('96385074')).toBeUndefined();
+    await createUserFood({ ...OATS, name: 'Skyr neu', barcode: '96385074' });
+  });
+
+  it('Rezepte und mitgelieferte Lebensmittel haben keinen Strichcode', async () => {
+    await applySeed(
+      {
+        exercises: [],
+        foods: [{ ...OATS, alcohol: 0, aliases: [], key: 'oats', sourceRef: 'usda:1' }],
+      },
+      SEED_VERSION,
+    );
+    const builtin = await db.foods.where('builtinKey').equals('oats').first();
+    expect(builtin?.barcode).toBeNull();
+    const recipe = await createRecipe({
+      name: 'Porridge',
+      ingredients: [{ id: 'i1', foodId: builtin!.id, grams: 50 }],
+      cookedWeightGrams: null,
+      servings: 1,
+    });
+    expect(recipe.barcode).toBeNull();
+  });
+});
 
 describe('Eigene Lebensmittel', () => {
   it('legt an, ändert, markiert und löscht nur per Soft-Delete', async () => {

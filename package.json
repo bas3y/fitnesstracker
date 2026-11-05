@@ -17,6 +17,7 @@
     "data": "node --max-old-space-size=4096 scripts/build-data.mjs"
   },
   "dependencies": {
+    "@zxing/library": "0.21.3",
     "dexie": "^4.4.7",
     "dexie-react-hooks": "^4.4.0",
     "react": "^19.3.1",

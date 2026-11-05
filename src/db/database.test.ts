@@ -691,7 +691,48 @@ describe('AppDatabase-Migration', () => {
       welcomeDismissed: true,
     });
     expect(await v21.dailyLogs.get('d1')).toMatchObject({ waterMl: 500, proteinGrams: null });
-    expect(v21.verno).toBe(21);
+    expect(v21.verno).toBeGreaterThanOrEqual(21);
     await v21.delete();
+  });
+
+  it('Version 22 ergänzt den Strichcode an Lebensmitteln (mit Index)', async () => {
+    const name = 'migration-test-v22';
+    const v21 = new Dexie(name);
+    v21.version(21).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+    });
+    await v21.table('foods').add({ id: 'f1', name: 'Quark', source: 'user', isFavorite: true });
+    v21.close();
+
+    const v22 = new AppDatabase(name);
+    expect(await v22.foods.get('f1')).toMatchObject({
+      name: 'Quark',
+      isFavorite: true,
+      barcode: null,
+    });
+    await v22.foods.update('f1', { barcode: '4006381333931' });
+    expect(await v22.foods.where('barcode').equals('4006381333931').count()).toBe(1);
+    expect(v22.verno).toBe(22);
+    await v22.delete();
   });
 });

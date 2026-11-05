@@ -27,7 +27,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 14b – Import von Gesundheitsdaten
 - [x] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
 - [x] Schritt 15b – Verbesserungen aus dem Gebrauch (Nachtragen, Ziehen, Protein, Weitergeben)
-- [ ] Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest 14–15c
+- [x] Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest 14–15c
 - [ ] Schritt 16 – Ziele & Rückblicke
 - [ ] Schritt 17 – Self-Improvement
 - [ ] Schritt 18 – Motivation & Trainingsblöcke
@@ -831,12 +831,23 @@ Mit dem Nutzer beim Start abgestimmt: Statistik-Seite mit Umschalter **„Kraft 
 
 **Notizen:**
 - Gebaut:
+  - Dexie v22: `Food.barcode` (Nutzerfeld in `FOOD_USER_DEFAULTS`, Index `barcode`, Seed fasst es nicht an), Backup-Default `null` (Sicherungen bis v21 importierbar). `foodInputSchema.barcode` normalisiert (Leerzeichen weg, UPC-A → EAN-13 mit führender 0) und prüft die Prüfziffer; doppelte Strichcodes unter aktiven Lebensmitteln werden abgelehnt. `createUserFood(input, { sourceRef })`, `findFoodByBarcode(code)` (`src/db/foods.ts`).
+  - `src/domain/barcode.ts` (`normalizeBarcode`, `gtinCheckDigit`, `isValidBarcode`, `parseBarcode`, `findByBarcode`, `formatBarcode`), `src/domain/openFoodFacts.ts` (`offProductUrl` mit Feldliste, `parseOffResponse`: Name + Marke, Werte pro 100 g, kJ → kcal, Alkohol % vol × 0,789 → g, Zucker ≤ KH, Portion aus `serving_quantity` in g/ml, Kategorie aus `categories_tags`; `OFF_SOURCE_PREFIX` = `off:`).
+  - Scanner in `src/features/nutrition/barcode/`: `BarcodeScanner` (Kamera per `getUserMedia`, Rückkamera, Rahmen, alle 200 ms ein Bild; Fehlertexte für verweigerte/fehlende Kamera; Nummer eintippen mit Prüfung), `detector.ts` (`BarcodeDetector` mit `ean_13/ean_8/upc_a`, sonst ZXing per `import()`), `zxingDecoder.ts` (`@zxing/library` 0.21.3, Bild auf 720 px verkleinert, Graustufen → `MultiFormatReader`; eigener Chunk 410 KB / 109 KB gzip, nur beim Scannen ohne `BarcodeDetector` geladen, im Precache), `openFoodFacts.ts` (`fetchOffProduct`: `credentials: 'omit'`, `no-referrer`, `no-store`, 10 s Timeout, 404 = nicht gefunden), `BarcodeFoodFlow` (gespeichert → sofort auswählen; sonst online Open Food Facts → `FoodForm` vorbefüllt mit Hinweis „bitte mit der Verpackung vergleichen“; nicht gefunden → leeres Formular mit Strichcode; Fehler → „Erneut versuchen“/„Selbst eintragen“; offline → „Nur mit Internet“ ausgegraut + „Selbst eintragen“), `ScanButton`, `ScanFoodPage` (`/daily/foods/scan`, `SCAN_FOOD_PATH`).
+  - Einstieg: `FoodPicker` (Button „Strichcode scannen“ unter „+ Eigenes Lebensmittel anlegen“, danach Menge wählen) und Lebensmittelseite. Suche in beiden findet Lebensmittel auch über die Strichcode-Nummer. `FoodForm` hat ein optionales Feld „Strichcode“ (auch beim Bearbeiten). Detailseite: „Strichcode 4 006381 333931“, Quelle „Werte von Open Food Facts“.
+  - `useOnline()` (`src/components/useOnline.ts`) für Online-Funktionen.
+  - Tests: `barcode.test.ts`, `openFoodFacts.test.ts`, `zxingDecoder.test.ts` (selbst gezeichnete EAN-13 als Graustufenbild), Strichcodes in `nutrition.test.ts`, Migration v21→v22, Backup. E2E `e2e/barcode.spec.ts` (Open Food Facts per `page.route` gemockt: Prüfziffer-Fehler, Vorschau bearbeiten, Speichern, nur eine Anfrage ohne Cookies; offline im Picker: gespeicherter Strichcode, unbekannter → „Nur mit Internet“ + selbst eintragen, Suche über die Nummer; wieder online; 503 + Wiederholen + nicht gefunden). 652 Unit-Tests, 92/92 E2E grün.
 - Abweichungen:
+  - **Scan-Button offline nicht ausgegraut:** Erkennung und Bibliothek sind lokal, also findet der Scan ohne Internet schon gespeicherte Strichcodes. Ausgegraut („Nur mit Internet“) ist nur die Abfrage bei Open Food Facts; unter dem Button steht offline „Ohne Internet nur gespeicherte Strichcodes“.
+  - Strichcode als eigenes Feld `barcode` statt in `sourceRef`; `sourceRef = off:<Nummer>` markiert nur die Herkunft der Werte. Strichcodes auch ohne Open Food Facts (selbst eingetragen) möglich.
+  - Kein UPC-E (8-stellige US-Kurzform), nur EAN-13/EAN-8/UPC-A. Portion heißt immer „1 Portion“ (Bezeichnung aus Open Food Facts ist zu uneinheitlich).
+  - Hauptbundle 313 → 320 KB: Der gemeinsame Chunk `foods-*.js` (7 KB, wurde schon vorher beim Start geladen) liegt jetzt im Hauptbundle; der Scanner selbst nicht.
 - Offene Punkte:
-
----
-
-## Phase 4 – Erweiterungen offline (grob)
+  - **Kamera auf echten Geräten prüfen** (iPhone Safari mit ZXing, Android mit `BarcodeDetector`): Erkennungsgeschwindigkeit, Fokus, Licht; Kamera braucht HTTPS (am PC nur `localhost`).
+  - Werte aus Open Food Facts sind Nutzerdaten und teils lückenhaft; US-Produkte zählen Ballaststoffe zu den KH (nicht korrigiert).
+  - Mitgelieferte Lebensmittel haben keinen Strichcode; ein Scan legt immer ein eigenes Lebensmittel an.
+  - Kein Taschenlampen-Schalter, kein Zoom.
+- **Zwischenstand Push & Handytest:** Code lokal committet. Push (Schritte 14–15c, DB-Version 17 → 22) erst, nachdem der Nutzer bestätigt hat, dass er ein **Backup auf dem Handy** gemacht hat (Nutzerwunsch: vor dem Push ausdrücklich nachfragen). Danach Handytest laut Liste oben.
 
 ### Schritt 16 – Ziele & Rückblicke
 Ziele (z. B. „Bankdrücken 100 kg bis Dezember“) mit Fortschrittsbalken, Wochen-/Monats-/Jahresrückblick, Vergleich von Zeiträumen.

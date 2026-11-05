@@ -78,8 +78,20 @@ export function FoodEditPage() {
     );
   }
 
-  const { name, aliases, category, kcal, protein, carbs, fat, fiber, sugar, alcohol, portions } =
-    food;
+  const {
+    name,
+    aliases,
+    category,
+    kcal,
+    protein,
+    carbs,
+    fat,
+    fiber,
+    sugar,
+    alcohol,
+    portions,
+    barcode,
+  } = food;
   return (
     <Page title="Lebensmittel bearbeiten" backTo={detailPath}>
       <FoodForm
@@ -95,6 +107,7 @@ export function FoodEditPage() {
           sugar,
           alcohol,
           portions,
+          barcode,
         }}
         submitLabel="Speichern"
         onSubmit={async (input) => {

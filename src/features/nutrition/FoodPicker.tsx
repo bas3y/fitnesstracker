@@ -1,11 +1,14 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { primaryButton, secondaryButton } from '../../components/buttons';
 import { SearchInput } from '../../components/SearchInput';
 import { createUserFood } from '../../db/foods';
 import { EMPTY_FOOD_INPUT, type MealAmount } from '../../db/schemas';
 import type { DayKey, Food } from '../../db/types';
 import { defaultMealAmount, formatNutrientLine } from '../../domain/nutrition';
+import { findByBarcode } from '../../domain/barcode';
 import { createSearch } from '../../domain/search';
+import { BarcodeFoodFlow } from './barcode/BarcodeFoodFlow';
+import { ScanButton } from './barcode/ScanButton';
 import { AmountForm, FoodFavoriteButton, FoodList, FoodSummary, MUTED } from './FoodParts';
 import { FoodForm } from './FoodForm';
 import { useActiveFoods, useFoodUsage } from './useNutrition';
@@ -36,6 +39,7 @@ export function FoodPicker({
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<{ food: Food; amount: MealAmount } | null>(null);
   const [creating, setCreating] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [added, setAdded] = useState<string[]>([]);
   const titleId = useId();
   const dialog = useRef<HTMLDivElement>(null);
@@ -49,7 +53,10 @@ export function FoodPicker({
   );
   const byId = useMemo(() => new Map(foods.map((food) => [food.id, food])), [foods]);
   const search = useMemo(() => createSearch(foods), [foods]);
-  const results = useMemo(() => search(query, MAX_RESULTS), [search, query]);
+  const results = useMemo(() => {
+    const byBarcode = findByBarcode(foods, query);
+    return byBarcode ? [byBarcode] : search(query, MAX_RESULTS);
+  }, [foods, search, query]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -94,8 +101,30 @@ export function FoodPicker({
     setQuery('');
   };
 
-  const heading = creating ? 'Eigenes Lebensmittel' : (selected?.food.name ?? title);
-  const back = creating ? () => setCreating(false) : selected ? () => setSelected(null) : null;
+  const heading = creating
+    ? 'Eigenes Lebensmittel'
+    : scanning
+      ? 'Strichcode scannen'
+      : (selected?.food.name ?? title);
+  const back = creating
+    ? () => setCreating(false)
+    : scanning
+      ? () => setScanning(false)
+      : selected
+        ? () => setSelected(null)
+        : null;
+  const scanned = useCallback(
+    (food: Food) => {
+      setScanning(false);
+      // Ausgeblendete oder (beim Rezept) andere Rezepte nicht auswählen
+      if (food.hiddenAt === null && (withRecipes || food.recipe === null)) {
+        setSelected({ food, amount: defaultMealAmount(food.portions) });
+      } else {
+        setQuery(food.name);
+      }
+    },
+    [withRecipes],
+  );
 
   return (
     <div
@@ -125,7 +154,7 @@ export function FoodPicker({
       </div>
 
       <div className="mx-auto max-w-md px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        {added.length > 0 && !selected && !creating && (
+        {added.length > 0 && !selected && !creating && !scanning && (
           <p
             role="status"
             className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
@@ -142,6 +171,12 @@ export function FoodPicker({
               setCreating(false);
             }}
             onCancel={() => setCreating(false)}
+          />
+        ) : scanning ? (
+          <BarcodeFoodFlow
+            submitLabel="Speichern und auswählen"
+            onFood={scanned}
+            onCancel={() => setScanning(false)}
           />
         ) : selected ? (
           <div className="flex flex-col gap-4">
@@ -165,9 +200,10 @@ export function FoodPicker({
             >
               + Eigenes Lebensmittel anlegen
             </button>
+            <ScanButton onClick={() => setScanning(true)} />
             <SearchInput
               label="Lebensmittel suchen"
-              placeholder="z. B. Haferflocken, Quark …"
+              placeholder="Name oder Strichcode-Nummer"
               value={query}
               onChange={setQuery}
             />

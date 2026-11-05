@@ -447,6 +447,21 @@ describe('Ernährung im Backup', () => {
     expect(result.backup.tables.settings[0]!.nutritionGoals).toEqual(NUTRITION_GOAL_DEFAULTS);
   });
 
+  it('stellt Strichcodes wieder her und ergänzt sie in Sicherungen aus DB-Version 21', async () => {
+    await createUserFood({ ...EMPTY_FOOD_INPUT, name: 'Skyr', barcode: '4006381333931' });
+    const data = await validBackup();
+    const restored = parseBackup(data);
+    if (!restored.ok) throw new Error(restored.error);
+    await restoreBackup(restored.backup);
+    expect(await db.foods.where('barcode').equals('4006381333931').count()).toBe(1);
+
+    data.dbVersion = 21;
+    delete data.tables.foods[0].barcode;
+    const old = parseBackup(data);
+    if (!old.ok) throw new Error(old.error);
+    expect(old.backup.tables.foods[0]).toMatchObject({ name: 'Skyr', barcode: null });
+  });
+
   it('lehnt ungültige Mahlzeiten ab', async () => {
     const food = await createUserFood({ ...EMPTY_FOOD_INPUT, name: 'Quark' });
     await addMealEntry('2026-11-02', 'snack', food.id, { grams: 100, portion: null });

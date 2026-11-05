@@ -12,10 +12,11 @@ import {
 import type { Food, Nutrients, Recipe } from './types';
 
 /** Startwerte der Nutzerfelder; der Seed fasst sie bei mitgelieferten Lebensmitteln nie an */
-export const FOOD_USER_DEFAULTS: Pick<Food, 'isFavorite' | 'hiddenAt' | 'recipe'> = {
+export const FOOD_USER_DEFAULTS: Pick<Food, 'isFavorite' | 'hiddenAt' | 'recipe' | 'barcode'> = {
   isFavorite: false,
   hiddenAt: null,
   recipe: null,
+  barcode: null,
 };
 
 /** Alle Lebensmittel, auch gelöschte: Rezepte und Lieblingsmahlzeiten rechnen mit ihnen weiter */
@@ -41,16 +42,35 @@ async function getUserFood(id: string): Promise<Food> {
   return food;
 }
 
-export async function createUserFood(input: FoodInput): Promise<Food> {
+/** Aktives Lebensmittel mit diesem (normalisierten) Strichcode – funktioniert ohne Internet */
+export async function findFoodByBarcode(code: string): Promise<Food | undefined> {
+  const matches = await db.foods.where('barcode').equals(code).toArray();
+  return matches.find((food) => food.deletedAt === null);
+}
+
+async function assertUniqueBarcode(barcode: string | null, exceptId?: string) {
+  if (barcode === null) return;
+  const existing = await findFoodByBarcode(barcode);
+  if (existing && existing.id !== exceptId) {
+    throw new Error(`Der Strichcode gehört schon zu „${existing.name}“`);
+  }
+}
+
+/** `sourceRef` z. B. `off:<Strichcode>`, wenn die Werte von Open Food Facts stammen */
+export async function createUserFood(
+  input: FoodInput,
+  { sourceRef = null }: { sourceRef?: string | null } = {},
+): Promise<Food> {
   const values = foodInputSchema.parse(input);
   return db.transaction('rw', db.foods, async () => {
     await assertUniqueName(values.name);
+    await assertUniqueBarcode(values.barcode);
     return create<Food>(db.foods, {
+      ...FOOD_USER_DEFAULTS,
       ...values,
       source: 'user',
       builtinKey: null,
-      sourceRef: null,
-      ...FOOD_USER_DEFAULTS,
+      sourceRef,
     });
   });
 }
@@ -62,6 +82,7 @@ export async function updateUserFood(id: string, input: FoodInput): Promise<void
     const food = await getUserFood(id);
     if (food.recipe) throw new Error('Rezepte über das Rezept-Formular ändern');
     await assertUniqueName(values.name, id);
+    await assertUniqueBarcode(values.barcode, id);
     await update(db.foods, id, values);
     await refreshRecipes();
   });

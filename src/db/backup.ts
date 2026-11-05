@@ -135,6 +135,8 @@ const foodSchema = baseEntitySchema
     isFavorite: z.boolean().default(false),
     hiddenAt: timestamp.nullable().default(null),
     recipe: recipeSchema.nullable().default(null),
+    // Seit DB-Version 22
+    barcode: z.string().nullable().default(null),
   });
 const mealEntrySchema = baseEntitySchema.extend(mealAmountSchema.shape).extend({
   date: dayKeySchema,

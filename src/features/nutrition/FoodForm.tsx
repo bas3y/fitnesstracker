@@ -43,6 +43,7 @@ export function FoodForm({
   onCancel: () => void;
 }) {
   const nameId = useId();
+  const barcodeId = useId();
   const [input, setInput] = useState<FoodInput>(initial);
   const [error, setError] = useState<string | null>(null);
   const change = (changes: Partial<FoodInput>) => {
@@ -95,6 +96,21 @@ export function FoodForm({
             labels={FOOD_CATEGORY_LABELS}
             onChange={(category) => category && change({ category })}
           />
+          <div>
+            <label htmlFor={barcodeId} className={LABEL}>
+              Strichcode (optional)
+            </label>
+            <input
+              id={barcodeId}
+              className={inputField}
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={20}
+              placeholder="Nummer unter dem Strichcode"
+              value={input.barcode ?? ''}
+              onChange={(event) => change({ barcode: event.target.value.trim() || null })}
+            />
+          </div>
         </div>
       </Card>
 

@@ -5,7 +5,9 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card, Page } from '../../components/Page';
 import { deleteUserFood, setFoodFavorite, setFoodHidden } from '../../db/foods';
 import type { Food, Nutrients } from '../../db/types';
+import { formatBarcode } from '../../domain/barcode';
 import { formatDecimal } from '../../domain/format';
+import { OFF_SOURCE_PREFIX } from '../../domain/openFoodFacts';
 import { FOOD_CATEGORY_LABELS } from '../../domain/labels';
 import {
   formatGrams,
@@ -32,6 +34,7 @@ function formatValue(key: keyof Nutrients, value: number): string {
 }
 
 function sourceText(food: Food): string | null {
+  if (food.sourceRef?.startsWith(OFF_SOURCE_PREFIX)) return 'Werte von Open Food Facts';
   if (food.source === 'user') return null;
   if (food.sourceRef?.startsWith('usda:')) return 'Quelle: USDA FoodData Central';
   return 'Durchschnittswerte gängiger Produkte';
@@ -112,6 +115,11 @@ function FoodDetail({ food }: { food: Food }) {
           <p className={`mt-3 ${MUTED}`}>
             Portionen:{' '}
             {food.portions.map((item) => `${item.label} = ${formatGrams(item.grams)}`).join(', ')}
+          </p>
+        )}
+        {food.barcode && (
+          <p className={`mt-3 ${MUTED}`}>
+            Strichcode <span className="tabular-nums">{formatBarcode(food.barcode)}</span>
           </p>
         )}
       </Card>
