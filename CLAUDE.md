@@ -52,6 +52,7 @@ e2e/           Playwright-Tests
 ## Verbindliche Regeln
 
 - **Offline first:** Keine Laufzeit-Aufrufe ins Internet (keine CDNs, keine APIs, keine Online-Fonts). Alles wird gebündelt.
+  - **Ausnahmen nur nach Rückfrage:** Online-Funktionen sind erlaubt, wenn der Nutzer sie für den Schritt freigegeben hat. Wo eine Online-Funktion in einem Schritt sinnvoll wäre, **vorher beim Nutzer nachfragen**. Freigegeben: Strichcode-Scanner mit Open Food Facts (Schritt 15c). Regeln dafür: Die App bleibt ohne Internet voll nutzbar, die Online-Funktion ist offline ausgegraut mit Hinweis „Nur mit Internet“, es werden nur die nötigsten Daten gesendet, Ergebnisse werden lokal gespeichert, Code und Bibliotheken bleiben gebündelt (kein CDN).
 - **Datenmodell:** Jeder Datensatz hat `id` (UUID via `crypto.randomUUID()`), `createdAt`, `updatedAt`, `deletedAt` (Soft-Delete, `null` = aktiv). So kann später ein Server-Sync ergänzt werden.
 - **Schemaänderungen:** Nur über eine **neue Dexie-Version** mit Upgrade-Funktion. Bestehende Daten auf dem Handy dürfen niemals verloren gehen. Backup-Format bei Bedarf mitziehen (Version im Backup-JSON).
 - **Mitgelieferte Daten:** Einträge aus `src/data/` haben `source: 'builtin'` und werden über eine Seed-Version aktualisiert. Eigene Einträge (`source: 'user'`) werden nie überschrieben.

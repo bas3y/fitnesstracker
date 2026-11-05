@@ -26,6 +26,8 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 14 – Import von Einheiten (Uhr, Strava)
 - [x] Schritt 14b – Import von Gesundheitsdaten
 - [x] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
+- [ ] Schritt 15b – Verbesserungen aus dem Gebrauch (Nachtragen, Ziehen, Protein, Weitergeben)
+- [ ] Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest 14–15c
 - [ ] Schritt 16 – Ziele & Rückblicke
 - [ ] Schritt 17 – Self-Improvement
 - [ ] Schritt 18 – Motivation & Trainingsblöcke
@@ -794,6 +796,31 @@ Mit dem Nutzer beim Start abgestimmt: Statistik-Seite mit Umschalter **„Kraft 
   - Ruhepuls aus dem Gesundheitsimport schlägt weiterhin nicht `Settings.restingHeartRate` vor (offen aus 14b).
   - Schritt 16 (Ziele & Rückblicke) kann `weeklyTotals`, `periodTotals` und `bestEffortsOf` für Ausdauer-Ziele („10 km unter 50 min“) nutzen.
 
+### Schritt 15b – Verbesserungen aus dem Gebrauch
+**Ziel:** Rückmeldungen des Nutzers nach Schritt 15 umsetzen (alles offline).
+- **Krafttraining nachtragen:** Eigener Einstieg „Training nachtragen“ (z. B. auf der Trainingsseite/Verlauf): Datum, Beginn und Dauer wählen, Übungen und Sätze eintragen (Modus `edit` des `WorkoutEditor`, alle Sätze direkt als erledigt), speichern als beendetes Workout. Zählt normal für Statistik, Rekorde, Heatmap und Trainingstage. Gedacht für Trainings, die auf Papier notiert wurden. Läuft gerade ein Workout, bleibt es davon unberührt. Bisher ging das nur über den Umweg Starten → Beenden → Datum ändern (`updateWorkoutInfo`).
+- **Ziehen mit Inhalt überall:** `SortableList` klappt beim Ziehen alle Zeilen zusammen (`compact`). Umstellen, sodass der Inhalt beim Ziehen sichtbar bleibt und mitgeht – überall, wo es Ziehgriffe gibt (Training-Kacheln, Startseiten-Widgets, Workout-Übungen, Plan-Übungen usw.). `compact` ggf. ganz entfernen; auf lange Workout-Karten und das automatische Scrollen achten.
+- **Nur Protein erfassen:** Einstellung „Nur Protein erfassen“ (Einstellungen → Ernährung, Standard aus). Dann zeigt die Ernährung nur ein Protein-Feld wie beim Wasser (Buttons z. B. „+10 g“, „+x“, Rückgängig/Korrigieren) mit Tagesziel aus `Settings.nutritionGoals`. Die Menge zählt zum Protein des Tages (auch im normalen Modus neben Lebensmitteln, z. B. als eigener Eintrag ohne Lebensmittel). Kachel auf der Alltag-Übersicht und Startseiten-Widget im Modus nur mit Protein. Dexie-Version + Backup falls neue Felder.
+- **App an andere weitergeben:** Jeder, der den Link öffnet, bekommt eine leere App mit eigenen Daten auf seinem Gerät (funktioniert schon). Ergänzen: Button „App weitergeben“ (Web Share mit Link, sonst Kopieren) z. B. in den Einstellungen; kurze Installationsanleitung in der App (Android: Chrome → „App installieren“; iPhone: Safari → Teilen → „Zum Home-Bildschirm“) samt Backup-Hinweis; kurzer Willkommens-Hinweis beim ersten Öffnen (leere App, Daten nur auf dem Gerät). Dieselbe Anleitung in `README.md`.
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
+- Offene Punkte:
+
+### Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest
+**Ziel:** Lebensmittel per Strichcode (EAN auf der Verpackung) scannen und als eigenes Lebensmittel speichern. **Erste mit dem Nutzer abgestimmte Ausnahme vom Offline-Prinzip** (siehe CLAUDE.md).
+- Kamera über `getUserMedia`; Erkennung per `BarcodeDetector` (Android Chrome), sonst eine gebündelte Bibliothek (z. B. ZXing, iOS Safari hat keinen `BarcodeDetector`) – nur per dynamischem `import()` laden, nicht ins Hauptbundle. Strichcode auch manuell eintippbar.
+- Nährwerte von **Open Food Facts** (`world.openfoodfacts.org/api/v2/product/<ean>`), gesendet wird nur die Nummer. Vorschau mit Werten pro 100 g (Kohlenhydrate ohne Ballaststoffe), vor dem Speichern bearbeitbar → `createUserFood` mit `source: 'user'` und gespeichertem Strichcode. Danach offline nutzbar; schon gespeicherter Strichcode wird ohne Internet gefunden.
+- **Offline:** Scan-Button ausgegraut mit Hinweis „Nur mit Internet“ (`navigator.onLine` + Fehlerbehandlung bei Abbruch). Service Worker darf die API-Aufrufe nicht cachen.
+- Einstieg im `FoodPicker` und auf der Lebensmittelseite.
+- **Danach Push** (Schritte 14–15c zusammen, vorher Nutzer an ein Backup auf dem Handy erinnern, DB-Version seit dem letzten Push 17 → ≥ 20) und Handytest: offene Punkte aus 14, 14b, 15 (iPhone-Dateiauswahl, Android-Teilen-Ziel, echter Apple-Health- und Garmin-Export, Teilen-Bild/Sticker in Instagram, Emojis), dazu 15b (Weitergeben an eine zweite Person, Nachtragen, Protein) und 15c (Kamera auf iPhone und Android).
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
+- Offene Punkte:
+
 ---
 
 ## Phase 4 – Erweiterungen offline (grob)
@@ -858,9 +885,10 @@ Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.
 
 ## Phase 6 – Später mit Internet/Server (nur Ausblick, keine Schritte)
 - Server + Sync (nutzt vorbereitete UUIDs/Timestamps/Soft-Delete), Mehrbenutzer mit Admin-Rolle, Privatsphäre
+- **„Multiplayer“-Modus** (Nutzerwunsch nach Schritt 15): Bis dahin nutzt jede Person die App über denselben Link mit eigenen Daten auf ihrem Gerät (Schritt 15b). Später überlegen, wie Geräte verbunden werden (Konto, Freunde, gemeinsame Pläne/Challenges) und ob dafür eine eigene, gehostete Version mit Server nötig ist.
 - Freunde, Pläne teilen, Ranglisten, Challenges
 - Garmin-Connect-/Strava-API, Schlaf/Ruhepuls/HRV-Übernahme, Online-Karten
-- Barcode-Scanner mit Open Food Facts online
+- ~~Barcode-Scanner mit Open Food Facts online~~ → vorgezogen als Schritt 15c
 - Push-Benachrichtigungen
 - KI-Funktionen (Trainingsanalyse, Planvorschläge über Claude API)
 
