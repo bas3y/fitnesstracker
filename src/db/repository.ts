@@ -4,8 +4,12 @@ import type { BaseEntity, Timestamp } from './types';
 export type NewEntity<T extends BaseEntity> = Omit<T, keyof BaseEntity> & { id?: string };
 export type EntityChanges<T extends BaseEntity> = Partial<Omit<T, keyof BaseEntity>>;
 
-/** Größerer Rücksprung der Uhr (Systemzeit gestellt) → echte Zeit statt Weiterzählen */
-const MAX_CLOCK_BACKSTEP_MS = 50;
+/**
+ * Erst bei einem großen Rücksprung der Uhr (Systemzeit gestellt) wieder die echte Zeit. Viele
+ * Schreibvorgänge am Stück können dem Weiterzählen einen Vorsprung vor der Uhr geben; ein kleiner
+ * Grenzwert würde dann zurückspringen und die Reihenfolge umdrehen.
+ */
+const MAX_CLOCK_BACKSTEP_MS = 10 * 60 * 1000;
 let lastMs = 0;
 
 /**

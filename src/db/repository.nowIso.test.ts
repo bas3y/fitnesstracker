@@ -16,4 +16,14 @@ describe('nowIso', () => {
     vi.setSystemTime(new Date('2026-11-01T08:00:00.000Z'));
     expect(nowIso()).toBe('2026-11-01T08:00:00.000Z');
   });
+
+  it('bleibt aufsteigend, wenn viele Aufrufe der Uhr davonlaufen', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-06T10:00:00.000Z'));
+    const burst = Array.from({ length: 500 }, () => nowIso());
+    vi.setSystemTime(new Date('2026-11-06T10:00:00.100Z'));
+    const after = nowIso();
+    expect(after > burst.at(-1)!).toBe(true);
+    expect(new Set(burst).size).toBe(500);
+  });
 });
