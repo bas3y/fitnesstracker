@@ -17,6 +17,7 @@ import {
   type Exercise,
   type Food,
   type Gear,
+  type Goal,
   type Habit,
   type HabitCheck,
   type MealEntry,
@@ -68,6 +69,7 @@ export class AppDatabase extends Dexie {
   enduranceSessions!: Table<EnduranceSession, string>;
   gear!: Table<Gear, string>;
   enduranceTracks!: Table<EnduranceTrack, string>;
+  goals!: Table<Goal, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -418,6 +420,10 @@ export class AppDatabase extends Dexie {
             food.barcode ??= null;
           }),
       );
+    // Ziele
+    this.version(23).stores({
+      goals: 'id, updatedAt',
+    });
   }
 }
 

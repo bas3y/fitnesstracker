@@ -6,6 +6,9 @@ import type {
   Equipment,
   ExerciseCategory,
   FoodCategory,
+  GoalKind,
+  GoalPeriod,
+  TotalGoalMetric,
   MealType,
   MuscleGroup,
   QuickAction,
@@ -51,6 +54,28 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   supplements: { name: 'Supplements', hint: 'Heutige Einnahmen abhaken, Bestand im Blick' },
   nutrition: { name: 'Ernährung', hint: 'Kalorien und Protein heute' },
   endurance: { name: 'Ausdauer', hint: 'Strecke dieser Woche, letzte Einheit, Bestzeiten' },
+  goals: { name: 'Ziele', hint: 'Fortschritt deiner Ziele' },
+};
+
+export const GOAL_KIND_LABELS: Record<GoalKind, { name: string; icon: string; hint: string }> = {
+  strength: { name: 'Kraft', icon: '🏋️', hint: 'z. B. Bankdrücken 100 kg' },
+  effort: { name: 'Bestzeit', icon: '⏱️', hint: 'z. B. 10 km unter 50 Minuten' },
+  bodyWeight: { name: 'Gewicht', icon: '⚖️', hint: 'Zielgewicht, ab- oder zunehmen' },
+  total: { name: 'Menge', icon: '📅', hint: 'z. B. 12 Trainings im Monat, 500 km im Jahr' },
+};
+
+export const TOTAL_GOAL_METRIC_LABELS: Record<TotalGoalMetric, string> = {
+  workouts: 'Krafttrainings',
+  trainings: 'Trainings (Kraft + Ausdauer)',
+  distance: 'Strecke',
+  duration: 'Ausdauer-Zeit',
+};
+
+export const GOAL_PERIOD_LABELS: Record<GoalPeriod, string> = {
+  week: 'Pro Woche',
+  month: 'Pro Monat',
+  year: 'Pro Jahr',
+  custom: 'Eigener Zeitraum',
 };
 
 export const MEAL_TYPE_LABELS: Record<MealType, string> = {

@@ -619,27 +619,44 @@ export function trainingProgress(
         .map(({ workoutId }) => workoutId),
     ).size;
 
-  const chronological = [...sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
-  const groups = groupByExercise(chronological);
-  let recordsThisMonth = 0;
-  for (const { startedAt, exercise, sets } of chronological.reverse()) {
-    if (Date.parse(startedAt) < monthStart) break;
-    const group = groups.get(exercise.id)!;
-    group.pop();
-    recordsThisMonth += sessionRecords(
-      sets,
-      group.map((session) => session.sets),
-      exerciseKind(exercise, bodyWeightKg),
-    ).flat().length;
-  }
-
   return {
     strengthPercent: percents.length > 0 ? median(percents) : null,
     exerciseCount: percents.length,
     workoutsThisMonth: workoutsBetween(monthStart, Number.POSITIVE_INFINITY),
     workoutsLastMonth: workoutsBetween(lastMonthStart, monthStart),
-    recordsThisMonth,
+    recordsThisMonth: countRecordsBetween(
+      sessions,
+      bodyWeightKg,
+      monthStart,
+      Number.POSITIVE_INFINITY,
+    ),
   };
+}
+
+/** Rekorde in Einheiten ab `from` bis vor `to` (ms), verglichen mit allen früheren Einheiten */
+export function countRecordsBetween(
+  sessions: StatsSession[],
+  bodyWeightKg: number | null,
+  from: number,
+  to: number,
+): number {
+  const chronological = [...sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  const groups = groupByExercise(chronological);
+  let count = 0;
+  // Rückwärts, damit nur so viel Historie durchgerechnet wird wie nötig
+  for (const { startedAt, exercise, sets } of chronological.reverse()) {
+    const time = Date.parse(startedAt);
+    if (time < from) break;
+    const group = groups.get(exercise.id)!;
+    group.pop();
+    if (time >= to) continue;
+    count += sessionRecords(
+      sets,
+      group.map((session) => session.sets),
+      exerciseKind(exercise, bodyWeightKg),
+    ).flat().length;
+  }
+  return count;
 }
 
 export interface RecentRecords {

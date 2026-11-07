@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useFromHere } from '../../components/backNavigation';
 import { WeeklyBarChart } from '../../components/charts';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
@@ -36,9 +37,11 @@ import {
   type MuscleVolume,
   type StatsSession,
 } from '../../domain/stats';
+import { GOALS_PATH } from '../goals/paths';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from './ActivityCard';
 import { EnduranceStats } from './EnduranceStats';
+import { ReviewStats } from './ReviewStats';
 import { exerciseStatsPath, useStatsFilter, type StatsView } from './statsFilter';
 
 const HINT = 'text-sm text-slate-500 dark:text-slate-400';
@@ -52,16 +55,31 @@ const SORT_OPTIONS: Array<{ value: ExerciseSort; label: string }> = [
 const VIEW_OPTIONS: Array<{ value: StatsView; label: string }> = [
   { value: 'strength', label: 'Kraft' },
   { value: 'endurance', label: 'Ausdauer' },
+  { value: 'review', label: 'Rückblick' },
 ];
 
 export function StatsPage() {
   const { view, setView } = useStatsFilter();
+  const from = useFromHere();
   return (
-    <Page title="Statistik">
+    <Page
+      title="Statistik"
+      action={
+        <Link
+          to={GOALS_PATH}
+          state={from}
+          className="flex min-h-11 shrink-0 items-center rounded-xl border border-slate-300 px-3 text-sm font-semibold dark:border-slate-600"
+        >
+          🎯 Ziele
+        </Link>
+      }
+    >
       <div className="mb-4">
         <SegmentedControl label="Bereich" options={VIEW_OPTIONS} value={view} onChange={setView} />
       </div>
-      {view === 'strength' ? <StrengthStats /> : <EnduranceStats />}
+      {view === 'strength' && <StrengthStats />}
+      {view === 'endurance' && <EnduranceStats />}
+      {view === 'review' && <ReviewStats />}
     </Page>
   );
 }

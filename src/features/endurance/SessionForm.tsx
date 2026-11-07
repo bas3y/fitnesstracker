@@ -18,15 +18,13 @@ import {
   type EnduranceSessionValues,
 } from '../../db/schemas';
 import { SWIM_STROKES, type DistanceUnit, type Gear } from '../../db/types';
+import { DurationInput } from '../../components/DurationInput';
 import {
   formatDistance,
   formatPace,
   gearOptions,
   hasDistance,
-  joinDuration,
   paceLabel,
-  splitDuration,
-  type DurationParts,
 } from '../../domain/endurance';
 import { ENDURANCE_SPORT_LABELS, SWIM_STROKE_LABELS } from '../../domain/labels';
 import { displayToMeters, metersToDisplay, roundTo } from '../../domain/units';
@@ -376,48 +374,5 @@ export function SessionForm({
         </button>
       </div>
     </form>
-  );
-}
-
-const DURATION_FIELDS: { key: keyof DurationParts; label: string; unit: string; max: number }[] = [
-  { key: 'hours', label: 'Stunden', unit: 'h', max: 47 },
-  { key: 'minutes', label: 'Minuten', unit: 'min', max: 59 },
-  { key: 'seconds', label: 'Sekunden', unit: 's', max: 59 },
-];
-
-/** Dauer als Stunden/Minuten/Sekunden; leeres Feld = 0 */
-function DurationInput({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (seconds: number) => void;
-}) {
-  const parts = splitDuration(value);
-  return (
-    <div role="group" aria-label="Dauer">
-      <span className={LABEL}>Dauer</span>
-      <div className="grid grid-cols-3 gap-2">
-        {DURATION_FIELDS.map(({ key, label, unit, max }) => (
-          <div key={key} className="relative">
-            <input
-              aria-label={label}
-              inputMode="numeric"
-              placeholder="0"
-              className={`${inputField} pr-10 text-center tabular-nums`}
-              value={parts[key] === 0 ? '' : String(parts[key])}
-              onChange={(event) => {
-                const digits = event.target.value.replace(/\D/g, '');
-                const next = Math.min(max, digits === '' ? 0 : Number(digits));
-                onChange(joinDuration({ ...parts, [key]: next }));
-              }}
-            />
-            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-600 dark:text-slate-400">
-              {unit}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }

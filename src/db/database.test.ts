@@ -732,7 +732,43 @@ describe('AppDatabase-Migration', () => {
     });
     await v22.foods.update('f1', { barcode: '4006381333931' });
     expect(await v22.foods.where('barcode').equals('4006381333931').count()).toBe(1);
-    expect(v22.verno).toBe(22);
+    expect(v22.verno).toBeGreaterThanOrEqual(22);
     await v22.delete();
+  });
+
+  it('Version 23 ergänzt die Tabelle für Ziele und behält bestehende Daten', async () => {
+    const name = 'migration-test-v23';
+    const v22 = new Dexie(name);
+    v22.version(22).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, barcode, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+    });
+    await v22.table('dailyLogs').add({ id: 'd1', date: '2026-11-01', weightKg: 82 });
+    v22.close();
+
+    const v23 = new AppDatabase(name);
+    expect(await v23.dailyLogs.get('d1')).toMatchObject({ weightKg: 82 });
+    expect(await v23.goals.count()).toBe(0);
+    expect(v23.verno).toBe(23);
+    await v23.delete();
   });
 });

@@ -13,6 +13,7 @@ import {
   QUICK_ACTIONS,
   type DashboardWidget,
   type EnduranceSession,
+  type Goal,
   type QuickAction,
   type Settings,
   type WeightUnit,
@@ -44,6 +45,8 @@ import {
 } from '../../domain/workout';
 import { HabitChecklist } from '../daily/HabitChecklist';
 import { EnduranceWidget } from '../endurance/EnduranceWidget';
+import { GoalsWidget } from '../goals/GoalsWidget';
+import { useGoals } from '../goals/useGoals';
 import { useEnduranceSessions } from '../endurance/useEndurance';
 import { TodayCard } from '../daily/TodayCard';
 import { TodoCard } from '../daily/TodoCard';
@@ -70,6 +73,7 @@ interface WidgetData {
   endurance: EnduranceSession[];
   history: WorkoutSummary[];
   records: RecentRecords[];
+  goals: Goal[];
   now: Date;
 }
 
@@ -124,6 +128,16 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
       return endurance.length > 0 ? (
         <EnduranceWidget sessions={endurance} today={today} unit={settings.distanceUnit} />
       ) : null;
+    case 'goals':
+      return data.goals.length > 0 ? (
+        <GoalsWidget
+          goals={data.goals}
+          strength={sessions}
+          endurance={endurance}
+          settings={settings}
+          today={today}
+        />
+      ) : null;
   }
 }
 
@@ -132,6 +146,7 @@ export function HomePage() {
   const sessions = useLiveQuery(loadStatsSessions);
   const endurance = useEnduranceSessions();
   const history = useWorkoutHistory();
+  const goals = useGoals();
   const now = useNow(true, 60_000);
   const [editing, setEditing] = useState(false);
   const bodyWeightKg = settings?.bodyWeightKg ?? null;
@@ -142,7 +157,8 @@ export function HomePage() {
   const data = settings &&
     sessions &&
     endurance &&
-    history && { settings, sessions, endurance, history, records, now };
+    history &&
+    goals && { settings, sessions, endurance, history, records, goals, now };
 
   return (
     <div className="mx-auto max-w-md px-4 pt-[calc(1.5rem+env(safe-area-inset-top))]">

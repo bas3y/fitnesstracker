@@ -1,0 +1,169 @@
+import { dailyLogOf } from '../test/dailyLog';
+import type { HabitHistoryItem } from './habits';
+import { ZERO_NUTRIENTS } from './nutrition';
+import { periodRange } from './periods';
+import {
+  hasReviewData,
+  reviewDelta,
+  reviewSummary,
+  type ReviewEnduranceSession,
+  type ReviewInput,
+} from './review';
+import type { StatsSession, StatsSet } from './stats';
+
+const TODAY = '2026-11-07';
+const NOVEMBER = periodRange('month', TODAY);
+const OCTOBER = periodRange('month', '2026-10-01');
+
+const set = (values: Partial<StatsSet> = {}): StatsSet => ({
+  weight: 100,
+  level: null,
+  eccentricWeight: null,
+  eccentricLevel: null,
+  reps: 5,
+  durationSeconds: null,
+  isWarmup: false,
+  workoutExerciseId: 'item',
+  completedAt: null,
+  ...values,
+});
+
+const workout = (day: string, sets: StatsSet[]): StatsSession => ({
+  workoutId: `w-${day}`,
+  startedAt: new Date(`${day}T18:00:00`).toISOString(),
+  exercise: {
+    id: 'bench',
+    name: 'Bankdrücken',
+    category: 'strength',
+    primaryMuscles: ['chest'],
+    secondaryMuscles: [],
+    equipment: 'barbell',
+    isTimed: false,
+  },
+  sets,
+});
+
+const run = (
+  day: string,
+  values: Partial<ReviewEnduranceSession> = {},
+): ReviewEnduranceSession => ({
+  id: `run-${day}`,
+  sport: 'run',
+  startedAt: new Date(`${day}T07:00:00`).toISOString(),
+  durationSeconds: 1800,
+  distanceMeters: 5000,
+  elevationGainMeters: 20,
+  trackSummary: null,
+  ...values,
+});
+
+const habit: HabitHistoryItem['habit'] = {
+  kind: 'check',
+  target: 1,
+  items: [],
+  frequency: 'daily',
+  timesPerWeek: 1,
+  weekdays: [],
+  pauses: [],
+  startDate: null,
+  createdAt: new Date('2026-11-05T08:00:00').toISOString(),
+  archivedAt: null,
+};
+
+const meal = (date: string, kcal: number, protein: number) => ({
+  date,
+  meal: 'lunch' as const,
+  grams: 100,
+  nutrients: { ...ZERO_NUTRIENTS, kcal, protein },
+  createdAt: `${date}T12:00:00.000Z`,
+});
+
+const input: ReviewInput = {
+  strength: [
+    workout('2026-10-20', [set({ weight: 90 })]),
+    workout('2026-11-02', [set({ weight: 95 }), set({ isWarmup: true, weight: 50 })]),
+    workout('2026-11-05', [set({ weight: 100 }), set({ weight: 100 })]),
+  ],
+  endurance: [
+    run('2026-10-15', {
+      trackSummary: { bestEfforts: [{ meters: 5000, seconds: 1700 }], heartRateSeconds: [] },
+    }),
+    run('2026-11-03', {
+      trackSummary: { bestEfforts: [{ meters: 5000, seconds: 1650 }], heartRateSeconds: [] },
+    }),
+    run('2026-11-05', { sport: 'ride', durationSeconds: 3600, distanceMeters: 30_000 }),
+  ],
+  logs: [
+    dailyLogOf('2026-10-31', { weightKg: 82 }),
+    dailyLogOf('2026-11-01', { steps: 8000, weightKg: 81.5, sleepSeconds: 7 * 3600 }),
+    dailyLogOf('2026-11-02', { steps: 12_000, waterMl: 0, proteinGrams: 30 }),
+    dailyLogOf('2026-11-04', { weightKg: 81 }),
+  ],
+  habits: [
+    {
+      habit,
+      entries: [{ date: '2026-11-05', itemId: null, amount: 1 }],
+    },
+  ],
+  meals: [meal('2026-11-01', 2000, 100), meal('2026-11-01', 500, 20), meal('2026-11-03', 1500, 80)],
+  bodyWeightKg: 80,
+};
+
+describe('reviewSummary', () => {
+  const november = reviewSummary(input, NOVEMBER, TODAY);
+
+  it('fasst das Krafttraining zusammen (ohne Aufwärmsätze, mit Rekorden)', () => {
+    expect(november.strength).toMatchObject({ workouts: 2, sets: 3, volumeKg: 95 * 5 + 2 * 500 });
+    expect(november.strength.records).toBeGreaterThan(0);
+    // Die allererste Einheit hat nichts zum Vergleichen
+    expect(reviewSummary(input, OCTOBER, TODAY).strength.records).toBe(0);
+    expect(november.trainingDays).toBe(3);
+  });
+
+  it('fasst die Ausdauer je Sportart zusammen, neue Bestzeiten nur gegen frühere', () => {
+    expect(november.endurance).toMatchObject({
+      count: 2,
+      durationSeconds: 5400,
+      distanceMeters: 35_000,
+      elevationGainMeters: 40,
+      records: 1,
+    });
+    expect(november.endurance.bySport.map(({ sport }) => sport)).toEqual(['ride', 'run']);
+    expect(reviewSummary(input, OCTOBER, TODAY).endurance.records).toBe(0);
+  });
+
+  it('mittelt Alltagswerte über Tage mit Eintrag und nimmt das letzte Gewicht', () => {
+    expect(november.daily).toMatchObject({
+      steps: 10_000,
+      sleepSeconds: 7 * 3600,
+      waterMl: null,
+      weightKg: 81,
+    });
+    expect(reviewSummary(input, OCTOBER, TODAY).daily.weightKg).toBe(82);
+  });
+
+  it('wertet Gewohnheiten nur bis heute aus', () => {
+    // 5.–7.11. fällig, erledigt nur am 5.
+    expect(november.habitCompletion).toBeCloseTo(100 / 3);
+    expect(reviewSummary(input, OCTOBER, TODAY).habitCompletion).toBeNull();
+  });
+
+  it('mittelt die Ernährung, Protein auch ohne Mahlzeiten', () => {
+    expect(november.nutrition).toEqual({ days: 3, kcal: 2000, protein: (120 + 30 + 80) / 3 });
+  });
+
+  it('erkennt leere Zeiträume', () => {
+    expect(hasReviewData(november)).toBe(true);
+    expect(hasReviewData(reviewSummary(input, periodRange('year', '2020-01-01'), TODAY))).toBe(
+      false,
+    );
+  });
+});
+
+describe('reviewDelta', () => {
+  it('rechnet nur mit beiden Werten', () => {
+    expect(reviewDelta(5, 3)).toBe(2);
+    expect(reviewDelta(null, 3)).toBeNull();
+    expect(reviewDelta(2, null)).toBeNull();
+  });
+});

@@ -1,10 +1,15 @@
 import { z } from 'zod';
 import { isValidBarcode, normalizeBarcode } from '../domain/barcode';
+import { BEST_EFFORT_METERS } from '../domain/track';
 import {
   ENDURANCE_SPORTS,
   EQUIPMENT,
   EXERCISE_CATEGORIES,
   FOOD_CATEGORIES,
+  GOAL_KINDS,
+  GOAL_PERIODS,
+  STRENGTH_GOAL_METRICS,
+  TOTAL_GOAL_METRICS,
   HABIT_FREQUENCIES,
   HABIT_GROUPS,
   HABIT_KINDS,
@@ -613,6 +618,130 @@ export const trackSummarySchema = z.object({
 
 export type GearInput = z.input<typeof gearFieldsSchema>;
 export type GearValues = z.output<typeof gearFieldsSchema>;
+
+// ---------- Ziele ----------
+
+export const MAX_GOAL_TARGET = 1_000_000_000;
+export const MAX_GOAL_MIN_REPS = 100;
+
+/** Felder eines Ziels ohne Metadaten – für Backup */
+export const goalFieldsSchema = z.object({
+  kind: z.enum(GOAL_KINDS),
+  title: z.string().trim().max(80, 'Name höchstens 80 Zeichen'),
+  target: z
+    .number({ message: 'Bitte einen Zielwert eingeben' })
+    .positive('Bitte einen Zielwert eingeben')
+    .max(MAX_GOAL_TARGET, 'Zielwert zu groß'),
+  startDate: dayKeySchema,
+  deadline: dayKeySchema.nullable(),
+  exerciseId: z.string().min(1).nullable(),
+  strengthMetric: z.enum(STRENGTH_GOAL_METRICS).nullable(),
+  minReps: z.number().int().min(1).max(MAX_GOAL_MIN_REPS).nullable(),
+  sport: z.enum(ENDURANCE_SPORTS).nullable(),
+  effortMeters: z.number().positive().nullable(),
+  startValue: z.number().positive().nullable(),
+  totalMetric: z.enum(TOTAL_GOAL_METRICS).nullable(),
+  period: z.enum(GOAL_PERIODS).nullable(),
+});
+
+type GoalFields = z.output<typeof goalFieldsSchema>;
+
+function goalIssue(goal: GoalFields): { path: keyof GoalFields; message: string } | null {
+  if (goal.deadline !== null && goal.deadline < goal.startDate) {
+    return { path: 'deadline', message: 'Das Zieldatum liegt vor dem Beginn' };
+  }
+  switch (goal.kind) {
+    case 'strength':
+      if (goal.exerciseId === null)
+        return { path: 'exerciseId', message: 'Bitte eine Übung wählen' };
+      if (goal.strengthMetric === null) {
+        return { path: 'strengthMetric', message: 'Bitte eine Kennzahl wählen' };
+      }
+      return null;
+    case 'effort':
+      if (goal.sport === null || !(BEST_EFFORT_METERS[goal.sport] ?? []).length) {
+        return { path: 'sport', message: 'Bitte Laufen oder Rad wählen' };
+      }
+      if (!BEST_EFFORT_METERS[goal.sport]!.includes(goal.effortMeters ?? -1)) {
+        return { path: 'effortMeters', message: 'Bitte eine Strecke wählen' };
+      }
+      return null;
+    case 'bodyWeight':
+      return goal.startValue === null
+        ? { path: 'startValue', message: 'Bitte das Startgewicht eingeben' }
+        : null;
+    case 'total':
+      if (goal.totalMetric === null) {
+        return { path: 'totalMetric', message: 'Bitte eine Kennzahl wählen' };
+      }
+      if (goal.period === null) return { path: 'period', message: 'Bitte einen Zeitraum wählen' };
+      if (goal.period === 'custom' && goal.deadline === null) {
+        return { path: 'deadline', message: 'Bitte das Ende des Zeitraums angeben' };
+      }
+      return null;
+  }
+}
+
+/**
+ * Formular: prüft je Art die Pflichtfelder und leert, was zur Art nicht passt. Der Zielwert kommt
+ * zuletzt dran (das Feld erscheint z. B. erst nach der Wahl der Übung).
+ */
+export const goalInputSchema = goalFieldsSchema
+  .extend({ target: z.number().min(0).max(MAX_GOAL_TARGET, 'Zielwert zu groß') })
+  .superRefine((goal, context) => {
+    const issue =
+      goalIssue(goal) ??
+      (goal.target > 0
+        ? null
+        : { path: 'target' as const, message: 'Bitte einen Zielwert eingeben' });
+    if (issue) context.addIssue({ code: 'custom', path: [issue.path], message: issue.message });
+  })
+  .transform((goal): GoalFields => {
+    const strength = goal.kind === 'strength';
+    const total = goal.kind === 'total';
+    const recurring = total && goal.period !== 'custom';
+    const sportUsed =
+      goal.kind === 'effort' ||
+      (total && (goal.totalMetric === 'distance' || goal.totalMetric === 'duration'));
+    return {
+      ...goal,
+      target:
+        goal.kind === 'total' && goal.totalMetric !== 'distance' && goal.totalMetric !== 'duration'
+          ? Math.round(goal.target)
+          : goal.target,
+      deadline: recurring ? null : goal.deadline,
+      exerciseId: strength ? goal.exerciseId : null,
+      strengthMetric: strength ? goal.strengthMetric : null,
+      minReps: strength && goal.strengthMetric === 'weight' ? goal.minReps : null,
+      sport: sportUsed ? goal.sport : null,
+      effortMeters: goal.kind === 'effort' ? goal.effortMeters : null,
+      startValue: goal.kind === 'bodyWeight' ? goal.startValue : null,
+      totalMetric: total ? goal.totalMetric : null,
+      period: total ? goal.period : null,
+    };
+  });
+
+export type GoalInput = z.input<typeof goalInputSchema>;
+export type GoalValues = z.output<typeof goalInputSchema>;
+
+/** Leeres Ziel; `target` 0 = noch nicht eingegeben */
+export function emptyGoalInput(kind: GoalInput['kind'], today: string): GoalInput {
+  return {
+    kind,
+    title: '',
+    target: 0,
+    startDate: today,
+    deadline: null,
+    exerciseId: null,
+    strengthMetric: null,
+    minReps: null,
+    sport: kind === 'effort' ? 'run' : null,
+    effortMeters: kind === 'effort' ? 10_000 : null,
+    startValue: null,
+    totalMetric: kind === 'total' ? 'trainings' : null,
+    period: kind === 'total' ? 'month' : null,
+  };
+}
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 

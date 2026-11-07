@@ -77,6 +77,7 @@ export const DASHBOARD_WIDGETS = [
   'supplements',
   'nutrition',
   'endurance',
+  'goals',
 ] as const;
 export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
 /** Standardaufbau seit DB-Version 14 (bestehende Startseiten wurden einmalig umgestellt) */
@@ -679,6 +680,51 @@ export interface EnduranceTrack extends BaseEntity {
   /** Vereinfachte Strecke als [Breite, Länge] in Grad, leer ohne GPS */
   route: [number, number][];
   laps: TrackLap[];
+}
+
+export const GOAL_KINDS = ['strength', 'effort', 'bodyWeight', 'total'] as const;
+/**
+ * `strength` = Bestwert einer Übung, `effort` = Bestzeit über eine Strecke,
+ * `bodyWeight` = Zielgewicht, `total` = Menge in einem Zeitraum (z. B. Trainings pro Monat)
+ */
+export type GoalKind = (typeof GOAL_KINDS)[number];
+
+export const STRENGTH_GOAL_METRICS = ['weight', 'oneRepMax', 'reps', 'duration'] as const;
+export type StrengthGoalMetric = (typeof STRENGTH_GOAL_METRICS)[number];
+
+export const TOTAL_GOAL_METRICS = ['workouts', 'trainings', 'distance', 'duration'] as const;
+/** `workouts` = Krafttrainings, `trainings` = Krafttrainings + Ausdauer-Einheiten */
+export type TotalGoalMetric = (typeof TOTAL_GOAL_METRICS)[number];
+
+export const GOAL_PERIODS = ['week', 'month', 'year', 'custom'] as const;
+/** Wiederkehrend je Kalenderwoche/-monat/-jahr oder einmalig von `startDate` bis `deadline` */
+export type GoalPeriod = (typeof GOAL_PERIODS)[number];
+
+/** Ziel (seit DB-Version 23); der Fortschritt wird immer aus den Daten berechnet */
+export interface Goal extends BaseEntity {
+  kind: GoalKind;
+  /** Leer = automatisch aus Art und Zielwert */
+  title: string;
+  /** Intern: kg, Wdh., Sekunden, Meter oder Anzahl */
+  target: number;
+  /** Angelegt bzw. Beginn des Zeitraums (`period: 'custom'`) */
+  startDate: DayKey;
+  /** Zieldatum bzw. Ende des Zeitraums; `null` = ohne */
+  deadline: DayKey | null;
+  // Nur `strength`
+  exerciseId: string | null;
+  strengthMetric: StrengthGoalMetric | null;
+  /** Nur `weight`: Ein Satz zählt erst ab so vielen Wdh.; `null` = ab 1 */
+  minReps: number | null;
+  /** `effort`: Pflicht; `total` (Strecke/Dauer): `null` = alle Sportarten */
+  sport: EnduranceSport | null;
+  /** Nur `effort` */
+  effortMeters: number | null;
+  /** Nur `bodyWeight`: Gewicht zu Beginn (gibt die Richtung vor) */
+  startValue: number | null;
+  // Nur `total`
+  totalMetric: TotalGoalMetric | null;
+  period: GoalPeriod | null;
 }
 
 /** Ausrüstung (z. B. Laufschuhe) mit Kilometerstand */

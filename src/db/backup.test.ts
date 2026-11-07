@@ -10,6 +10,7 @@ import { getBodyMeasurement, getDailyLog, setBodyMeasure, updateDailyLog } from 
 import { db } from './database';
 import { createEnduranceSession, createGear, loadEnduranceSession, loadGear } from './endurance';
 import { createUserExercise } from './exercises';
+import { createGoal, listGoals } from './goals';
 import { createRecipe, createUserFood, setFoodFavorite } from './foods';
 import { addMealEntry, listMealEntries, listSavedMeals, saveMeal } from './nutrition';
 import { addHabitAmount, createHabit, loadHabit, pauseHabit, setHabitChecked } from './habits';
@@ -21,6 +22,7 @@ import {
   EMPTY_FOOD_INPUT,
   EMPTY_HABIT_INPUT,
   EMPTY_SUPPLEMENT_INPUT,
+  emptyGoalInput,
   NUTRITION_GOAL_DEFAULTS,
   type EnduranceSessionInput,
 } from './schemas';
@@ -110,6 +112,7 @@ describe('parseBackup', () => {
         enduranceSessions: 0,
         gear: 0,
         enduranceTracks: 0,
+        goals: 0,
       });
   });
 
@@ -572,6 +575,38 @@ describe('Ernährung im Backup', () => {
     await createEnduranceSession(RUN_INPUT);
     const data = await validBackup();
     data.tables.enduranceSessions[0].sport = 'curling';
+    expect(parseBackup(data).ok).toBe(false);
+  });
+});
+
+describe('Ziele im Backup', () => {
+  it('stellt Ziele wieder her und ergänzt sie in Sicherungen aus DB-Version 22', async () => {
+    const goal = await createGoal({ ...emptyGoalInput('total', '2026-11-01'), target: 12 });
+    const data = await validBackup();
+    await resetDatabase();
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    await restoreBackup(result.backup);
+    expect(await listGoals()).toMatchObject([{ id: goal.id, target: 12, period: 'month' }]);
+
+    data.dbVersion = 22;
+    delete data.tables.goals;
+    const old = parseBackup(data);
+    if (!old.ok) throw new Error(old.error);
+    expect(old.backup.tables.goals).toEqual([]);
+  });
+
+  it('lehnt unbekannte Zielarten ab', async () => {
+    const data = await validBackup();
+    data.tables.goals = [
+      {
+        id: 'g1',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        deletedAt: null,
+        kind: 'abnehmen',
+      },
+    ];
     expect(parseBackup(data).ok).toBe(false);
   });
 });

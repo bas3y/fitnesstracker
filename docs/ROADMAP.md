@@ -28,7 +28,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 15 – Ausdauer-Statistiken & Teilen-Bild
 - [x] Schritt 15b – Verbesserungen aus dem Gebrauch (Nachtragen, Ziehen, Protein, Weitergeben)
 - [x] Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest 14–15c
-- [ ] Schritt 16 – Ziele & Rückblicke
+- [x] Schritt 16 – Ziele & Rückblicke
 - [ ] Schritt 17 – Self-Improvement
 - [ ] Schritt 18 – Motivation & Trainingsblöcke
 - [ ] Schritt 19 – PDF-Export/Berichte
@@ -857,10 +857,27 @@ Mit dem Nutzer beim Start abgestimmt: Statistik-Seite mit Umschalter **„Kraft 
 ### Schritt 16 – Ziele & Rückblicke
 Ziele (z. B. „Bankdrücken 100 kg bis Dezember“) mit Fortschrittsbalken, Wochen-/Monats-/Jahresrückblick, Vergleich von Zeiträumen.
 
+Mit dem Nutzer beim Start abgestimmt: Zielarten **Kraft, Bestzeit, Körpergewicht, Menge im Zeitraum**; Ziele und Rückblick **in der Statistik** (Umschalter „Kraft | Ausdauer | Rückblick“, Seite „Ziele“, Startseiten-Widget); Rückblick über **alle Bereiche**, immer mit dem Vorzeitraum verglichen.
+
 **Notizen:**
 - Gebaut:
+  - Dexie v23: Tabelle `goals` (`Goal`: `kind`, `title`, `target` intern in kg/Wdh./s/m/Anzahl, `startDate`, `deadline`, je Art `exerciseId`/`strengthMetric`/`minReps`, `sport`/`effortMeters`, `startValue`, `totalMetric`/`period`). Backup (`goalFieldsSchema`, Sicherungen bis v22 importierbar), `goalInputSchema` prüft je Art die Pflichtfelder (Zielwert zuletzt) und leert unpassende Felder, `emptyGoalInput(kind, today)`. Schreiben über `src/db/goals.ts` (`createGoal`, `updateGoal`, `deleteGoal` weich), Daten über `loadGoalData()`.
+  - **Fortschritt wird nie gespeichert**, sondern aus den Daten berechnet: `src/domain/goals.ts` (`goalProgress` → Status aktiv/erreicht/verpasst, aktueller Wert, Ausgangswert, Prozent, „erreicht am“, Tage bis Zieldatum, bei Mengen Soll bis heute, beim Gewicht nötiges Tempo pro Woche, bei wiederkehrenden Zielen „in x von y Wochen geschafft“). Kraft: bester Arbeitssatz (Gewicht optional ab x Wdh., 1RM, Wdh., Dauer; Stufen zählen nie), Ausgangswert = Bestwert vor dem Anlegen. Bestzeit: aus dem Verlauf, sonst ganze Einheit mit Ø-Pace hochgerechnet (`effortSeconds`). Gewicht: Richtung aus Start- vs. Zielgewicht. Menge: Krafttrainings, Trainings (Kraft + Ausdauer), Strecke, Ausdauer-Zeit je Woche/Monat/Jahr oder eigener Zeitraum. Automatische Namen (`goalTitle`, z. B. „Bankdrücken (Langhantel): 100 kg × 5“, „500 km Laufen pro Jahr“).
+  - Gemeinsame Zeiträume `src/domain/periods.ts` (`periodRange`, `shiftPeriod`, `comparisonRange`: laufender Zeitraum nur bis zum gleichen Tag des Vorzeitraums, `formatPeriod` mit ISO-KW).
+  - UI `src/features/goals/`: `GoalsPage` (`/stats/goals`, `GOALS_PATH`, aktiv nach Zieldatum, „Abgeschlossen“), `GoalCreatePage`/`GoalEditPage` mit `GoalForm` (Art, Übung per `ExercisePicker`, Strecke als Chips, Zielzeit per `DurationInput`, „Bisher bester Wert …“ bzw. „Ziel schon am … erreicht“, Löschen mit Rückfrage), `GoalCard` (Balken mit Soll-Marke, Statuszeile), Widget `goals` (`GoalsWidget`, bis zu 3 offene Ziele). Link „🎯 Ziele“ oben in der Statistik.
+  - **Rückblick:** `view=review` + `period`/`date` in der URL (`useStatsFilter`, `REVIEW_STATS_PATH`), `ReviewStats` mit Woche/Monat/Jahr, Vor/Zurück. Karten Training (Trainingstage, Krafttrainings, Arbeitssätze, Volumen, Kraft-Rekorde, Ausdauer-Einheiten/-Zeit/Strecke/Höhenmeter, neue Bestzeiten, je Sportart), Alltag (Ø Schritte/Schlaf/Wasser/Stimmung/Energie/Ruhepuls, letztes Gewicht, Gewohnheiten erledigt), Ernährung (Tage, Ø kcal, Ø Protein; nur Protein im Protein-Modus), im Zeitraum erreichte Ziele. Unterschied zum Vorzeitraum grün/rot (Gewicht und kcal neutral). Logik `src/domain/review.ts` (`reviewSummary`), Laden `loadReviewInput` (`src/db/review.ts`). Rekordzählung als `countRecordsBetween` aus `trainingProgress` herausgezogen.
+  - `DurationInput` aus `SessionForm` nach `src/components/` verschoben.
+  - Tests: `goals.test.ts`, `periods.test.ts`, `review.test.ts`, `db/goals.test.ts`, Migration v22→v23, Backup. E2E `e2e/goals.spec.ts` offline in beiden Viewports (Kraftziel mit Fehler ohne Übung, Vorschlag/Bisher, Mengen-Ziel pro Woche, Widget, Ziel vom Widget aus ändern → erreicht, Löschen, Neuladen; Rückblick Monat/Woche/Jahr mit Vergleich, Blättern, leerer Zeitraum, URL übersteht Neuladen). `mvp1` zählt ein Widget mehr. 694 Unit-Tests, 96/96 E2E grün. Hauptbundle 320 → 325 KB (Widget „Ziele“), Seiten als eigene Chunks.
 - Abweichungen:
+  - Kraft- und Bestzeit-Ziele zählen den Allzeit-Bestwert: Wer das Ziel schon früher geschafft hat, sieht es sofort als erreicht (das Formular weist darauf hin). Gewicht und Mengen zählen erst ab dem Beginn.
+  - Bestzeit-Ziele werten anders als die Statistik-Bestzeiten auch Einheiten ohne Verlauf aus (Ø-Pace über die ganze Einheit), damit Ziele ohne Uhr erreichbar sind. Nur Laufen und Rad (Strecken wie bei den Bestzeiten).
+  - Kein Rekord-Toast beim Erreichen eines Ziels (passt zu Schritt 18 „Motivation“). Ziele ohne Archiv: abgeschlossene stehen unten, löschen ist möglich.
+  - Rückblick ohne Diagramme (nur Kennzahlen mit Unterschied); Krafttraining-Dauer fehlt (die Statistik lädt kein Workout-Ende). Erreichte wiederkehrende Ziele erscheinen nicht unter „Ziele“ im Rückblick.
 - Offene Punkte:
+  - Rückblick als Teilen-Bild oder PDF → Schritt 19 (Berichte) kann `reviewSummary` direkt nutzen.
+  - Ziele für Gewohnheiten, Schritte oder Körpermaße wären naheliegende weitere Arten.
+  - Hinweis/Toast „Ziel erreicht“ und Ziel-Badges → Schritt 18.
+  - Handytest: Formular (Datumsfelder, ExercisePicker) und Lesbarkeit der Rückblick-Zeilen auf kleinen Displays.
 
 ### Schritt 17 – Self-Improvement
 Journal/Dankbarkeit, Wochenreflexion, Lesen (Bücher, Seiten, Notizen), Pomodoro/Meditation-Timer, Fortschrittsfotos (lokal gespeichert, komprimiert, Speicherhinweis, im Backup optional).

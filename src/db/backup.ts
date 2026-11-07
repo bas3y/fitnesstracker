@@ -10,6 +10,7 @@ import {
   exerciseFieldsSchema,
   gearFieldsSchema,
   foodFieldsSchema,
+  goalFieldsSchema,
   habitFieldsSchema,
   heartRateSettingSchema,
   mealAmountSchema,
@@ -268,6 +269,8 @@ const gearSchema = baseEntitySchema.extend(gearFieldsSchema.shape).extend({
 const enduranceTrackSchema = baseEntitySchema.extend(trackFieldsSchema.shape).extend({
   sessionId: z.string().min(1),
 });
+// Seit DB-Version 23
+const goalSchema = baseEntitySchema.extend(goalFieldsSchema.shape);
 
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
@@ -301,6 +304,7 @@ export const backupSchema = z.object({
     enduranceSessions: z.array(enduranceSessionSchema).default([]),
     gear: z.array(gearSchema).default([]),
     enduranceTracks: z.array(enduranceTrackSchema).default([]),
+    goals: z.array(goalSchema).default([]),
   }),
 });
 
@@ -329,6 +333,7 @@ export const TABLE_LABELS: Record<TableName, string> = {
   enduranceSessions: 'Ausdauer-Einheiten',
   gear: 'Ausrüstung',
   enduranceTracks: 'Verläufe von Einheiten',
+  goals: 'Ziele',
 };
 
 export async function createBackup(): Promise<Backup> {

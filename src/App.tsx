@@ -57,6 +57,9 @@ const SessionEditPage = lazyPage(
   () => import('./features/endurance/SessionEditPage'),
   'SessionEditPage',
 );
+const GoalCreatePage = lazyPage(() => import('./features/goals/GoalEditPage'), 'GoalCreatePage');
+const GoalEditPage = lazyPage(() => import('./features/goals/GoalEditPage'), 'GoalEditPage');
+const GoalsPage = lazyPage(() => import('./features/goals/GoalsPage'), 'GoalsPage');
 const FoodCreatePage = lazyPage(
   () => import('./features/nutrition/FoodEditPage'),
   'FoodCreatePage',
@@ -186,6 +189,9 @@ export function App() {
           <Route path="daily/foods/:id" element={<FoodDetailPage />} />
           <Route path="daily/foods/:id/edit" element={<FoodEditPage />} />
           <Route path="stats" element={<StatsPage />} />
+          <Route path="stats/goals" element={<GoalsPage />} />
+          <Route path="stats/goals/new" element={<GoalCreatePage />} />
+          <Route path="stats/goals/:id/edit" element={<GoalEditPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/about" element={<AboutPage />} />
           <Route path="settings/app" element={<ShareAppPage />} />
