@@ -38,6 +38,7 @@ import {
   type StatsSession,
 } from '../../domain/stats';
 import { GOALS_PATH } from '../goals/paths';
+import { ACHIEVEMENTS_PATH } from '../motivation/paths';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from './ActivityCard';
 import { EnduranceStats } from './EnduranceStats';
@@ -45,6 +46,8 @@ import { ReviewStats } from './ReviewStats';
 import { exerciseStatsPath, useStatsFilter, type StatsView } from './statsFilter';
 
 const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HEADER_LINK =
+  'flex min-h-11 shrink-0 items-center rounded-xl border border-slate-300 px-3 text-sm font-semibold dark:border-slate-600';
 
 const SORT_OPTIONS: Array<{ value: ExerciseSort; label: string }> = [
   { value: 'recent', label: 'Zuletzt' },
@@ -65,13 +68,14 @@ export function StatsPage() {
     <Page
       title="Statistik"
       action={
-        <Link
-          to={GOALS_PATH}
-          state={from}
-          className="flex min-h-11 shrink-0 items-center rounded-xl border border-slate-300 px-3 text-sm font-semibold dark:border-slate-600"
-        >
-          🎯 Ziele
-        </Link>
+        <div className="flex shrink-0 gap-2">
+          <Link to={ACHIEVEMENTS_PATH} state={from} className={HEADER_LINK}>
+            🏆 Erfolge
+          </Link>
+          <Link to={GOALS_PATH} state={from} className={HEADER_LINK}>
+            🎯 Ziele
+          </Link>
+        </div>
       }
     >
       <div className="mb-4">

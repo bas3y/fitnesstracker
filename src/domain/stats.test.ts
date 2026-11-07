@@ -1,4 +1,5 @@
 import type { MuscleGroup } from '../db/types';
+import { benchSession, statsSet } from '../test/motivationData';
 import {
   analyzeRest,
   availableMetrics,
@@ -21,6 +22,7 @@ import {
   muscleVolumes,
   rangeStart,
   recentRecords,
+  recordCounts,
   restByExercise,
   restPairs,
   sortOverviews,
@@ -785,4 +787,16 @@ describe('formatRestAdvice', () => {
 
 it('Heatmap-Schlüssel entsprechen dem lokalen Datum', () => {
   expect(toDateInput(new Date(2026, 9, 31, 0, 30).toISOString())).toBe('2026-10-31');
+});
+
+describe('recordCounts', () => {
+  it('zählt Rekorde je Einheit gegenüber allen früheren derselben Übung', () => {
+    const first = benchSession('2026-10-01', [statsSet({ weight: 100, reps: 5 })]);
+    const same = benchSession('2026-10-03', [statsSet({ weight: 100, reps: 5 })]);
+    const better = benchSession('2026-10-05', [statsSet({ weight: 110, reps: 5 })]);
+    const counts = recordCounts([better, first, same], null);
+    expect(counts.map((entry) => entry.startedAt)).toEqual([better.startedAt]);
+    expect(counts[0]!.count).toBeGreaterThan(0);
+    expect(recordCounts([first], null)).toEqual([]);
+  });
 });

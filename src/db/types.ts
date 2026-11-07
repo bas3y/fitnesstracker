@@ -71,6 +71,19 @@ export interface Settings extends BaseEntity {
   /** Gewohnheit (Zählen: Minuten, Abhaken: erledigt), die Fokus-Sitzungen mitzählt */
   focusHabitId: string | null;
   meditationHabitId: string | null;
+  // Seit DB-Version 27
+  /** Trainingsserie: so viele Trainings (Kraft + Ausdauer) pro Woche halten die Serie */
+  trainingWeekTarget: number;
+  /** Schon gemeldete Erfolge; `null` = noch nie geprüft (der erste Abgleich meldet nichts) */
+  celebrations: Celebrations | null;
+}
+
+/** Bereits gezeigte Hinweise, damit jeder Erfolg nur einmal gemeldet wird */
+export interface Celebrations {
+  /** Abzeichen → höchste gemeldete Stufe (1 = erste) */
+  badges: Record<string, number>;
+  /** Ziel → Schlüssel des gemeldeten Erreichens (`once` bzw. Beginn des Zeitraums) */
+  goals: Record<string, string>;
 }
 
 export const DASHBOARD_WIDGETS = [
@@ -88,6 +101,7 @@ export const DASHBOARD_WIDGETS = [
   'nutrition',
   'endurance',
   'goals',
+  'motivation',
 ] as const;
 export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
 /** Standardaufbau seit DB-Version 14 (bestehende Startseiten wurden einmalig umgestellt) */

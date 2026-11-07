@@ -827,6 +827,31 @@ describe('Timer und Fortschrittsfotos', () => {
     });
     expect(result.backup.tables.timerSessions).toEqual([]);
   });
+
+  it('ergänzt Sicherungen aus DB-Version 26 und behält gemeldete Erfolge', async () => {
+    await updateSettings({
+      trainingWeekTarget: 3,
+      celebrations: { badges: { workouts: 2 }, goals: { g1: 'once' } },
+    });
+    const current = await validBackup();
+    const restored = parseBackup(current);
+    if (!restored.ok) throw new Error(restored.error);
+    expect(restored.backup.tables.settings[0]).toMatchObject({
+      trainingWeekTarget: 3,
+      celebrations: { badges: { workouts: 2 }, goals: { g1: 'once' } },
+    });
+
+    const data = await validBackup();
+    data.dbVersion = 26;
+    delete data.tables.settings[0].trainingWeekTarget;
+    delete data.tables.settings[0].celebrations;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.settings[0]).toMatchObject({
+      trainingWeekTarget: 2,
+      celebrations: null,
+    });
+  });
 });
 
 describe('Sicherungen aus DB-Version 10', () => {

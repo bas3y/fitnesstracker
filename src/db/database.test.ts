@@ -927,7 +927,59 @@ describe('AppDatabase-Migration', () => {
     expect(await v26.timerSessions.where('date').equals('2026-11-07').count()).toBe(0);
     expect(await v26.progressPhotos.where('date').equals('2026-11-07').count()).toBe(0);
     expect(await v26.photoFiles.where('[photoId+variant]').equals(['p', 'full']).count()).toBe(0);
-    expect(v26.verno).toBe(26);
+    expect(v26.verno).toBeGreaterThanOrEqual(26);
     await v26.delete();
+  });
+
+  it('Version 27 ergänzt Trainingsserie und Erfolge, Einstellungen bleiben', async () => {
+    const name = 'migration-test-v27';
+    const v26 = new Dexie(name);
+    v26.version(26).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, barcode, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+      goals: 'id, updatedAt',
+      goalEntries: 'id, goalId, updatedAt',
+      journalPrompts: 'id, updatedAt',
+      journalEntries: 'id, [kind+date], updatedAt',
+      books: 'id, updatedAt',
+      readingLogs: 'id, bookId, date, updatedAt',
+      bookNotes: 'id, bookId, updatedAt',
+      timerSessions: 'id, kind, date, updatedAt',
+      progressPhotos: 'id, date, updatedAt',
+      photoFiles: 'id, [photoId+variant], updatedAt',
+    });
+    await v26.table('settings').add({ id: 'app-settings', name: 'Niklas', focusHabitId: 'h1' });
+    await v26.table('timerSessions').add({ id: 't1', kind: 'focus', date: '2026-11-07' });
+    v26.close();
+
+    const v27 = new AppDatabase(name);
+    expect(await v27.settings.get('app-settings')).toMatchObject({
+      name: 'Niklas',
+      focusHabitId: 'h1',
+      trainingWeekTarget: 2,
+      celebrations: null,
+    });
+    expect(await v27.timerSessions.get('t1')).toMatchObject({ kind: 'focus' });
+    expect(v27.verno).toBe(27);
+    await v27.delete();
   });
 });

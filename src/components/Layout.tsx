@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { ensureSettings } from '../db/settings';
 import { getBackupReminder } from '../domain/backupReminder';
@@ -10,6 +10,13 @@ import { ActiveWorkoutBanner } from '../features/training/ActiveWorkoutBanner';
 import { RestTimerAlarm } from '../features/training/RestTimer';
 import { BottomNav } from './BottomNav';
 import { ToastHost } from './Toast';
+
+// Abzeichen/Ziele berechnen braucht viel Logik: nicht im Hauptbundle
+const CelebrationWatcher = lazy(() =>
+  import('../features/motivation/CelebrationWatcher').then((module) => ({
+    default: module.CelebrationWatcher,
+  })),
+);
 
 export function Layout() {
   const settings = useSettings();
@@ -40,6 +47,9 @@ export function Layout() {
       <TimerAlarm />
       <SupplementReminder />
       <ToastHost />
+      <Suspense fallback={null}>
+        <CelebrationWatcher />
+      </Suspense>
       <main>
         <Suspense fallback={null}>
           <Outlet />

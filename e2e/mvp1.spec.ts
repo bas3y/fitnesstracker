@@ -72,7 +72,7 @@ test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offl
   await expect(page.getByRole('button', { name: 'Workout starten' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Diese Woche' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Trainingsfortschritt' })).toHaveCount(0);
-  await addWidgets(page, ['Letztes Workout', 'Erfolge', 'Trainingstage']);
+  await addWidgets(page, ['Letztes Workout', 'Neue Rekorde', 'Trainingstage']);
 
   // CSV gibt es erst nach dem ersten Workout
   await openNav(page, 'Einstellungen');
@@ -102,7 +102,7 @@ test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offl
   await openNav(page, 'Dashboard');
   await expect(weekTiles(page)).toHaveText(['1', '1', '600']);
   await expect(page.getByRole('link', { name: /^Push/ })).toContainText('1 Satz');
-  await expect(page.getByRole('heading', { name: 'Erfolge' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Neue Rekorde' })).toHaveCount(0);
 
   // Zweites Training, Abstecher zum Dashboard, Fortsetzen über den Hinweis
   await openNav(page, 'Training');
@@ -318,7 +318,7 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
   await page.getByRole('button', { name: 'Nächstes Training hinzufügen' }).click();
   await expect(widgets).toHaveCount(5);
   await expect(page.getByRole('list', { name: 'Weitere Widgets' }).getByRole('button')).toHaveCount(
-    9,
+    10,
   );
   await page.getByRole('button', { name: 'Fertig' }).click();
 

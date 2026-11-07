@@ -32,7 +32,8 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 16b – Ziele für Gewohnheiten, Alltag & eigene Ziele, eigene Emojis
 - [x] Schritt 17 – Self-Improvement (Journal, Wochenreflexion, Lesen)
 - [x] Schritt 17b – Fokus-/Meditations-Timer & Fortschrittsfotos
-- [ ] Schritt 18 – Motivation & Trainingsblöcke
+- [x] Schritt 18 – Motivation (Serien, Abzeichen, Erfolgs-Hinweise)
+- [ ] Schritt 18b – Trainingsblöcke (Aufbau/Deload/Peak) in Plänen
 - [ ] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
 
@@ -977,8 +978,39 @@ Mit dem Nutzer beim Start abgestimmt: **aufgeteilt in 17 + 17b**; Ort = **eine g
   - Timer-Sitzungen erscheinen nicht im Gewohnheiten-Verlauf als eigene Quelle; Journal-/Meditations-Serie → Schritt 18.
   - Vor dem nächsten Push an ein Backup erinnern (DB-Version 22 → 26).
 
-### Schritt 18 – Motivation & Trainingsblöcke
-Badges, Streak-Übersicht über alle Bereiche, Trainingsblöcke (Aufbau/Deload/Peak) in Plänen.
+### Schritt 18 – Motivation
+Badges, Streak-Übersicht über alle Bereiche. Trainingsblöcke → Schritt 18b.
+
+Mit dem Nutzer beim Start abgestimmt: **aufgeteilt in 18 + 18b**; Serien für **Training, Gewohnheiten, Journal/Meditation/Lesen und Tagesziele**; Abzeichen als **feste Liste mit Stufen, aus den Daten berechnet**, Hinweis beim Freischalten, Seite mit allen (gesperrte grau mit Fortschritt); Ort = **Seite „🏆 Erfolge“ in der Statistik** neben „🎯 Ziele“ + **Startseiten-Widget**.
+
+**Notizen:**
+- Gebaut:
+  - Dexie v27: `Settings.trainingWeekTarget` (Standard 2) und `Settings.celebrations` (`{ badges: Abzeichen → gemeldete Stufe, goals: Ziel → Schlüssel des Erreichens }`, `null` = noch nie abgeglichen). Backup: Sicherungen bis v26 importierbar (Standard 2 bzw. `null`).
+  - **Serien** (`src/domain/streaks.ts`): `daySeries`/`weekSeries` → `summarizeRuns` (aktuell, beste, heute geschafft; heute offen unterbricht nichts), `runReachedOn`. Bereiche: **Training** (Wochen Mo–So mit mind. x Trainings, Kraft-Workouts + Ausdauer-Einheiten), **Schritt-/Wasser-/Schlafziel** (aktuelle Tagesziele), **Proteinziel** (Trainings-/Ruhetag, Mahlzeiten + schnell erfasstes Protein), **Supplements** (alle fälligen Einnahmen genommen; Tage ohne fällige zählen nicht), **Journal** (nur Tage, nicht Wochenreflexion), **Meditation**, **Fokus**, **Lesen**, jede nicht archivierte **Gewohnheit** (`habitStreak` bzw. `quitStreak`). `streakOverview` sortiert laufende zuerst (Wochen zählen wie 7 Tage) und lässt Bereiche ohne je geschaffte Serie weg.
+  - **Abzeichen** (`src/domain/badges.ts`): 17 Abzeichen in 3 Gruppen mit 3–6 Stufen – Training (Krafttrainings, Ausdauer-Einheiten, Strecke, bewegte Last, Rekorde, Trainingsserie), Alltag (Gewohnheitsserie, Schritte gesamt, Tage mit Wasser-/Schlaf-/Proteinziel), Persönliche Entwicklung (Journal-Tage, Bücher, Meditation, Fokus, erreichte Ziele, Fortschrittsfotos). `evaluateBadges` berechnet Wert, Stufe und „erreicht am“ je Stufe; Anzeige in Gewichts-/Streckeneinheit des Nutzers (`formatBadgeValue`, `formatBadgeTier`). Rekorde je Einheit: `recordCounts` (`src/domain/stats.ts`).
+  - **Erfolgs-Hinweise:** `celebrate` (`src/domain/celebrations.ts`) vergleicht mit `Settings.celebrations` – erster Abgleich still, Stufen werden nie zurückgenommen, wiederkehrende Ziele je Zeitraum einmal, gelöschte Ziele fallen heraus; Titel „Neues Abzeichen!“/„Ziel erreicht!“/„Geschafft!“, höchstens 4 Zeilen. `checkCelebrations()` (`src/db/motivation.ts`, schreibt nur bei Änderung, prüft in der Transaktion auf gleichzeitigen Abgleich). `CelebrationWatcher` (lazy im Layout) prüft sofort beim Start (damit der stille erste Abgleich vor dem ersten Erfolg liegt) und reagiert auf `Dexie.on.storagemutated` (1,5 s gesammelt, spätestens nach 5 s, laufende Sätze/Verläufe/Bilddaten ignoriert); der Hinweis wartet, bis ein anderer (z. B. Rekord) verschwunden ist. Damit gibt es jetzt auch den offenen „Ziel erreicht“-Hinweis aus Schritt 16/16b.
+  - **UI** `src/features/motivation/`: `AchievementsPage` (`/stats/achievements`, `ACHIEVEMENTS_PATH`, Link „🏆 Erfolge“ oben in der Statistik): Karte „Serien“ (Symbol, Status „Heute geschafft/noch offen/Unterbrochen“, beste Serie, 🔥 wenn heute geschafft), Karte „Trainingsserie“ (Stepper „Trainings pro Woche“), „Abzeichen“ je Gruppe als 3er-Raster (Ring je Stufe Bronze/Silber/Gold/…, gesperrt grau) mit Dialog (was zählt, bisher, Balken zur nächsten Stufe, alle Stufen mit Datum). Widget `motivation` „Serien & Abzeichen“ (`MotivationWidget`, lazy): bis zu 3 laufende Serien + nächstes Abzeichen mit Balken. Daten: `loadMotivation()`/`useMotivation(today)`.
+  - Widget „Erfolge“ (neueste Rekorde) heißt jetzt **„Neue Rekorde“**, damit es nicht mit der Seite „Erfolge“ verwechselt wird.
+  - Tests: `streaks.test.ts`, `badges.test.ts`, `celebrations.test.ts`, `recordCounts` in `stats.test.ts`, `db/motivation.test.ts` (Laden, erster stiller Abgleich, Ziel + Abzeichen einmal gemeldet, gelöschtes Ziel), Migration v26→v27, Backup (Erfolge bleiben, Sicherung aus v26). Testdaten `src/test/motivationData.ts`. E2E `e2e/motivation.spec.ts` offline in beiden Viewports (Widget leer, alles gesperrt, erstes Training → Hinweis, Wochenziel senken → Trainingsserie, Abzeichen-Dialog mit Datum, Journal → Hinweis, eigenes Ziel abhaken → „Geschafft!“, Neuladen ohne erneuten Hinweis, Widget → Erfolge → Zurück); `mvp1` zählt ein Widget mehr. 815 Unit-Tests, 110/110 E2E grün. Hauptbundle ~332 KB (unverändert, Logik in eigenen Chunks).
+- Abweichungen:
+  - Abzeichen werden aus den Daten berechnet: Wer Daten löscht, verliert die Stufe in der Anzeige wieder (gemeldet wird sie trotzdem nicht erneut). „Gewohnheitsserie“ zeigt kein Datum je Stufe (die Serie der Gewohnheit kennt den Tag nicht) und zählt nur tägliche/feste Tage und Aufhören, nicht „x-mal pro Woche“.
+  - „Ziele“-Abzeichen zählt nur erreichte einmalige Ziele; wiederkehrende (z. B. „12 Trainings pro Monat“) melden aber jeden erreichten Zeitraum als Hinweis.
+  - Tagesziel-Serien und -Abzeichen rechnen wie die Ziele mit den **aktuellen** Zielen aus den Einstellungen, auch rückwirkend.
+  - Kein Schalter zum Abstellen der Hinweise (bei Bedarf nachrüsten). Abzeichen-Liste ist fest (keine eigenen Abzeichen).
+  - Bearbeitete Sätze in einem beendeten Workout lösen allein keinen Abgleich aus (erst die nächste andere Änderung oder der nächste Start).
+- Offene Punkte:
+  - **Handytest:** Lesbarkeit des Abzeichen-Rasters und der Serien auf kleinen Displays, Hinweis nach „Workout beenden“ (kommt nach 1,5 s oben), Rechenzeit der Erfolge-Seite mit vielen Daten.
+  - Journal-/Meditations-Serie ist jetzt in der Übersicht (offener Punkt aus 17/17b erledigt); Foto-Erinnerung „Zeit für ein neues Foto“ weiterhin offen.
+  - Abzeichen/Serien im PDF-Bericht → Schritt 19 (`evaluateBadges`, `streakOverview`).
+  - Vor dem nächsten Push an ein Backup erinnern (DB-Version 22 → 27).
+
+### Schritt 18b – Trainingsblöcke (Aufbau/Deload/Peak) in Plänen
+**Ziel:** Rest aus Schritt 18 (mit dem Nutzer abgestimmt: aufgeteilt). Setzt auf `plans`/`planDays`/`planExercises` und `startPlanWorkout` auf.
+- Pläne bekommen optional eine Abfolge von **Blöcken** (Art: Aufbau, Deload, Peak/Intensität, ggf. Test; Dauer in Wochen; Startdatum), aktueller Block + Woche („Aufbau · Woche 2 von 4“) auf der Trainingsseite, im Vorschlag und im laufenden Workout.
+- **Vorbefüllen je Block:** z. B. Deload mit weniger Sätzen/Gewicht, Peak mit kleinerem Wdh.-Bereich und mehr Gewicht; Overload-Vorschlag entsprechend anpassen (`plannedSetValues`).
+- Ende eines Blocks: Hinweis und Übergang zum nächsten (oder Wiederholen); Blöcke in der Statistik sichtbar (z. B. Markierung im Verlauf).
+- Beim Start mit dem Nutzer klären: feste Vorlagen (z. B. 3 + 1 Wochen) oder frei; automatische Anpassung der Sätze oder nur Anzeige; Prozentwerte je Blockart.
+- Neue Dexie-Version + Backup; vor dem nächsten Push an ein Backup erinnern.
 
 **Notizen:**
 - Gebaut:

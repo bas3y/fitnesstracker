@@ -5,6 +5,7 @@ import {
   NUTRITION_GOAL_DEFAULTS,
   SUPPLEMENT_SETTING_DEFAULTS,
   TIMER_PRESET_DEFAULTS,
+  TRAINING_WEEK_TARGET_DEFAULT,
 } from './schemas';
 import {
   DEFAULT_DASHBOARD_WIDGETS,
@@ -56,6 +57,8 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   activeTimer: null,
   focusHabitId: null,
   meditationHabitId: null,
+  trainingWeekTarget: TRAINING_WEEK_TARGET_DEFAULT,
+  celebrations: null,
 };
 
 export function getSettings(): Promise<Settings | undefined> {

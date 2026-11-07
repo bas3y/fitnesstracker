@@ -60,6 +60,10 @@ const SessionEditPage = lazyPage(
 const GoalCreatePage = lazyPage(() => import('./features/goals/GoalEditPage'), 'GoalCreatePage');
 const GoalEditPage = lazyPage(() => import('./features/goals/GoalEditPage'), 'GoalEditPage');
 const GoalsPage = lazyPage(() => import('./features/goals/GoalsPage'), 'GoalsPage');
+const AchievementsPage = lazyPage(
+  () => import('./features/motivation/AchievementsPage'),
+  'AchievementsPage',
+);
 const FoodCreatePage = lazyPage(
   () => import('./features/nutrition/FoodEditPage'),
   'FoodCreatePage',
@@ -218,6 +222,7 @@ export function App() {
           <Route path="daily/photos/:id" element={<PhotoPage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="stats/goals" element={<GoalsPage />} />
+          <Route path="stats/achievements" element={<AchievementsPage />} />
           <Route path="stats/goals/new" element={<GoalCreatePage />} />
           <Route path="stats/goals/:id/edit" element={<GoalEditPage />} />
           <Route path="settings" element={<SettingsPage />} />

@@ -966,6 +966,18 @@ export const photoInputSchema = z.object({
 
 export type PhotoInput = z.input<typeof photoInputSchema>;
 
+// ---------- Motivation ----------
+
+export const TRAINING_WEEK_TARGET_DEFAULT = 2;
+export const MAX_TRAINING_WEEK_TARGET = 14;
+
+export const trainingWeekTargetSchema = z.number().int().min(1).max(MAX_TRAINING_WEEK_TARGET);
+
+export const celebrationsSchema = z.object({
+  badges: z.record(z.string(), z.number().int().nonnegative()),
+  goals: z.record(z.string(), z.string()),
+});
+
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 
 export const builtinExerciseSchema = exerciseFieldsSchema.extend({ key: builtinKey });

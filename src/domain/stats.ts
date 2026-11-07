@@ -659,6 +659,24 @@ export function countRecordsBetween(
   return count;
 }
 
+/** Rekorde je Einheit mit Rekord als `{ startedAt, count }`, älteste zuerst (für Abzeichen) */
+export function recordCounts(
+  sessions: readonly StatsSession[],
+  bodyWeightKg: number | null,
+): Array<{ startedAt: string; count: number }> {
+  const chronological = [...sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  const history = new Map<string, StrengthSet[][]>();
+  const result: Array<{ startedAt: string; count: number }> = [];
+  for (const { startedAt, exercise, sets } of chronological) {
+    const past = history.get(exercise.id) ?? [];
+    const count = sessionRecords(sets, past, exerciseKind(exercise, bodyWeightKg)).flat().length;
+    if (count > 0) result.push({ startedAt, count });
+    past.push(sets);
+    history.set(exercise.id, past);
+  }
+  return result;
+}
+
 export interface RecentRecords {
   workoutId: string;
   startedAt: string;

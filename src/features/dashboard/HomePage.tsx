@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react';
 import type { BackState } from '../../components/backNavigation';
 import { Link } from 'react-router-dom';
 import { Chip } from '../../components/Chip';
@@ -59,6 +59,13 @@ import { HISTORY_PATH } from '../training/paths';
 import { TrainingStartCard } from '../training/TrainingStartCard';
 import { useNow, useWorkoutHistory } from '../training/useWorkouts';
 import { QuickActions } from './QuickActions';
+
+// Serien und Abzeichen rechnen viel: eigener Chunk, nicht im Hauptbundle
+const MotivationWidget = lazy(() =>
+  import('../motivation/MotivationWidget').then((module) => ({
+    default: module.MotivationWidget,
+  })),
+);
 
 const RECENT_RECORD_ROWS = 3;
 const TODO_LIMIT = 5;
@@ -128,6 +135,12 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
       return endurance.length > 0 ? (
         <EnduranceWidget sessions={endurance} today={today} unit={settings.distanceUnit} />
       ) : null;
+    case 'motivation':
+      return (
+        <Suspense fallback={null}>
+          <MotivationWidget settings={settings} today={today} />
+        </Suspense>
+      );
     case 'goals':
       return data.goals.length > 0 ? (
         <GoalsWidget
@@ -229,7 +242,7 @@ function WidgetList({ data }: { data: WidgetData }) {
         <p className={MUTED}>
           {dashboardWidgets.length === 0
             ? 'Keine Widgets ausgewählt. Über „Anpassen“ stellst du dir die Startseite zusammen.'
-            : 'Nach deinem ersten Workout siehst du hier deine Woche, deine Erfolge und deine Trainingstage.'}
+            : 'Nach deinem ersten Workout siehst du hier deine Woche, deine Rekorde und deine Trainingstage.'}
         </p>
       </Card>
     );

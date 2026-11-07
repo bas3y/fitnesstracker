@@ -51,7 +51,7 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   progress: { name: 'Trainingsfortschritt', hint: 'Kraftsteigerung, Workouts und Rekorde' },
   week: { name: 'Diese Woche', hint: 'Workouts, Sätze und Volumen' },
   lastWorkout: { name: 'Letztes Workout', hint: 'Dein letztes Training auf einen Blick' },
-  records: { name: 'Erfolge', hint: 'Deine neuesten Rekorde' },
+  records: { name: 'Neue Rekorde', hint: 'Deine neuesten Kraft-Rekorde' },
   activity: { name: 'Trainingstage', hint: 'Heatmap der letzten 3 Monate' },
   nextTraining: { name: 'Nächstes Training', hint: 'Vorschlag aus deinem Plan mit Startknopf' },
   daily: { name: 'Heute', hint: 'Schritte, Wasser, Schlaf und Gewicht' },
@@ -59,6 +59,7 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   nutrition: { name: 'Ernährung', hint: 'Kalorien und Protein heute' },
   endurance: { name: 'Ausdauer', hint: 'Strecke dieser Woche, letzte Einheit, Bestzeiten' },
   goals: { name: 'Ziele', hint: 'Fortschritt deiner Ziele' },
+  motivation: { name: 'Serien & Abzeichen', hint: 'Laufende Serien und nächstes Abzeichen' },
 };
 
 export const GOAL_KIND_LABELS: Record<GoalKind, { name: string; icon: string; hint: string }> = {

@@ -5,6 +5,7 @@ import {
   NUTRITION_GOAL_DEFAULTS,
   SUPPLEMENT_SETTING_DEFAULTS,
   TIMER_PRESET_DEFAULTS,
+  TRAINING_WEEK_TARGET_DEFAULT,
 } from './schemas';
 import {
   DEFAULT_DASHBOARD_WIDGETS,
@@ -493,6 +494,18 @@ export class AppDatabase extends Dexie {
             settings.activeTimer ??= null;
             settings.focusHabitId ??= null;
             settings.meditationHabitId ??= null;
+          }),
+      );
+    // Motivation: Trainingsserie, schon gemeldete Abzeichen und Ziele (`null` = still abgleichen)
+    this.version(27)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.trainingWeekTarget ??= TRAINING_WEEK_TARGET_DEFAULT;
+            settings.celebrations ??= null;
           }),
       );
   }

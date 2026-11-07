@@ -5,6 +5,7 @@ import { nowIso } from './repository';
 import {
   bodyMeasureSchema,
   bookFieldsSchema,
+  celebrationsSchema,
   DAILY_GOAL_DEFAULTS,
   dailyLogValuesSchema,
   dayKeySchema,
@@ -36,6 +37,8 @@ import {
   todoInputSchema,
   trackFieldsSchema,
   trackSummarySchema,
+  TRAINING_WEEK_TARGET_DEFAULT,
+  trainingWeekTargetSchema,
   weekdaysSchema,
 } from './schemas';
 import { ensureTrackSummaries } from './endurance';
@@ -127,6 +130,9 @@ const settingsSchema = baseEntitySchema.extend({
   activeTimer: activeTimerSchema.nullable().default(null),
   focusHabitId: z.string().nullable().default(null),
   meditationHabitId: z.string().nullable().default(null),
+  // Seit DB-Version 27; ältere Sicherungen gleichen die Erfolge beim nächsten Start still ab
+  trainingWeekTarget: trainingWeekTargetSchema.default(TRAINING_WEEK_TARGET_DEFAULT),
+  celebrations: celebrationsSchema.nullable().default(null),
 });
 
 const catalogEntryFields = {

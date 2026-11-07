@@ -1,0 +1,154 @@
+import { Dialog } from '../../components/Dialog';
+import {
+  BADGE_HINTS,
+  formatBadgeTier,
+  formatBadgeValue,
+  nextTier,
+  tierShare,
+  type BadgeState,
+  type BadgeUnits,
+} from '../../domain/badges';
+import { formatGoalDate } from '../../domain/goals';
+import { formatStreak } from '../../domain/habits';
+import type { StreakItem } from '../../domain/streaks';
+
+const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+
+/** Ring je Stufe: Bronze, Silber, Gold, dann Smaragd, Saphir, Amethyst */
+const TIER_RINGS = [
+  'border-slate-200 bg-slate-100 grayscale opacity-60 dark:border-slate-700 dark:bg-slate-900',
+  'border-amber-700 bg-amber-50 dark:bg-amber-950/40',
+  'border-slate-400 bg-slate-50 dark:border-slate-300 dark:bg-slate-700',
+  'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/30',
+  'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40',
+  'border-sky-500 bg-sky-50 dark:bg-sky-950/40',
+  'border-violet-500 bg-violet-50 dark:bg-violet-950/40',
+];
+
+function tierRing(level: number): string {
+  return TIER_RINGS[Math.min(level, TIER_RINGS.length - 1)]!;
+}
+
+function streakStatus(item: StreakItem, trainingWeekTarget: number): string {
+  const weeks = item.unit === 'weeks';
+  const status = item.todayDone
+    ? weeks
+      ? 'Diese Woche geschafft'
+      : 'Heute geschafft'
+    : item.current > 0
+      ? weeks
+        ? 'Diese Woche noch offen'
+        : 'Heute noch offen'
+      : 'Unterbrochen';
+  const parts = [status, `Beste: ${formatStreak(item.best, item.unit)}`];
+  if (item.area === 'training') parts.push(`Ziel ${trainingWeekTarget}× pro Woche`);
+  return parts.join(' · ');
+}
+
+export function StreakRow({
+  item,
+  trainingWeekTarget,
+  compact = false,
+}: {
+  item: StreakItem;
+  trainingWeekTarget: number;
+  compact?: boolean;
+}) {
+  const [count, unit] = formatStreak(item.current, item.unit).split(' ');
+  return (
+    <li className="flex min-h-14 items-center gap-3 py-2">
+      <span aria-hidden="true" className="w-8 shrink-0 text-center text-2xl">
+        {item.icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{item.name}</p>
+        {!compact && <p className={HINT}>{streakStatus(item, trainingWeekTarget)}</p>}
+        {compact && <p className={HINT}>{item.todayDone ? 'Geschafft' : 'Noch offen'}</p>}
+      </div>
+      <div
+        className={`shrink-0 text-right ${item.current > 0 ? '' : 'text-slate-400 dark:text-slate-500'}`}
+      >
+        <p className="text-xl leading-tight font-bold tabular-nums">
+          {item.todayDone && <span aria-hidden="true">🔥 </span>}
+          {count}
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{unit}</p>
+      </div>
+    </li>
+  );
+}
+
+export function BadgeTile({ state, onOpen }: { state: BadgeState; onOpen: () => void }) {
+  const { badge, level, tiers } = state;
+  return (
+    <button
+      type="button"
+      aria-label={`${badge.name}: ${level === 0 ? 'gesperrt' : `Stufe ${level} von ${tiers.length}`}`}
+      className="flex min-h-11 flex-col items-center gap-1 rounded-xl p-2 text-center active:bg-slate-100 dark:active:bg-slate-700"
+      onClick={onOpen}
+    >
+      <span
+        aria-hidden="true"
+        className={`flex h-14 w-14 items-center justify-center rounded-full border-4 text-2xl ${tierRing(level)}`}
+      >
+        {badge.icon}
+      </span>
+      <span className="text-sm leading-tight font-medium">{badge.name}</span>
+      <span className="text-xs text-slate-500 dark:text-slate-400">
+        {level === 0 ? 'Gesperrt' : `${level} / ${tiers.length}`}
+      </span>
+    </button>
+  );
+}
+
+export function BadgeDialog({
+  state,
+  units,
+  onClose,
+}: {
+  state: BadgeState;
+  units: BadgeUnits;
+  onClose: () => void;
+}) {
+  const { badge, value, tiers } = state;
+  const next = nextTier(state);
+  return (
+    <Dialog title={`${badge.icon} ${badge.name}`} onClose={onClose}>
+      <p className={HINT}>{BADGE_HINTS[badge.id]}</p>
+      <p>
+        Bisher: <span className="font-semibold">{formatBadgeValue(badge.id, value, units)}</span>
+      </p>
+      {next && (
+        <div>
+          <p className="text-sm">
+            Nächste Stufe: {formatBadgeTier(badge.id, next.threshold, units)}
+          </p>
+          <div className="mt-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700">
+            <div
+              className="h-2 rounded-full bg-emerald-500"
+              style={{ width: `${tierShare(state) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+      <ol aria-label="Stufen" className="flex flex-col gap-1">
+        {tiers.map((tier, index) => (
+          <li key={tier.threshold} className="flex items-center gap-2 text-sm">
+            <span
+              aria-hidden="true"
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs ${tierRing(tier.reached ? index + 1 : 0)}`}
+            >
+              {tier.reached ? '✓' : ''}
+            </span>
+            <span className={`min-w-0 flex-1 ${tier.reached ? 'font-medium' : HINT}`}>
+              {formatBadgeTier(badge.id, tier.threshold, units)}
+            </span>
+            <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
+              {tier.reached ? (tier.achievedOn ? formatGoalDate(tier.achievedOn) : 'erreicht') : ''}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </Dialog>
+  );
+}

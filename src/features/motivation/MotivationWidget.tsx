@@ -1,0 +1,83 @@
+import { Link } from 'react-router-dom';
+import type { BackState } from '../../components/backNavigation';
+import { Card } from '../../components/Page';
+import type { DayKey, Settings } from '../../db/types';
+import {
+  formatBadgeTier,
+  formatBadgeValue,
+  nextTier,
+  tierShare,
+  type BadgeState,
+} from '../../domain/badges';
+import { DASHBOARD_WIDGET_LABELS } from '../../domain/labels';
+import { StreakRow } from './MotivationParts';
+import { ACHIEVEMENTS_PATH } from './paths';
+import { useMotivation } from './useMotivation';
+
+const SHOWN_STREAKS = 3;
+const FROM_DASHBOARD: BackState = { from: '/' };
+
+/** Angefangenes Abzeichen, das seiner nächsten Stufe am nächsten ist */
+function closestBadge(badges: readonly BadgeState[]): BadgeState | null {
+  const candidates = badges.filter((state) => state.value > 0 && nextTier(state));
+  return candidates.sort((a, b) => tierShare(b) - tierShare(a))[0] ?? null;
+}
+
+export function MotivationWidget({ settings, today }: { settings: Settings; today: DayKey }) {
+  const view = useMotivation(today);
+  if (!view) return null;
+  const running = view.streaks.filter((item) => item.current > 0).slice(0, SHOWN_STREAKS);
+  const badge = closestBadge(view.badges);
+  const next = badge && nextTier(badge);
+
+  return (
+    <Card title={DASHBOARD_WIDGET_LABELS.motivation.name}>
+      {running.length === 0 ? (
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Gerade keine laufende Serie – heute ist ein guter Tag, eine zu starten.
+        </p>
+      ) : (
+        <ul
+          aria-label="Laufende Serien"
+          className="divide-y divide-slate-100 dark:divide-slate-700"
+        >
+          {running.map((item) => (
+            <StreakRow
+              key={item.key}
+              item={item}
+              trainingWeekTarget={view.trainingWeekTarget}
+              compact
+            />
+          ))}
+        </ul>
+      )}
+      {badge && next && (
+        <div data-testid="next-badge" className="mt-3">
+          <p className="text-sm">
+            <span className="font-medium">Nächstes Abzeichen:</span> {badge.badge.icon}{' '}
+            {badge.badge.name} – {formatBadgeTier(badge.badge.id, next.threshold, settings)}
+          </p>
+          <div className="mt-1 flex items-center gap-2">
+            <div className="h-2 flex-1 rounded-full bg-slate-100 dark:bg-slate-700">
+              <div
+                className="h-2 rounded-full bg-emerald-500"
+                style={{ width: `${tierShare(badge) * 100}%` }}
+              />
+            </div>
+            <span className="shrink-0 text-xs text-slate-500 tabular-nums dark:text-slate-400">
+              {formatBadgeValue(badge.badge.id, badge.value, settings)} /{' '}
+              {formatBadgeValue(badge.badge.id, next.threshold, settings)}
+            </span>
+          </div>
+        </div>
+      )}
+      <Link
+        to={ACHIEVEMENTS_PATH}
+        state={FROM_DASHBOARD}
+        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+      >
+        Alle Erfolge ›
+      </Link>
+    </Card>
+  );
+}
