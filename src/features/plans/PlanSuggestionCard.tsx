@@ -6,7 +6,10 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card } from '../../components/Page';
 import { startPlanWorkout, type ActivePlanSuggestion, type PlanDayDetail } from '../../db/plans';
 import { startWorkout } from '../../db/workouts';
+import { formatAdjustment, formatBlockWeek, workoutBlockFor } from '../../domain/blocks';
+import { dayKey } from '../../domain/daily';
 import type { PlanDaySuggestion } from '../../domain/plans';
+import { BlockStatusPanel } from './BlockStatus';
 import { PLANS_PATH, TRAINING_PATH, WORKOUT_PATH } from '../training/paths';
 
 function reasonText({ reason, lastDay }: PlanDaySuggestion<PlanDayDetail>): string {
@@ -43,6 +46,14 @@ export function PlanSuggestionCard({
   const [pending, setPending] = useState<PlanDayDetail | 'free' | null>(null);
   const { plan, days, suggestion } = active;
   const planPath = `${PLANS_PATH}/${plan.id}`;
+  const today = dayKey(new Date());
+  const block = workoutBlockFor(plan, today);
+  const blockLine = block && (
+    <span className="mt-2 block text-sm">
+      {formatBlockWeek(block)}
+      {block.adjusted && ` · ${formatAdjustment(block)}`}
+    </span>
+  );
 
   const start = async () => {
     if (pending === 'free') await startWorkout();
@@ -57,9 +68,14 @@ export function PlanSuggestionCard({
       onConfirm={() => void start()}
       onCancel={() => setPending(null)}
     >
-      {pending === 'free'
-        ? 'Du startest ein leeres Workout und fügst die Übungen selbst hinzu.'
-        : exerciseNames(pending) || 'Dieses Training hat noch keine Übungen.'}
+      {pending === 'free' ? (
+        'Du startest ein leeres Workout und fügst die Übungen selbst hinzu.'
+      ) : (
+        <>
+          {exerciseNames(pending) || 'Dieses Training hat noch keine Übungen.'}
+          {blockLine}
+        </>
+      )}
     </ConfirmDialog>
   );
 
@@ -86,6 +102,7 @@ export function PlanSuggestionCard({
 
   return (
     <Card title={plan.name}>
+      <BlockStatusPanel plan={plan} today={today} />
       <p className="text-sm text-slate-500 dark:text-slate-400">{reasonText(suggestion)}</p>
       <p className="text-xl font-bold">{suggested.day.name}</p>
       <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">{exerciseNames(suggested)}</p>

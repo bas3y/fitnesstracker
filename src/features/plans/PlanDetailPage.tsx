@@ -17,10 +17,20 @@ import {
   type PlanDayDetail,
   type PlanDetail,
 } from '../../db/plans';
-import { PLAN_SCHEDULES, type PlanDay, type PlanSchedule } from '../../db/types';
+import {
+  PLAN_SCHEDULES,
+  type DayKey,
+  type Plan,
+  type PlanDay,
+  type PlanSchedule,
+} from '../../db/types';
+import { blockStatus, formatBlockWeek } from '../../domain/blocks';
+import { dayKey } from '../../domain/daily';
+import { BLOCK_KIND_LABELS } from '../../domain/labels';
 import { formatWeekdays, PLAN_SCHEDULE_LABELS } from '../../domain/plans';
+import { formatDayKey } from '../../domain/stats';
 import { useSettings } from '../settings/useSettings';
-import { PLANS_PATH } from '../training/paths';
+import { planBlocksPath, PLANS_PATH } from '../training/paths';
 import { NameField } from './NameField';
 import { usePlanDetail } from './usePlans';
 
@@ -53,6 +63,16 @@ function dayHint({ day, items }: PlanDayDetail, schedule: PlanSchedule): string 
   return weekdays ? `${weekdays} · ${count}` : count;
 }
 
+function blocksHint(plan: Plan, today: DayKey): string {
+  if (plan.blocks.length === 0) return 'Keine – z. B. 3 Wochen Aufbau + 1 Woche Deload';
+  const status = blockStatus(plan, today);
+  const sequence = plan.blocks.map((block) => BLOCK_KIND_LABELS[block.kind]).join(' → ');
+  if (!status) return `${sequence} · angehalten`;
+  if (status.phase === 'upcoming') return `${sequence} · beginnt ${formatDayKey(status.startDate)}`;
+  if (status.phase === 'ended') return `${BLOCK_KIND_LABELS[status.block.kind]} geschafft`;
+  return formatBlockWeek({ ...status.block, week: status.week });
+}
+
 function PlanEditor({ detail }: { detail: PlanDetail }) {
   const { plan, days } = detail;
   const navigate = useNavigate();
@@ -60,6 +80,7 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletingDay, setDeletingDay] = useState<PlanDay | null>(null);
   const isActive = settings?.activePlanId === plan.id;
+  const today = dayKey(new Date());
 
   return (
     <Page title={plan.name} backTo={PLANS_PATH}>
@@ -103,7 +124,13 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
         </div>
       </Card>
 
-      <h2 className="mb-2 text-lg font-semibold">Trainings</h2>
+      <LinkRow
+        to={planBlocksPath(plan.id)}
+        label="Trainingsblöcke"
+        hint={blocksHint(plan, today)}
+      />
+
+      <h2 className="mt-4 mb-2 text-lg font-semibold">Trainings</h2>
       <SortableList
         label="Trainings"
         items={days.map((item) => ({ ...item, id: item.day.id, name: item.day.name }))}

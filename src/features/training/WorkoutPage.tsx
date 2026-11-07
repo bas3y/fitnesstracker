@@ -5,6 +5,7 @@ import { dangerButton, inputField, primaryButton, secondaryButton } from '../../
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card, Page } from '../../components/Page';
 import { deleteWorkout, finishWorkout, startWorkout, type WorkoutDetail } from '../../db/workouts';
+import { formatAdjustment, formatBlockWeek } from '../../domain/blocks';
 import { formatClock, formatTime, workoutDurationSeconds } from '../../domain/workout';
 import { HISTORY_PATH, TRAINING_PATH, WORKOUT_PATH } from './paths';
 import { RestTimerBar } from './RestTimer';
@@ -70,6 +71,18 @@ function ActiveWorkout({ detail }: { detail: WorkoutDetail }) {
           {formatClock(workoutDurationSeconds(workout, now))}
         </span>
       </p>
+      {workout.block && (
+        <p className="-mt-2 mb-4 text-sm" data-testid="workout-block">
+          <span className="font-semibold text-emerald-800 dark:text-emerald-300">
+            {formatBlockWeek(workout.block)}
+          </span>
+          {workout.block.adjusted && (
+            <span className="block text-slate-500 dark:text-slate-400">
+              Sätze angepasst: {formatAdjustment(workout.block)}
+            </span>
+          )}
+        </p>
+      )}
 
       <WorkoutEditor detail={detail} mode="live" />
 

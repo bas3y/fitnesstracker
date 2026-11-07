@@ -44,7 +44,11 @@ function ChartFrame({ label, children }: { label: string; children: ReactNode })
 export interface ChartPoint {
   time: number;
   value: number;
+  /** Hervorgehobener Punkt (andere Farbe), Text erscheint im Tooltip */
+  marker?: string;
 }
+
+const MARKER_COLOR = '#f59e0b';
 
 /** Linie über eine echte Zeitachse, Trainingspausen bleiben also sichtbar */
 export function ProgressChart({
@@ -90,14 +94,31 @@ export function ProgressChart({
           content={({ active, payload }) => {
             const point = payload?.[0]?.payload as ChartPoint | undefined;
             if (!active || !point) return null;
-            return <ChartTooltip title={shortDate(point.time)} value={formatValue(point.value)} />;
+            const title = shortDate(point.time) + (point.marker ? ` · ${point.marker}` : '');
+            return <ChartTooltip title={title} value={formatValue(point.value)} />;
           }}
         />
         <Line
           dataKey="value"
           stroke={LINE_COLOR}
           strokeWidth={2}
-          dot={points.length > MAX_DOTS ? false : { r: 3, fill: LINE_COLOR }}
+          dot={(props: { cx?: number; cy?: number; index?: number; payload?: ChartPoint }) => {
+            const { cx, cy, index, payload } = props;
+            const marked = !!payload?.marker;
+            if (cx === undefined || cy === undefined || (!marked && points.length > MAX_DOTS)) {
+              return <g key={index} />;
+            }
+            return (
+              <circle
+                key={index}
+                cx={cx}
+                cy={cy}
+                r={marked ? 4 : 3}
+                fill={marked ? MARKER_COLOR : LINE_COLOR}
+                stroke="none"
+              />
+            );
+          }}
           isAnimationActive={false}
         />
       </LineChart>

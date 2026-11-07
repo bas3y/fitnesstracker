@@ -33,7 +33,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 17 – Self-Improvement (Journal, Wochenreflexion, Lesen)
 - [x] Schritt 17b – Fokus-/Meditations-Timer & Fortschrittsfotos
 - [x] Schritt 18 – Motivation (Serien, Abzeichen, Erfolgs-Hinweise)
-- [ ] Schritt 18b – Trainingsblöcke (Aufbau/Deload/Peak) in Plänen
+- [x] Schritt 18b – Trainingsblöcke (Aufbau/Deload/Peak) in Plänen
 - [ ] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
 
@@ -1012,10 +1012,28 @@ Mit dem Nutzer beim Start abgestimmt: **aufgeteilt in 18 + 18b**; Serien für **
 - Beim Start mit dem Nutzer klären: feste Vorlagen (z. B. 3 + 1 Wochen) oder frei; automatische Anpassung der Sätze oder nur Anzeige; Prozentwerte je Blockart.
 - Neue Dexie-Version + Backup; vor dem nächsten Push an ein Backup erinnern.
 
+Mit dem Nutzer beim Start abgestimmt: **Vorlagen + frei änderbar**; Sätze **automatisch anpassen, abschaltbar** (dann nur Anzeige); Prozentwerte als **Standard je Blockart, je Block änderbar**; am Ende **Hinweis mit Wahl** (nächster Block / wiederholen / ohne Blöcke weiter), bis dahin läuft der Block weiter.
+
 **Notizen:**
 - Gebaut:
+  - Dexie v28: `Plan.blocks` (Liste `PlanBlock`: `id`, `kind` `build`/`deload`/`peak`/`test`, `weeks`, `setsPercent`, `loadPercent`, `repShift`, `progression`), `Plan.blockProgress` (`{ index, startDate }` | `null`), `Plan.blockAdjust` (Standard `true`), `Workout.block` (Kopie beim Start: Art, Woche, Werte, `adjusted`). Backup: Sicherungen bis v27 importierbar (leere Blöcke, `block: null`).
+  - **Logik** `src/domain/blocks.ts`: `BLOCK_DEFAULTS` (Aufbau 100/100/±0 mit Overload, Deload 50 % Sätze/90 % Gewicht ohne Overload, Peak 105 % Gewicht/Wdh. −2, Test 35 % Sätze/110 %/Wdh. −7), `BLOCK_TEMPLATES` (3+1, 4+1, Aufbau→Peak→Deload, mit Test), `blockStatus` (Woche ab Startdatum, `upcoming`/`running`/`ended`), `workoutBlockFor`, `blockSetCount`, `shiftRepRange`, `scaleWeight` (auf 2,5 kg bzw. 5 lb gerundet, 0/Unterstützung bleibt), `scaleLevel`, `formatBlockWeek`, `formatAdjustment`. `plannedSetValues` nimmt `block` (ohne Overload: Werte vom letzten Mal mit Wdh.-Verschiebung; Last in Prozent).
+  - **DB** `src/db/plans.ts`: `setPlanBlocks` (Zod, hält den laufenden Block beim Verschieben), `startPlanBlock(planId, index, startDate)` (Wechseln/Wiederholen), `stopPlanBlocks`, `updatePlan({ blockAdjust })`; `startPlanWorkout` kopiert den Block ins Workout und passt Sätze/Wdh.-Bereich an. `duplicatePlan` kopiert die Blöcke (nicht gestartet).
+  - **Grundlage für Overload und Prozente** ist das letzte Training **ohne angepassten Block** (`getLastPerformance(…, { baseOnly: true })`): Nach dem Deload geht es vom letzten Aufbau-Training weiter, eine zweite Deload-Woche rechnet nicht vom Deload aus.
+  - **UI:** Seite `PlanBlocksPage` (`/training/plans/:id/blocks`, `planBlocksPath`, Zeile „Trainingsblöcke“ auf der Plan-Seite): ohne Blöcke Vorlagen + „Eigene Abfolge“ (starten heute); sonst Karte „Aktueller Block“ (Status, Block wählen, Beginn des Blocks, „Blöcke anhalten“), Schalter „Sätze automatisch an den Block anpassen“, Abfolge zum Ziehen mit Dialog je Block (Art, Dauer, Sätze %, Gewicht %, Wdh. verschieben, Overload, „Standard für …“), ✕ und „Alle Blöcke entfernen“. `BlockStatusPanel` auf der Trainingsseite (Vorschlagskarte, auch Startseiten-Widget): „Aufbau · Woche 2 von 4“ + Anpassung; nach dem Ende „… ist geschafft!“ mit „Weiter mit …“/„… wiederholen“ bzw. „Abfolge wiederholen“/„Ohne Blöcke weiter“. Startrückfrage, laufendes Workout, Detailseite und Verlauf zeigen den Block; in angepassten Blöcken ohne Overload kein „Vorschlag“ an der Übung. **Statistik:** angepasste Block-Trainings sind im Übungsverlauf orange markiert (Tooltip mit Block, Legende).
+  - Tests: `domain/blocks.test.ts`, Block-Fälle in `strength.test.ts`, `db/plans.test.ts` (Abfolge, Aufbau, Deload mit Grundlage, Peak, Anpassen aus, vor Beginn, Duplizieren), Migration v27→v28, Backup (Wiederherstellen, Sicherung aus v27, ungültige Blöcke). E2E `e2e/blocks.spec.ts` offline in beiden Viewports (Vorlage → Aufbau → Wechsel zum Deload → Block auf 80 % ändern → Deload mit 2 Sätzen à 80 kg ohne Vorschlag → Verlauf/Detail/Statistik → Anpassen aus → Ende → Abfolge wiederholen → Neuladen).
 - Abweichungen:
+  - Blöcke laufen nach **Kalenderwochen ab dem Startdatum** des Blocks (nicht nach Anzahl Trainings). Ein neuer Block beginnt am Tag des Wechsels.
+  - Anpassen ist ein Schalter **je Plan** (nicht je Training). Einzelne Werte im Workout ändert man wie gewohnt.
+  - Ohne Vorgeschichte gibt es keine Prozente (kein Gewicht bekannt): Wdh. = Untergrenze des verschobenen Bereichs, Gewicht leer.
+  - Halteübungen: Dauer bleibt, nur Sätze und Last werden angepasst. Aufwärmsätze bleiben unverändert.
+  - Mit Overload in einem angepassten Block (z. B. Deload mit Haken „Overload“) gilt der Vorschlag vom letzten normalen Training, die Wdh.-Verschiebung dann nicht. Ein Aufbau-Block mit geänderten Werten zählt als „angepasst“ und ist dann selbst keine Grundlage mehr – Standard ist unverändert.
+  - `Dialog` (`src/components/`) scrollt jetzt bei hohem Inhalt (`max-h-[90dvh]`).
 - Offene Punkte:
+  - **Handytest:** Block-Dialog auf kleinen Displays, Datumsfeld „Beginn des Blocks“, Lesbarkeit der orangen Punkte im Diagramm.
+  - Kein Block in der CSV-Spalte und im Teilen-Bild (ggf. Schritt 19 im Bericht: `Workout.block`).
+  - Keine automatische Erinnerung außerhalb der Trainingsseite/des Widgets, wenn ein Block endet.
+  - Vor dem nächsten Push an ein Backup erinnern (DB-Version 22 → 28).
 
 ### Schritt 19 – PDF-Export/Berichte
 Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.

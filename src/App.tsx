@@ -100,6 +100,7 @@ const PhotosPage = lazyPage(() => import('./features/self/PhotosPage'), 'PhotosP
 const TimerPage = lazyPage(() => import('./features/self/TimerPage'), 'TimerPage');
 const ReadingPage = lazyPage(() => import('./features/self/ReadingPage'), 'ReadingPage');
 const ReflectionPage = lazyPage(() => import('./features/self/ReflectionPage'), 'ReflectionPage');
+const PlanBlocksPage = lazyPage(() => import('./features/plans/PlanBlocksPage'), 'PlanBlocksPage');
 const PlanDayPage = lazyPage(() => import('./features/plans/PlanDayPage'), 'PlanDayPage');
 const PlanDetailPage = lazyPage(() => import('./features/plans/PlanDetailPage'), 'PlanDetailPage');
 const PlanListPage = lazyPage(() => import('./features/plans/PlanListPage'), 'PlanListPage');
@@ -179,6 +180,7 @@ export function App() {
           <Route path="training/plans/new" element={<PlanNewPage />} />
           <Route path="training/plans/:id" element={<PlanDetailPage />} />
           <Route path="training/plans/:id/days/:dayId" element={<PlanDayPage />} />
+          <Route path="training/plans/:id/blocks" element={<PlanBlocksPage />} />
           <Route path="training/activity/:sport" element={<ActivityPage />} />
           <Route path="training/activity/:sport/new" element={<SessionCreatePage />} />
           <Route path="training/sessions/:id" element={<SessionDetailPage />} />

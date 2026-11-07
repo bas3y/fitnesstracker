@@ -979,7 +979,61 @@ describe('AppDatabase-Migration', () => {
       celebrations: null,
     });
     expect(await v27.timerSessions.get('t1')).toMatchObject({ kind: 'focus' });
-    expect(v27.verno).toBe(27);
+    expect(v27.verno).toBeGreaterThanOrEqual(27);
     await v27.delete();
+  });
+
+  it('Version 28 ergänzt Trainingsblöcke an Plänen und Workouts, Daten bleiben', async () => {
+    const name = 'migration-test-v28';
+    const v27 = new Dexie(name);
+    v27.version(27).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, barcode, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+      goals: 'id, updatedAt',
+      goalEntries: 'id, goalId, updatedAt',
+      journalPrompts: 'id, updatedAt',
+      journalEntries: 'id, [kind+date], updatedAt',
+      books: 'id, updatedAt',
+      readingLogs: 'id, bookId, date, updatedAt',
+      bookNotes: 'id, bookId, updatedAt',
+      timerSessions: 'id, kind, date, updatedAt',
+      progressPhotos: 'id, date, updatedAt',
+      photoFiles: 'id, [photoId+variant], updatedAt',
+    });
+    await v27.table('plans').add({ id: 'p1', name: 'PPL', schedule: 'rotation', order: 0 });
+    await v27
+      .table('workouts')
+      .add({ id: 'w1', startedAt: '2026-11-01T10:00:00.000Z', planId: 'p1' });
+    v27.close();
+
+    const v28 = new AppDatabase(name);
+    expect(await v28.plans.get('p1')).toMatchObject({
+      name: 'PPL',
+      blocks: [],
+      blockProgress: null,
+      blockAdjust: true,
+    });
+    expect(await v28.workouts.get('w1')).toMatchObject({ planId: 'p1', block: null });
+    expect(v28.verno).toBe(28);
+    await v28.delete();
   });
 });

@@ -59,6 +59,8 @@ interface WorkoutExerciseCardProps {
   otherExerciseIds: string[];
   /** Griff zum Umsortieren */
   handle: ReactNode;
+  /** Overload-Vorschlag zeigen; aus in angepassten Blöcken wie Deload */
+  progression?: boolean;
 }
 
 interface SetFormat {
@@ -78,6 +80,7 @@ export function WorkoutExerciseCard({
   records,
   otherExerciseIds,
   handle,
+  progression = true,
 }: WorkoutExerciseCardProps) {
   const { workoutExercise, exercise, sets } = item;
   const name = exercise?.name ?? 'Unbekannte Übung';
@@ -133,6 +136,7 @@ export function WorkoutExerciseCard({
           workoutExerciseId={workoutExercise.id}
           format={format}
           mode={mode}
+          progression={progression}
           range={
             workoutExercise.repMin !== null && workoutExercise.repMax !== null
               ? { min: workoutExercise.repMin, max: workoutExercise.repMax }
@@ -294,6 +298,7 @@ function LastTime({
   format,
   mode,
   range,
+  progression,
 }: {
   exerciseId: string;
   workoutId: string;
@@ -301,13 +306,17 @@ function LastTime({
   format: SetFormat;
   mode: WorkoutMode;
   range: RepRange;
+  progression: boolean;
 }) {
   const last = useLastPerformance(exerciseId, workoutId);
-  if (last === undefined) return null;
+  // Grundlage für den Overload: letztes Training ohne angepassten Block (z. B. nicht der Deload)
+  const base = useLastPerformance(exerciseId, workoutId, { baseOnly: true });
+  if (last === undefined || base === undefined) return null;
   const working = last?.sets.filter((set) => !set.isWarmup) ?? [];
+  const baseWorking = base?.sets.filter((set) => !set.isWarmup) ?? [];
   const suggestion =
-    mode === 'live'
-      ? suggestProgression(working, {
+    mode === 'live' && progression
+      ? suggestProgression(baseWorking, {
           isTimed: format.isTimed,
           isBodyweight: format.isBodyweight,
           range,

@@ -1,4 +1,6 @@
 import { PLAN_TEMPLATES } from '../data/planTemplates';
+import { newBlock } from '../domain/blocks';
+import { dayKey, shiftDay } from '../domain/daily';
 import { db } from './database';
 import {
   addPlanDay,
@@ -16,7 +18,10 @@ import {
   reorderPlanExercises,
   reorderPlans,
   setActivePlan,
+  setPlanBlocks,
+  startPlanBlock,
   startPlanWorkout,
+  stopPlanBlocks,
   updatePlan,
   updatePlanDay,
   updatePlanExercise,
@@ -530,5 +535,111 @@ describe('Übung im laufenden Workout tauschen', () => {
     const after = await loadWorkoutDetail(detail.workout.id);
     expect(after?.items[0]?.sets).toHaveLength(1);
     expect(after?.items[0]?.sets[0]?.completedAt).not.toBeNull();
+  });
+});
+
+describe('Trainingsblöcke', () => {
+  const today = () => dayKey(new Date());
+  const blocks = () => [newBlock('build', 3, 'aufbau'), newBlock('deload', 1, 'deload')];
+
+  async function blockPlan() {
+    const { plan, day } = await planWithDay();
+    const item = await addPlanExercise(day.id, bench);
+    await updatePlanExercise(item.id, { targetSets: 4, repMin: 6, repMax: 10 });
+    await setPlanBlocks(plan.id, blocks());
+    return { plan, day };
+  }
+
+  it('speichert Abfolge und Fortschritt, prüft Werte und hält den laufenden Block', async () => {
+    const { plan } = await blockPlan();
+    await startPlanBlock(plan.id, 1, '2026-11-02');
+    expect(await db.plans.get(plan.id)).toMatchObject({
+      blockProgress: { index: 1, startDate: '2026-11-02' },
+    });
+    // Verschieben behält den laufenden Deload
+    await setPlanBlocks(plan.id, [...blocks()].reverse());
+    expect((await db.plans.get(plan.id))?.blockProgress?.index).toBe(0);
+    await expect(startPlanBlock(plan.id, 5, '2026-11-02')).rejects.toThrow();
+    await expect(setPlanBlocks(plan.id, [{ ...newBlock('build'), weeks: 0 }])).rejects.toThrow();
+    await stopPlanBlocks(plan.id);
+    expect((await db.plans.get(plan.id))?.blockProgress).toBeNull();
+    await startPlanBlock(plan.id, 0, '2026-11-02');
+    await setPlanBlocks(plan.id, []);
+    expect(await db.plans.get(plan.id)).toMatchObject({ blocks: [], blockProgress: null });
+  });
+
+  it('Aufbau befüllt wie gewohnt und merkt den Block am Workout', async () => {
+    const { plan, day } = await blockPlan();
+    await startPlanBlock(plan.id, 0, today());
+    await trainDay(day.id, { weight: 100, reps: 10 });
+    const workout = await startPlanWorkout(day.id);
+    expect(workout.block).toMatchObject({ kind: 'build', week: 1, weeks: 3, adjusted: false });
+    const detail = await loadWorkoutDetail(workout.id);
+    expect(detail?.items[0]?.sets).toHaveLength(4);
+    expect(detail?.items[0]?.sets[0]).toMatchObject({ weight: 102.5, reps: 6 });
+  });
+
+  it('Deload: halbe Sätze, 90 % vom letzten normalen Training, ohne Overload', async () => {
+    const { plan, day } = await blockPlan();
+    await trainDay(day.id, { weight: 100, reps: 10 });
+    await startPlanBlock(plan.id, 1, today());
+
+    const deload = await startPlanWorkout(day.id);
+    expect(deload.block).toMatchObject({ kind: 'deload', adjusted: true, setsPercent: 50 });
+    let detail = await loadWorkoutDetail(deload.id);
+    expect(detail?.items[0]?.sets.map((set) => [set.weight, set.reps])).toEqual([
+      [90, 10],
+      [90, 10],
+    ]);
+    // Zweites Deload-Training: Grundlage bleibt das normale Training, nicht der Deload
+    const set = detail!.items[0]!.sets[0]!;
+    await completeSet(set.id, 0);
+    await finishWorkout(deload.id, '');
+    detail = await loadWorkoutDetail((await startPlanWorkout(day.id)).id);
+    expect(detail?.items[0]?.sets[0]).toMatchObject({ weight: 90, reps: 10 });
+    await finishWorkout(detail!.workout.id, '');
+
+    // Zurück im Aufbau: Overload vom letzten normalen Training (100 kg × 10)
+    await startPlanBlock(plan.id, 0, today());
+    detail = await loadWorkoutDetail((await startPlanWorkout(day.id)).id);
+    expect(detail?.items[0]?.sets[0]).toMatchObject({ weight: 102.5, reps: 6 });
+  });
+
+  it('Peak verschiebt den Wdh.-Bereich im Workout', async () => {
+    const { plan, day } = await blockPlan();
+    await setPlanBlocks(plan.id, [newBlock('peak', 2, 'peak')]);
+    await startPlanBlock(plan.id, 0, today());
+    const detail = await loadWorkoutDetail((await startPlanWorkout(day.id)).id);
+    expect(detail?.items[0]?.workoutExercise).toMatchObject({ repMin: 4, repMax: 8 });
+    expect(detail?.items[0]?.sets[0]).toMatchObject({ weight: null, reps: 4 });
+  });
+
+  it('zeigt den Block bei ausgeschaltetem Anpassen nur an', async () => {
+    const { plan, day } = await blockPlan();
+    await updatePlan(plan.id, { blockAdjust: false });
+    await trainDay(day.id, { weight: 100, reps: 10 });
+    await startPlanBlock(plan.id, 1, today());
+    const workout = await startPlanWorkout(day.id);
+    expect(workout.block).toMatchObject({ kind: 'deload', adjusted: false });
+    const detail = await loadWorkoutDetail(workout.id);
+    expect(detail?.items[0]?.sets).toHaveLength(4);
+    expect(detail?.items[0]?.sets[0]).toMatchObject({ weight: 102.5, reps: 6 });
+  });
+
+  it('ohne laufende Blöcke oder vor dem Beginn kein Block', async () => {
+    const { plan, day } = await blockPlan();
+    expect((await startPlanWorkout(day.id)).block).toBeNull();
+    await db.workouts.clear();
+    await startPlanBlock(plan.id, 1, shiftDay(today(), 3));
+    expect((await startPlanWorkout(day.id)).block).toBeNull();
+  });
+
+  it('kopiert Blöcke beim Duplizieren, die Kopie startet sie nicht', async () => {
+    const { plan } = await blockPlan();
+    await startPlanBlock(plan.id, 0, today());
+    const copy = await db.plans.get((await duplicatePlan(plan.id)).id);
+    expect(copy?.blocks.map((block) => block.kind)).toEqual(['build', 'deload']);
+    expect(copy?.blocks[0]?.id).not.toBe('aufbau');
+    expect(copy?.blockProgress).toBeNull();
   });
 });

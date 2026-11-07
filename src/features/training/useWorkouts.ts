@@ -18,8 +18,15 @@ export function useWorkoutDetail(id: string | undefined) {
   return useLiveQuery(async () => (id ? loadWorkoutDetail(id) : null), [id]);
 }
 
-export function useLastPerformance(exerciseId: string, workoutId: string) {
-  return useLiveQuery(() => getLastPerformance(exerciseId, workoutId), [exerciseId, workoutId]);
+export function useLastPerformance(
+  exerciseId: string,
+  workoutId: string,
+  { baseOnly = false }: { baseOnly?: boolean } = {},
+) {
+  return useLiveQuery(
+    () => getLastPerformance(exerciseId, workoutId, { baseOnly }),
+    [exerciseId, workoutId, baseOnly],
+  );
 }
 
 export function useWorkoutHistory() {

@@ -34,7 +34,7 @@ export function Dialog({
         onKeyDown={(event) => {
           if (event.key === 'Escape') onClose();
         }}
-        className="flex w-full max-w-sm flex-col gap-3 rounded-2xl bg-white p-4 shadow-lg outline-none dark:bg-slate-800"
+        className="flex max-h-[90dvh] w-full max-w-sm flex-col gap-3 overflow-y-auto rounded-2xl bg-white p-4 shadow-lg outline-none dark:bg-slate-800"
       >
         <h2 id={titleId} className="text-lg font-semibold">
           {title}

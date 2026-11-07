@@ -6,6 +6,7 @@ import { TrophyIcon } from '../../components/icons';
 import { Card, Page } from '../../components/Page';
 import type { Workout } from '../../db/types';
 import { deleteWorkout } from '../../db/workouts';
+import { formatBlockWeek } from '../../domain/blocks';
 import {
   formatTime,
   formatWorkoutDate,
@@ -60,7 +61,16 @@ export function WorkoutHistoryPage() {
                       {time} · {formatWorkoutDuration(workoutDurationSeconds(workout, new Date()))}
                     </span>
                   </span>
-                  {planDayName && <span className="block font-medium">{planDayName}</span>}
+                  {(planDayName || workout.block) && (
+                    <span className="block font-medium">
+                      {planDayName}{' '}
+                      {workout.block && (
+                        <span className="ml-2 rounded-md bg-emerald-100 px-1.5 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200">
+                          {formatBlockWeek(workout.block)}
+                        </span>
+                      )}
+                    </span>
+                  )}
                   <span className="block truncate text-sm text-slate-600 dark:text-slate-300">
                     {exerciseNames.join(', ') || 'Keine Übungen'}
                   </span>

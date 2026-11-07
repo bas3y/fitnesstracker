@@ -6,6 +6,7 @@ import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { loadFinishedExerciseSessions } from '../../db/records';
 import type { Exercise, WeightUnit } from '../../db/types';
+import { formatBlockWeek } from '../../domain/blocks';
 import { formatDecimal } from '../../domain/format';
 import {
   analyzeRest,
@@ -47,13 +48,23 @@ export function ExerciseStats({ exercise }: { exercise: Exercise }) {
     () => (sessions ?? []).map(({ workout, sets }) => ({ startedAt: workout.startedAt, sets })),
     [sessions],
   );
+  // Angepasste Blöcke (Deload, Peak …) sind im Verlauf markiert
+  const blocks = useMemo(
+    () =>
+      new Map(
+        (sessions ?? []).flatMap(({ workout }) =>
+          workout.block?.adjusted ? [[workout.startedAt, formatBlockWeek(workout.block)]] : [],
+        ),
+      ),
+    [sessions],
+  );
   if (!settings || groups.length === 0) return null;
 
   const unit = settings.weightUnit;
   const kind = exerciseKind(exercise, settings.bodyWeightKg);
   return (
     <>
-      <HistoryCard groups={groups} kind={kind} unit={unit} name={exercise.name} />
+      <HistoryCard groups={groups} kind={kind} unit={unit} name={exercise.name} blocks={blocks} />
       <BestsCard groups={groups} kind={kind} unit={unit} />
       {settings.restAnalysisEnabled && <RestCard groups={groups} isTimed={exercise.isTimed} />}
     </>
@@ -65,11 +76,14 @@ function HistoryCard({
   kind,
   unit,
   name,
+  blocks,
 }: {
   groups: SetGroup[];
   kind: ExerciseKind;
   unit: WeightUnit;
   name: string;
+  /** Beginn des Workouts → Block, falls angepasst */
+  blocks: Map<string, string>;
 }) {
   const { range, setRange } = useStatsFilter();
   const [chosen, setChosen] = useState<ExerciseMetric | null>(null);
@@ -83,9 +97,16 @@ function HistoryCard({
         const value = values[metric];
         return value === undefined
           ? []
-          : [{ time: Date.parse(date), value: metricDisplayValue(metric, value, unit) }];
+          : [
+              {
+                time: Date.parse(date),
+                value: metricDisplayValue(metric, value, unit),
+                marker: blocks.get(date),
+              },
+            ];
       })
     : [];
+  const hasMarkers = chartPoints.some((point) => point.marker);
   const format = (value: number) => formatMetricValue(metric!, value, unit);
   const first = chartPoints[0]?.value;
   const last = chartPoints.at(-1)?.value;
@@ -115,6 +136,15 @@ function HistoryCard({
               points={chartPoints}
               formatValue={format}
             />
+            {hasMarkers && (
+              <p className={HINT} data-testid="block-legend">
+                <span
+                  aria-hidden="true"
+                  className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-amber-500"
+                />
+                Orange: Trainingsblock mit angepassten Sätzen (z. B. Deload)
+              </p>
+            )}
             {first !== undefined && last !== undefined && chartPoints.length > 1 ? (
               <p className={HINT} data-testid="history-summary">
                 {format(first)} → {format(last)}

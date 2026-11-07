@@ -4,7 +4,14 @@ import { db } from './database';
 import { create, nowIso, softDelete, update } from './repository';
 import { setValuesSchema, type SetValues } from './schemas';
 import { getSettings, updateSettings } from './settings';
-import type { Exercise, LoadType, Workout, WorkoutExercise, WorkoutSet } from './types';
+import type {
+  BlockAdjustment,
+  Exercise,
+  LoadType,
+  Workout,
+  WorkoutExercise,
+  WorkoutSet,
+} from './types';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
 const byOrder = (a: { order: number }, b: { order: number }) => a.order - b.order;
@@ -89,6 +96,7 @@ export function startWorkout(): Promise<Workout> {
       restEndsAt: null,
       planId: null,
       planDayId: null,
+      block: null,
     });
   });
 }
@@ -120,6 +128,7 @@ export async function createPastWorkout({
     restEndsAt: null,
     planId: null,
     planDayId: null,
+    block: null,
   });
 }
 
@@ -145,10 +154,12 @@ export async function addPlannedSets(
   item: WorkoutExercise,
   count: number,
   warmupCount = 0,
+  block: BlockAdjustment | null = null,
 ): Promise<void> {
   const exercise = await db.exercises.get(item.exerciseId);
   const settings = await getSettings();
-  const lastTime = await getLastPerformance(item.exerciseId, item.workoutId);
+  // Angepasste Blöcke (z. B. Deload) sind keine Grundlage für Overload und Prozente
+  const lastTime = await getLastPerformance(item.exerciseId, item.workoutId, { baseOnly: true });
   const shared = {
     lastSets: lastTime?.sets ?? [],
     isTimed: exercise?.isTimed ?? false,
@@ -166,6 +177,7 @@ export async function addPlannedSets(
       ...shared,
       count,
       weightStepKg: progressionWeightStepKg(settings?.weightUnit ?? 'kg'),
+      block,
     }).map((set) => ({ ...set, isWarmup: false })),
   ];
   for (const [order, setValues] of values.entries()) {
@@ -199,10 +211,14 @@ function withLoadType<T extends Pick<WorkoutSet, LoadField>>(
 
 type LoadField = 'weight' | 'level' | 'eccentricWeight' | 'eccentricLevel';
 
-/** Abgeschlossene Sätze dieser Übung aus dem letzten beendeten Workout (vor `beforeWorkoutId`) */
+/**
+ * Abgeschlossene Sätze dieser Übung aus dem letzten beendeten Workout (vor `beforeWorkoutId`).
+ * `baseOnly`: Workouts mit angepasstem Trainingsblock (Deload, Peak …) überspringen.
+ */
 export async function getLastPerformance(
   exerciseId: string,
   beforeWorkoutId?: string,
+  { baseOnly = false }: { baseOnly?: boolean } = {},
 ): Promise<LastPerformance | null> {
   const items = await db.workoutExercises
     .where('exerciseId')
@@ -215,6 +231,7 @@ export async function getLastPerformance(
   const workouts = (await db.workouts.bulkGet([...new Set(items.map((i) => i.workoutId))]))
     .filter((w): w is Workout => !!w && isActive(w) && w.endedAt !== null)
     .filter((w) => !before || w.startedAt < before.startedAt)
+    .filter((w) => !baseOnly || !w.block?.adjusted)
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 
   for (const workout of workouts) {

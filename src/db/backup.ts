@@ -23,6 +23,8 @@ import {
   nutrientsSchema,
   nutritionGoalsSchema,
   photoInputSchema,
+  planBlockProgressSchema,
+  planBlocksSchema,
   planExerciseValuesSchema,
   readingPagesSchema,
   recipeSchema,
@@ -40,6 +42,7 @@ import {
   TRAINING_WEEK_TARGET_DEFAULT,
   trainingWeekTargetSchema,
   weekdaysSchema,
+  workoutBlockSchema,
 } from './schemas';
 import { ensureTrackSummaries } from './endurance';
 import { ensureSeeded } from './seed';
@@ -184,6 +187,8 @@ const workoutSchema = baseEntitySchema.extend({
   // Seit DB-Version 7
   planId: z.string().nullable().default(null),
   planDayId: z.string().nullable().default(null),
+  // Seit DB-Version 28
+  block: workoutBlockSchema.nullable().default(null),
 });
 const workoutExerciseSchema = baseEntitySchema.extend({
   workoutId: z.string().min(1),
@@ -213,6 +218,10 @@ const planSchema = baseEntitySchema.extend({
   schedule: z.enum(PLAN_SCHEDULES),
   // Seit DB-Version 8; bei gleichem Wert zählt die Anlagereihenfolge
   order: z.number().default(0),
+  // Seit DB-Version 28
+  blocks: planBlocksSchema.default([]),
+  blockProgress: planBlockProgressSchema.nullable().default(null),
+  blockAdjust: z.boolean().default(true),
 });
 const planDaySchema = baseEntitySchema.extend({
   planId: z.string().min(1),

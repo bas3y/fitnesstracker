@@ -508,6 +508,25 @@ export class AppDatabase extends Dexie {
             settings.celebrations ??= null;
           }),
       );
+    // Trainingsblöcke (Aufbau/Deload/Peak/Test) in Plänen
+    this.version(28)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx
+          .table<Plan, string>('plans')
+          .toCollection()
+          .modify((plan) => {
+            plan.blocks ??= [];
+            plan.blockProgress ??= null;
+            plan.blockAdjust ??= true;
+          });
+        await tx
+          .table<Workout, string>('workouts')
+          .toCollection()
+          .modify((workout) => {
+            workout.block ??= null;
+          });
+      });
   }
 }
 

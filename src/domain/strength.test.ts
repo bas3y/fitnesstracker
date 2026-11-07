@@ -155,6 +155,50 @@ describe('plannedSetValues (Vorbefüllung aus dem Plan)', () => {
     expect(first).toMatchObject({ weight: 80, eccentricWeight: 100 });
   });
 
+  describe('im Trainingsblock', () => {
+    const deload = { setsPercent: 50, loadPercent: 90, repShift: 0, progression: false };
+    const peak = { setsPercent: 100, loadPercent: 105, repShift: -2, progression: false };
+
+    it('Deload: Werte vom letzten Mal mit weniger Gewicht, ohne Overload', () => {
+      const values = plannedSetValues({
+        ...plan,
+        count: 2,
+        block: deload,
+        lastSets: [logged(100, 10), logged(100, 9), logged(95, 8)],
+      });
+      expect(values.map((v) => [v.weight, v.reps])).toEqual([
+        [90, 10],
+        [90, 9],
+      ]);
+    });
+
+    it('Peak: mehr Gewicht und weniger Wdh., Stufen in ganzen Schritten', () => {
+      const [first] = plannedSetValues({ ...plan, block: peak, lastSets: [logged(60, 10)] });
+      expect(first).toMatchObject({ weight: 62.5, reps: 8 });
+      const [machine] = plannedSetValues({
+        ...plan,
+        block: peak,
+        lastSets: [{ ...logged(0, 10), weight: null, level: 10 }],
+      });
+      expect(machine).toMatchObject({ weight: null, level: 11, reps: 8 });
+    });
+
+    it('beim ersten Mal das Planziel ohne Last', () => {
+      const [first] = plannedSetValues({ ...plan, block: deload, lastSets: [] });
+      expect(first).toMatchObject({ weight: null, reps: 6 });
+    });
+
+    it('mit Overload: Vorschlag wie gewohnt, Last in Prozent', () => {
+      const [first] = plannedSetValues({
+        ...plan,
+        block: { ...deload, progression: true },
+        lastSets: [logged(60, 10)],
+      });
+      // Overload 62,5 kg × 90 % = 56,25 → 57,5 kg
+      expect(first).toMatchObject({ weight: 57.5, reps: 6 });
+    });
+  });
+
   it('rechnet den Gewichtssprung zur Anzeigeeinheit passend um', () => {
     expect(progressionWeightStepKg('kg')).toBe(2.5);
     expect(progressionWeightStepKg('lb')).toBeCloseTo(2.268, 3);

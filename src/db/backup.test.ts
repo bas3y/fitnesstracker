@@ -23,7 +23,17 @@ import {
   loadProgressPhoto,
   type PhotoImage,
 } from './photos';
-import { addPlanExercise, createPlan, deletePlan, loadPlanDetail } from './plans';
+import {
+  addPlanExercise,
+  createPlan,
+  deletePlan,
+  loadPlanDetail,
+  setPlanBlocks,
+  startPlanBlock,
+  startPlanWorkout,
+} from './plans';
+import { newBlock } from '../domain/blocks';
+import { dayKey } from '../domain/daily';
 import {
   addBookNote,
   addReadingLog,
@@ -1006,6 +1016,70 @@ describe('Workouts im Backup', () => {
     await restoreBackup(result.backup);
     expect((await getSettings())?.activePlanId).toBe(plan.id);
     expect((await loadPlanDetail(plan.id))?.days[0]?.items).toHaveLength(1);
+  });
+
+  it('sichert Trainingsblöcke und den Block im Workout', async () => {
+    const plan = await createPlan('Block-Plan');
+    const detail = await loadPlanDetail(plan.id);
+    const exercise = await createUserExercise(EXERCISE);
+    await addPlanExercise(detail!.days[0]!.day.id, exercise);
+    const blocks = [newBlock('build', 3, 'b1'), newBlock('deload', 1, 'b2')];
+    await setPlanBlocks(plan.id, blocks);
+    const today = dayKey(new Date());
+    await startPlanBlock(plan.id, 1, today);
+    const workout = await startPlanWorkout(detail!.days[0]!.day.id);
+    const data = JSON.parse(JSON.stringify(await createBackup()));
+    await resetDatabase();
+
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    await restoreBackup(result.backup);
+    expect(await db.plans.get(plan.id)).toMatchObject({
+      blocks,
+      blockProgress: { index: 1, startDate: today },
+      blockAdjust: true,
+    });
+    expect((await db.workouts.get(workout.id))?.block).toMatchObject({ kind: 'deload' });
+  });
+
+  it('ergänzt bei Sicherungen aus DB-Version 27 die Blockfelder', async () => {
+    await createPlan('Alt');
+    const data = JSON.parse(JSON.stringify(await createBackup()));
+    data.dbVersion = 27;
+    delete data.tables.plans[0].blocks;
+    delete data.tables.plans[0].blockProgress;
+    delete data.tables.plans[0].blockAdjust;
+    data.tables.workouts = [
+      {
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        deletedAt: null,
+        id: 'w1',
+        startedAt: '2026-01-01T00:00:00.000Z',
+        endedAt: null,
+        notes: '',
+        restEndsAt: null,
+        planId: null,
+        planDayId: null,
+      },
+    ];
+
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.plans[0]).toMatchObject({
+      blocks: [],
+      blockProgress: null,
+      blockAdjust: true,
+    });
+    expect(result.backup.tables.workouts[0]?.block).toBeNull();
+  });
+
+  it('lehnt ungültige Blöcke ab', async () => {
+    const plan = await createPlan('Block-Plan');
+    await setPlanBlocks(plan.id, [newBlock('build')]);
+    const data = JSON.parse(JSON.stringify(await createBackup()));
+    data.tables.plans[0].blocks[0].weeks = 0;
+    expect(parseBackup(data).ok).toBe(false);
   });
 
   it('ergänzt bei Sicherungen aus DB-Version 9 die Pausen-Schalter', async () => {

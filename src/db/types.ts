@@ -235,6 +235,8 @@ export interface Workout extends BaseEntity {
   /** Herkunft aus einem Trainingsplan; `null` = freies Training */
   planId: string | null;
   planDayId: string | null;
+  /** Trainingsblock des Plans beim Start; `null` = ohne Block */
+  block: WorkoutBlock | null;
 }
 
 export interface WorkoutExercise extends BaseEntity {
@@ -276,10 +278,54 @@ export const PLAN_SCHEDULES = ['rotation', 'weekdays'] as const;
 /** `rotation` = Trainings der Reihe nach, `weekdays` = feste Wochentage */
 export type PlanSchedule = (typeof PLAN_SCHEDULES)[number];
 
+export const BLOCK_KINDS = ['build', 'deload', 'peak', 'test'] as const;
+/** Art eines Trainingsblocks: Aufbau, Deload, Peak/Intensität, Test */
+export type BlockKind = (typeof BLOCK_KINDS)[number];
+
+/** Anpassung der Vorbefüllung in einem Block */
+export interface BlockAdjustment {
+  /** Anteil der geplanten Arbeitssätze (mindestens 1 Satz) */
+  setsPercent: number;
+  /** Anteil der Last vom letzten Mal (Gewicht bzw. Stufe) */
+  loadPercent: number;
+  /** Verschiebung des Wdh.-Bereichs und der Wdh. vom letzten Mal */
+  repShift: number;
+  /** Overload-Vorschlag (mehr Last/Wdh.) wie gewohnt */
+  progression: boolean;
+}
+
+export interface PlanBlock extends BlockAdjustment {
+  id: string;
+  kind: BlockKind;
+  weeks: number;
+}
+
+/** Laufender Block: Index in `Plan.blocks` und sein erster Tag */
+export interface PlanBlockProgress {
+  index: number;
+  startDate: DayKey;
+}
+
 export interface Plan extends BaseEntity {
   name: string;
   schedule: PlanSchedule;
   order: number;
+  /** Abfolge der Trainingsblöcke; leer = ohne Blöcke */
+  blocks: PlanBlock[];
+  /** `null` = Blöcke nicht gestartet bzw. beendet */
+  blockProgress: PlanBlockProgress | null;
+  /** Sätze nach Block anpassen; `false` = Block nur anzeigen */
+  blockAdjust: boolean;
+}
+
+/** Block zum Zeitpunkt des Trainings (Kopie wie die Zielwerte) */
+export interface WorkoutBlock extends BlockAdjustment {
+  kind: BlockKind;
+  index: number;
+  week: number;
+  weeks: number;
+  /** Vorbefüllung wurde angepasst – zählt nicht als Grundlage für den Overload */
+  adjusted: boolean;
 }
 
 export interface PlanDay extends BaseEntity {

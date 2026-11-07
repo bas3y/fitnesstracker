@@ -1,19 +1,34 @@
 import { PLAN_TEMPLATES } from '../data/planTemplates';
+import { blockSetCount, shiftRepRange, workoutBlockFor } from '../domain/blocks';
 import { suggestPlanDay, type PlanDaySuggestion } from '../domain/plans';
 import { toDateInput } from '../domain/workout';
 import { db } from './database';
 import { create, listActive, nowIso, softDelete, update } from './repository';
-import { planExerciseValuesSchema, weekdaysSchema, type PlanExerciseValues } from './schemas';
+import {
+  planBlockProgressSchema,
+  planBlocksSchema,
+  planExerciseValuesSchema,
+  weekdaysSchema,
+  type PlanExerciseValues,
+} from './schemas';
 import { getSettings, updateSettings } from './settings';
 import type {
+  DayKey,
   Exercise,
   Plan,
+  PlanBlock,
   PlanDay,
   PlanExercise,
   PlanSchedule,
   Workout,
   WorkoutExercise,
 } from './types';
+
+const NO_BLOCKS: Pick<Plan, 'blocks' | 'blockProgress' | 'blockAdjust'> = {
+  blocks: [],
+  blockProgress: null,
+  blockAdjust: true,
+};
 import { addPlannedSets, getActiveWorkout } from './workouts';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
@@ -137,6 +152,7 @@ async function activateIfNone(planId: string): Promise<void> {
 export function createPlan(name = 'Neuer Plan'): Promise<Plan> {
   return db.transaction('rw', PLAN_TABLES, async () => {
     const plan = await create<Plan>(db.plans, {
+      ...NO_BLOCKS,
       name,
       schedule: 'rotation',
       order: await nextPlanOrder(),
@@ -164,6 +180,7 @@ export function createPlanFromTemplate(key: string): Promise<Plan> {
       .toArray();
     const byKey = new Map(builtins.map((exercise) => [exercise.builtinKey, exercise]));
     const plan = await create<Plan>(db.plans, {
+      ...NO_BLOCKS,
       name: template.name,
       schedule: template.schedule,
       order: await nextPlanOrder(),
@@ -201,10 +218,14 @@ export function createPlanFromTemplate(key: string): Promise<Plan> {
 export function duplicatePlan(id: string): Promise<Plan> {
   return db.transaction('rw', PLAN_TABLES, async () => {
     const source = await getPlan(id);
+    // Blöcke werden mitkopiert, laufen in der Kopie aber erst nach dem Start
     const plan = await create<Plan>(db.plans, {
       name: `${source.name} (Kopie)`,
       schedule: source.schedule,
       order: await nextPlanOrder(),
+      blocks: source.blocks.map((block) => ({ ...block, id: crypto.randomUUID() })),
+      blockProgress: null,
+      blockAdjust: source.blockAdjust,
     });
     for (const sourceDay of await activeDays(id)) {
       const { name, order, weekdays } = sourceDay;
@@ -230,11 +251,50 @@ export function duplicatePlan(id: string): Promise<Plan> {
 
 export async function updatePlan(
   id: string,
-  changes: { name?: string; schedule?: PlanSchedule },
+  changes: { name?: string; schedule?: PlanSchedule; blockAdjust?: boolean },
 ): Promise<void> {
   const name = changes.name?.trim();
   if (changes.name !== undefined && !name) throw new Error('Bitte einen Namen eingeben');
   await update(db.plans, id, name === undefined ? changes : { ...changes, name });
+}
+
+/**
+ * Ersetzt die Abfolge der Trainingsblöcke. Der laufende Block bleibt laufend, auch wenn er
+ * verschoben wird; wird er entfernt, gilt der Block an seiner Stelle. Ohne Blöcke enden sie.
+ */
+export function setPlanBlocks(planId: string, blocks: PlanBlock[]): Promise<void> {
+  return db.transaction('rw', db.plans, async () => {
+    const plan = await getPlan(planId);
+    const parsed = planBlocksSchema.parse(blocks);
+    const progress = plan.blockProgress;
+    const runningId = progress ? plan.blocks[progress.index]?.id : undefined;
+    const moved = parsed.findIndex((block) => block.id === runningId);
+    await update(db.plans, planId, {
+      blocks: parsed,
+      blockProgress:
+        progress && parsed.length > 0
+          ? {
+              ...progress,
+              index: moved >= 0 ? moved : Math.min(progress.index, parsed.length - 1),
+            }
+          : null,
+    });
+  });
+}
+
+/** Startet den Block an `index` ab `startDate` (auch zum Wechseln oder Wiederholen) */
+export function startPlanBlock(planId: string, index: number, startDate: DayKey): Promise<void> {
+  return db.transaction('rw', db.plans, async () => {
+    const plan = await getPlan(planId);
+    if (!plan.blocks[index]) throw new Error('Block nicht gefunden');
+    const blockProgress = planBlockProgressSchema.parse({ index, startDate });
+    await update(db.plans, planId, { blockProgress });
+  });
+}
+
+/** Ohne Blöcke weiter trainieren; die Abfolge bleibt für später erhalten */
+export async function stopPlanBlocks(planId: string): Promise<void> {
+  await update(db.plans, planId, { blockProgress: null });
 }
 
 /** Löscht den Plan samt Trainings; bisherige Workouts bleiben unverändert */
@@ -415,6 +475,7 @@ export function startPlanWorkout(planDayId: string): Promise<Workout> {
     'rw',
     [
       db.settings,
+      db.plans,
       db.planDays,
       db.planExercises,
       db.workouts,
@@ -426,29 +487,43 @@ export function startPlanWorkout(planDayId: string): Promise<Workout> {
       const running = await getActiveWorkout();
       if (running) return running;
       const day = await getPlanDay(planDayId);
+      const plan = await db.plans.get(day.planId);
+      const startedAt = nowIso();
+      const block = plan ? workoutBlockFor(plan, toDateInput(startedAt)) : null;
+      const adjustment = block?.adjusted ? block : null;
       const workout = await create<Workout>(db.workouts, {
-        startedAt: nowIso(),
+        startedAt,
         endedAt: null,
         notes: '',
         restEndsAt: null,
         planId: day.planId,
         planDayId,
+        block,
       });
       let order = 0;
       for (const planExercise of await activeDayExercises(planDayId)) {
         const exercise = await db.exercises.get(planExercise.exerciseId);
         if (!exercise || !isActive(exercise)) continue;
-        const { exerciseId, repMin, repMax, targetDurationSeconds, restSeconds } = planExercise;
+        const { exerciseId, targetDurationSeconds, restSeconds } = planExercise;
+        const range = adjustment
+          ? shiftRepRange(
+              { min: planExercise.repMin, max: planExercise.repMax },
+              adjustment.repShift,
+            )
+          : { min: planExercise.repMin, max: planExercise.repMax };
         const item = await create<WorkoutExercise>(db.workoutExercises, {
           workoutId: workout.id,
           exerciseId,
           order: order++,
-          repMin,
-          repMax,
+          repMin: range.min,
+          repMax: range.max,
           targetDurationSeconds,
           restSeconds,
         });
-        await addPlannedSets(item, planExercise.targetSets, planExercise.warmupSets);
+        const sets = adjustment
+          ? blockSetCount(planExercise.targetSets, adjustment.setsPercent)
+          : planExercise.targetSets;
+        await addPlannedSets(item, sets, planExercise.warmupSets, adjustment);
       }
       return workout;
     },

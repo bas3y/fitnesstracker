@@ -47,6 +47,7 @@ export function WorkoutEditor({ detail, mode }: { detail: WorkoutDetail; mode: W
               .filter((other) => other.workoutExercise.id !== item.id)
               .map((other) => other.workoutExercise.exerciseId)}
             handle={row.handle}
+            progression={!workout.block?.adjusted || workout.block.progression}
           />
         )}
       />

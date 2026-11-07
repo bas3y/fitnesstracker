@@ -4,3 +4,4 @@ export const HISTORY_PATH = '/training/history';
 /** Training nachtragen (beendetes Workout anlegen) */
 export const LOG_WORKOUT_PATH = '/training/history/new';
 export const PLANS_PATH = '/training/plans';
+export const planBlocksPath = (planId: string) => `${PLANS_PATH}/${planId}/blocks`;

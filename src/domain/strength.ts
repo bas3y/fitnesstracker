@@ -1,4 +1,5 @@
-import type { Exercise, WeightUnit, WorkoutSet } from '../db/types';
+import type { BlockAdjustment, Exercise, WeightUnit, WorkoutSet } from '../db/types';
+import { scaleLevel, scaleWeight } from './blocks';
 import { formatDecimal } from './format';
 import { displayToKg, kgToDisplay, roundTo } from './units';
 import { formatClock, formatWeight, suggestSetValues } from './workout';
@@ -571,6 +572,8 @@ export function suggestProgression(
 /**
  * Startwerte der Sätze eines geplanten Workouts: mit Vorgeschichte der Overload-Vorschlag
  * (Exzentrik wie letztes Mal), beim ersten Mal das Planziel – die Last trägt man dann selbst ein.
+ * Im Trainingsblock (`block`): Last in Prozent; ohne Overload die Werte vom letzten Mal mit
+ * verschobenen Wdh. `count` und `range` sind dann schon an den Block angepasst.
  */
 export function plannedSetValues({
   lastSets,
@@ -580,6 +583,7 @@ export function plannedSetValues({
   range,
   targetDurationSeconds,
   weightStepKg,
+  block = null,
 }: {
   lastSets: Array<StrengthSet & Pick<WorkoutSet, 'rpe' | 'rir'>>;
   count: number;
@@ -588,13 +592,18 @@ export function plannedSetValues({
   range: RepRange | null;
   targetDurationSeconds: number | null;
   weightStepKg: number;
+  block?: BlockAdjustment | null;
 }) {
-  const suggestion = suggestProgression(lastSets, {
-    isTimed,
-    isBodyweight,
-    range: range ?? DEFAULT_REP_RANGE,
-    weightStepKg,
-  });
+  const suggestion =
+    block && !block.progression
+      ? null
+      : suggestProgression(lastSets, {
+          isTimed,
+          isBodyweight,
+          range: range ?? DEFAULT_REP_RANGE,
+          weightStepKg,
+        });
+  const hasHistory = lastSets.some((set) => !set.isWarmup);
   return Array.from({ length: count }, (_, index) => {
     const values = suggestSetValues({
       previous: undefined,
@@ -604,7 +613,15 @@ export function plannedSetValues({
     });
     if (suggestion) {
       const { weight, level, reps, durationSeconds } = suggestion;
-      return { ...values, weight, level, reps, durationSeconds };
+      return scaleForBlock(
+        { ...values, weight, level, reps, durationSeconds },
+        block,
+        weightStepKg,
+      );
+    }
+    if (block && hasHistory) {
+      const reps = values.reps === null ? null : Math.max(1, values.reps + block.repShift);
+      return scaleForBlock({ ...values, reps: isTimed ? null : reps }, block, weightStepKg);
     }
     return {
       ...values,
@@ -612,6 +629,19 @@ export function plannedSetValues({
       durationSeconds: isTimed ? targetDurationSeconds : null,
     };
   });
+}
+
+function scaleForBlock<T extends Pick<WorkoutSet, 'weight' | 'level'>>(
+  values: T,
+  block: BlockAdjustment | null,
+  weightStepKg: number,
+): T {
+  if (!block) return values;
+  return {
+    ...values,
+    weight: scaleWeight(values.weight, block.loadPercent, weightStepKg),
+    level: scaleLevel(values.level, block.loadPercent),
+  };
 }
 
 /**

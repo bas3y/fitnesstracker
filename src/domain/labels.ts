@@ -1,4 +1,5 @@
 import type {
+  BlockKind,
   BookStatus,
   BodyMeasure,
   DailyImportField,
@@ -18,6 +19,13 @@ import type {
   TimerKind,
   TimerPhaseType,
 } from '../db/types';
+
+export const BLOCK_KIND_LABELS: Record<BlockKind, string> = {
+  build: 'Aufbau',
+  deload: 'Deload',
+  peak: 'Peak',
+  test: 'Test',
+};
 
 export const DAILY_IMPORT_FIELD_LABELS: Record<DailyImportField, string> = {
   steps: 'Schritte',

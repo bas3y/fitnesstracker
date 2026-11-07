@@ -5,6 +5,7 @@ import { dangerButton, primaryButton, secondaryButton } from '../../components/b
 import { TrophyIcon } from '../../components/icons';
 import { Card, Page } from '../../components/Page';
 import { deleteWorkout, type WorkoutDetail } from '../../db/workouts';
+import { formatAdjustment, formatBlockWeek } from '../../domain/blocks';
 import { workoutShareContent } from '../../domain/shareCard';
 import { formatRecord } from '../../domain/strength';
 import {
@@ -76,6 +77,12 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
         {planDayName && `${planDayName} · `}
         {formatTime(workout.startedAt)} Uhr · Dauer{' '}
         {formatWorkoutDuration(workoutDurationSeconds(workout, new Date()))}
+        {workout.block && (
+          <span className="block font-medium text-emerald-800 dark:text-emerald-300">
+            {formatBlockWeek(workout.block)}
+            {workout.block.adjusted && ` · ${formatAdjustment(workout.block)}`}
+          </span>
+        )}
       </p>
       {workout.notes && (
         <Card>

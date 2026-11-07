@@ -3,6 +3,7 @@ import { isValidBarcode, normalizeBarcode } from '../domain/barcode';
 import { isSingleEmoji } from '../domain/emoji';
 import { BEST_EFFORT_METERS } from '../domain/track';
 import {
+  BLOCK_KINDS,
   BOOK_STATUSES,
   CUSTOM_GOAL_TYPES,
   HABIT_GOAL_METRICS,
@@ -130,6 +131,42 @@ export const planExerciseValuesSchema = z
   });
 
 export type PlanExerciseValues = z.infer<typeof planExerciseValuesSchema>;
+
+export const MAX_PLAN_BLOCKS = 12;
+export const MAX_BLOCK_WEEKS = 12;
+export const MIN_BLOCK_PERCENT = 10;
+export const MAX_BLOCK_PERCENT = 200;
+export const MAX_BLOCK_REP_SHIFT = 10;
+
+export const blockAdjustmentSchema = z.object({
+  setsPercent: z.number().int().min(MIN_BLOCK_PERCENT).max(MAX_BLOCK_PERCENT),
+  loadPercent: z.number().int().min(MIN_BLOCK_PERCENT).max(MAX_BLOCK_PERCENT),
+  repShift: z.number().int().min(-MAX_BLOCK_REP_SHIFT).max(MAX_BLOCK_REP_SHIFT),
+  progression: z.boolean(),
+});
+
+export const planBlockSchema = blockAdjustmentSchema.extend({
+  id: z.string().min(1),
+  kind: z.enum(BLOCK_KINDS),
+  weeks: z.number().int().min(1).max(MAX_BLOCK_WEEKS),
+});
+
+export const planBlocksSchema = z
+  .array(planBlockSchema)
+  .max(MAX_PLAN_BLOCKS, `Höchstens ${MAX_PLAN_BLOCKS} Blöcke`);
+
+export const planBlockProgressSchema = z.object({
+  index: z.number().int().nonnegative(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ungültiges Datum'),
+});
+
+export const workoutBlockSchema = blockAdjustmentSchema.extend({
+  kind: z.enum(BLOCK_KINDS),
+  index: z.number().int().nonnegative(),
+  week: z.number().int().min(1),
+  weeks: z.number().int().min(1),
+  adjusted: z.boolean(),
+});
 
 export const MAX_STEPS = 200_000;
 export const MAX_WATER_ML = 20_000;
