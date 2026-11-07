@@ -29,6 +29,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 15b – Verbesserungen aus dem Gebrauch (Nachtragen, Ziehen, Protein, Weitergeben)
 - [x] Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest 14–15c
 - [x] Schritt 16 – Ziele & Rückblicke
+- [ ] Schritt 16b – Ziele für Gewohnheiten, Alltag & eigene Ziele, eigene Emojis
 - [ ] Schritt 17 – Self-Improvement
 - [ ] Schritt 18 – Motivation & Trainingsblöcke
 - [ ] Schritt 19 – PDF-Export/Berichte
@@ -878,6 +879,26 @@ Mit dem Nutzer beim Start abgestimmt: Zielarten **Kraft, Bestzeit, Körpergewich
   - Ziele für Gewohnheiten, Schritte oder Körpermaße wären naheliegende weitere Arten.
   - Hinweis/Toast „Ziel erreicht“ und Ziel-Badges → Schritt 18.
   - Handytest: Formular (Datumsfelder, ExercisePicker) und Lesbarkeit der Rückblick-Zeilen auf kleinen Displays.
+
+### Schritt 16b – Ziele für Gewohnheiten, Alltag & eigene Ziele, eigene Emojis
+**Ziel:** Nutzerwunsch nach Schritt 16 (alles offline). Mit dem Nutzer abgestimmt: als eigener Schritt vor 17, weil die Ziel-Logik aus 16 erweitert wird; Schritt 17 nutzt die Ziele dann nur (z. B. Bücher-Log als Quelle für Lese-Ziele).
+- **Zielart „Gewohnheit“** (Gewohnheit wählen, Fortschritt aus `habitChecks`, keine neue Tabelle):
+  - Menge (`count`, z. B. Lesen): Summe im Zeitraum – „1000 Seiten bis 31.12.“, „300 Seiten pro Monat“.
+  - Tage (`check`/`items`): erledigte Tage – „Meditieren an 100 Tagen im Jahr“.
+  - Aufhören (`quit`, z. B. Rauchen): **Serie** „30 Tage am Stück rauchfrei“ (Rückfall setzt zurück, beste Serie mit anzeigen) **und Reduzieren** „höchstens 20 Zigaretten pro Woche/Monat“ (Obergrenze, weniger ist besser; laufender Zeitraum zeigt, wie viel noch übrig ist, Überschreiten = verfehlt).
+- **Alltagswerte** in der Zielart „Menge“: Schritte gesamt („300.000 Schritte im Monat“) und Tage mit erreichtem Tagesziel bei Schritten, Wasser, Schlaf.
+- **Eigenes Ziel:** freier Name, optional eigenes Emoji, zwei Formen:
+  - mit Zahl (Zielwert + Einheit, z. B. „Spanisch: 50 Lektionen“), Fortschritt selbst eintragen (+1/+x, Rückgängig) auf der Ziele-Seite und im Widget;
+  - Ja/Nein (z. B. „Führerschein machen“), wird abgehakt.
+  - Einträge einzeln gespeichert (neue Tabelle `goalEntries` mit Datum und Menge, Dexie v24 + Backup), damit „erreicht am“ und der Rückblick funktionieren.
+- **Eigene Emojis:** Gewohnheiten (und eigene Ziele) bekommen neben den Vorschlägen ein Feld „Eigenes Emoji“ (Emoji-Tastatur des Handys, genau ein Emoji, per `Intl.Segmenter` geprüft). Schema erlaubt schon jedes Zeichen, also keine Migration für Gewohnheiten.
+- **Rückblick:** Summen der Gewohnheiten mit Menge („Lesen: 420 Seiten (+80)“), Rückfälle bei Aufhören-Gewohnheiten (weniger = grün), erreichte neue Ziele.
+- Vor dem nächsten Push an ein Backup erinnern (DB-Version 22 → 24).
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
+- Offene Punkte:
 
 ### Schritt 17 – Self-Improvement
 Journal/Dankbarkeit, Wochenreflexion, Lesen (Bücher, Seiten, Notizen), Pomodoro/Meditation-Timer, Fortschrittsfotos (lokal gespeichert, komprimiert, Speicherhinweis, im Backup optional).
