@@ -31,7 +31,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 16 – Ziele & Rückblicke
 - [x] Schritt 16b – Ziele für Gewohnheiten, Alltag & eigene Ziele, eigene Emojis
 - [x] Schritt 17 – Self-Improvement (Journal, Wochenreflexion, Lesen)
-- [ ] Schritt 17b – Fokus-/Meditations-Timer & Fortschrittsfotos
+- [x] Schritt 17b – Fokus-/Meditations-Timer & Fortschrittsfotos
 - [ ] Schritt 18 – Motivation & Trainingsblöcke
 - [ ] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
@@ -958,8 +958,24 @@ Mit dem Nutzer beim Start abgestimmt: **aufgeteilt in 17 + 17b**; Ort = **eine g
 
 **Notizen:**
 - Gebaut:
+  - Dexie v26: Tabellen `timerSessions` (Art, Tag, `startedAt` bzw. `null` = nachgetragen, Dauer ohne Pausen, Runden, Notiz, `habitId`/`habitAmount`), `progressPhotos` (Tag, Ansicht Vorne/Seite/Hinten/Sonstige, Notiz, Maße, Bytes) und `photoFiles` (je Foto zwei Zeilen `full`/`thumb` als `ArrayBuffer`, Index `[photoId+variant]`); `Settings.timerPresets`, `activeTimer`, `focusHabitId`, `meditationHabitId`.
+  - **Timer** (`/daily/timer`, `TimerPage`): Fokus (Fokuszeit/Pause/Runden, Standard 25/5/4, keine Pause nach der letzten Runde) und Meditation (Chips 5–30 min + Stepper). Laufender Timer nur als Zeitstempel in `Settings.activeTimer` (`startedAt`, `pausedAt`, `pausedSeconds`, `skippedSeconds`, Phasenliste), Berechnung in `src/domain/timer.ts` (`timerState`, `timerResult` …) → läuft nach Neuladen weiter. Anhalten/Fortsetzen, „Pause überspringen“ (nur Pausen, Fokuszeit bleibt genau), „Beenden“ mit Speichern/Verwerfen/Weiterlaufen. Gong per Web Audio (`playGong` in `restAlarm.ts`, leiser beim Wechsel zurück in den Fokus), Meditation mit Gong zu Beginn, Bildschirm bleibt an (`useWakeLock`). `TimerAlarm` im Layout klingelt bei Phasenwechseln auf jeder Seite und speichert einen abgelaufenen Timer (auch nach Neuladen, dann ohne Gong) mit Hinweis „… beendet · x min gespeichert“; `finishTimer(startedAt)` schützt vor doppeltem Speichern. Liste der Sitzungen des Tages mit Notiz und Löschen, Summen Tag/Woche, „Sitzung nachtragen“.
+  - **Gewohnheit** je Art verknüpfbar: Zählen → Minuten addiert, Abhaken → Tag abgehakt; Löschen zieht ab bzw. nimmt den Haken erst mit der letzten Sitzung des Tages zurück.
+  - **Ziele:** Menge um „Fokus-Minuten“/„Meditationsminuten“ (`TOTAL_GOAL_METRICS` `focusTime`/`meditationTime`, intern Sekunden, Namen „300 min Meditation pro Monat“). **Rückblick:** Fokus-Zeit und Meditation in „Persönliche Entwicklung“. **Schnellzugriff:** „Timer“, „Foto“.
+  - **Fortschrittsfotos** (`/daily/photos`): Aufnehmen/Auswählen (`<input type="file" accept="image/*">`), per Canvas verkleinert (JPEG, längste Seite 1600 px, Vorschau 400 px, EXIF-Drehung über `createImageBitmap`, `prepareImage.ts`), Dialog mit Vorschau, Tag, Ansicht, Notiz. Raster je Tag (nur Vorschauen geladen), Filter nach Ansicht (in der URL), Detailseite (Angaben ändern, löschen – Bilddaten werden wirklich entfernt), **Vergleich** (`/daily/photos/compare?a=&b=`): Vorher/Nachher nebeneinander, Abstand („30 Tage später“), Gewicht am Tag bzw. bis 7 Tage daneben, Auswahl beider Fotos, „Seiten tauschen“. Speicher-Karte (Fotos-Größe, `navigator.storage.estimate`, Hinweis auf Backup und nicht dauerhaften Speicher).
+  - **Backup:** Schalter „Fortschrittsfotos einschließen“ (nur wenn Fotos da sind, mit geschätzter Größe). Bilddaten als Base64. Sicherung ohne Fotos lässt beim Import die Fotos auf dem Gerät unberührt (`backupHasPhotos`), mit Fotos werden sie ersetzt; Hinweis in der Import-Vorschau. Sicherungen bis v25 importierbar.
+  - `SelfSection`: Zeilen „Fokus & Meditation“ (läuft: Phase + Restzeit, sonst Minuten des Tages) und „Fortschrittsfotos“.
+  - Tests: `domain/timer.test.ts`, `domain/photos.test.ts`, `db/timer.test.ts`, `db/photos.test.ts`, Timer-Ziele in `goals.test.ts`, `review.test.ts`, Migration v25→v26, Backup (mit/ohne Fotos, kaputte Bilddaten, Sicherung aus v25). E2E `e2e/timerPhotos.spec.ts` offline in beiden Viewports (Timer mit `page.clock`: Neuladen, Anhalten, Pause überspringen, automatisches Speichern, Notiz, Meditation mit Gewohnheit, vorzeitig beenden, Nachtragen, Löschen, Ziel; Fotos: Verkleinern hoch/quer, Filter, Vergleich + Zurück mit Filter, ändern, löschen, Backup mit Fotos → DB löschen → Import). 784 Unit-Tests, 108/108 E2E grün. Hauptbundle ~333 KB (unverändert), Seiten als eigene Chunks.
 - Abweichungen:
+  - Timer-Zustand in `Settings` statt eigener Tabelle (es gibt höchstens einen). Fokus-Phasen laufen automatisch weiter (keine Bestätigung je Runde); kein langer Pause-Block nach x Runden.
+  - Gewohnheiten zum Verknüpfen: Zählen **und** Abhaken (Plan: wie beim Lesen nur Minuten), weil „Meditieren“ meist eine Abhak-Gewohnheit ist.
+  - Fotos als `ArrayBuffer` statt Blob (robuster in älterem Safari und in Tests), immer JPEG (Safari kann kein WebP per Canvas erzeugen).
+  - Backup-Vorschau zählt wie bei allen Tabellen auch gelöschte Fotos (ohne Bilddaten).
 - Offene Punkte:
+  - **Handytest:** Gong bei gesperrtem Bildschirm/App im Hintergrund (iOS hält die App an → kein Ton; Wake Lock hält den Bildschirm an), Lautstärke/Stummschalter, Kamera-Auswahl beim Foto (iPhone HEIC → JPEG), Speicherplatz bei vielen Fotos, Backup-Datei mit Fotos teilen (Größe).
+  - Kein Overlay-/Schieberegler-Vergleich, keine Raster-Hilfslinien beim Aufnehmen, keine Erinnerung „Zeit für ein neues Foto“ (ggf. Schritt 18).
+  - Timer-Sitzungen erscheinen nicht im Gewohnheiten-Verlauf als eigene Quelle; Journal-/Meditations-Serie → Schritt 18.
+  - Vor dem nächsten Push an ein Backup erinnern (DB-Version 22 → 26).
 
 ### Schritt 18 – Motivation & Trainingsblöcke
 Badges, Streak-Übersicht über alle Bereiche, Trainingsblöcke (Aufbau/Deload/Peak) in Plänen.

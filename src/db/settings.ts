@@ -4,6 +4,7 @@ import {
   DAILY_GOAL_DEFAULTS,
   NUTRITION_GOAL_DEFAULTS,
   SUPPLEMENT_SETTING_DEFAULTS,
+  TIMER_PRESET_DEFAULTS,
 } from './schemas';
 import {
   DEFAULT_DASHBOARD_WIDGETS,
@@ -51,6 +52,10 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   maxHeartRate: null,
   restingHeartRate: null,
   readingHabitId: null,
+  timerPresets: { ...TIMER_PRESET_DEFAULTS },
+  activeTimer: null,
+  focusHabitId: null,
+  meditationHabitId: null,
 };
 
 export function getSettings(): Promise<Settings | undefined> {

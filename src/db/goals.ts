@@ -97,16 +97,19 @@ export function setGoalChecked(
 
 /** Alles außer dem Training (das lädt die Startseite ohnehin) */
 export async function loadGoalExtras(): Promise<Omit<GoalData, 'strength' | 'endurance'>> {
-  const [weights, logs, settings, habits, entries, readingLogs, books] = await Promise.all([
-    loadBodyWeights(),
-    listDailyLogs(),
-    getSettings(),
-    loadHabits(),
-    listActive(db.goalEntries),
-    listReadingLogs(),
-    listBooks(),
-  ]);
+  const [weights, logs, settings, habits, entries, readingLogs, books, timerSessions] =
+    await Promise.all([
+      loadBodyWeights(),
+      listDailyLogs(),
+      getSettings(),
+      loadHabits(),
+      listActive(db.goalEntries),
+      listReadingLogs(),
+      listBooks(),
+      listActive(db.timerSessions),
+    ]);
   return {
+    timerSessions,
     reading: readingLogs
       .map(({ date, pages }) => ({ date, value: pages }))
       .sort((a, b) => a.date.localeCompare(b.date)),

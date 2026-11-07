@@ -8,8 +8,10 @@ import type {
   JournalEntry,
   MealEntry,
   ReadingLog,
+  TimerSession,
 } from '../db/types';
 import { shiftDay } from './daily';
+import { timerSecondsInRange } from './timer';
 import { averageWeekRating, countJournal } from './journal';
 import { booksFinishedInRange, pagesInRange } from './reading';
 import { sessionDay, sessionTotals, type DayRange, type SessionTotals } from './endurance';
@@ -61,6 +63,7 @@ export interface ReviewInput {
   journal: readonly Pick<JournalEntry, 'kind' | 'date' | 'rating'>[];
   readingLogs: readonly Pick<ReadingLog, 'bookId' | 'date' | 'pages'>[];
   books: readonly Pick<Book, 'status' | 'finishedOn'>[];
+  timerSessions: readonly Pick<TimerSession, 'kind' | 'date' | 'durationSeconds'>[];
 }
 
 export interface ReviewSummary {
@@ -106,6 +109,9 @@ export interface ReviewSummary {
     weekRating: number | null;
     pages: number;
     books: number;
+    /** Sekunden aus dem Timer */
+    focusSeconds: number;
+    meditationSeconds: number;
   };
 }
 
@@ -219,6 +225,8 @@ export function reviewSummary(input: ReviewInput, range: DayRange, today: DayKey
       weekRating: averageWeekRating(input.journal, range),
       pages: pagesInRange(input.readingLogs, range),
       books: booksFinishedInRange(input.books, range),
+      focusSeconds: timerSecondsInRange(input.timerSessions, range, 'focus'),
+      meditationSeconds: timerSecondsInRange(input.timerSessions, range, 'meditation'),
     },
   };
 }

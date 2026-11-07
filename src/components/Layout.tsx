@@ -3,6 +3,7 @@ import { Link, Outlet } from 'react-router-dom';
 import { ensureSettings } from '../db/settings';
 import { getBackupReminder } from '../domain/backupReminder';
 import { useApplyTheme } from '../features/settings/theme';
+import { TimerAlarm } from '../features/self/TimerAlarm';
 import { useSettings } from '../features/settings/useSettings';
 import { SupplementReminder } from '../features/supplements/SupplementReminder';
 import { ActiveWorkoutBanner } from '../features/training/ActiveWorkoutBanner';
@@ -36,6 +37,7 @@ export function Layout() {
       )}
       <ActiveWorkoutBanner first={!reminder} />
       <RestTimerAlarm />
+      <TimerAlarm />
       <SupplementReminder />
       <ToastHost />
       <main>

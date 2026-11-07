@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { base64ToBytes, bytesToBase64 } from '../domain/photos';
 import { db } from './database';
 import { nowIso } from './repository';
 import {
@@ -20,6 +21,7 @@ import {
   NUTRITION_GOAL_DEFAULTS,
   nutrientsSchema,
   nutritionGoalsSchema,
+  photoInputSchema,
   planExerciseValuesSchema,
   readingPagesSchema,
   recipeSchema,
@@ -28,6 +30,9 @@ import {
   setValuesSchema,
   SUPPLEMENT_SETTING_DEFAULTS,
   supplementFieldsSchema,
+  activeTimerSchema,
+  TIMER_PRESET_DEFAULTS,
+  timerPresetsSchema,
   todoInputSchema,
   trackFieldsSchema,
   trackSummarySchema,
@@ -49,6 +54,8 @@ import {
   MEAL_TYPES,
   PLAN_SCHEDULES,
   QUICK_ACTIONS,
+  TIMER_KINDS,
+  type PhotoFile,
 } from './types';
 
 export const BACKUP_APP = 'fitnesstracker';
@@ -115,6 +122,11 @@ const settingsSchema = baseEntitySchema.extend({
   welcomeDismissed: z.boolean().default(true),
   // Seit DB-Version 25
   readingHabitId: z.string().nullable().default(null),
+  // Seit DB-Version 26
+  timerPresets: timerPresetsSchema.default(TIMER_PRESET_DEFAULTS),
+  activeTimer: activeTimerSchema.nullable().default(null),
+  focusHabitId: z.string().nullable().default(null),
+  meditationHabitId: z.string().nullable().default(null),
 });
 
 const catalogEntryFields = {
@@ -312,8 +324,32 @@ const bookNoteSchema = baseEntitySchema.extend({
   text: z.string().min(1),
   page: readingPagesSchema.nullable(),
 });
+// Seit DB-Version 26
+const timerSessionSchema = baseEntitySchema.extend({
+  kind: z.enum(TIMER_KINDS),
+  date: dayKeySchema,
+  startedAt: timestamp.nullable(),
+  durationSeconds: z.number().int().nonnegative(),
+  rounds: z.number().int().nonnegative().nullable(),
+  note: z.string(),
+  habitId: z.string().nullable(),
+  habitAmount: z.number().nonnegative(),
+});
+const progressPhotoSchema = baseEntitySchema.extend(photoInputSchema.shape).extend({
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  bytes: z.number().int().nonnegative(),
+});
+/** Bilddaten als Base64 (im Gerät als `ArrayBuffer`) */
+const photoFileSchema = baseEntitySchema.extend({
+  photoId: z.string().min(1),
+  variant: z.enum(['full', 'thumb']),
+  mimeType: z.string().min(1),
+  data: z.base64(),
+});
 
-// Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
+// Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar.
+// Fotos sind optional: Fehlen sie, bleiben beim Import die Fotos auf dem Gerät erhalten.
 export const backupSchema = z.object({
   app: z.literal(BACKUP_APP, { message: 'Keine Fitnesstracker-Sicherung' }),
   backupVersion: z
@@ -352,11 +388,17 @@ export const backupSchema = z.object({
     books: z.array(bookSchema).default([]),
     readingLogs: z.array(readingLogSchema).default([]),
     bookNotes: z.array(bookNoteSchema).default([]),
+    timerSessions: z.array(timerSessionSchema).default([]),
+    progressPhotos: z.array(progressPhotoSchema).optional(),
+    photoFiles: z.array(photoFileSchema).optional(),
   }),
 });
 
 export type Backup = z.infer<typeof backupSchema>;
 export type TableName = keyof Backup['tables'];
+
+/** Nur mit dem Schalter „Fotos einschließen“ in der Sicherung */
+const PHOTO_TABLES: readonly string[] = ['progressPhotos', 'photoFiles'] satisfies TableName[];
 
 export const TABLE_LABELS: Record<TableName, string> = {
   settings: 'Einstellungen',
@@ -387,12 +429,31 @@ export const TABLE_LABELS: Record<TableName, string> = {
   books: 'Bücher',
   readingLogs: 'Gelesene Seiten',
   bookNotes: 'Notizen zu Büchern',
+  timerSessions: 'Fokus- und Meditations-Sitzungen',
+  progressPhotos: 'Fortschrittsfotos',
+  photoFiles: 'Bilddaten der Fotos',
 };
 
-export async function createBackup(): Promise<Backup> {
-  return db.transaction('r', db.tables, async () => {
+export interface BackupOptions {
+  /** Fortschrittsfotos samt Bilddaten (macht die Datei groß) */
+  includePhotos?: boolean;
+}
+
+export async function createBackup({ includePhotos = false }: BackupOptions = {}): Promise<Backup> {
+  const tables = db.tables.filter((table) => includePhotos || !PHOTO_TABLES.includes(table.name));
+  return db.transaction('r', tables, async () => {
     const entries = await Promise.all(
-      db.tables.map(async (table) => [table.name, await table.toArray()] as const),
+      tables.map(async (table) => {
+        const rows = await table.toArray();
+        if (table.name !== 'photoFiles') return [table.name, rows] as const;
+        return [
+          table.name,
+          (rows as PhotoFile[]).map((file) => ({
+            ...file,
+            data: bytesToBase64(new Uint8Array(file.data)),
+          })),
+        ] as const;
+      }),
     );
     return {
       app: BACKUP_APP,
@@ -432,20 +493,43 @@ export function parseBackupText(text: string): ParseResult {
   return parseBackup(data);
 }
 
-export function countRows(backup: Backup): Record<TableName, number> {
-  const counts = {} as Record<TableName, number>;
+/** Zeilen je Tabelle; fehlende (Fotos nicht enthalten) fehlen auch hier */
+export function countRows(backup: Backup): Partial<Record<TableName, number>> {
+  const counts: Partial<Record<TableName, number>> = {};
   for (const name of Object.keys(backup.tables) as TableName[]) {
-    counts[name] = backup.tables[name].length;
+    const rows = backup.tables[name];
+    if (rows) counts[name] = rows.length;
   }
   return counts;
 }
 
-/** Ersetzt **alle** Daten durch den Inhalt der Sicherung und bringt mitgelieferte Daten auf den aktuellen Stand */
+/** Sicherung enthält Fotos (sonst bleiben die Fotos auf dem Gerät beim Import erhalten) */
+export function backupHasPhotos(backup: Backup): boolean {
+  return backup.tables.progressPhotos !== undefined;
+}
+
+/**
+ * Ersetzt **alle** Daten durch den Inhalt der Sicherung (Fotos nur, wenn sie enthalten sind) und
+ * bringt mitgelieferte Daten auf den aktuellen Stand
+ */
 export async function restoreBackup(backup: Backup): Promise<void> {
+  const replaced = backupHasPhotos(backup)
+    ? db.tables
+    : db.tables.filter((table) => !PHOTO_TABLES.includes(table.name));
   await db.transaction('rw', db.tables, async () => {
-    await Promise.all(db.tables.map((table) => table.clear()));
+    await Promise.all(replaced.map((table) => table.clear()));
     for (const [name, rows] of Object.entries(backup.tables)) {
-      await db.table(name).bulkAdd(rows);
+      if (!rows) continue;
+      if (name === 'photoFiles') {
+        await db.photoFiles.bulkAdd(
+          backup.tables.photoFiles!.map((file) => ({
+            ...file,
+            data: base64ToBytes(file.data).buffer,
+          })),
+        );
+      } else {
+        await db.table(name).bulkAdd(rows);
+      }
     }
     // Die wiederhergestellten Daten entsprechen genau dem Stand der Sicherung
     const settings = await db.settings.get(SETTINGS_ID);

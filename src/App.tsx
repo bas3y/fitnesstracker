@@ -87,6 +87,13 @@ const JournalHistoryPage = lazyPage(
   'JournalHistoryPage',
 );
 const JournalPage = lazyPage(() => import('./features/self/JournalPage'), 'JournalPage');
+const PhotoComparePage = lazyPage(
+  () => import('./features/self/PhotoComparePage'),
+  'PhotoComparePage',
+);
+const PhotoPage = lazyPage(() => import('./features/self/PhotoPage'), 'PhotoPage');
+const PhotosPage = lazyPage(() => import('./features/self/PhotosPage'), 'PhotosPage');
+const TimerPage = lazyPage(() => import('./features/self/TimerPage'), 'TimerPage');
 const ReadingPage = lazyPage(() => import('./features/self/ReadingPage'), 'ReadingPage');
 const ReflectionPage = lazyPage(() => import('./features/self/ReflectionPage'), 'ReflectionPage');
 const PlanDayPage = lazyPage(() => import('./features/plans/PlanDayPage'), 'PlanDayPage');
@@ -205,6 +212,10 @@ export function App() {
           <Route path="daily/reading/new" element={<BookCreatePage />} />
           <Route path="daily/reading/:id" element={<BookPage />} />
           <Route path="daily/reading/:id/edit" element={<BookEditPage />} />
+          <Route path="daily/timer" element={<TimerPage />} />
+          <Route path="daily/photos" element={<PhotosPage />} />
+          <Route path="daily/photos/compare" element={<PhotoComparePage />} />
+          <Route path="daily/photos/:id" element={<PhotoPage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="stats/goals" element={<GoalsPage />} />
           <Route path="stats/goals/new" element={<GoalCreatePage />} />

@@ -1,7 +1,14 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import type { DayKey } from '../../db/types';
+import { TIMER_KINDS, type DayKey } from '../../db/types';
+import { formatDayLabel } from '../../domain/daily';
 import { journalDate, journalDayStatus, reflectionProgress } from '../../domain/journal';
+import { TIMER_KIND_LABELS, TIMER_PHASE_LABELS } from '../../domain/labels';
+import { sortPhotos } from '../../domain/photos';
+import { formatTimerDuration, timerSecondsOn, timerState } from '../../domain/timer';
+import { formatClock } from '../../domain/workout';
+import { useSettings } from '../settings/useSettings';
+import { useNow } from '../training/useWorkouts';
 import {
   bookProgress,
   formatBookProgress,
@@ -10,8 +17,15 @@ import {
   pagesOn,
 } from '../../domain/reading';
 import { withDate } from '../daily/paths';
-import { JOURNAL_PATH, READING_PATH, REFLECTION_PATH } from './paths';
-import { useBooks, useJournalEntry, useJournalPrompts, useReadingLogs } from './useSelf';
+import { JOURNAL_PATH, PHOTOS_PATH, READING_PATH, REFLECTION_PATH, TIMER_PATH } from './paths';
+import {
+  useBooks,
+  useJournalEntry,
+  useJournalPrompts,
+  useProgressPhotos,
+  useReadingLogs,
+  useTimerSessions,
+} from './useSelf';
 
 const MUTED = 'block text-sm text-slate-500 dark:text-slate-400';
 
@@ -29,6 +43,8 @@ export function SelfSection({ date, today }: { date: DayKey; today: DayKey }) {
         <JournalRow date={date} today={today} />
         <ReflectionRow date={date} today={today} />
         <ReadingRow date={date} today={today} />
+        <TimerRow date={date} today={today} />
+        <PhotosRow date={date} today={today} />
       </ul>
     </section>
   );
@@ -130,6 +146,53 @@ function ReadingRow({ date, today }: { date: DayKey; today: DayKey }) {
           {line}
         </span>
       ))}
+    </Row>
+  );
+}
+
+function TimerRow({ date, today }: { date: DayKey; today: DayKey }) {
+  const sessions = useTimerSessions();
+  const timer = useSettings()?.activeTimer ?? null;
+  const now = useNow(timer !== null && timer.pausedAt === null, 1000);
+  let text: string | null = null;
+  if (timer) {
+    const state = timerState(timer, now);
+    text = `Läuft: ${TIMER_PHASE_LABELS[state.phase.type]} ${formatClock(state.phaseRemaining)}${
+      state.paused ? ' (angehalten)' : ''
+    }`;
+  } else if (sessions) {
+    const parts = TIMER_KINDS.flatMap((kind) => {
+      const seconds = timerSecondsOn(sessions, date, kind);
+      return seconds > 0 ? [`${TIMER_KIND_LABELS[kind].name} ${formatTimerDuration(seconds)}`] : [];
+    });
+    text =
+      parts.length > 0
+        ? `${date === today ? 'Heute' : 'An dem Tag'}: ${parts.join(' · ')}`
+        : 'Pomodoro und Meditation mit Gong';
+  }
+  return (
+    <Row to={withDate(TIMER_PATH, date, today)} icon="⏱️" name="Fokus & Meditation">
+      {text && <span className={`${MUTED} tabular-nums`}>{text}</span>}
+    </Row>
+  );
+}
+
+function PhotosRow({ date, today }: { date: DayKey; today: DayKey }) {
+  const photos = useProgressPhotos();
+  let text: string | null = null;
+  if (photos) {
+    const onDay = photos.filter((photo) => photo.date === date).length;
+    const latest = sortPhotos(photos)[0];
+    text =
+      onDay > 0
+        ? `${onDay === 1 ? '1 Foto' : `${onDay} Fotos`} ${date === today ? 'heute' : 'an dem Tag'}`
+        : latest
+          ? `${photos.length === 1 ? '1 Foto' : `${photos.length} Fotos`} · zuletzt ${formatDayLabel(latest.date, today)}`
+          : 'Vorher/Nachher vergleichen';
+  }
+  return (
+    <Row to={withDate(PHOTOS_PATH, date, today)} icon="📸" name="Fortschrittsfotos">
+      {text && <span className={MUTED}>{text}</span>}
     </Row>
   );
 }

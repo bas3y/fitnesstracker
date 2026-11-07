@@ -1,7 +1,11 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
 import { primaryButton, secondaryButton } from '../../components/buttons';
 import { Card } from '../../components/Page';
+import { listProgressPhotos } from '../../db/photos';
+import { formatBytes } from '../../domain/photos';
 import {
+  backupHasPhotos,
   backupToFile,
   countRows,
   createBackup,
@@ -26,12 +30,18 @@ export function BackupSection({ settings }: { settings: Settings }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [pending, setPending] = useState<Backup | null>(null);
+  const [includePhotos, setIncludePhotos] = useState(false);
+  const photos = useLiveQuery(async () => {
+    const list = await listProgressPhotos();
+    return { count: list.length, bytes: list.reduce((sum, photo) => sum + photo.bytes, 0) };
+  }, []);
 
   const handleExport = async () => {
     setBusy(true);
     setStatus(null);
     try {
-      const result = await shareOrDownload(backupToFile(await createBackup()));
+      const backup = await createBackup({ includePhotos: includePhotos && !!photos?.count });
+      const result = await shareOrDownload(backupToFile(backup));
       if (result !== 'cancelled') {
         await updateSettings({ lastBackupAt: nowIso() });
         setStatus({ kind: 'success', text: 'Sicherung wurde erstellt' });
@@ -79,6 +89,24 @@ export function BackupSection({ settings }: { settings: Settings }) {
       </p>
 
       <div className="flex flex-col gap-2">
+        {photos && photos.count > 0 && (
+          <div className="mb-1">
+            <label className="flex min-h-11 items-center gap-3">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-emerald-600"
+                checked={includePhotos}
+                onChange={(event) => setIncludePhotos(event.target.checked)}
+              />
+              Fortschrittsfotos einschließen
+            </label>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {photos.count === 1 ? '1 Foto' : `${photos.count} Fotos`}, die Datei wird etwa{' '}
+              {formatBytes(Math.round(photos.bytes * 1.37))} größer. Ohne Haken bleiben beim Import
+              einer Sicherung die Fotos auf dem Gerät erhalten.
+            </p>
+          </div>
+        )}
         <button type="button" className={primaryButton} disabled={busy} onClick={handleExport}>
           Backup exportieren
         </button>
@@ -109,7 +137,9 @@ export function BackupSection({ settings }: { settings: Settings }) {
             ))}
           </ul>
           <p className="mb-3 text-sm font-medium text-amber-800 dark:text-amber-300">
-            Ersetzt alle Daten auf diesem Gerät.
+            {backupHasPhotos(pending)
+              ? 'Ersetzt alle Daten auf diesem Gerät, auch die Fotos.'
+              : 'Ersetzt alle Daten auf diesem Gerät. Ohne Fotos: Die Fotos auf dem Gerät bleiben erhalten.'}
           </p>
           <div className="flex gap-2">
             <button

@@ -81,6 +81,7 @@ const EMPTY: GoalData = {
   entries: [],
   reading: [],
   finishedBooks: [],
+  timerSessions: [],
 };
 
 const habitOf = (values: Partial<GoalHabit> & Pick<GoalHabit, 'id' | 'kind'>): GoalHabit => ({
@@ -770,6 +771,36 @@ describe('Lesen als Menge', () => {
       '12 Bücher pro Jahr',
     );
     expect(formatGoalValue(total({ totalMetric: 'books' }), 1, UNITS)).toBe('1 Buch');
+  });
+});
+
+describe('Timer-Ziele', () => {
+  const data: GoalData = {
+    ...EMPTY,
+    timerSessions: [
+      { kind: 'focus', date: '2026-11-02', durationSeconds: 3000 },
+      { kind: 'focus', date: '2026-10-30', durationSeconds: 1500 },
+      { kind: 'meditation', date: '2026-11-03', durationSeconds: 600 },
+    ],
+  };
+  const total = (values: Partial<GoalInput>) =>
+    goal({ kind: 'total', period: 'month', target: 3600, ...values });
+
+  it('summiert Fokus- bzw. Meditationszeit im Zeitraum', () => {
+    expect(goalProgress(total({ totalMetric: 'focusTime' }), data, TODAY).current).toBe(3000);
+    expect(goalProgress(total({ totalMetric: 'meditationTime' }), data, TODAY)).toMatchObject({
+      current: 600,
+    });
+  });
+
+  it('benennt Timer-Ziele in Minuten', () => {
+    expect(goalTitle(total({ totalMetric: 'focusTime', target: 600 * 60 }), {}, UNITS)).toBe(
+      '600 min Fokus pro Monat',
+    );
+    expect(
+      goalTitle(total({ totalMetric: 'meditationTime', period: 'week', target: 3600 }), {}, UNITS),
+    ).toBe('60 min Meditation pro Woche');
+    expect(formatGoalValue(total({ totalMetric: 'focusTime' }), 90_000, UNITS)).toBe('1.500 min');
   });
 });
 

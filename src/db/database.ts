@@ -4,6 +4,7 @@ import {
   DAILY_GOAL_DEFAULTS,
   NUTRITION_GOAL_DEFAULTS,
   SUPPLEMENT_SETTING_DEFAULTS,
+  TIMER_PRESET_DEFAULTS,
 } from './schemas';
 import {
   DEFAULT_DASHBOARD_WIDGETS,
@@ -28,12 +29,15 @@ import {
   type MealEntry,
   type Plan,
   type PlanDay,
+  type PhotoFile,
   type PlanExercise,
+  type ProgressPhoto,
   type ReadingLog,
   type SavedMeal,
   type Settings,
   type Supplement,
   type SupplementIntake,
+  type TimerSession,
   type Todo,
   type TrackSummary,
   type Workout,
@@ -82,6 +86,9 @@ export class AppDatabase extends Dexie {
   books!: Table<Book, string>;
   readingLogs!: Table<ReadingLog, string>;
   bookNotes!: Table<BookNote, string>;
+  timerSessions!: Table<TimerSession, string>;
+  progressPhotos!: Table<ProgressPhoto, string>;
+  photoFiles!: Table<PhotoFile, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -468,6 +475,24 @@ export class AppDatabase extends Dexie {
           .toCollection()
           .modify((settings) => {
             settings.readingHabitId ??= null;
+          }),
+      );
+    // Fokus-/Meditations-Timer und Fortschrittsfotos
+    this.version(26)
+      .stores({
+        timerSessions: 'id, kind, date, updatedAt',
+        progressPhotos: 'id, date, updatedAt',
+        photoFiles: 'id, [photoId+variant], updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.timerPresets ??= { ...TIMER_PRESET_DEFAULTS };
+            settings.activeTimer ??= null;
+            settings.focusHabitId ??= null;
+            settings.meditationHabitId ??= null;
           }),
       );
   }

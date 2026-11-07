@@ -856,6 +856,25 @@ function TotalTarget({
           onChange={(target) => onChange(target ?? 0)}
         />
       );
+    case 'focusTime':
+    case 'meditationTime':
+      return (
+        <Stepper
+          label="Ziel"
+          value={value === null ? null : Math.round(value / 60)}
+          unit="min"
+          step={input.period === 'week' ? 30 : 60}
+          min={1}
+          max={1_000_000}
+          decimals={0}
+          startValue={
+            (input.totalMetric === 'focusTime' ? 120 : 30) *
+            (input.period === 'week' ? 1 : input.period === 'year' ? 50 : 4)
+          }
+          allowEmpty
+          onChange={(minutes) => onChange(minutes === null ? 0 : minutes * 60)}
+        />
+      );
     case 'stepsGoalDays':
     case 'waterGoalDays':
     case 'sleepGoalDays':
@@ -909,6 +928,14 @@ function DailyGoalHint({ input, settings }: { input: GoalInput; settings: Settin
   }
   if (input.totalMetric === 'books') {
     return <p className={HINT}>Zählt Bücher, die im Zeitraum als gelesen markiert wurden.</p>;
+  }
+  if (input.totalMetric === 'focusTime' || input.totalMetric === 'meditationTime') {
+    return (
+      <p className={HINT}>
+        Summe der {input.totalMetric === 'focusTime' ? 'Fokus-Zeit' : 'Meditationszeit'} aus dem
+        Timer (Alltag › Fokus & Meditation), ohne Pausen.
+      </p>
+    );
   }
   if (!goal) return null;
   return (

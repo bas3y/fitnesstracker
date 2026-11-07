@@ -873,7 +873,61 @@ describe('AppDatabase-Migration', () => {
     expect(await v25.readingLogs.where('bookId').equals('x').count()).toBe(0);
     expect(await v25.bookNotes.count()).toBe(0);
     expect(await v25.journalPrompts.count()).toBe(0);
-    expect(v25.verno).toBe(25);
+    expect(v25.verno).toBeGreaterThanOrEqual(25);
     await v25.delete();
+  });
+
+  it('Version 26 ergänzt Timer und Fortschrittsfotos, Einstellungen und Bücher bleiben', async () => {
+    const name = 'migration-test-v26';
+    const v25 = new Dexie(name);
+    v25.version(25).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, barcode, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+      goals: 'id, updatedAt',
+      goalEntries: 'id, goalId, updatedAt',
+      journalPrompts: 'id, updatedAt',
+      journalEntries: 'id, [kind+date], updatedAt',
+      books: 'id, updatedAt',
+      readingLogs: 'id, bookId, date, updatedAt',
+      bookNotes: 'id, bookId, updatedAt',
+    });
+    await v25.table('settings').add({ id: 'app-settings', name: 'Niklas', readingHabitId: 'h1' });
+    await v25.table('books').add({ id: 'b1', title: 'Dune' });
+    v25.close();
+
+    const v26 = new AppDatabase(name);
+    expect(await v26.settings.get('app-settings')).toMatchObject({
+      name: 'Niklas',
+      readingHabitId: 'h1',
+      timerPresets: { focusMinutes: 25, breakMinutes: 5, rounds: 4, meditationMinutes: 10 },
+      activeTimer: null,
+      focusHabitId: null,
+      meditationHabitId: null,
+    });
+    expect(await v26.books.get('b1')).toMatchObject({ title: 'Dune' });
+    expect(await v26.timerSessions.where('date').equals('2026-11-07').count()).toBe(0);
+    expect(await v26.progressPhotos.where('date').equals('2026-11-07').count()).toBe(0);
+    expect(await v26.photoFiles.where('[photoId+variant]').equals(['p', 'full']).count()).toBe(0);
+    expect(v26.verno).toBe(26);
+    await v26.delete();
   });
 });

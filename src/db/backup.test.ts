@@ -1,5 +1,6 @@
 import {
   backupFileName,
+  backupHasPhotos,
   countRows,
   createBackup,
   parseBackup,
@@ -15,6 +16,13 @@ import { createRecipe, createUserFood, setFoodFavorite } from './foods';
 import { addMealEntry, listMealEntries, listSavedMeals, saveMeal } from './nutrition';
 import { addHabitAmount, createHabit, loadHabit, pauseHabit, setHabitChecked } from './habits';
 import { addJournalPrompt, getJournalEntry, listJournalPrompts, saveJournalEntry } from './journal';
+import {
+  addProgressPhoto,
+  listProgressPhotos,
+  loadPhotoFile,
+  loadProgressPhoto,
+  type PhotoImage,
+} from './photos';
 import { addPlanExercise, createPlan, deletePlan, loadPlanDetail } from './plans';
 import {
   addBookNote,
@@ -35,8 +43,10 @@ import {
   emptyBookInput,
   emptyGoalInput,
   NUTRITION_GOAL_DEFAULTS,
+  TIMER_PRESET_DEFAULTS,
   type EnduranceSessionInput,
 } from './schemas';
+import { addTimerSession, listTimerSessions, setTimerHabit, startTimer } from './timer';
 import { createSupplement, loadSupplement, setSupplementTaken } from './supplements';
 import { applySeed, SEED_VERSION } from './seed';
 import { getSettings, updateSettings } from './settings';
@@ -91,7 +101,16 @@ describe('createBackup', () => {
     expect(backup.app).toBe('fitnesstracker');
     expect(backup.backupVersion).toBe(1);
     expect(backup.dbVersion).toBe(db.verno);
-    expect(Object.keys(backup.tables)).toEqual(db.tables.map((t) => t.name));
+    // Fotos nur auf Wunsch
+    expect(Object.keys(backup.tables)).toEqual(
+      db.tables
+        .map((t) => t.name)
+        .filter((name) => !['progressPhotos', 'photoFiles'].includes(name)),
+    );
+    expect(Object.keys(await createBackup({ includePhotos: true }))).toEqual(Object.keys(backup));
+    expect(Object.keys((await createBackup({ includePhotos: true })).tables)).toEqual(
+      db.tables.map((t) => t.name),
+    );
     expect(backup.tables.settings[0]?.name).toBe('Alex');
   });
 });
@@ -130,6 +149,7 @@ describe('parseBackup', () => {
         books: 0,
         readingLogs: 0,
         bookNotes: 0,
+        timerSessions: 0,
       });
   });
 
@@ -715,6 +735,97 @@ describe('Persönliche Entwicklung im Backup', () => {
     expect(result.backup.tables.settings[0]?.readingHabitId).toBeNull();
     expect(result.backup.tables.books).toEqual([]);
     expect(result.backup.tables.journalEntries).toEqual([]);
+  });
+});
+
+describe('Timer und Fortschrittsfotos', () => {
+  const image = (): PhotoImage => ({
+    mimeType: 'image/jpeg',
+    width: 3,
+    height: 4,
+    full: new Uint8Array([255, 216, 255, 1, 2]).buffer,
+    thumb: new Uint8Array([7]).buffer,
+  });
+
+  it('stellt Sitzungen, Timer-Einstellungen und Fotos samt Bilddaten wieder her', async () => {
+    const habit = await createHabit({ ...EMPTY_HABIT_INPUT, name: 'Meditieren' });
+    await setTimerHabit('meditation', habit.id);
+    await addTimerSession({
+      kind: 'meditation',
+      date: '2026-11-07',
+      durationSeconds: 600,
+      note: 'gut',
+    });
+    await startTimer('focus', { ...TIMER_PRESET_DEFAULTS, focusMinutes: 50 });
+    const photo = await addProgressPhoto({ date: '2026-11-07', pose: 'front', note: '' }, image());
+
+    const data = JSON.parse(JSON.stringify(await createBackup({ includePhotos: true })));
+    await resetDatabase();
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(countRows(result.backup)).toMatchObject({
+      timerSessions: 1,
+      progressPhotos: 1,
+      photoFiles: 2,
+    });
+    expect(backupHasPhotos(result.backup)).toBe(true);
+    await restoreBackup(result.backup);
+
+    expect(await listTimerSessions()).toMatchObject([{ note: 'gut', habitId: habit.id }]);
+    const settings = await getSettings();
+    expect(settings).toMatchObject({
+      meditationHabitId: habit.id,
+      timerPresets: { focusMinutes: 50 },
+      activeTimer: { kind: 'focus' },
+    });
+    expect(await loadProgressPhoto(photo.id)).toMatchObject({ pose: 'front', bytes: 6 });
+    const file = await loadPhotoFile(photo.id, 'full');
+    expect(new Uint8Array(file!.data)).toEqual(new Uint8Array([255, 216, 255, 1, 2]));
+  });
+
+  it('lässt Fotos auf dem Gerät, wenn die Sicherung keine enthält', async () => {
+    const data = JSON.parse(JSON.stringify(await createBackup()));
+    const photo = await addProgressPhoto({ date: '2026-11-07', pose: 'side', note: '' }, image());
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(backupHasPhotos(result.backup)).toBe(false);
+    expect(countRows(result.backup)).not.toHaveProperty('progressPhotos');
+    await restoreBackup(result.backup);
+    expect(await loadProgressPhoto(photo.id)).not.toBeNull();
+    expect(await loadPhotoFile(photo.id, 'thumb')).not.toBeNull();
+  });
+
+  it('ersetzt Fotos, wenn die Sicherung welche enthält, und lehnt kaputte Bilddaten ab', async () => {
+    const data = JSON.parse(JSON.stringify(await createBackup({ includePhotos: true })));
+    await addProgressPhoto({ date: '2026-11-07', pose: 'side', note: '' }, image());
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    await restoreBackup(result.backup);
+    expect(await listProgressPhotos()).toHaveLength(0);
+    expect(await db.photoFiles.count()).toBe(0);
+
+    await addProgressPhoto({ date: '2026-11-07', pose: 'side', note: '' }, image());
+    const broken = JSON.parse(JSON.stringify(await createBackup({ includePhotos: true })));
+    broken.tables.photoFiles[0].data = 'kein base64!';
+    expect(parseBackup(broken)).toMatchObject({ ok: false });
+  });
+
+  it('ergänzt Sicherungen aus DB-Version 25', async () => {
+    const data = await validBackup();
+    data.dbVersion = 25;
+    for (const key of ['timerPresets', 'activeTimer', 'focusHabitId', 'meditationHabitId']) {
+      delete data.tables.settings[0][key];
+    }
+    delete data.tables.timerSessions;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.settings[0]).toMatchObject({
+      timerPresets: TIMER_PRESET_DEFAULTS,
+      activeTimer: null,
+      focusHabitId: null,
+      meditationHabitId: null,
+    });
+    expect(result.backup.tables.timerSessions).toEqual([]);
   });
 });
 

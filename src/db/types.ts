@@ -63,6 +63,14 @@ export interface Settings extends BaseEntity {
   restingHeartRate: number | null;
   /** Zähl-Gewohnheit, die gelesene Seiten automatisch mitzählt (seit DB-Version 25) */
   readingHabitId: string | null;
+  // Seit DB-Version 26
+  /** Zuletzt gewählte Einstellungen des Fokus-/Meditations-Timers */
+  timerPresets: TimerPresets;
+  /** Laufender Timer (höchstens einer); `null` = keiner */
+  activeTimer: ActiveTimer | null;
+  /** Gewohnheit (Zählen: Minuten, Abhaken: erledigt), die Fokus-Sitzungen mitzählt */
+  focusHabitId: string | null;
+  meditationHabitId: string | null;
 }
 
 export const DASHBOARD_WIDGETS = [
@@ -112,6 +120,8 @@ export const QUICK_ACTIONS = [
   'endurance',
   'journal',
   'reading',
+  'timer',
+  'photo',
 ] as const;
 export type QuickAction = (typeof QUICK_ACTIONS)[number];
 export const DEFAULT_QUICK_ACTIONS: readonly QuickAction[] = [
@@ -708,11 +718,14 @@ export const TOTAL_GOAL_METRICS = [
   'sleepGoalDays',
   'pages',
   'books',
+  'focusTime',
+  'meditationTime',
 ] as const;
 /**
  * `workouts` = Krafttrainings, `trainings` = Krafttrainings + Ausdauer-Einheiten,
  * `steps` = Schritte gesamt, `…GoalDays` = Tage mit erreichtem Tagesziel (aktuelle Einstellungen),
- * `pages` = gelesene Seiten, `books` = beendete Bücher (seit DB-Version 25)
+ * `pages` = gelesene Seiten, `books` = beendete Bücher (seit DB-Version 25),
+ * `focusTime`/`meditationTime` = Timer-Sitzungen in Sekunden (seit DB-Version 26)
  */
 export type TotalGoalMetric = (typeof TOTAL_GOAL_METRICS)[number];
 
@@ -841,6 +854,85 @@ export interface BookNote extends BaseEntity {
   bookId: string;
   text: string;
   page: number | null;
+}
+
+export const TIMER_KINDS = ['focus', 'meditation'] as const;
+export type TimerKind = (typeof TIMER_KINDS)[number];
+
+export interface TimerPresets {
+  focusMinutes: number;
+  breakMinutes: number;
+  /** Fokus-Runden je Sitzung (zwischen zwei Runden eine Pause) */
+  rounds: number;
+  meditationMinutes: number;
+}
+
+export type TimerPhaseType = 'focus' | 'break' | 'meditation';
+
+export interface TimerPhase {
+  type: TimerPhaseType;
+  seconds: number;
+}
+
+/**
+ * Laufender Timer, nur über Zeitstempel (läuft nach dem Neuladen weiter):
+ * vergangene Zeit = (`pausedAt` ?? jetzt) − `startedAt` − `pausedSeconds` + `skippedSeconds`
+ */
+export interface ActiveTimer {
+  kind: TimerKind;
+  startedAt: Timestamp;
+  phases: TimerPhase[];
+  /** Gerade angehalten seit */
+  pausedAt: Timestamp | null;
+  /** Summe abgeschlossener Unterbrechungen */
+  pausedSeconds: number;
+  /** Übersprungene Pausenzeit (zählt nie als Fokus) */
+  skippedSeconds: number;
+}
+
+/** Fokus- bzw. Meditations-Sitzung (seit DB-Version 26) */
+export interface TimerSession extends BaseEntity {
+  kind: TimerKind;
+  /** Tag des Beginns */
+  date: DayKey;
+  /** `null` = nachgetragen */
+  startedAt: Timestamp | null;
+  /** Nur Fokus- bzw. Meditationszeit, ohne Pausen */
+  durationSeconds: number;
+  /** Fokus: abgeschlossene Runden; sonst `null` */
+  rounds: number | null;
+  note: string;
+  /** Gewohnheit, bei der die Sitzung mitgezählt wurde */
+  habitId: string | null;
+  /** Dort eingetragene Menge (Minuten bzw. 1 beim Abhaken), wird beim Löschen abgezogen */
+  habitAmount: number;
+}
+
+export const PHOTO_POSES = ['front', 'side', 'back', 'other'] as const;
+export type PhotoPose = (typeof PHOTO_POSES)[number];
+
+/** Fortschrittsfoto (seit DB-Version 26); die Bilddaten liegen in `photoFiles` */
+export interface ProgressPhoto extends BaseEntity {
+  date: DayKey;
+  pose: PhotoPose;
+  note: string;
+  width: number;
+  height: number;
+  /** Größe von Bild und Vorschau zusammen */
+  bytes: number;
+}
+
+export type PhotoVariant = 'full' | 'thumb';
+
+/**
+ * Bilddaten eines Fotos, je Größe eine Zeile. Getrennt vom Foto, damit Listen keine Bilder und
+ * das Raster nur Vorschauen laden; wird beim Löschen des Fotos wirklich entfernt (Speicherplatz).
+ */
+export interface PhotoFile extends BaseEntity {
+  photoId: string;
+  variant: PhotoVariant;
+  mimeType: string;
+  data: ArrayBuffer;
 }
 
 /** Ausrüstung (z. B. Laufschuhe) mit Kilometerstand */

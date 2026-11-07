@@ -146,6 +146,12 @@ const input: ReviewInput = {
     { status: 'abandoned', finishedOn: '2026-11-04' },
     { status: 'reading', finishedOn: null },
   ],
+  timerSessions: [
+    { kind: 'focus', date: '2026-11-02', durationSeconds: 3000 },
+    { kind: 'focus', date: '2026-11-04', durationSeconds: 1500 },
+    { kind: 'meditation', date: '2026-11-04', durationSeconds: 600 },
+    { kind: 'meditation', date: '2026-10-30', durationSeconds: 900 },
+  ],
 };
 
 describe('reviewSummary', () => {
@@ -208,6 +214,8 @@ describe('reviewSummary', () => {
       weekRating: 4,
       pages: 40,
       books: 1,
+      focusSeconds: 4500,
+      meditationSeconds: 600,
     });
     expect(reviewSummary(input, OCTOBER, TODAY).growth).toEqual({
       journalDays: 1,
@@ -215,6 +223,8 @@ describe('reviewSummary', () => {
       weekRating: 2,
       pages: 30,
       books: 1,
+      focusSeconds: 0,
+      meditationSeconds: 900,
     });
   });
 

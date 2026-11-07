@@ -18,15 +18,18 @@ import {
   HABIT_GROUPS,
   HABIT_KINDS,
   MUSCLE_GROUPS,
+  PHOTO_POSES,
   SUPPLEMENT_PERIODS,
   SUPPLEMENT_SCHEDULES,
   SUPPLEMENT_TIMINGS,
   SWIM_STROKES,
+  TIMER_KINDS,
   TODO_PRIORITIES,
   TRAINING_KINDS,
   type DayKey,
   type EnduranceSport,
   type NutritionGoals,
+  type TimerPresets,
 } from './types';
 
 const nutrient = z.number().nonnegative();
@@ -899,6 +902,69 @@ export const bookNoteInputSchema = z.object({
 });
 
 export type BookNoteInput = z.input<typeof bookNoteInputSchema>;
+
+// ---------- Timer ----------
+
+export const TIMER_PRESET_DEFAULTS: TimerPresets = {
+  focusMinutes: 25,
+  breakMinutes: 5,
+  rounds: 4,
+  meditationMinutes: 10,
+};
+
+export const timerPresetsSchema = z.object({
+  focusMinutes: z.number().int().min(1).max(180),
+  breakMinutes: z.number().int().min(1).max(60),
+  rounds: z.number().int().min(1).max(12),
+  meditationMinutes: z.number().int().min(1).max(180),
+});
+
+export const activeTimerSchema = z.object({
+  kind: z.enum(TIMER_KINDS),
+  startedAt: z.iso.datetime(),
+  phases: z
+    .array(
+      z.object({
+        type: z.enum(['focus', 'break', 'meditation']),
+        seconds: z.number().int().positive(),
+      }),
+    )
+    .min(1),
+  pausedAt: z.iso.datetime().nullable(),
+  pausedSeconds: z.number().nonnegative(),
+  skippedSeconds: z.number().nonnegative(),
+});
+
+export const MAX_TIMER_NOTE = 2_000;
+
+export const timerNoteSchema = z
+  .string()
+  .trim()
+  .max(MAX_TIMER_NOTE, `Höchstens ${MAX_TIMER_NOTE} Zeichen`);
+
+/** Sitzung nachtragen */
+export const timerSessionInputSchema = z.object({
+  kind: z.enum(TIMER_KINDS),
+  date: dayKeySchema,
+  durationSeconds: z
+    .number()
+    .int()
+    .min(60, 'Mindestens 1 Minute')
+    .max(24 * 3600, 'Höchstens 24 Stunden'),
+  note: timerNoteSchema,
+});
+
+export type TimerSessionInput = z.input<typeof timerSessionInputSchema>;
+
+// ---------- Fortschrittsfotos ----------
+
+export const photoInputSchema = z.object({
+  date: dayKeySchema,
+  pose: z.enum(PHOTO_POSES),
+  note: z.string().trim().max(1_000, 'Höchstens 1000 Zeichen'),
+});
+
+export type PhotoInput = z.input<typeof photoInputSchema>;
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 

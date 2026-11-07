@@ -7,6 +7,7 @@ import { listJournalEntries } from './journal';
 import { listBooks, listReadingLogs } from './reading';
 import { getBodyWeightKg } from './records';
 import { loadStatsSessions } from './stats';
+import { listTimerSessions } from './timer';
 import type { DayKey } from './types';
 
 /** Alles für den Rückblick; Mahlzeiten nur von `from` bis `to` */
@@ -27,5 +28,17 @@ export async function loadReviewInput(from: DayKey, to: DayKey): Promise<ReviewI
       listReadingLogs(),
       listBooks(),
     ]);
-  return { strength, endurance, logs, habits, meals, bodyWeightKg, journal, readingLogs, books };
+  const timerSessions = await listTimerSessions();
+  return {
+    strength,
+    endurance,
+    logs,
+    habits,
+    meals,
+    bodyWeightKg,
+    journal,
+    readingLogs,
+    books,
+    timerSessions,
+  };
 }

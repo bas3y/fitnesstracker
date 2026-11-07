@@ -11,6 +11,7 @@ import type {
   HabitKind,
   Settings,
   StrengthGoalMetric,
+  TimerSession,
   WeightUnit,
 } from '../db/types';
 import type { DatedWeight } from './daily';
@@ -75,6 +76,8 @@ export interface GoalData {
   reading: readonly DatedValue[];
   /** Tage, an denen ein Buch beendet wurde (je Buch einer) */
   finishedBooks: readonly DayKey[];
+  /** Fokus- und Meditations-Sitzungen */
+  timerSessions: readonly Pick<TimerSession, 'kind' | 'date' | 'durationSeconds'>[];
 }
 
 export interface DatedValue {
@@ -321,6 +324,13 @@ function totalPoints(goal: Goal, data: GoalData): DatedValue[] {
       return [...data.reading];
     case 'books':
       return data.finishedBooks.map((date) => ({ date, value: 1 }));
+    case 'focusTime':
+    case 'meditationTime': {
+      const kind = goal.totalMetric === 'focusTime' ? 'focus' : 'meditation';
+      return data.timerSessions
+        .filter((session) => session.kind === kind)
+        .map((session) => ({ date: session.date, value: session.durationSeconds }));
+    }
     default:
       return dailyPoints(goal, data);
   }
@@ -676,6 +686,9 @@ export function formatGoalValue(
           return formatCount(value, 'Seite', 'Seiten');
         case 'books':
           return formatCount(value, 'Buch', 'Bücher');
+        case 'focusTime':
+        case 'meditationTime':
+          return `${Math.round(value / 60).toLocaleString('de-DE')} min`;
         default:
           return formatDays(value);
       }
@@ -756,7 +769,11 @@ export function goalTitle(goal: Goal, subject: GoalSubject, units: GoalUnits): s
             ? `${value}${sport}`
             : daily
               ? `${value} mit ${daily}`
-              : value;
+              : goal.totalMetric === 'focusTime'
+                ? `${value} Fokus`
+                : goal.totalMetric === 'meditationTime'
+                  ? `${value} Meditation`
+                  : value;
       return `${what} ${periodSuffix(goal)}`;
     }
   }

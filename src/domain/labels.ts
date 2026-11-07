@@ -12,8 +12,11 @@ import type {
   TotalGoalMetric,
   MealType,
   MuscleGroup,
+  PhotoPose,
   QuickAction,
   SwimStroke,
+  TimerKind,
+  TimerPhaseType,
 } from '../db/types';
 
 export const DAILY_IMPORT_FIELD_LABELS: Record<DailyImportField, string> = {
@@ -90,6 +93,8 @@ export const TOTAL_GOAL_METRIC_LABELS: Record<TotalGoalMetric, string> = {
   sleepGoalDays: 'Tage mit erreichtem Schlafziel',
   pages: 'Gelesene Seiten',
   books: 'Gelesene Bücher',
+  focusTime: 'Fokus-Minuten',
+  meditationTime: 'Meditationsminuten',
 };
 
 export const GOAL_PERIOD_LABELS: Record<GoalPeriod, string> = {
@@ -126,6 +131,26 @@ export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: stri
   endurance: { name: 'Ausdauer', icon: '🏃' },
   journal: { name: 'Journal', icon: '📓' },
   reading: { name: 'Lesen', icon: '📚' },
+  timer: { name: 'Timer', icon: '⏱️' },
+  photo: { name: 'Foto', icon: '📸' },
+};
+
+export const TIMER_KIND_LABELS: Record<TimerKind, { name: string; icon: string }> = {
+  focus: { name: 'Fokus', icon: '🎯' },
+  meditation: { name: 'Meditation', icon: '🧘' },
+};
+
+export const TIMER_PHASE_LABELS: Record<TimerPhaseType, string> = {
+  focus: 'Fokus',
+  break: 'Pause',
+  meditation: 'Meditation',
+};
+
+export const PHOTO_POSE_LABELS: Record<PhotoPose, string> = {
+  front: 'Vorne',
+  side: 'Seite',
+  back: 'Hinten',
+  other: 'Sonstige',
 };
 
 export const BODY_MEASURE_LABELS: Record<BodyMeasure, string> = {

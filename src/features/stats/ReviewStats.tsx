@@ -453,7 +453,7 @@ function HabitsCard({ current, previous }: { current: ReviewSummary; previous: R
   );
 }
 
-/** Journal, Wochenreflexion, Lesen */
+/** Journal, Wochenreflexion, Lesen, Timer */
 function GrowthCard({ current, previous }: { current: ReviewSummary; previous: ReviewSummary }) {
   const pick = (key: keyof ReviewSummary['growth']) => ({
     current: current.growth[key],
@@ -470,6 +470,18 @@ function GrowthCard({ current, previous }: { current: ReviewSummary; previous: R
     },
     { label: 'Gelesene Seiten', ...pick('pages'), format: count, better: 'higher' },
     { label: 'Gelesene Bücher', ...pick('books'), format: count, better: 'higher' },
+    {
+      label: 'Fokus-Zeit',
+      ...pick('focusSeconds'),
+      format: formatWorkoutDuration,
+      better: 'higher',
+    },
+    {
+      label: 'Meditation',
+      ...pick('meditationSeconds'),
+      format: formatWorkoutDuration,
+      better: 'higher',
+    },
   ];
   if (rows.every((row) => !row.current && !row.previous)) return null;
   return (
