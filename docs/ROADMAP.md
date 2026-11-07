@@ -34,6 +34,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 17b – Fokus-/Meditations-Timer & Fortschrittsfotos
 - [x] Schritt 18 – Motivation (Serien, Abzeichen, Erfolgs-Hinweise)
 - [x] Schritt 18b – Trainingsblöcke (Aufbau/Deload/Peak) in Plänen
+- [ ] Schritt 18c – Push & Handytest 16–18b
 - [ ] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
 
@@ -1034,6 +1035,22 @@ Mit dem Nutzer beim Start abgestimmt: **Vorlagen + frei änderbar**; Sätze **au
   - Kein Block in der CSV-Spalte und im Teilen-Bild (ggf. Schritt 19 im Bericht: `Workout.block`).
   - Keine automatische Erinnerung außerhalb der Trainingsseite/des Widgets, wenn ein Block endet.
   - Vor dem nächsten Push an ein Backup erinnern (DB-Version 22 → 28).
+
+### Schritt 18c – Push & Handytest 16–18b
+**Ziel:** Stand aus 16, 16b, 17, 17b, 18 und 18b veröffentlichen und auf dem echten Handy prüfen (Nutzerwunsch nach 18b). Danach folgt Schritt 19.
+
+Ablauf:
+- **Vorher Backup:** Der Nutzer exportiert auf dem Handy ein Backup (Einstellungen → Datensicherung), weil die DB-Version von 22 auf 28 springt. Erst nach seiner Bestätigung pushen.
+- **Push:** Wer „Schritt 18c starten“ schreibt, gibt den Push auf `main` frei (Ausnahme von „Kein Push“). Vorher Definition of Done kurz prüfen (lint, typecheck, test, build). Danach prüfen, dass die GitHub Action durchgelaufen ist, und dem Nutzer sagen, wann die Version online ist.
+- **Handytest durch den Nutzer:** App öffnen → „Neue Version verfügbar“ → „Neu laden“; vorhandene Daten noch da? Dann die Punkte „Handytest“ aus den Notizen von 16–18b durchgehen, u. a.: Ziele/Rückblick, Journal-Autospeichern beim App-Wechsel, Bildschirmtastatur, Lesen-Dialog, Timer-Gong bei gesperrtem Bildschirm/Stummschalter, Fortschrittsfotos (Kamera, HEIC, Speicher, Backup mit Fotos), Erfolge-Seite und Hinweise, Trainingsblöcke (Block-Dialog, Datumsfeld, orange Punkte im Diagramm). Alles im Flugmodus.
+- Gefundene Probleme beheben und erneut pushen.
+
+**Fertig wenn:** gepusht, Action grün, Nutzer bestätigt den Handytest.
+
+**Notizen:**
+- Gebaut:
+- Ergebnis Handytest:
+- Offene Punkte:
 
 ### Schritt 19 – PDF-Export/Berichte
 Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.
