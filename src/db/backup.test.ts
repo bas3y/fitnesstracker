@@ -10,7 +10,7 @@ import { getBodyMeasurement, getDailyLog, setBodyMeasure, updateDailyLog } from 
 import { db } from './database';
 import { createEnduranceSession, createGear, loadEnduranceSession, loadGear } from './endurance';
 import { createUserExercise } from './exercises';
-import { createGoal, listGoals } from './goals';
+import { addGoalEntry, createGoal, listGoals, loadGoalData } from './goals';
 import { createRecipe, createUserFood, setFoodFavorite } from './foods';
 import { addMealEntry, listMealEntries, listSavedMeals, saveMeal } from './nutrition';
 import { addHabitAmount, createHabit, loadHabit, pauseHabit, setHabitChecked } from './habits';
@@ -113,6 +113,7 @@ describe('parseBackup', () => {
         gear: 0,
         enduranceTracks: 0,
         goals: 0,
+        goalEntries: 0,
       });
   });
 
@@ -594,6 +595,41 @@ describe('Ziele im Backup', () => {
     const old = parseBackup(data);
     if (!old.ok) throw new Error(old.error);
     expect(old.backup.tables.goals).toEqual([]);
+  });
+
+  it('stellt eigene Ziele mit Einträgen wieder her und ergänzt Sicherungen aus DB-Version 23', async () => {
+    const goal = await createGoal({
+      ...emptyGoalInput('custom', '2026-11-01'),
+      title: 'Spanisch',
+      icon: '🇪🇸',
+      unit: 'Lektionen',
+      target: 50,
+    });
+    await addGoalEntry(goal.id, 3, '2026-11-02');
+    const data = await validBackup();
+    await resetDatabase();
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    await restoreBackup(result.backup);
+    expect(await listGoals()).toMatchObject([{ id: goal.id, icon: '🇪🇸', unit: 'Lektionen' }]);
+    expect((await loadGoalData()).entries).toEqual([
+      { goalId: goal.id, date: '2026-11-02', amount: 3 },
+    ]);
+
+    const total = await createGoal({ ...emptyGoalInput('total', '2026-11-01'), target: 12 });
+    const old = await validBackup();
+    old.dbVersion = 23;
+    delete old.tables.goalEntries;
+    old.tables.goals = old.tables.goals.filter((item: { id: string }) => item.id === total.id);
+    for (const key of ['habitId', 'habitMetric', 'customType', 'unit', 'icon']) {
+      delete old.tables.goals[0][key];
+    }
+    const parsed = parseBackup(old);
+    if (!parsed.ok) throw new Error(parsed.error);
+    expect(parsed.backup.tables.goalEntries).toEqual([]);
+    expect(parsed.backup.tables.goals).toMatchObject([
+      { id: total.id, habitId: null, habitMetric: null, customType: null, unit: '', icon: '' },
+    ]);
   });
 
   it('lehnt unbekannte Zielarten ab', async () => {

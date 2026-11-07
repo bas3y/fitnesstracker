@@ -1,5 +1,4 @@
 import { dailyLogOf } from '../test/dailyLog';
-import type { HabitHistoryItem } from './habits';
 import { ZERO_NUTRIENTS } from './nutrition';
 import { periodRange } from './periods';
 import {
@@ -7,6 +6,7 @@ import {
   reviewDelta,
   reviewSummary,
   type ReviewEnduranceSession,
+  type ReviewHabit,
   type ReviewInput,
 } from './review';
 import type { StatsSession, StatsSet } from './stats';
@@ -57,7 +57,11 @@ const run = (
   ...values,
 });
 
-const habit: HabitHistoryItem['habit'] = {
+const habit: ReviewHabit['habit'] = {
+  id: 'meditate',
+  name: 'Meditieren',
+  icon: '🧘',
+  unit: '',
   kind: 'check',
   target: 1,
   items: [],
@@ -104,6 +108,22 @@ const input: ReviewInput = {
       habit,
       entries: [{ date: '2026-11-05', itemId: null, amount: 1 }],
     },
+    {
+      habit: { ...habit, id: 'read', name: 'Lesen', icon: '📚', unit: 'Seiten', kind: 'count' },
+      entries: [
+        { date: '2026-10-10', itemId: null, amount: 40 },
+        { date: '2026-11-02', itemId: null, amount: 20 },
+        { date: '2026-11-03', itemId: null, amount: 30 },
+      ],
+    },
+    {
+      habit: { ...habit, id: 'smoke', name: 'Rauchen', kind: 'quit', target: 0 },
+      entries: [{ date: '2026-10-12', itemId: null, amount: 3 }],
+    },
+    {
+      habit: { ...habit, id: 'old', kind: 'count', archivedAt: '2026-01-01T00:00:00.000Z' },
+      entries: [],
+    },
   ],
   meals: [meal('2026-11-01', 2000, 100), meal('2026-11-01', 500, 20), meal('2026-11-03', 1500, 80)],
   bodyWeightKg: 80,
@@ -143,9 +163,19 @@ describe('reviewSummary', () => {
   });
 
   it('wertet Gewohnheiten nur bis heute aus', () => {
-    // 5.–7.11. fällig, erledigt nur am 5.
-    expect(november.habitCompletion).toBeCloseTo(100 / 3);
+    // Abhaken: 5.–7.11. fällig, erledigt nur am 5.; Lesen (Tagesziel 1): 2. und 3.11.
+    // ab dem 5.11. (angelegt) zählen beide: 5.: 1 von 2, 6.: 0 von 2, 7.: 0 von 2
+    expect(november.habitCompletion).toBeCloseTo(50 / 3);
     expect(reviewSummary(input, OCTOBER, TODAY).habitCompletion).toBeNull();
+  });
+
+  it('summiert Gewohnheiten mit Menge und Rückfälle, archivierte nur mit Einträgen', () => {
+    expect(november.habitTotals).toEqual([
+      { habitId: 'read', name: 'Lesen', icon: '📚', unit: 'Seiten', kind: 'count', amount: 50 },
+      { habitId: 'smoke', name: 'Rauchen', icon: '🧘', unit: '', kind: 'quit', amount: 0 },
+    ]);
+    const october = reviewSummary(input, OCTOBER, TODAY).habitTotals;
+    expect(october.map((item) => item.amount)).toEqual([40, 3]);
   });
 
   it('mittelt die Ernährung, Protein auch ohne Mahlzeiten', () => {

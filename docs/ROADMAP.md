@@ -29,7 +29,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 15b – Verbesserungen aus dem Gebrauch (Nachtragen, Ziehen, Protein, Weitergeben)
 - [x] Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest 14–15c
 - [x] Schritt 16 – Ziele & Rückblicke
-- [ ] Schritt 16b – Ziele für Gewohnheiten, Alltag & eigene Ziele, eigene Emojis
+- [x] Schritt 16b – Ziele für Gewohnheiten, Alltag & eigene Ziele, eigene Emojis
 - [ ] Schritt 17 – Self-Improvement
 - [ ] Schritt 18 – Motivation & Trainingsblöcke
 - [ ] Schritt 19 – PDF-Export/Berichte
@@ -897,8 +897,25 @@ Mit dem Nutzer beim Start abgestimmt: Zielarten **Kraft, Bestzeit, Körpergewich
 
 **Notizen:**
 - Gebaut:
+  - Dexie v24: `Goal` um `habitId`, `habitMetric` (`amount`/`days`/`streak`/`limit`), `customType` (`number`/`check`), `unit`, `icon` erweitert (Upgrade setzt `null`/`''`), neue Tabelle `goalEntries` (`goalId`, `date`, `amount`). Backup: Defaults für Ziele aus v23, `goalEntries` als leere Tabelle für ältere Sicherungen. `GOAL_KINDS` + `habit`, `custom`; `TOTAL_GOAL_METRICS` + `steps`, `stepsGoalDays`, `waterGoalDays`, `sleepGoalDays`. `goalInputSchema`: Zeitraum Pflicht für Menge und Gewohnheit außer Serie (`usesPeriod`), Zielwert 0 nur bei Obergrenze, Ja/Nein immer Zielwert 1, eigenes Ziel braucht Namen, `icon` muss genau ein Emoji sein; unpassende Felder werden geleert.
+  - `src/domain/goals.ts`: `GoalData` + `logs`, `dailyGoals`, `habits`, `entries`. Gewohnheit: Menge = Summe (nur die Gewohnheit selbst, keine Unterpunkte), Tage = `doneDates`, **Serie** über `quitStreakDays` (neu in `habits.ts`, `quitStreak` nutzt sie; aktuelle + beste Serie, erreicht sobald eine Serie den Zielwert erreicht), **Obergrenze** (`limitProgress`: Balken = verbrauchter Anteil, `remaining`, wiederkehrend immer aktiv mit Verlauf „in x von y Wochen geschafft“ = unter der Grenze, eigener Zeitraum: überschritten = verpasst, sonst am Ende erreicht). Alltag: Schritte gesamt, Tage mit erreichtem Tagesziel (aktuelle Einstellungen). Eigenes Ziel: Summe der Einträge, mit Zieldatum Soll-Marke. `habitMetricsFor`, `isCountGoal`, `hasPeriod`, `goalIcon`, `goalSubject` (Übung bzw. Gewohnheit → `GoalSubject`, ersetzt den `exercise`-Parameter von `goalTitle`/`goalName`/`formatGoalValue`). Namen z. B. „Lesen: 300 Seiten pro Monat“, „Meditieren: an 100 Tagen pro Jahr“, „Rauchen: 30 Tage am Stück“, „Rauchen: höchstens 20 Zigaretten pro Woche“, „300.000 Schritte pro Monat“, „20 Tage mit Schrittziel pro Monat“.
+  - `src/db/goals.ts`: `addGoalEntry`, `undoGoalEntry` (letzter Eintrag), `setGoalChecked`, `deleteGoal` löscht Einträge mit, `loadGoalExtras()` (alles außer Training; das Startseiten-Widget nutzt die schon geladenen Trainings).
+  - UI: Zielart als 3×2-Raster (6 Arten passen nicht in einen Umschalter). Karte „Gewohnheit“ (Auswahl ohne archivierte, Kennzahl je Art, Hinweis, Zeitraum außer bei Serie, Zielwert mit Vorschlag aus dem Tagesziel; ohne Gewohnheiten Link „Gewohnheit anlegen“). Karte „Eigenes Ziel“ (Name, Emoji, „Mit Zahl“ mit Zielwert + Einheit oder „Ja/Nein“). Menge zeigt bei Tagesziel-Kennzahlen, welches Ziel zählt. `GoalCard`: Symbol der Gewohnheit/eigenes Emoji, Obergrenze mit „2 / 20“, „Noch 18 übrig“ bzw. „um 3 überschritten“ (rot, gelb wenn über dem Soll), Serie mit „Beste Serie“, eigene Ziele mit Buttons **+1**, **+x** (Dialog mit Menge), **Rückgängig** bzw. **✓ Erledigt/Zurücknehmen** – auf der Ziele-Seite und im Widget (Buttons unter dem Link, nicht darin).
+  - **Eigenes Emoji:** `EmojiPicker` (`src/components/`): Vorschläge + Feld „Eigenes Emoji“, Prüfung `isSingleEmoji`/`parseEmoji` (`src/domain/emoji.ts`, `Intl.Segmenter`, Rückfall für alte Browser). In `HabitForm` und für eigene Ziele (dort optional, leer = 🎯). Keine Migration für Gewohnheiten.
+  - **Rückblick:** Karte „Gewohnheiten“ mit Summen der Zähl-Gewohnheiten und Rückfällen bei Aufhören (weniger = grün), `ReviewSummary.habitTotals`, `ReviewInput.habits` braucht jetzt `id`/`name`/`icon`/`unit`. Erreichte Ziele lädt der Rückblick jetzt über `useGoalData()` (zählt damit alle neuen Arten).
+  - Tests: Schema, alle neuen Kennzahlen, Namen/Symbole in `goals.test.ts`, `emoji.test.ts`, `habitTotals` in `review.test.ts`, Einträge/Abhaken/Löschen/`loadGoalData` in `db/goals.test.ts`, Migration v23→v24, Backup (eigene Ziele + Einträge, Sicherung aus v23). E2E `e2e/habitGoals.spec.ts` offline in beiden Viewports (eigenes Emoji mit Fehler, Menge/Serie/Obergrenze, Rückblick mit roter Differenz, Neuladen; eigenes Ziel mit Namensfehler, Emoji, +1/+x/Rückgängig, Ja/Nein im Widget abhaken → abgeschlossen, Neuladen, Löschen). 718 Unit-Tests, 100/100 E2E grün. Hauptbundle 325 → 331 KB (Widget lädt Gewohnheiten/Einträge, Karte mit Eintragen-Buttons).
 - Abweichungen:
+  - Serie nur für Aufhören-Gewohnheiten (für Abhaken gibt es die Serie schon auf der Gewohnheit). Sie zählt wie Kraftziele ab Beginn der Gewohnheit: wer schon 40 Tage geschafft hat, sieht ein 30-Tage-Ziel sofort als erreicht.
+  - Menge bei Zähl-Gewohnheiten nur für `count` (Unterpunkte haben verschiedene Einheiten); Tage auch für Zählen (Tage mit erreichtem Tagesziel).
+  - Eigene Ziele mit Zahl sind einmalig (optional mit Zieldatum), nicht wiederkehrend. Einträge immer mit dem heutigen Datum, „Rückgängig“ nimmt den zuletzt eingetragenen zurück (auch nach Neuladen).
+  - Eigenes Emoji nur für eigene Ziele, nicht für die übrigen Zielarten (dort Symbol der Art bzw. der Gewohnheit).
+  - Tagesziel-Kennzahlen rechnen mit dem **aktuellen** Tagesziel aus den Einstellungen, auch rückwirkend (Hinweis im Formular).
+  - Pausen einer Gewohnheit ändern Menge, Tage und Obergrenze nicht (gezählt wird, was eingetragen ist); die Serie überspringt Pausen wie `quitStreak`.
 - Offene Punkte:
+  - Kein Hinweis/Toast beim Erreichen eines Ziels (weiter Schritt 18).
+  - Schritt 17 (Bücher-Log) kann eine Quelle für Lese-Ziele werden: neue Kennzahl in `TOTAL_GOAL_METRICS` oder Zielart, Punkte in `goalPoints`.
+  - Handytest: Emoji-Tastatur in „Eigenes Emoji“ (iPhone/Android), Darstellung zusammengesetzter Emojis (Flaggen, Hauttöne), Dialog „+x“ mit Bildschirmtastatur.
+  - Vor dem nächsten Push an ein Backup erinnern (DB-Version 22 → 24).
 
 ### Schritt 17 – Self-Improvement
 Journal/Dankbarkeit, Wochenreflexion, Lesen (Bücher, Seiten, Notizen), Pomodoro/Meditation-Timer, Fortschrittsfotos (lokal gespeichert, komprimiert, Speicherhinweis, im Backup optional).

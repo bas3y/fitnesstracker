@@ -284,19 +284,32 @@ export function quitStreak(
   entries: readonly HabitEntry[],
   today: DayKey,
 ): HabitStreak {
+  let current = 0;
+  let best = 0;
+  for (const day of quitStreakDays(habit, entries, today)) {
+    current = day.value;
+    best = Math.max(best, current);
+  }
+  return { current, best, unit: 'days' };
+}
+
+/** Serie (Tage am Stück im Limit) am Ende jedes Tages wie bei `quitStreak` */
+export function quitStreakDays(
+  habit: Pick<Habit, 'target' | 'startDate' | 'pauses'>,
+  entries: readonly HabitEntry[],
+  today: DayKey,
+): DayValue[] {
   const own = entries.filter((entry) => entry.itemId === null && entry.date <= today);
   const start = habit.startDate ?? own.map((entry) => entry.date).sort()[0] ?? today;
   const overLimit = new Set(
     own.filter((entry) => entry.amount > habit.target).map((entry) => entry.date),
   );
   let current = 0;
-  let best = 0;
-  for (const day of periodsBetween(start, today, 1)) {
+  return periodsBetween(start, today, 1).map((day) => {
     if (overLimit.has(day)) current = 0;
     else if (!isPausedOn(habit, day)) current += 1;
-    best = Math.max(best, current);
-  }
-  return { current, best, unit: 'days' };
+    return { date: day, value: current };
+  });
 }
 
 /** Summe über die Woche (Mo–So) von `date`; nur die Gewohnheit selbst, keine Unterpunkte */

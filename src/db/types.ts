@@ -682,19 +682,43 @@ export interface EnduranceTrack extends BaseEntity {
   laps: TrackLap[];
 }
 
-export const GOAL_KINDS = ['strength', 'effort', 'bodyWeight', 'total'] as const;
+export const GOAL_KINDS = ['strength', 'effort', 'bodyWeight', 'total', 'habit', 'custom'] as const;
 /**
  * `strength` = Bestwert einer Übung, `effort` = Bestzeit über eine Strecke,
- * `bodyWeight` = Zielgewicht, `total` = Menge in einem Zeitraum (z. B. Trainings pro Monat)
+ * `bodyWeight` = Zielgewicht, `total` = Menge in einem Zeitraum (z. B. Trainings pro Monat),
+ * `habit` = aus einer Gewohnheit, `custom` = eigenes Ziel mit selbst eingetragenem Fortschritt
  */
 export type GoalKind = (typeof GOAL_KINDS)[number];
 
 export const STRENGTH_GOAL_METRICS = ['weight', 'oneRepMax', 'reps', 'duration'] as const;
 export type StrengthGoalMetric = (typeof STRENGTH_GOAL_METRICS)[number];
 
-export const TOTAL_GOAL_METRICS = ['workouts', 'trainings', 'distance', 'duration'] as const;
-/** `workouts` = Krafttrainings, `trainings` = Krafttrainings + Ausdauer-Einheiten */
+export const TOTAL_GOAL_METRICS = [
+  'workouts',
+  'trainings',
+  'distance',
+  'duration',
+  'steps',
+  'stepsGoalDays',
+  'waterGoalDays',
+  'sleepGoalDays',
+] as const;
+/**
+ * `workouts` = Krafttrainings, `trainings` = Krafttrainings + Ausdauer-Einheiten,
+ * `steps` = Schritte gesamt, `…GoalDays` = Tage mit erreichtem Tagesziel (aktuelle Einstellungen)
+ */
 export type TotalGoalMetric = (typeof TOTAL_GOAL_METRICS)[number];
+
+export const HABIT_GOAL_METRICS = ['amount', 'days', 'streak', 'limit'] as const;
+/**
+ * `amount` = Summe der Menge (`count`), `days` = erledigte Tage (`check`/`count`/`items`),
+ * `streak` = Tage am Stück im Limit (`quit`), `limit` = höchstens so viel im Zeitraum (`quit`)
+ */
+export type HabitGoalMetric = (typeof HABIT_GOAL_METRICS)[number];
+
+export const CUSTOM_GOAL_TYPES = ['number', 'check'] as const;
+/** `number` = Zielwert mit Einheit, `check` = Ja/Nein (abhaken) */
+export type CustomGoalType = (typeof CUSTOM_GOAL_TYPES)[number];
 
 export const GOAL_PERIODS = ['week', 'month', 'year', 'custom'] as const;
 /** Wiederkehrend je Kalenderwoche/-monat/-jahr oder einmalig von `startDate` bis `deadline` */
@@ -722,9 +746,28 @@ export interface Goal extends BaseEntity {
   effortMeters: number | null;
   /** Nur `bodyWeight`: Gewicht zu Beginn (gibt die Richtung vor) */
   startValue: number | null;
-  // Nur `total`
+  /** Nur `total` */
   totalMetric: TotalGoalMetric | null;
+  /** `total` und `habit` (außer Serie): Pflicht */
   period: GoalPeriod | null;
+  // Seit DB-Version 24
+  /** Nur `habit` */
+  habitId: string | null;
+  habitMetric: HabitGoalMetric | null;
+  /** Nur `custom` */
+  customType: CustomGoalType | null;
+  /** Nur `custom` mit Zahl, z. B. „Lektionen“ */
+  unit: string;
+  /** Emoji; leer = Symbol der Art */
+  icon: string;
+}
+
+/** Selbst eingetragener Fortschritt eines eigenen Ziels (seit DB-Version 24) */
+export interface GoalEntry extends BaseEntity {
+  goalId: string;
+  date: DayKey;
+  /** Ja/Nein: 1 */
+  amount: number;
 }
 
 /** Ausrüstung (z. B. Laufschuhe) mit Kilometerstand */

@@ -1,19 +1,30 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Exercise, Goal } from '../../db/types';
+import { primaryButton } from '../../components/buttons';
+import { Dialog } from '../../components/Dialog';
+import { Stepper } from '../../components/Stepper';
+import { addGoalEntry, setGoalChecked, undoGoalEntry } from '../../db/goals';
+import { MAX_GOAL_ENTRY_AMOUNT } from '../../db/schemas';
+import type { Goal } from '../../db/types';
 import { formatDecimal } from '../../domain/format';
 import {
   formatDaysLeft,
   formatGoalDate,
   formatGoalValue,
+  goalIcon,
   goalName,
+  hasPeriod,
+  isCountGoal,
   type GoalProgress,
+  type GoalSubject,
   type GoalUnits,
 } from '../../domain/goals';
-import { GOAL_KIND_LABELS } from '../../domain/labels';
 import { kgToDisplay } from '../../domain/units';
 import { goalEditPath } from './paths';
 
 const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const ACTION =
+  'flex min-h-11 items-center justify-center rounded-xl bg-slate-100 px-3 text-sm font-semibold text-slate-800 active:bg-slate-200 dark:bg-slate-700 dark:text-slate-100 dark:active:bg-slate-600';
 
 const PERIOD_NAMES = { week: 'Woche', month: 'Monat', year: 'Jahr' } as const;
 const PERIOD_DONE = {
@@ -30,18 +41,22 @@ export function GoalBar({
   percent,
   expectedPercent,
   status,
+  color,
 }: {
   label: string;
   percent: number;
   expectedPercent: number | null;
   status: GoalProgress['status'];
+  /** Überschreibt die Farbe nach Status */
+  color?: string;
 }) {
-  const color =
-    status === 'achieved'
+  const fill =
+    color ??
+    (status === 'achieved'
       ? 'bg-emerald-600'
       : status === 'missed'
         ? 'bg-slate-400 dark:bg-slate-500'
-        : 'bg-emerald-500';
+        : 'bg-emerald-500');
   return (
     <div
       role="progressbar"
@@ -51,7 +66,7 @@ export function GoalBar({
       aria-valuenow={percent}
       className="relative h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"
     >
-      <div className={`h-full rounded-full ${color}`} style={{ width: `${percent}%` }} />
+      <div className={`h-full rounded-full ${fill}`} style={{ width: `${percent}%` }} />
       {expectedPercent !== null && (
         <div
           aria-hidden="true"
@@ -63,27 +78,62 @@ export function GoalBar({
   );
 }
 
-function statusLine(goal: Goal, progress: GoalProgress, units: GoalUnits): string | null {
-  const { status, achievedOn, daysLeft, expected, current, perWeek, recurring } = progress;
-  if (recurring && goal.period && goal.period !== 'custom') {
-    if (achievedOn) return `✓ ${PERIOD_DONE[goal.period]}`;
+const isLimitGoal = (goal: Goal) => goal.kind === 'habit' && goal.habitMetric === 'limit';
+const isStreakGoal = (goal: Goal) => goal.kind === 'habit' && goal.habitMetric === 'streak';
+
+function recurringPeriod(goal: Goal, progress: GoalProgress) {
+  return progress.recurring && progress.range && goal.period && goal.period !== 'custom'
+    ? goal.period
+    : null;
+}
+
+function limitStatus(
+  goal: Goal,
+  progress: GoalProgress,
+  format: (value: number) => string,
+): string | null {
+  const remaining = progress.remaining ?? 0;
+  const period = recurringPeriod(goal, progress);
+  if (progress.status === 'achieved' && progress.achievedOn) {
+    return `✓ Geschafft (bis ${formatGoalDate(progress.achievedOn)})`;
+  }
+  if (remaining < 0) {
+    const when = period ? `${PERIOD_NOW[period]} ` : '';
+    return `${when}um ${format(-remaining)} überschritten`;
+  }
+  const parts = [remaining === 0 ? 'Nichts mehr übrig' : `Noch ${format(remaining)} übrig`];
+  if (progress.daysLeft !== null) parts.push(formatDaysLeft(progress.daysLeft));
+  return parts.join(' · ');
+}
+
+function statusLine(
+  goal: Goal,
+  progress: GoalProgress,
+  units: GoalUnits,
+  subject: GoalSubject,
+): string | null {
+  const format = (value: number) => formatGoalValue(goal, value, units, subject);
+  if (isLimitGoal(goal)) return limitStatus(goal, progress, format);
+  const { status, achievedOn, daysLeft, expected, current, perWeek } = progress;
+  const period = recurringPeriod(goal, progress);
+  if (period) {
+    if (achievedOn) return `✓ ${PERIOD_DONE[period]}`;
   } else if (status === 'achieved' && achievedOn) {
     return `✓ Erreicht am ${formatGoalDate(achievedOn)}`;
   } else if (status === 'missed') {
-    return goal.kind === 'total'
+    return hasPeriod(goal)
       ? `Zeitraum vorbei (bis ${formatGoalDate(goal.deadline ?? goal.startDate)})`
       : `Zieldatum ${formatGoalDate(goal.deadline!)} verpasst`;
   }
   const parts: string[] = [];
+  if (isStreakGoal(goal) && progress.best !== null && progress.best > (current ?? 0)) {
+    parts.push(`Beste Serie: ${format(progress.best)}`);
+  }
   if (daysLeft !== null) parts.push(formatDaysLeft(daysLeft));
   if (expected !== null && current !== null && !achievedOn) {
     const diff = current - expected;
-    const counted = goal.totalMetric === 'workouts' || goal.totalMetric === 'trainings';
-    const amount = formatGoalValue(
-      goal,
-      counted ? Math.round(Math.abs(diff)) : Math.abs(diff),
-      units,
-    );
+    const counted = isCountGoal(goal);
+    const amount = format(counted ? Math.round(Math.abs(diff)) : Math.abs(diff));
     const tolerance =
       goal.totalMetric === 'distance' ? 500 : goal.totalMetric === 'duration' ? 300 : 0.5;
     parts.push(
@@ -106,84 +156,226 @@ function valueLine(
   goal: Goal,
   progress: GoalProgress,
   units: GoalUnits,
-  isBodyweight: boolean,
+  subject: GoalSubject,
 ): string {
-  const format = (value: number) => formatGoalValue(goal, value, units, isBodyweight);
-  if (progress.current === null || (goal.kind === 'total' && progress.current === 0)) {
+  const format = (value: number) => formatGoalValue(goal, value, units, subject);
+  const current = progress.current ?? 0;
+  if (goal.kind === 'custom' && goal.customType === 'check') {
+    return current >= 1 ? 'Erledigt' : 'Noch nicht erledigt';
+  }
+  if (isLimitGoal(goal)) {
+    return `${current === 0 ? 'Nichts' : format(current)} · höchstens ${format(goal.target)}`;
+  }
+  if (isStreakGoal(goal)) {
+    return `Jetzt ${format(current)} am Stück · Ziel ${format(goal.target)}`;
+  }
+  const summed = goal.kind === 'total' || goal.kind === 'habit' || goal.kind === 'custom';
+  if (progress.current === null || (summed && progress.current === 0)) {
     const target = `Ziel ${format(goal.target)}`;
-    return goal.kind === 'total' ? `Noch nichts · ${target}` : `Noch keine Werte · ${target}`;
+    if (goal.kind === 'custom') return `Noch nichts eingetragen · ${target}`;
+    return summed ? `Noch nichts · ${target}` : `Noch keine Werte · ${target}`;
   }
   const parts = [
-    `${goal.kind === 'total' ? 'Bisher' : 'Jetzt'} ${format(progress.current)}`,
+    `${summed ? 'Bisher' : 'Jetzt'} ${format(progress.current)}`,
     `Ziel ${format(goal.target)}`,
   ];
   if (progress.baseline !== null) parts.push(`Start ${format(progress.baseline)}`);
   return parts.join(' · ');
 }
 
+function barColor(goal: Goal, progress: GoalProgress): string | undefined {
+  if (!isLimitGoal(goal)) return undefined;
+  if ((progress.remaining ?? 0) < 0) return 'bg-red-500';
+  const ahead =
+    progress.expected !== null && progress.current !== null && progress.current > progress.expected;
+  return ahead ? 'bg-amber-500' : 'bg-emerald-500';
+}
+
 /** Ziel mit Balken; `compact` für das Startseiten-Widget */
 export function GoalCard({
   goal,
   progress,
-  exercise,
+  subject,
   units,
   compact = false,
   linkState,
 }: {
   goal: Goal;
   progress: GoalProgress;
-  exercise: Exercise | null;
+  subject: GoalSubject;
   units: GoalUnits;
   compact?: boolean;
   linkState?: unknown;
 }) {
-  const name = goalName(goal, exercise, units);
-  const status = statusLine(goal, progress, units);
+  const name = goalName(goal, subject, units);
+  const status = statusLine(goal, progress, units, subject);
+  const limit = isLimitGoal(goal);
   const expectedPercent =
-    progress.expected !== null && !progress.achievedOn
+    progress.expected !== null && !progress.achievedOn && goal.target > 0
       ? (progress.expected / goal.target) * 100
       : null;
-  const period =
-    progress.recurring && progress.range && goal.period && goal.period !== 'custom'
-      ? goal.period
-      : null;
+  const period = recurringPeriod(goal, progress);
+  const exceeded = limit && (progress.remaining ?? 0) < 0;
   return (
-    <Link
-      to={goalEditPath(goal.id)}
-      state={linkState}
-      aria-label={`Ziel: ${name}`}
-      className={`block rounded-2xl active:bg-slate-50 dark:active:bg-slate-700 ${compact ? 'mb-2 border border-slate-200 p-3 dark:border-slate-700' : 'mb-3 bg-white p-4 shadow-sm dark:bg-slate-800'}`}
+    <div
+      className={`rounded-2xl ${compact ? 'mb-2 border border-slate-200 dark:border-slate-700' : 'mb-3 bg-white shadow-sm dark:bg-slate-800'}`}
     >
-      <div className="mb-2 flex items-start gap-2">
-        <span aria-hidden="true" className="text-lg leading-6">
-          {GOAL_KIND_LABELS[goal.kind].icon}
-        </span>
-        <span className="min-w-0 flex-1 font-semibold leading-6">{name}</span>
-        <span className="shrink-0 font-bold tabular-nums leading-6">{progress.percent} %</span>
-      </div>
-      <GoalBar
-        label={name}
-        percent={progress.percent}
-        expectedPercent={expectedPercent}
-        status={progress.status}
-      />
-      <p className={`mt-2 tabular-nums ${HINT}`}>
-        {period ? `${PERIOD_NOW[period]}: ` : ''}
-        {valueLine(goal, progress, units, exercise?.equipment === 'bodyweight')}
-      </p>
-      {status && (
-        <p
-          className={`text-sm ${progress.achievedOn ? 'font-medium text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}
+      <Link
+        to={goalEditPath(goal.id)}
+        state={linkState}
+        aria-label={`Ziel: ${name}`}
+        className={`block rounded-2xl active:bg-slate-50 dark:active:bg-slate-700 ${compact ? 'p-3' : 'p-4'}`}
+      >
+        <div className="mb-2 flex items-start gap-2">
+          <span aria-hidden="true" className="text-lg leading-6">
+            {goalIcon(goal, subject)}
+          </span>
+          <span className="min-w-0 flex-1 font-semibold leading-6">{name}</span>
+          <span className="shrink-0 font-bold tabular-nums leading-6">
+            {limit
+              ? `${formatDecimal(progress.current ?? 0, 2)} / ${formatDecimal(goal.target, 2)}`
+              : `${progress.percent} %`}
+          </span>
+        </div>
+        <GoalBar
+          label={name}
+          percent={progress.percent}
+          expectedPercent={expectedPercent}
+          status={progress.status}
+          color={barColor(goal, progress)}
+        />
+        <p className={`mt-2 tabular-nums ${HINT}`}>
+          {period ? `${PERIOD_NOW[period]}: ` : ''}
+          {valueLine(goal, progress, units, subject)}
+        </p>
+        {status && (
+          <p
+            className={`text-sm ${
+              exceeded
+                ? 'font-medium text-red-700 dark:text-red-400'
+                : progress.achievedOn
+                  ? 'font-medium text-emerald-700 dark:text-emerald-400'
+                  : 'text-slate-600 dark:text-slate-300'
+            }`}
+          >
+            {status}
+          </p>
+        )}
+        {!compact && progress.history && period && (
+          <p className={HINT}>
+            Bisher in {progress.history.reached} von {progress.history.total}{' '}
+            {progress.history.total === 1 ? PERIOD_NAMES[period] : PERIOD_PLURAL[period]} geschafft
+          </p>
+        )}
+      </Link>
+      {goal.kind === 'custom' && (
+        <GoalEntryActions
+          goal={goal}
+          name={name}
+          current={progress.current ?? 0}
+          compact={compact}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Eigenes Ziel: Fortschritt direkt an der Karte eintragen */
+function GoalEntryActions({
+  goal,
+  name,
+  current,
+  compact,
+}: {
+  goal: Goal;
+  name: string;
+  current: number;
+  compact: boolean;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [amount, setAmount] = useState<number | null>(null);
+  const padding = compact ? 'px-3 pb-3' : 'px-4 pb-4';
+
+  if (goal.customType === 'check') {
+    const done = current >= 1;
+    return (
+      <div className={`flex gap-2 ${padding}`}>
+        <button
+          type="button"
+          aria-label={`${done ? 'Zurücknehmen' : 'Erledigt'}: ${name}`}
+          className={
+            done
+              ? ACTION
+              : `${ACTION} bg-emerald-700 text-white active:bg-emerald-800 dark:bg-emerald-700`
+          }
+          onClick={() => void setGoalChecked(goal.id, !done)}
         >
-          {status}
-        </p>
+          {done ? 'Zurücknehmen' : '✓ Erledigt'}
+        </button>
+      </div>
+    );
+  }
+
+  const unit = goal.unit ? ` ${goal.unit}` : '';
+  return (
+    <div className={`flex flex-wrap gap-2 ${padding}`}>
+      <button
+        type="button"
+        aria-label={`+1${unit}: ${name}`}
+        className={ACTION}
+        onClick={() => void addGoalEntry(goal.id, 1)}
+      >
+        +1
+      </button>
+      <button
+        type="button"
+        aria-label={`Menge eintragen: ${name}`}
+        className={ACTION}
+        onClick={() => {
+          setAmount(null);
+          setAdding(true);
+        }}
+      >
+        +x
+      </button>
+      {current > 0 && (
+        <button
+          type="button"
+          aria-label={`Rückgängig: ${name}`}
+          className={ACTION}
+          onClick={() => void undoGoalEntry(goal.id)}
+        >
+          Rückgängig
+        </button>
       )}
-      {!compact && progress.history && period && (
-        <p className={HINT}>
-          Bisher in {progress.history.reached} von {progress.history.total}{' '}
-          {progress.history.total === 1 ? PERIOD_NAMES[period] : PERIOD_PLURAL[period]} geschafft
-        </p>
+      {adding && (
+        <Dialog title={name} onClose={() => setAdding(false)}>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!amount) return;
+              void addGoalEntry(goal.id, amount).then(() => setAdding(false));
+            }}
+          >
+            <Stepper
+              label="Menge"
+              value={amount}
+              unit={goal.unit || undefined}
+              step={1}
+              min={0.01}
+              max={MAX_GOAL_ENTRY_AMOUNT}
+              decimals={2}
+              startValue={1}
+              allowEmpty
+              onChange={setAmount}
+            />
+            <button type="submit" className={primaryButton} disabled={!amount}>
+              Eintragen
+            </button>
+          </form>
+        </Dialog>
       )}
-    </Link>
+    </div>
   );
 }

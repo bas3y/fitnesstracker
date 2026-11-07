@@ -2,6 +2,7 @@ import { useId, useState, type FormEvent } from 'react';
 import { inputField, primaryButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
+import { EmojiPicker } from '../../components/EmojiPicker';
 import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Stepper } from '../../components/Stepper';
@@ -111,22 +112,11 @@ export function HabitForm({
             </div>
           </div>
 
-          <div role="group" aria-label="Symbol">
-            <p className={LABEL}>Symbol</p>
-            <div className="flex flex-wrap gap-1">
-              {HABIT_ICONS.map((icon) => (
-                <Chip
-                  key={icon}
-                  pressed={input.icon === icon}
-                  className="px-3 text-lg"
-                  aria-label={`Symbol ${icon}`}
-                  onClick={() => change({ icon })}
-                >
-                  {icon}
-                </Chip>
-              ))}
-            </div>
-          </div>
+          <EmojiPicker
+            value={input.icon}
+            suggestions={HABIT_ICONS}
+            onChange={(icon) => change({ icon })}
+          />
 
           <div>
             <p className={LABEL}>Gruppe</p>

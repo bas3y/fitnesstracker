@@ -74,6 +74,7 @@ export function GoalEditPage() {
         data={data}
         today={today}
         submitLabel="Speichern"
+        goalId={goal.id}
         onSubmit={async (values) => {
           await updateGoal(goal.id, values);
           back();
@@ -90,7 +91,9 @@ export function GoalEditPage() {
           }}
           onCancel={() => setConfirming(false)}
         >
-          Deine Trainings und Einträge bleiben erhalten.
+          {goal.kind === 'custom'
+            ? 'Der eingetragene Fortschritt wird mit gelöscht.'
+            : 'Deine Trainings und Einträge bleiben erhalten.'}
         </ConfirmDialog>
       )}
     </Page>

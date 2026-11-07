@@ -1,9 +1,15 @@
 import type {
+  DailyLog,
   DayKey,
   DistanceUnit,
   EnduranceSession,
   Exercise,
   Goal,
+  GoalEntry,
+  Habit,
+  HabitGoalMetric,
+  HabitKind,
+  Settings,
   StrengthGoalMetric,
   WeightUnit,
 } from '../db/types';
@@ -11,7 +17,8 @@ import type { DatedWeight } from './daily';
 import { formatDistance, sessionDay, type DayRange } from './endurance';
 import { formatEffortDistance } from './enduranceStats';
 import { formatDecimal } from './format';
-import { ENDURANCE_SPORT_LABELS } from './labels';
+import { doneDates, formatHabitAmount, quitStreakDays, type HabitEntry } from './habits';
+import { ENDURANCE_SPORT_LABELS, GOAL_KIND_LABELS } from './labels';
 import { daysBetween, inRange, periodRange, shiftPeriod } from './periods';
 import { parseDayKey, type StatsSession } from './stats';
 import { exerciseKind, isPerformed, setOneRepMax, type ExerciseKind } from './strength';
@@ -23,6 +30,33 @@ export type GoalEnduranceSession = Pick<
   'id' | 'sport' | 'startedAt' | 'durationSeconds' | 'distanceMeters' | 'trackSummary'
 >;
 
+export type GoalHabit = Pick<
+  Habit,
+  | 'id'
+  | 'name'
+  | 'icon'
+  | 'kind'
+  | 'target'
+  | 'unit'
+  | 'step'
+  | 'items'
+  | 'startDate'
+  | 'pauses'
+  | 'archivedAt'
+  | 'frequency'
+  | 'timesPerWeek'
+  | 'weekdays'
+>;
+
+export interface GoalHabitData {
+  habit: GoalHabit;
+  entries: readonly HabitEntry[];
+}
+
+export type GoalDailyLog = Pick<DailyLog, 'date' | 'steps' | 'waterMl' | 'sleepSeconds'>;
+export type GoalDailyGoals = Pick<Settings, 'stepsGoal' | 'waterGoalMl' | 'sleepGoalSeconds'>;
+export type GoalEntryValue = Pick<GoalEntry, 'goalId' | 'date' | 'amount'>;
+
 /** Alles, woraus der Fortschritt berechnet wird */
 export interface GoalData {
   /** Beendete Workouts, älteste zuerst (`loadStatsSessions`) */
@@ -30,6 +64,13 @@ export interface GoalData {
   endurance: readonly GoalEnduranceSession[];
   /** Aufsteigend nach Datum */
   weights: readonly DatedWeight[];
+  logs: readonly GoalDailyLog[];
+  /** Aktuelle Tagesziele (für „Tage mit erreichtem Tagesziel“) */
+  dailyGoals: GoalDailyGoals;
+  /** Auch archivierte */
+  habits: readonly GoalHabitData[];
+  /** Selbst eingetragener Fortschritt eigener Ziele */
+  entries: readonly GoalEntryValue[];
 }
 
 export interface DatedValue {
@@ -38,6 +79,66 @@ export interface DatedValue {
 }
 
 type GoalExercise = Pick<Exercise, 'name' | 'isTimed' | 'equipment'>;
+
+/** Wozu das Ziel gehört: Übung (Kraft) bzw. Gewohnheit */
+export interface GoalSubject {
+  exercise?: GoalExercise | null;
+  habit?: Pick<GoalHabit, 'name' | 'icon' | 'unit' | 'kind'> | null;
+}
+
+export function goalSubject(
+  goal: Pick<Goal, 'exerciseId' | 'habitId'>,
+  exercises: ReadonlyMap<string, GoalExercise>,
+  data: Pick<GoalData, 'habits'>,
+): GoalSubject {
+  return {
+    exercise: goal.exerciseId ? (exercises.get(goal.exerciseId) ?? null) : null,
+    habit: goal.habitId ? (habitOfGoal(goal, data)?.habit ?? null) : null,
+  };
+}
+
+export function habitOfGoal(
+  goal: Pick<Goal, 'habitId'>,
+  data: Pick<GoalData, 'habits'>,
+): GoalHabitData | null {
+  return data.habits.find(({ habit }) => habit.id === goal.habitId) ?? null;
+}
+
+// ---------- Gewohnheit ----------
+
+/** Kennzahlen, die zur Art der Gewohnheit passen; die erste ist der Vorschlag */
+export function habitMetricsFor(kind: HabitKind): HabitGoalMetric[] {
+  switch (kind) {
+    case 'count':
+      return ['amount', 'days'];
+    case 'quit':
+      return ['streak', 'limit'];
+    default:
+      return ['days'];
+  }
+}
+
+export const HABIT_GOAL_METRIC_LABELS: Record<HabitGoalMetric, string> = {
+  amount: 'Menge',
+  days: 'Tage',
+  streak: 'Serie',
+  limit: 'Obergrenze',
+};
+
+function habitPoints(goal: Goal, data: GoalData): DatedValue[] {
+  const item = habitOfGoal(goal, data);
+  if (!item) return [];
+  const own = item.entries.filter((entry) => entry.itemId === null);
+  switch (goal.habitMetric) {
+    case 'amount':
+    case 'limit':
+      return own.map(({ date, amount }) => ({ date, value: amount }));
+    case 'days':
+      return doneDates(item.habit, item.entries).map((date) => ({ date, value: 1 }));
+    default:
+      return [];
+  }
+}
 
 // ---------- Kraft ----------
 
@@ -104,12 +205,28 @@ export function effortSeconds(session: GoalEnduranceSession, meters: number): nu
 
 // ---------- Werte ----------
 
-const isRecurring = (goal: Pick<Goal, 'kind' | 'period'>) =>
-  goal.kind === 'total' && goal.period !== null && goal.period !== 'custom';
+/** Zählt in einem Zeitraum (Menge, Gewohnheit außer Serie) */
+export const hasPeriod = (goal: Pick<Goal, 'kind' | 'habitMetric'>) =>
+  goal.kind === 'total' || (goal.kind === 'habit' && goal.habitMetric !== 'streak');
 
-/** Bei Bestzeiten ist weniger besser, beim Gewicht hängt es vom Start ab */
-export function lowerIsBetter(goal: Pick<Goal, 'kind' | 'target' | 'startValue'>): boolean {
-  if (goal.kind === 'effort') return true;
+const isRecurring = (goal: Pick<Goal, 'kind' | 'period' | 'habitMetric'>) =>
+  hasPeriod(goal) && goal.period !== null && goal.period !== 'custom';
+
+const isLimit = (goal: Pick<Goal, 'kind' | 'habitMetric'>) =>
+  goal.kind === 'habit' && goal.habitMetric === 'limit';
+
+/** Zielwert ist eine Anzahl (Trainings, Tage, Schritte) */
+export function isCountGoal(goal: Pick<Goal, 'kind' | 'totalMetric' | 'habitMetric'>): boolean {
+  if (goal.kind === 'total')
+    return goal.totalMetric !== 'distance' && goal.totalMetric !== 'duration';
+  return goal.kind === 'habit' && (goal.habitMetric === 'days' || goal.habitMetric === 'streak');
+}
+
+/** Bei Bestzeiten und Obergrenzen ist weniger besser, beim Gewicht hängt es vom Start ab */
+export function lowerIsBetter(
+  goal: Pick<Goal, 'kind' | 'target' | 'startValue' | 'habitMetric'>,
+): boolean {
+  if (goal.kind === 'effort' || isLimit(goal)) return true;
   return goal.kind === 'bodyWeight' && goal.startValue !== null && goal.target < goal.startValue;
 }
 
@@ -138,8 +255,35 @@ export function goalPoints(goal: Goal, data: GoalData): DatedValue[] {
     case 'total':
       points.push(...totalPoints(goal, data));
       break;
+    case 'habit':
+      points.push(...habitPoints(goal, data));
+      break;
+    case 'custom':
+      for (const entry of data.entries) {
+        if (entry.goalId === goal.id) points.push({ date: entry.date, value: entry.amount });
+      }
+      break;
   }
   return points.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function dailyPoints(goal: Goal, data: GoalData): DatedValue[] {
+  const { stepsGoal, waterGoalMl, sleepGoalSeconds } = data.dailyGoals;
+  const reached = (value: number | null, goalValue: number) => value !== null && value >= goalValue;
+  return data.logs.flatMap((log): DatedValue[] => {
+    switch (goal.totalMetric) {
+      case 'steps':
+        return log.steps ? [{ date: log.date, value: log.steps }] : [];
+      case 'stepsGoalDays':
+        return reached(log.steps, stepsGoal) ? [{ date: log.date, value: 1 }] : [];
+      case 'waterGoalDays':
+        return reached(log.waterMl, waterGoalMl) ? [{ date: log.date, value: 1 }] : [];
+      case 'sleepGoalDays':
+        return reached(log.sleepSeconds, sleepGoalSeconds) ? [{ date: log.date, value: 1 }] : [];
+      default:
+        return [];
+    }
+  });
 }
 
 function totalPoints(goal: Goal, data: GoalData): DatedValue[] {
@@ -170,7 +314,7 @@ function totalPoints(goal: Goal, data: GoalData): DatedValue[] {
         value: session.durationSeconds,
       }));
     default:
-      return [];
+      return dailyPoints(goal, data);
   }
 }
 
@@ -201,6 +345,10 @@ export interface GoalProgress {
   perWeek: number | null;
   /** Wiederkehrend: abgeschlossene Zeiträume seit dem Anlegen; `null` = noch keiner */
   history: { reached: number; total: number } | null;
+  /** Nur Obergrenze: noch erlaubt (negativ = überschritten) */
+  remaining: number | null;
+  /** Nur Serie: längste Serie bisher */
+  best: number | null;
 }
 
 function share(
@@ -235,12 +383,26 @@ const sum = (points: readonly DatedValue[]) =>
 
 /** Zeitraum eines Mengen-Ziels, in dem `today` liegt (eigener Zeitraum: fest) */
 export function goalRange(goal: Goal, today: DayKey): DayRange | null {
-  if (goal.kind !== 'total' || goal.period === null) return null;
+  if (!hasPeriod(goal) || goal.period === null) return null;
   if (goal.period === 'custom') return { from: goal.startDate, to: goal.deadline ?? today };
   return periodRange(goal.period, today);
 }
 
 const MAX_HISTORY_PERIODS = 600;
+
+const EMPTY_EXTRAS = { remaining: null, best: null } as const;
+
+/** Statt `active`: Zieldatum vorbei */
+function deadlineStatus(goal: Goal, achievedOn: DayKey | null, today: DayKey): GoalStatus {
+  if (achievedOn) return 'achieved';
+  return goal.deadline !== null && goal.deadline < today ? 'missed' : 'active';
+}
+
+/** Gleichmäßig vom Beginn bis zum Zieldatum verteilt wäre man heute hier */
+function expectedUntil(target: number, range: DayRange, today: DayKey): number | null {
+  if (!inRange(today, range)) return null;
+  return (target * daysBetween(range.from, today)) / daysBetween(range.from, range.to);
+}
 
 export function goalProgress(goal: Goal, data: GoalData, today: DayKey): GoalProgress {
   const points = goalPoints(goal, data).filter((point) => point.date <= today);
@@ -253,9 +415,15 @@ export function goalProgress(goal: Goal, data: GoalData, today: DayKey): GoalPro
     expected: null,
     perWeek: null,
     history: null,
+    ...EMPTY_EXTRAS,
   };
 
-  if (goal.kind === 'total') return totalProgress(goal, points, today);
+  if (isLimit(goal)) return limitProgress(goal, points, today);
+  if (goal.kind === 'habit' && goal.habitMetric === 'streak') {
+    return { ...base, ...streakProgress(goal, data, today) };
+  }
+  if (hasPeriod(goal)) return totalProgress(goal, points, today);
+  if (goal.kind === 'custom') return { ...base, ...customProgress(goal, points, today) };
 
   let current: number | null;
   let baseline: number | null;
@@ -298,36 +466,45 @@ export function goalProgress(goal: Goal, data: GoalData, today: DayKey): GoalPro
   };
 }
 
+/** Bis heute erreicht, sobald die Summe den Zielwert erreicht */
+function reachedOnBySum(points: readonly DatedValue[], target: number): DayKey | null {
+  let running = 0;
+  return (
+    points.find((point) => {
+      running += point.value;
+      return running >= target;
+    })?.date ?? null
+  );
+}
+
+/** Abgeschlossene Zeiträume seit dem Anlegen, `isReached` bekommt die Summe */
+function periodHistory(
+  goal: Goal,
+  points: readonly DatedValue[],
+  current: DayRange,
+  isReached: (total: number) => boolean,
+): GoalProgress['history'] {
+  if (!isRecurring(goal) || goal.period === null || goal.period === 'custom') return null;
+  let reachedCount = 0;
+  let total = 0;
+  let period = periodRange(goal.period, goal.startDate);
+  while (period.to < current.from && total < MAX_HISTORY_PERIODS) {
+    const { from, to } = period;
+    if (isReached(sum(points.filter((point) => point.date >= from && point.date <= to)))) {
+      reachedCount += 1;
+    }
+    total += 1;
+    period = shiftPeriod(goal.period, period, 1);
+  }
+  return total > 0 ? { reached: reachedCount, total } : null;
+}
+
 function totalProgress(goal: Goal, points: DatedValue[], today: DayKey): GoalProgress {
   const range = goalRange(goal, today)!;
   const inside = points.filter((point) => inRange(point.date, range));
   const current = sum(inside);
-  let running = 0;
-  const achievedOn =
-    inside.find((point) => {
-      running += point.value;
-      return running >= goal.target;
-    })?.date ?? null;
+  const achievedOn = reachedOnBySum(inside, goal.target);
   const recurring = isRecurring(goal);
-  const expected = inRange(today, range)
-    ? (goal.target * daysBetween(range.from, today)) / daysBetween(range.from, range.to)
-    : null;
-
-  let history: GoalProgress['history'] = null;
-  if (recurring && goal.period !== null && goal.period !== 'custom') {
-    let reachedCount = 0;
-    let total = 0;
-    let period = periodRange(goal.period, goal.startDate);
-    while (period.to < range.from && total < MAX_HISTORY_PERIODS) {
-      const { from, to } = period;
-      if (sum(points.filter((point) => point.date >= from && point.date <= to)) >= goal.target) {
-        reachedCount += 1;
-      }
-      total += 1;
-      period = shiftPeriod(goal.period, period, 1);
-    }
-    if (total > 0) history = { reached: reachedCount, total };
-  }
 
   return {
     status: recurring ? 'active' : achievedOn ? 'achieved' : range.to < today ? 'missed' : 'active',
@@ -338,10 +515,79 @@ function totalProgress(goal: Goal, points: DatedValue[], today: DayKey): GoalPro
     lowerIsBetter: false,
     recurring,
     range,
-    expected,
+    expected: expectedUntil(goal.target, range, today),
     daysLeft: achievedOn && !recurring ? null : daysUntil(today, range.to),
     perWeek: null,
-    history,
+    history: periodHistory(goal, points, range, (total) => total >= goal.target),
+    ...EMPTY_EXTRAS,
+  };
+}
+
+/**
+ * Obergrenze (Aufhören): Balken = verbrauchter Anteil. Wiederkehrend bleibt das Ziel aktiv,
+ * ein eigener Zeitraum ist erreicht, wenn er ohne Überschreiten zu Ende geht.
+ */
+function limitProgress(goal: Goal, points: DatedValue[], today: DayKey): GoalProgress {
+  const range = goalRange(goal, today)!;
+  const inside = points.filter((point) => inRange(point.date, range));
+  const current = sum(inside);
+  const recurring = isRecurring(goal);
+  const exceeded = current > goal.target;
+  const over = recurring ? false : exceeded;
+  const achievedOn = !recurring && !exceeded && range.to < today ? range.to : null;
+  const used = goal.target > 0 ? current / goal.target : current > 0 ? 1 : 0;
+  return {
+    status: over ? 'missed' : achievedOn ? 'achieved' : 'active',
+    current,
+    baseline: null,
+    percent: Math.min(100, Math.floor(used * 100 + 1e-9)),
+    achievedOn,
+    lowerIsBetter: true,
+    recurring,
+    range,
+    expected: over || achievedOn ? null : expectedUntil(goal.target, range, today),
+    daysLeft: over || achievedOn ? null : daysUntil(today, range.to),
+    perWeek: null,
+    history: periodHistory(goal, points, range, (total) => total <= goal.target),
+    remaining: goal.target - current,
+    best: null,
+  };
+}
+
+/** Serie (Aufhören): Tage am Stück im Limit; erreicht, sobald eine Serie den Zielwert erreicht */
+function streakProgress(goal: Goal, data: GoalData, today: DayKey) {
+  const item = habitOfGoal(goal, data);
+  const days = item ? quitStreakDays(item.habit, item.entries, today) : [];
+  const current = days.at(-1)?.value ?? 0;
+  const best = days.reduce((max, day) => Math.max(max, day.value), 0);
+  const achievedOn = days.find((day) => day.value >= goal.target)?.date ?? null;
+  return {
+    status: deadlineStatus(goal, achievedOn, today),
+    current,
+    baseline: null,
+    percent: achievedOn ? 100 : toPercent(current / goal.target),
+    achievedOn,
+    daysLeft: achievedOn ? null : daysUntil(today, goal.deadline),
+    best,
+  };
+}
+
+/** Eigenes Ziel: Summe der Einträge (Ja/Nein: ein Eintrag) */
+function customProgress(goal: Goal, points: DatedValue[], today: DayKey) {
+  const current = sum(points);
+  const achievedOn = reachedOnBySum(points, goal.target);
+  const range = goal.deadline ? { from: goal.startDate, to: goal.deadline } : null;
+  return {
+    status: deadlineStatus(goal, achievedOn, today),
+    current,
+    baseline: null,
+    percent: achievedOn ? 100 : toPercent(current / goal.target),
+    achievedOn,
+    expected:
+      range && !achievedOn && goal.customType === 'number'
+        ? expectedUntil(goal.target, range, today)
+        : null,
+    daysLeft: achievedOn ? null : daysUntil(today, goal.deadline),
   };
 }
 
@@ -370,16 +616,29 @@ function formatHours(seconds: number): string {
   return seconds % 3600 === 0 ? `${seconds / 3600} h` : formatWorkoutDuration(seconds);
 }
 
-/** Wert in der Anzeigeeinheit, z. B. „100 kg“, „49:30“, „12 Trainings“, „420,5 km“ */
+const formatDays = (count: number) => formatCount(count, 'Tag', 'Tage');
+
+/** Wert in der Anzeigeeinheit, z. B. „100 kg“, „49:30“, „12 Trainings“, „420,5 km“, „30 Seiten“ */
 export function formatGoalValue(
-  goal: Pick<Goal, 'kind' | 'strengthMetric' | 'totalMetric' | 'sport'>,
+  goal: Pick<
+    Goal,
+    'kind' | 'strengthMetric' | 'totalMetric' | 'sport' | 'habitMetric' | 'customType' | 'unit'
+  >,
   value: number,
   units: GoalUnits,
-  isBodyweight = false,
+  subject: GoalSubject = {},
 ): string {
+  const isBodyweight = subject.exercise?.equipment === 'bodyweight';
   const kg = (amount: number, decimals: number) =>
     `${formatDecimal(kgToDisplay(amount, units.weightUnit), decimals)} ${units.weightUnit}`;
   switch (goal.kind) {
+    case 'habit':
+      return goal.habitMetric === 'days' || goal.habitMetric === 'streak'
+        ? formatDays(value)
+        : formatHabitAmount(value, subject.habit?.unit ?? '');
+    case 'custom':
+      if (goal.customType === 'check') return value >= 1 ? 'Erledigt' : 'Offen';
+      return formatHabitAmount(value, goal.unit);
     case 'strength':
       switch (goal.strengthMetric) {
         case 'reps':
@@ -401,17 +660,63 @@ export function formatGoalValue(
           return formatCount(value, 'Training', 'Trainings');
         case 'distance':
           return formatDistance(value, goal.sport ?? 'run', units.distanceUnit, 1);
-        default:
+        case 'duration':
           return formatHours(value);
+        case 'steps':
+          return `${Math.round(value).toLocaleString('de-DE')} ${value === 1 ? 'Schritt' : 'Schritte'}`;
+        default:
+          return formatDays(value);
       }
   }
 }
 
+const DAILY_GOAL_NAMES = {
+  stepsGoalDays: 'Schrittziel',
+  waterGoalDays: 'Wasserziel',
+  sleepGoalDays: 'Schlafziel',
+} as const;
+
+/** „pro Woche“ … bzw. „bis 31.12.2026“ */
+function periodSuffix(goal: Pick<Goal, 'period' | 'deadline' | 'startDate'>): string {
+  switch (goal.period) {
+    case 'week':
+      return 'pro Woche';
+    case 'month':
+      return 'pro Monat';
+    case 'year':
+      return 'pro Jahr';
+    default:
+      return `bis ${formatGoalDate(goal.deadline ?? goal.startDate)}`;
+  }
+}
+
+/** Symbol für Karte und Liste: eigenes Emoji, Symbol der Gewohnheit oder der Art */
+export function goalIcon(goal: Pick<Goal, 'kind' | 'icon'>, subject: GoalSubject = {}): string {
+  if (goal.kind === 'custom') return goal.icon || '🎯';
+  if (goal.kind === 'habit' && subject.habit) return subject.habit.icon;
+  return GOAL_KIND_LABELS[goal.kind].icon;
+}
+
 /** Automatischer Name, z. B. „Bankdrücken: 100 kg × 5“ oder „500 km Laufen pro Jahr“ */
-export function goalTitle(goal: Goal, exercise: GoalExercise | null, units: GoalUnits): string {
-  const isBodyweight = exercise?.equipment === 'bodyweight';
-  const value = formatGoalValue(goal, goal.target, units, isBodyweight);
+export function goalTitle(goal: Goal, subject: GoalSubject, units: GoalUnits): string {
+  const value = formatGoalValue(goal, goal.target, units, subject);
+  const exercise = subject.exercise ?? null;
   switch (goal.kind) {
+    case 'habit': {
+      const name = subject.habit?.name ?? 'Gewohnheit';
+      switch (goal.habitMetric) {
+        case 'streak':
+          return `${name}: ${value} am Stück`;
+        case 'limit':
+          return `${name}: höchstens ${value} ${periodSuffix(goal)}`;
+        case 'days':
+          return `${name}: an ${formatCount(goal.target, 'Tag', 'Tagen')} ${periodSuffix(goal)}`;
+        default:
+          return `${name}: ${value} ${periodSuffix(goal)}`;
+      }
+    }
+    case 'custom':
+      return goal.customType === 'check' ? 'Eigenes Ziel' : `Eigenes Ziel: ${value}`;
     case 'strength': {
       const name = exercise?.name ?? 'Übung';
       const reps = goal.minReps && goal.minReps > 1 ? ` × ${goal.minReps}` : '';
@@ -426,27 +731,27 @@ export function goalTitle(goal: Goal, exercise: GoalExercise | null, units: Goal
       return `Gewicht ${value}`;
     case 'total': {
       const sport = goal.sport ? ` ${ENDURANCE_SPORT_LABELS[goal.sport].name}` : '';
+      const daily =
+        goal.totalMetric === 'stepsGoalDays' ||
+        goal.totalMetric === 'waterGoalDays' ||
+        goal.totalMetric === 'sleepGoalDays'
+          ? DAILY_GOAL_NAMES[goal.totalMetric]
+          : null;
       const what =
         goal.totalMetric === 'duration'
           ? `${value}${sport || ' Ausdauer'}`
           : goal.totalMetric === 'distance'
             ? `${value}${sport}`
-            : value;
-      const when =
-        goal.period === 'week'
-          ? 'pro Woche'
-          : goal.period === 'month'
-            ? 'pro Monat'
-            : goal.period === 'year'
-              ? 'pro Jahr'
-              : `bis ${formatGoalDate(goal.deadline ?? goal.startDate)}`;
-      return `${what} ${when}`;
+            : daily
+              ? `${value} mit ${daily}`
+              : value;
+      return `${what} ${periodSuffix(goal)}`;
     }
   }
 }
 
-export function goalName(goal: Goal, exercise: GoalExercise | null, units: GoalUnits): string {
-  return goal.title || goalTitle(goal, exercise, units);
+export function goalName(goal: Goal, subject: GoalSubject, units: GoalUnits): string {
+  return goal.title || goalTitle(goal, subject, units);
 }
 
 /** z. B. „31.12.2026“ */

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useBackTo } from '../../components/backNavigation';
 import { Card, Page } from '../../components/Page';
 import { dayKey } from '../../domain/daily';
-import { goalProgress, sortGoalsByDeadline } from '../../domain/goals';
+import { goalProgress, goalSubject, sortGoalsByDeadline } from '../../domain/goals';
 import { useSettings } from '../settings/useSettings';
 import { GoalCard } from './GoalCard';
 import { NEW_GOAL_PATH } from './paths';
@@ -36,7 +36,7 @@ export function GoalsPage() {
     </Link>
   );
 
-  if (!items || !settings || !exercises) {
+  if (!items || !data || !settings || !exercises) {
     return (
       <Page title="Ziele" backTo={backTo} action={action}>
         {null}
@@ -58,7 +58,7 @@ export function GoalsPage() {
       key={goal.id}
       goal={goal}
       progress={progress}
-      exercise={goal.exerciseId ? (exercises.get(goal.exerciseId) ?? null) : null}
+      subject={goalSubject(goal, exercises, data)}
       units={units}
     />
   );
@@ -75,6 +75,8 @@ export function GoalsPage() {
             <li>10 km unter 50 Minuten laufen</li>
             <li>Auf 80 kg Körpergewicht</li>
             <li>12 Trainings pro Monat oder 500 km im Jahr</li>
+            <li>1000 Seiten lesen oder 30 Tage rauchfrei</li>
+            <li>Eigene Ziele wie „50 Lektionen Spanisch“</li>
           </ul>
         </Card>
       )}
@@ -82,8 +84,8 @@ export function GoalsPage() {
         <section aria-label="Aktive Ziele" className="mb-4">
           {active.map(card)}
           <p className={HINT}>
-            Der Fortschritt kommt aus deinen Trainings und Einträgen. Die Marke im Balken zeigt, wo
-            du bei gleichmäßigem Tempo heute wärst.
+            Der Fortschritt kommt aus deinen Trainings und Einträgen, bei eigenen Zielen trägst du
+            ihn selbst ein. Die Marke im Balken zeigt, wo du bei gleichmäßigem Tempo heute wärst.
           </p>
         </section>
       )}

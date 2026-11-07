@@ -3,9 +3,14 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { BackState } from '../../components/backNavigation';
 import { Card } from '../../components/Page';
-import { loadBodyWeights } from '../../db/daily';
+import { loadGoalExtras } from '../../db/goals';
 import type { DayKey, Goal, Settings } from '../../db/types';
-import { goalProgress, sortGoalsByDeadline, type GoalEnduranceSession } from '../../domain/goals';
+import {
+  goalProgress,
+  goalSubject,
+  sortGoalsByDeadline,
+  type GoalEnduranceSession,
+} from '../../domain/goals';
 import { DASHBOARD_WIDGET_LABELS } from '../../domain/labels';
 import type { StatsSession } from '../../domain/stats';
 import { GoalCard } from './GoalCard';
@@ -29,15 +34,18 @@ export function GoalsWidget({
   settings: Settings;
   today: DayKey;
 }) {
-  const weights = useLiveQuery(loadBodyWeights, []);
+  const extras = useLiveQuery(loadGoalExtras, []);
   const exercises = useGoalExercises(goals);
+  const data = useMemo(
+    () => (extras ? { strength, endurance, ...extras } : null),
+    [strength, endurance, extras],
+  );
   const active = useMemo(() => {
-    if (!weights) return null;
-    const data = { strength, endurance, weights };
+    if (!data) return null;
     const items = goals.map((goal) => ({ goal, progress: goalProgress(goal, data, today) }));
     return sortGoalsByDeadline(items.filter(({ progress }) => progress.status === 'active'));
-  }, [goals, strength, endurance, weights, today]);
-  if (!active || !exercises) return null;
+  }, [goals, data, today]);
+  if (!active || !data || !exercises) return null;
 
   return (
     <Card title={DASHBOARD_WIDGET_LABELS.goals.name}>
@@ -52,7 +60,7 @@ export function GoalsWidget({
               key={goal.id}
               goal={goal}
               progress={progress}
-              exercise={goal.exerciseId ? (exercises.get(goal.exerciseId) ?? null) : null}
+              subject={goalSubject(goal, exercises, data)}
               units={settings}
               compact
               linkState={FROM_DASHBOARD}

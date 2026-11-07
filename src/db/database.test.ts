@@ -768,7 +768,62 @@ describe('AppDatabase-Migration', () => {
     const v23 = new AppDatabase(name);
     expect(await v23.dailyLogs.get('d1')).toMatchObject({ weightKg: 82 });
     expect(await v23.goals.count()).toBe(0);
-    expect(v23.verno).toBe(23);
+    expect(v23.verno).toBeGreaterThanOrEqual(23);
     await v23.delete();
+  });
+
+  it('Version 24 ergänzt Ziele um Gewohnheiten/eigene Ziele und die Tabelle für Einträge', async () => {
+    const name = 'migration-test-v24';
+    const v23 = new Dexie(name);
+    v23.version(23).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, barcode, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+      goals: 'id, updatedAt',
+    });
+    await v23.table('goals').add({
+      id: 'g1',
+      kind: 'bodyWeight',
+      title: '',
+      target: 85,
+      startDate: '2026-11-01',
+      deadline: null,
+      startValue: 90,
+      totalMetric: null,
+      period: null,
+    });
+    v23.close();
+
+    const v24 = new AppDatabase(name);
+    expect(await v24.goals.get('g1')).toMatchObject({
+      target: 85,
+      startValue: 90,
+      habitId: null,
+      habitMetric: null,
+      customType: null,
+      unit: '',
+      icon: '',
+    });
+    expect(await v24.goalEntries.where('goalId').equals('g1').count()).toBe(0);
+    expect(v24.verno).toBe(24);
+    await v24.delete();
   });
 });

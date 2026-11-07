@@ -9,7 +9,8 @@ import type { DayKey, Goal, Settings } from '../../db/types';
 import { dayKey } from '../../domain/daily';
 import { formatDistance, formatTotals, type DayRange } from '../../domain/endurance';
 import { formatDecimal } from '../../domain/format';
-import { formatGoalDate, goalName, goalProgress, type GoalData } from '../../domain/goals';
+import { formatGoalDate, goalName, goalProgress, goalSubject } from '../../domain/goals';
+import { formatHabitAmount } from '../../domain/habits';
 import { ENDURANCE_SPORT_LABELS } from '../../domain/labels';
 import {
   CALENDAR_PERIOD_LABELS,
@@ -32,7 +33,7 @@ import {
 import { kgToDisplay } from '../../domain/units';
 import { formatWorkoutDuration } from '../../domain/workout';
 import { GOALS_PATH } from '../goals/paths';
-import { useGoalExercises, useGoals } from '../goals/useGoals';
+import { useGoalData, useGoalExercises, useGoals } from '../goals/useGoals';
 import { useSettings } from '../settings/useSettings';
 import { useStatsFilter } from './statsFilter';
 
@@ -164,7 +165,8 @@ function ReviewContent({
       <TrainingCard current={current} previous={previous} settings={settings} />
       <DailyCard current={current} previous={previous} settings={settings} />
       <NutritionCard current={current} previous={previous} settings={settings} />
-      <GoalsCard input={input} range={range} today={today} settings={settings} />
+      <HabitsCard current={current} previous={previous} />
+      <GoalsCard range={range} today={today} settings={settings} />
     </>
   );
 }
@@ -432,38 +434,48 @@ function NutritionCard({
   );
 }
 
+/** Summen der Gewohnheiten mit Menge und Rückfälle beim Aufhören */
+function HabitsCard({ current, previous }: { current: ReviewSummary; previous: ReviewSummary }) {
+  const previousById = new Map(previous.habitTotals.map((habit) => [habit.habitId, habit]));
+  const rows: Row[] = current.habitTotals.map((habit) => ({
+    label: `${habit.icon} ${habit.name}${habit.kind === 'quit' ? ' (Rückfälle)' : ''}`,
+    current: habit.amount,
+    previous: previousById.get(habit.habitId)?.amount ?? 0,
+    format: (value) => formatHabitAmount(value, habit.unit),
+    better: habit.kind === 'quit' ? 'lower' : 'higher',
+  }));
+  if (rows.every((row) => !row.current && !row.previous)) return null;
+  return (
+    <Card title="Gewohnheiten">
+      <ReviewRows rows={rows} label="Gewohnheiten im Vergleich" />
+    </Card>
+  );
+}
+
 /** Im Zeitraum erreichte Ziele (wiederkehrende zählen nicht) */
 function GoalsCard({
-  input,
   range,
   today,
   settings,
 }: {
-  input: ReviewInput;
   range: DayRange;
   today: DayKey;
   settings: Settings;
 }) {
   const goals = useGoals();
+  const data = useGoalData();
   const exercises = useGoalExercises(goals);
   const from = useFromHere();
   const achieved = useMemo(() => {
-    if (!goals) return [];
-    const data: GoalData = {
-      strength: input.strength,
-      endurance: input.endurance,
-      weights: input.logs.flatMap(({ date, weightKg }) =>
-        weightKg === null ? [] : [{ date, weightKg }],
-      ),
-    };
+    if (!goals || !data) return [];
     return goals.flatMap((goal): { goal: Goal; on: DayKey }[] => {
       const progress = goalProgress(goal, data, today);
       return !progress.recurring && progress.achievedOn && inRange(progress.achievedOn, range)
         ? [{ goal, on: progress.achievedOn }]
         : [];
     });
-  }, [goals, input, range, today]);
-  if (!goals || !exercises || goals.length === 0) return null;
+  }, [goals, data, range, today]);
+  if (!goals || !data || !exercises || goals.length === 0) return null;
 
   return (
     <Card title="Ziele">
@@ -473,12 +485,7 @@ function GoalsCard({
         <ul aria-label="Erreichte Ziele" className="flex flex-col gap-1">
           {achieved.map(({ goal, on }) => (
             <li key={goal.id}>
-              🏆{' '}
-              {goalName(
-                goal,
-                goal.exerciseId ? (exercises.get(goal.exerciseId) ?? null) : null,
-                settings,
-              )}{' '}
+              🏆 {goalName(goal, goalSubject(goal, exercises, data), settings)}{' '}
               <span className={HINT}>({formatGoalDate(on)})</span>
             </li>
           ))}

@@ -10,8 +10,12 @@ import {
   lowerIsBetter,
   sortGoalsByDeadline,
   strengthMetricsFor,
+  goalIcon,
+  habitMetricsFor,
   type GoalData,
   type GoalEnduranceSession,
+  type GoalHabit,
+  type GoalSubject,
 } from './goals';
 import type { StatsSession, StatsSet } from './stats';
 
@@ -67,7 +71,33 @@ const run = (day: string, values: Partial<GoalEnduranceSession> = {}): GoalEndur
   ...values,
 });
 
-const EMPTY: GoalData = { strength: [], endurance: [], weights: [] };
+const EMPTY: GoalData = {
+  strength: [],
+  endurance: [],
+  weights: [],
+  logs: [],
+  dailyGoals: { stepsGoal: 10_000, waterGoalMl: 2500, sleepGoalSeconds: 8 * 3600 },
+  habits: [],
+  entries: [],
+};
+
+const habitOf = (values: Partial<GoalHabit> & Pick<GoalHabit, 'id' | 'kind'>): GoalHabit => ({
+  name: values.id === 'read' ? 'Lesen' : 'Gewohnheit',
+  icon: '📚',
+  target: 1,
+  unit: '',
+  step: 1,
+  items: [],
+  startDate: null,
+  pauses: [],
+  archivedAt: null,
+  frequency: 'daily',
+  timesPerWeek: 1,
+  weekdays: [],
+  ...values,
+});
+
+const entry = (date: string, amount: number) => ({ date, itemId: null, amount });
 
 describe('goalInputSchema', () => {
   it('verlangt je Art die Pflichtfelder', () => {
@@ -405,18 +435,18 @@ describe('Anzeige', () => {
           target: 100,
           minReps: 5,
         }),
-        bench,
+        { exercise: bench },
         UNITS,
       ),
     ).toBe('Bankdrücken: 100 kg × 5');
     expect(
       goalTitle(
         goal({ kind: 'effort', sport: 'run', effortMeters: 10_000, target: 2970 }),
-        null,
+        {},
         UNITS,
       ),
     ).toBe('Laufen: 10 km in 49:30');
-    expect(goalTitle(goal({ kind: 'bodyWeight', startValue: 90, target: 85 }), null, UNITS)).toBe(
+    expect(goalTitle(goal({ kind: 'bodyWeight', startValue: 90, target: 85 }), {}, UNITS)).toBe(
       'Gewicht 85 kg',
     );
     expect(
@@ -428,7 +458,7 @@ describe('Anzeige', () => {
           period: 'year',
           target: 500_000,
         }),
-        null,
+        {},
         UNITS,
       ),
     ).toBe('500 km Laufen pro Jahr');
@@ -441,12 +471,12 @@ describe('Anzeige', () => {
           deadline: '2026-12-31',
           target: 36_000,
         }),
-        null,
+        {},
         UNITS,
       ),
     ).toBe('10 h Ausdauer bis 31.12.2026');
     const named = goal({ kind: 'bodyWeight', startValue: 90, target: 85, title: 'Sommerform' });
-    expect(goalName(named, null, UNITS)).toBe('Sommerform');
+    expect(goalName(named, {}, UNITS)).toBe('Sommerform');
   });
 
   it('formatiert Werte in der Anzeigeeinheit', () => {
@@ -456,7 +486,16 @@ describe('Anzeige', () => {
       strengthMetric: 'weight',
       target: 10,
     });
-    expect(formatGoalValue(pullups, 10, { ...UNITS, weightUnit: 'lb' }, true)).toBe('+22 lb');
+    expect(
+      formatGoalValue(
+        pullups,
+        10,
+        { ...UNITS, weightUnit: 'lb' },
+        {
+          exercise: { name: 'Klimmzüge', isTimed: false, equipment: 'bodyweight' },
+        },
+      ),
+    ).toBe('+22 lb');
     const count = goal({ kind: 'total', totalMetric: 'workouts', period: 'week', target: 1 });
     expect(formatGoalValue(count, 1, UNITS)).toBe('1 Krafttraining');
   });
@@ -474,5 +513,329 @@ describe('Anzeige', () => {
       },
     ].map((item) => ({ ...item, progress: goalProgress(item.goal, EMPTY, TODAY) }));
     expect(sortGoalsByDeadline(items).map((item) => item.id)).toEqual(['nov', 'dec', 'none']);
+  });
+});
+
+describe('Schema: Gewohnheiten und eigene Ziele', () => {
+  const habitInput = (values: Partial<GoalInput> = {}) => ({
+    ...emptyGoalInput('habit', TODAY),
+    habitId: 'smoke',
+    ...values,
+  });
+
+  it('verlangt Gewohnheit und Kennzahl, Obergrenze darf 0 sein', () => {
+    expect(
+      goalInputSchema.safeParse({ ...habitInput({ habitId: null }), target: 5 }).error?.issues[0]
+        ?.message,
+    ).toBe('Bitte eine Gewohnheit wählen');
+    expect(goalInputSchema.safeParse(habitInput({ target: 5 })).error?.issues[0]?.message).toBe(
+      'Bitte eine Kennzahl wählen',
+    );
+    expect(goalInputSchema.safeParse(habitInput({ habitMetric: 'limit', target: 0 })).success).toBe(
+      true,
+    );
+    expect(
+      goalInputSchema.safeParse(habitInput({ habitMetric: 'amount', target: 0 })).success,
+    ).toBe(false);
+  });
+
+  it('Serie hat keinen Zeitraum, aber ein Zieldatum', () => {
+    expect(
+      goalInputSchema.parse(
+        habitInput({ habitMetric: 'streak', target: 30.4, deadline: '2026-12-31' }),
+      ),
+    ).toMatchObject({ period: null, target: 30, deadline: '2026-12-31' });
+    expect(
+      goalInputSchema.parse(
+        habitInput({ habitMetric: 'days', target: 20, deadline: '2026-12-31' }),
+      ),
+    ).toMatchObject({ period: 'month', deadline: null, customType: null, icon: '' });
+  });
+
+  it('eigenes Ziel braucht einen Namen, Ja/Nein hat immer den Zielwert 1', () => {
+    const custom = emptyGoalInput('custom', TODAY);
+    expect(goalInputSchema.safeParse({ ...custom, target: 5 }).error?.issues[0]?.message).toBe(
+      'Bitte einen Namen eingeben',
+    );
+    expect(
+      goalInputSchema.parse({ ...custom, title: 'Führerschein', customType: 'check', unit: 'x' }),
+    ).toMatchObject({ target: 1, unit: '', customType: 'check' });
+    expect(
+      goalInputSchema.safeParse({ ...custom, title: 'Spanisch', target: 50, icon: 'ab' }).error
+        ?.issues[0]?.message,
+    ).toBe('Bitte genau ein Emoji eingeben');
+    expect(
+      goalInputSchema.parse({
+        ...custom,
+        title: 'Spanisch',
+        target: 50,
+        icon: '🇪🇸',
+        unit: 'Lektionen',
+      }),
+    ).toMatchObject({ icon: '🇪🇸', unit: 'Lektionen', habitId: null, period: null });
+  });
+});
+
+describe('Gewohnheits-Ziele', () => {
+  const read = habitOf({ id: 'read', kind: 'count', target: 10, unit: 'Seiten' });
+  const meditate = habitOf({ id: 'meditate', kind: 'check' });
+  const smoke = habitOf({ id: 'smoke', kind: 'quit', target: 0, startDate: '2026-10-01' });
+  const cigarettes = habitOf({ id: 'cigs', kind: 'quit', target: 5, unit: 'Zigaretten' });
+  const data: GoalData = {
+    ...EMPTY,
+    habits: [
+      {
+        habit: read,
+        entries: [
+          entry('2026-10-30', 20),
+          entry('2026-11-02', 30),
+          entry('2026-11-05', 5),
+          { date: '2026-11-05', itemId: 'x', amount: 99 },
+        ],
+      },
+      {
+        habit: meditate,
+        entries: [entry('2026-11-01', 1), entry('2026-11-02', 1), entry('2026-11-03', 1)],
+      },
+      { habit: smoke, entries: [entry('2026-10-20', 2)] },
+      {
+        habit: cigarettes,
+        entries: [
+          entry('2026-10-28', 10),
+          entry('2026-11-02', 3),
+          entry('2026-11-04', 4),
+          entry('2026-11-06', 6),
+        ],
+      },
+    ],
+  };
+  const habitGoal = (values: Partial<GoalInput>) => goal({ kind: 'habit', ...values });
+
+  it('schlägt Kennzahlen passend zur Art vor', () => {
+    expect(habitMetricsFor('count')).toEqual(['amount', 'days']);
+    expect(habitMetricsFor('items')).toEqual(['days']);
+    expect(habitMetricsFor('quit')).toEqual(['streak', 'limit']);
+  });
+
+  it('summiert die Menge im Zeitraum (ohne Unterpunkte)', () => {
+    const monthly = habitGoal({ habitId: 'read', habitMetric: 'amount', target: 300 });
+    expect(goalProgress(monthly, data, TODAY)).toMatchObject({ current: 35, recurring: true });
+    const custom = habitGoal({
+      habitId: 'read',
+      habitMetric: 'amount',
+      period: 'custom',
+      startDate: '2026-10-01',
+      deadline: '2026-12-31',
+      target: 50,
+    });
+    expect(goalProgress(custom, data, TODAY)).toMatchObject({
+      current: 55,
+      status: 'achieved',
+      achievedOn: '2026-11-02',
+    });
+  });
+
+  it('zählt erledigte Tage', () => {
+    const weekly = habitGoal({
+      habitId: 'meditate',
+      habitMetric: 'days',
+      period: 'week',
+      target: 5,
+    });
+    // Woche ab Mo 2.11.; der 1.11. ist ein Sonntag
+    expect(goalProgress(weekly, data, TODAY)).toMatchObject({ current: 2, percent: 40 });
+    // Zählen: nur Tage mit erreichtem Tagesziel (10 Seiten)
+    const readDays = habitGoal({ habitId: 'read', habitMetric: 'days', target: 10 });
+    expect(goalProgress(readDays, data, TODAY).current).toBe(1);
+  });
+
+  it('Serie: aktuelle und beste Serie, erreicht sobald eine Serie lang genug war', () => {
+    const streak = habitGoal({ habitId: 'smoke', habitMetric: 'streak', target: 30 });
+    // 1.–19.10. = 19 Tage, Rückfall am 20.10., 21.10.–7.11. = 18 Tage
+    expect(goalProgress(streak, data, TODAY)).toMatchObject({
+      current: 18,
+      best: 19,
+      percent: 60,
+      status: 'active',
+      achievedOn: null,
+    });
+    expect(goalProgress({ ...streak, target: 15 }, data, TODAY)).toMatchObject({
+      status: 'achieved',
+      achievedOn: '2026-10-15',
+      percent: 100,
+    });
+    expect(goalProgress({ ...streak, deadline: '2026-11-01' }, data, TODAY).status).toBe('missed');
+  });
+
+  it('Obergrenze: weniger ist besser, wiederkehrend bleibt sie aktiv', () => {
+    const weekly = habitGoal({ habitId: 'cigs', habitMetric: 'limit', period: 'week', target: 20 });
+    expect(lowerIsBetter(weekly)).toBe(true);
+    expect(goalProgress(weekly, data, TODAY)).toMatchObject({
+      current: 13,
+      remaining: 7,
+      percent: 65,
+      status: 'active',
+      recurring: true,
+      // Wochen ab 28.9. bis 26.10.: alle unter 20
+      history: { reached: 5, total: 5 },
+    });
+    expect(goalProgress({ ...weekly, target: 10 }, data, TODAY)).toMatchObject({
+      remaining: -3,
+      percent: 100,
+      status: 'active',
+    });
+    expect(goalProgress({ ...weekly, target: 0 }, data, TODAY).percent).toBe(100);
+  });
+
+  it('Obergrenze im eigenen Zeitraum: überschritten = verfehlt, sonst am Ende erreicht', () => {
+    const october = habitGoal({
+      habitId: 'cigs',
+      habitMetric: 'limit',
+      period: 'custom',
+      startDate: '2026-10-01',
+      deadline: '2026-10-31',
+      target: 5,
+    });
+    expect(goalProgress(october, data, TODAY).status).toBe('missed');
+    expect(goalProgress({ ...october, target: 20 }, data, TODAY)).toMatchObject({
+      status: 'achieved',
+      achievedOn: '2026-10-31',
+    });
+    const november = { ...october, startDate: '2026-11-01', deadline: '2026-11-30', target: 20 };
+    const progress = goalProgress(november, data, TODAY);
+    expect(progress).toMatchObject({ status: 'active', remaining: 7, daysLeft: 23 });
+    expect(progress.expected).toBeCloseTo(20 * (7 / 30));
+  });
+
+  it('ohne Gewohnheit (gelöscht) gibt es keinen Fortschritt', () => {
+    const lost = habitGoal({ habitId: 'gone', habitMetric: 'amount', target: 10 });
+    expect(goalProgress(lost, data, TODAY)).toMatchObject({ current: 0, percent: 0 });
+  });
+});
+
+describe('Alltagswerte als Menge', () => {
+  const data: GoalData = {
+    ...EMPTY,
+    logs: [
+      { date: '2026-10-31', steps: 20_000, waterMl: 3000, sleepSeconds: 9 * 3600 },
+      { date: '2026-11-01', steps: 12_000, waterMl: 3000, sleepSeconds: 7 * 3600 },
+      { date: '2026-11-02', steps: 8000, waterMl: null, sleepSeconds: 8 * 3600 },
+      { date: '2026-11-03', steps: 10_000, waterMl: 1000, sleepSeconds: null },
+    ],
+  };
+  const daily = (totalMetric: GoalInput['totalMetric']) =>
+    goalProgress(goal({ kind: 'total', totalMetric, period: 'month', target: 10 }), data, TODAY)
+      .current;
+
+  it('summiert Schritte und zählt Tage mit erreichtem Tagesziel', () => {
+    expect(daily('steps')).toBe(30_000);
+    expect(daily('stepsGoalDays')).toBe(2);
+    expect(daily('waterGoalDays')).toBe(1);
+    expect(daily('sleepGoalDays')).toBe(1);
+  });
+});
+
+describe('Eigene Ziele', () => {
+  const spanish = goal({ kind: 'custom', title: 'Spanisch', target: 50, unit: 'Lektionen' });
+  const license = goal({ kind: 'custom', title: 'Führerschein', customType: 'check' });
+  const withEntries = (...items: [string, string, number][]): GoalData => ({
+    ...EMPTY,
+    entries: items.map(([goalId, date, amount]) => ({ goalId, date, amount })),
+  });
+
+  it('summiert die eingetragenen Mengen', () => {
+    const data = withEntries(
+      [spanish.id, '2026-10-05', 20],
+      [spanish.id, '2026-10-20', 25],
+      ['other', '2026-10-20', 100],
+    );
+    expect(goalProgress(spanish, data, TODAY)).toMatchObject({
+      current: 45,
+      percent: 90,
+      status: 'active',
+    });
+    const done = withEntries(
+      [spanish.id, '2026-10-05', 20],
+      [spanish.id, '2026-10-20', 25],
+      [spanish.id, '2026-11-03', 5],
+    );
+    expect(goalProgress(spanish, done, TODAY)).toMatchObject({
+      status: 'achieved',
+      achievedOn: '2026-11-03',
+    });
+    expect(goalProgress({ ...spanish, deadline: '2026-10-31' }, data, TODAY).status).toBe('missed');
+    // Mit Zieldatum: Soll bis heute
+    const planned = goalProgress({ ...spanish, deadline: '2026-11-29' }, data, TODAY);
+    expect(planned.expected).toBeCloseTo(50 * (38 / 60));
+  });
+
+  it('Ja/Nein ist mit einem Eintrag erreicht', () => {
+    expect(goalProgress(license, EMPTY, TODAY)).toMatchObject({ current: 0, percent: 0 });
+    expect(goalProgress(license, withEntries([license.id, '2026-11-06', 1]), TODAY)).toMatchObject({
+      status: 'achieved',
+      achievedOn: '2026-11-06',
+      percent: 100,
+    });
+  });
+});
+
+describe('Anzeige: neue Zielarten', () => {
+  const reading = { name: 'Lesen', icon: '📚', unit: 'Seiten', kind: 'count' as const };
+  const smoking = { name: 'Rauchen', icon: '🚭', unit: 'Zigaretten', kind: 'quit' as const };
+
+  it('erzeugt verständliche Namen', () => {
+    const title = (
+      values: Partial<GoalInput> & Pick<GoalInput, 'kind'>,
+      habit: GoalSubject['habit'] = reading,
+    ) => goalTitle(goal(values), { habit }, UNITS);
+    expect(title({ kind: 'habit', habitId: 'r', habitMetric: 'amount', target: 300 })).toBe(
+      'Lesen: 300 Seiten pro Monat',
+    );
+    expect(
+      title({
+        kind: 'habit',
+        habitId: 'r',
+        habitMetric: 'amount',
+        period: 'custom',
+        deadline: '2026-12-31',
+        target: 1000,
+      }),
+    ).toBe('Lesen: 1000 Seiten bis 31.12.2026');
+    expect(
+      title(
+        { kind: 'habit', habitId: 'm', habitMetric: 'days', period: 'year', target: 100 },
+        {
+          ...reading,
+          name: 'Meditieren',
+        },
+      ),
+    ).toBe('Meditieren: an 100 Tagen pro Jahr');
+    expect(title({ kind: 'habit', habitId: 's', habitMetric: 'streak', target: 30 }, smoking)).toBe(
+      'Rauchen: 30 Tage am Stück',
+    );
+    expect(
+      title(
+        { kind: 'habit', habitId: 's', habitMetric: 'limit', period: 'week', target: 20 },
+        smoking,
+      ),
+    ).toBe('Rauchen: höchstens 20 Zigaretten pro Woche');
+    expect(title({ kind: 'total', totalMetric: 'steps', target: 300_000 })).toBe(
+      '300.000 Schritte pro Monat',
+    );
+    expect(title({ kind: 'total', totalMetric: 'stepsGoalDays', target: 20 })).toBe(
+      '20 Tage mit Schrittziel pro Monat',
+    );
+    const spanish = goal({ kind: 'custom', title: 'Spanisch', target: 50, unit: 'Lektionen' });
+    expect(goalName(spanish, {}, UNITS)).toBe('Spanisch');
+    expect(formatGoalValue(spanish, 12.5, UNITS)).toBe('12,5 Lektionen');
+  });
+
+  it('wählt das Symbol', () => {
+    const custom = goal({ kind: 'custom', title: 'Spanisch', target: 50 });
+    expect(goalIcon(custom)).toBe('🎯');
+    expect(goalIcon({ ...custom, icon: '🇪🇸' })).toBe('🇪🇸');
+    const habit = goal({ kind: 'habit', habitId: 'r', habitMetric: 'amount', target: 10 });
+    expect(goalIcon(habit, { habit: reading })).toBe('📚');
+    expect(goalIcon(goal({ kind: 'bodyWeight', startValue: 90, target: 85 }))).toBe('⚖️');
   });
 });

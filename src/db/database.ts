@@ -18,6 +18,7 @@ import {
   type Food,
   type Gear,
   type Goal,
+  type GoalEntry,
   type Habit,
   type HabitCheck,
   type MealEntry,
@@ -70,6 +71,7 @@ export class AppDatabase extends Dexie {
   gear!: Table<Gear, string>;
   enduranceTracks!: Table<EnduranceTrack, string>;
   goals!: Table<Goal, string>;
+  goalEntries!: Table<GoalEntry, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -424,6 +426,23 @@ export class AppDatabase extends Dexie {
     this.version(23).stores({
       goals: 'id, updatedAt',
     });
+    // Ziele für Gewohnheiten und eigene Ziele mit selbst eingetragenem Fortschritt
+    this.version(24)
+      .stores({
+        goalEntries: 'id, goalId, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Goal, string>('goals')
+          .toCollection()
+          .modify((goal) => {
+            goal.habitId ??= null;
+            goal.habitMetric ??= null;
+            goal.customType ??= null;
+            goal.unit ??= '';
+            goal.icon ??= '';
+          }),
+      );
   }
 }
 

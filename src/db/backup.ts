@@ -269,8 +269,19 @@ const gearSchema = baseEntitySchema.extend(gearFieldsSchema.shape).extend({
 const enduranceTrackSchema = baseEntitySchema.extend(trackFieldsSchema.shape).extend({
   sessionId: z.string().min(1),
 });
-// Seit DB-Version 23
-const goalSchema = baseEntitySchema.extend(goalFieldsSchema.shape);
+// Seit DB-Version 23, Gewohnheiten und eigene Ziele seit 24
+const goalSchema = baseEntitySchema.extend(goalFieldsSchema.shape).extend({
+  habitId: goalFieldsSchema.shape.habitId.default(null),
+  habitMetric: goalFieldsSchema.shape.habitMetric.default(null),
+  customType: goalFieldsSchema.shape.customType.default(null),
+  unit: goalFieldsSchema.shape.unit.default(''),
+  icon: goalFieldsSchema.shape.icon.default(''),
+});
+const goalEntrySchema = baseEntitySchema.extend({
+  goalId: z.string().min(1),
+  date: dayKeySchema,
+  amount: z.number().positive(),
+});
 
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
@@ -305,6 +316,7 @@ export const backupSchema = z.object({
     gear: z.array(gearSchema).default([]),
     enduranceTracks: z.array(enduranceTrackSchema).default([]),
     goals: z.array(goalSchema).default([]),
+    goalEntries: z.array(goalEntrySchema).default([]),
   }),
 });
 
@@ -334,6 +346,7 @@ export const TABLE_LABELS: Record<TableName, string> = {
   gear: 'Ausrüstung',
   enduranceTracks: 'Verläufe von Einheiten',
   goals: 'Ziele',
+  goalEntries: 'Einträge zu eigenen Zielen',
 };
 
 export async function createBackup(): Promise<Backup> {

@@ -61,7 +61,21 @@ export const GOAL_KIND_LABELS: Record<GoalKind, { name: string; icon: string; hi
   strength: { name: 'Kraft', icon: '🏋️', hint: 'z. B. Bankdrücken 100 kg' },
   effort: { name: 'Bestzeit', icon: '⏱️', hint: 'z. B. 10 km unter 50 Minuten' },
   bodyWeight: { name: 'Gewicht', icon: '⚖️', hint: 'Zielgewicht, ab- oder zunehmen' },
-  total: { name: 'Menge', icon: '📅', hint: 'z. B. 12 Trainings im Monat, 500 km im Jahr' },
+  total: {
+    name: 'Menge',
+    icon: '📅',
+    hint: 'z. B. 12 Trainings im Monat, 500 km im Jahr, 300.000 Schritte im Monat',
+  },
+  habit: {
+    name: 'Gewohnheit',
+    icon: '✅',
+    hint: 'z. B. 1000 Seiten lesen, an 100 Tagen meditieren, 30 Tage rauchfrei',
+  },
+  custom: {
+    name: 'Eigenes',
+    icon: '🎯',
+    hint: 'Fortschritt selbst eintragen, z. B. 50 Lektionen Spanisch oder Führerschein machen',
+  },
 };
 
 export const TOTAL_GOAL_METRIC_LABELS: Record<TotalGoalMetric, string> = {
@@ -69,6 +83,10 @@ export const TOTAL_GOAL_METRIC_LABELS: Record<TotalGoalMetric, string> = {
   trainings: 'Trainings (Kraft + Ausdauer)',
   distance: 'Strecke',
   duration: 'Ausdauer-Zeit',
+  steps: 'Schritte',
+  stepsGoalDays: 'Tage mit erreichtem Schrittziel',
+  waterGoalDays: 'Tage mit erreichtem Wasserziel',
+  sleepGoalDays: 'Tage mit erreichtem Schlafziel',
 };
 
 export const GOAL_PERIOD_LABELS: Record<GoalPeriod, string> = {

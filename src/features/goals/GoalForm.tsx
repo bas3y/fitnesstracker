@@ -1,7 +1,9 @@
 import { useId, useMemo, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { dangerButton, inputField, primaryButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
 import { DurationInput } from '../../components/DurationInput';
+import { EmojiPicker } from '../../components/EmojiPicker';
 import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Select } from '../../components/Select';
@@ -9,6 +11,7 @@ import { Stepper } from '../../components/Stepper';
 import {
   DISTANCE_SPORTS,
   MAX_GOAL_MIN_REPS,
+  MAX_GOAL_UNIT_LENGTH,
   emptyGoalInput,
   goalInputSchema,
   type GoalInput,
@@ -27,15 +30,21 @@ import {
   type Settings,
 } from '../../db/types';
 import { EFFORT_SPORTS, formatEffortDistance, sportEfforts } from '../../domain/enduranceStats';
+import { formatDecimal } from '../../domain/format';
 import {
+  HABIT_GOAL_METRIC_LABELS,
   formatGoalDate,
   formatGoalValue,
   goalProgress,
   goalTitle,
+  habitMetricsFor,
+  hasPeriod,
   strengthMetricLabel,
   strengthMetricsFor,
   type GoalData,
+  type GoalHabit,
   type GoalProgress,
+  type GoalSubject,
 } from '../../domain/goals';
 import {
   ENDURANCE_SPORT_LABELS,
@@ -49,15 +58,13 @@ import {
   metersToDisplay,
   roundTo,
 } from '../../domain/units';
+import { formatWorkoutDuration } from '../../domain/workout';
+import { HABITS_PATH } from '../daily/useHabits';
 import { ExercisePicker } from '../training/ExercisePicker';
 
 const LABEL = 'mb-1 block text-sm font-medium';
 const HINT = 'text-sm text-slate-500 dark:text-slate-400';
 
-const KIND_OPTIONS = GOAL_KINDS.map((kind) => ({
-  value: kind,
-  label: GOAL_KIND_LABELS[kind].name,
-}));
 const PERIOD_OPTIONS: { value: GoalPeriod; label: string }[] = GOAL_PERIODS.map((period) => ({
   value: period,
   label: { week: 'Woche', month: 'Monat', year: 'Jahr', custom: 'Eigener' }[period],
@@ -66,11 +73,27 @@ const SPORT_NAMES = Object.fromEntries(
   ENDURANCE_SPORTS.map((sport) => [sport, ENDURANCE_SPORT_LABELS[sport].name]),
 ) as Record<EnduranceSport, string>;
 
+/** Vorschläge für eigene Ziele */
+const CUSTOM_GOAL_ICONS = ['🎯', '📖', '🗣️', '🎸', '🎓', '🚗', '💰', '✈️', '🏠', '💼', '🎨', '🌱'];
+
+/** Tage je Zeitraum für Vorschläge */
+const PERIOD_DAYS: Record<GoalPeriod, number> = { week: 7, month: 30, year: 365, custom: 30 };
+
+const isLimitInput = (input: GoalInput) => input.kind === 'habit' && input.habitMetric === 'limit';
+
 /** Für Vorschau und „Bisher“: Eingabe als Ziel, falls sie schon vollständig genug ist */
 function previewGoal(input: GoalInput): Goal | null {
-  const result = goalInputSchema.safeParse({ ...input, target: input.target || 1 });
+  const target = input.target || (isLimitInput(input) ? 0 : 1);
+  const result = goalInputSchema.safeParse({ ...input, target, title: input.title || 'Vorschau' });
   if (!result.success) return null;
-  return { ...result.data, id: 'preview', createdAt: '', updatedAt: '', deletedAt: null };
+  return {
+    ...result.data,
+    title: input.title,
+    id: 'preview',
+    createdAt: '',
+    updatedAt: '',
+    deletedAt: null,
+  };
 }
 
 export function GoalForm({
@@ -83,6 +106,7 @@ export function GoalForm({
   onSubmit,
   onCancel,
   onDelete,
+  goalId,
 }: {
   initial: GoalInput;
   initialExercise: Exercise | null;
@@ -93,10 +117,12 @@ export function GoalForm({
   onSubmit: (values: GoalValues) => Promise<void>;
   onCancel: () => void;
   onDelete?: () => void;
+  /** Beim Bearbeiten: für den bisher eingetragenen Fortschritt eigener Ziele */
+  goalId?: string;
 }) {
   const titleId = useId();
   const deadlineId = useId();
-  const startId = useId();
+  const unitId = useId();
   const [input, setInput] = useState(initial);
   const [exercise, setExercise] = useState(initialExercise);
   const [picking, setPicking] = useState(false);
@@ -107,8 +133,21 @@ export function GoalForm({
     setError(null);
   };
 
+  const selectableHabits = data.habits
+    .map(({ habit }) => habit)
+    .filter((habit) => habit.archivedAt === null || habit.id === input.habitId);
+  const habit = data.habits.find((item) => item.habit.id === input.habitId)?.habit ?? null;
+  const subject: GoalSubject = { exercise, habit };
+
+  const habitDefaults = (selected: GoalHabit | null): Partial<GoalInput> => ({
+    habitId: selected?.id ?? null,
+    habitMetric: selected ? habitMetricsFor(selected.kind)[0]! : null,
+    target: 0,
+  });
+
   const changeKind = (kind: GoalKind) => {
     if (kind === input.kind) return;
+    const firstHabit = selectableHabits.find((item) => item.archivedAt === null) ?? null;
     setInput({
       ...emptyGoalInput(kind, input.startDate),
       title: input.title,
@@ -116,17 +155,19 @@ export function GoalForm({
       startValue: kind === 'bodyWeight' ? settings.bodyWeightKg : null,
       exerciseId: kind === 'strength' ? (exercise?.id ?? null) : null,
       strengthMetric: kind === 'strength' && exercise ? strengthMetricsFor(exercise)[0]! : null,
+      ...(kind === 'habit' ? habitDefaults(firstHabit) : {}),
     });
     setError(null);
   };
 
   const preview = useMemo(() => previewGoal(input), [input]);
   const progress = useMemo(
-    () => (preview ? goalProgress(preview, data, today) : null),
-    [preview, data, today],
+    () => (preview ? goalProgress({ ...preview, id: goalId ?? 'preview' }, data, today) : null),
+    [preview, data, today, goalId],
   );
   const isBodyweight = exercise?.equipment === 'bodyweight';
-  const autoTitle = preview && input.target > 0 ? goalTitle(preview, exercise, units) : '';
+  const autoTitle =
+    preview && (input.target > 0 || isLimitInput(input)) ? goalTitle(preview, subject, units) : '';
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -158,16 +199,34 @@ export function GoalForm({
     />
   );
 
+  const periodFields = (
+    <PeriodFields input={input} today={today} onChange={change} deadlineId={deadlineId} />
+  );
+
   return (
     <form onSubmit={(event) => void submit(event)}>
       <Card>
         <div className="flex flex-col gap-3">
-          <SegmentedControl
-            label="Art des Ziels"
-            options={KIND_OPTIONS}
-            value={input.kind}
-            onChange={changeKind}
-          />
+          <div role="group" aria-label="Art des Ziels" className="grid grid-cols-3 gap-2">
+            {GOAL_KINDS.map((kind) => (
+              <button
+                key={kind}
+                type="button"
+                aria-pressed={input.kind === kind}
+                className={`flex min-h-14 flex-col items-center justify-center rounded-xl border-2 px-1 py-1 text-sm font-semibold ${
+                  input.kind === kind
+                    ? 'border-emerald-700 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
+                    : 'border-slate-200 dark:border-slate-700'
+                }`}
+                onClick={() => changeKind(kind)}
+              >
+                <span aria-hidden="true" className="text-lg leading-6">
+                  {GOAL_KIND_LABELS[kind].icon}
+                </span>
+                {GOAL_KIND_LABELS[kind].name}
+              </button>
+            ))}
+          </div>
           <p className={HINT}>{GOAL_KIND_LABELS[input.kind].hint}</p>
         </div>
       </Card>
@@ -334,57 +393,147 @@ export function GoalForm({
                 onChange={(sport) => change({ sport })}
               />
             )}
-            <SegmentedControl
-              label="Zeitraum"
-              options={PERIOD_OPTIONS}
-              value={input.period ?? 'month'}
-              onChange={(period) =>
-                change({
-                  period,
-                  startDate: period === 'custom' ? input.startDate : today,
-                  deadline: period === 'custom' ? (input.deadline ?? null) : null,
-                })
-              }
-            />
-            {input.period === 'custom' && (
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label htmlFor={startId} className={LABEL}>
-                    Beginn
-                  </label>
-                  <input
-                    id={startId}
-                    type="date"
-                    className={inputField}
-                    value={input.startDate}
-                    onChange={(event) =>
-                      event.target.value && change({ startDate: event.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <label htmlFor={deadlineId} className={LABEL}>
-                    Ende
-                  </label>
-                  <input
-                    id={deadlineId}
-                    type="date"
-                    className={inputField}
-                    min={input.startDate}
-                    value={input.deadline ?? ''}
-                    onChange={(event) => change({ deadline: event.target.value || null })}
-                  />
-                </div>
-              </div>
-            )}
+            {periodFields}
             <TotalTarget input={input} units={units} onChange={(target) => change({ target })} />
+            <DailyGoalHint input={input} settings={settings} />
+          </div>
+        </Card>
+      )}
+
+      {input.kind === 'habit' && (
+        <Card title="Gewohnheit">
+          {selectableHabits.length === 0 ? (
+            <p className={HINT}>
+              Noch keine Gewohnheiten.{' '}
+              <Link
+                to={HABITS_PATH}
+                className="font-semibold text-emerald-700 underline dark:text-emerald-400"
+              >
+                Gewohnheit anlegen
+              </Link>
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <Select
+                label="Gewohnheit"
+                value={input.habitId ?? null}
+                options={selectableHabits.map((item) => item.id)}
+                labels={Object.fromEntries(
+                  selectableHabits.map((item) => [item.id, `${item.icon} ${item.name}`]),
+                )}
+                emptyLabel="Bitte wählen"
+                onChange={(habitId) =>
+                  change(
+                    habitDefaults(selectableHabits.find((item) => item.id === habitId) ?? null),
+                  )
+                }
+              />
+              {habit && habitMetricsFor(habit.kind).length > 1 && (
+                <SegmentedControl
+                  label="Kennzahl"
+                  options={habitMetricsFor(habit.kind).map((metric) => ({
+                    value: metric,
+                    label: HABIT_GOAL_METRIC_LABELS[metric],
+                  }))}
+                  value={input.habitMetric ?? habitMetricsFor(habit.kind)[0]!}
+                  onChange={(habitMetric) =>
+                    change({
+                      habitMetric,
+                      target: 0,
+                      period: habitMetric === 'streak' ? null : (input.period ?? 'month'),
+                    })
+                  }
+                />
+              )}
+              {habit && <p className={HINT}>{habitMetricHint(input, habit)}</p>}
+              {habit && input.habitMetric !== 'streak' && periodFields}
+              {habit && (
+                <HabitTarget
+                  input={input}
+                  habit={habit}
+                  onChange={(target) => change({ target })}
+                />
+              )}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {input.kind === 'custom' && (
+        <Card title="Eigenes Ziel">
+          <div className="flex flex-col gap-4">
+            <div>
+              <label htmlFor={titleId} className={LABEL}>
+                Name
+              </label>
+              <input
+                id={titleId}
+                className={inputField}
+                maxLength={80}
+                placeholder="z. B. Spanisch lernen"
+                value={input.title}
+                onChange={(event) => change({ title: event.target.value })}
+              />
+            </div>
+            <EmojiPicker
+              value={input.icon ?? ''}
+              suggestions={CUSTOM_GOAL_ICONS}
+              optional
+              onChange={(icon) => change({ icon })}
+            />
+            <SegmentedControl
+              label="Form"
+              options={[
+                { value: 'number' as const, label: 'Mit Zahl' },
+                { value: 'check' as const, label: 'Ja/Nein' },
+              ]}
+              value={input.customType ?? 'number'}
+              onChange={(customType) => change({ customType, target: 0 })}
+            />
+            {input.customType === 'check' ? (
+              <p className={HINT}>
+                Wird auf der Ziele-Seite und im Widget abgehakt, z. B. „Führerschein machen“.
+              </p>
+            ) : (
+              <>
+                <div className="grid grid-cols-[1fr_7rem] items-end gap-2">
+                  <Stepper
+                    label="Ziel"
+                    value={input.target || null}
+                    step={1}
+                    min={0.01}
+                    max={1_000_000}
+                    decimals={2}
+                    startValue={10}
+                    allowEmpty
+                    onChange={(target) => change({ target: target ?? 0 })}
+                  />
+                  <div>
+                    <label htmlFor={unitId} className={LABEL}>
+                      Einheit
+                    </label>
+                    <input
+                      id={unitId}
+                      className={inputField}
+                      maxLength={MAX_GOAL_UNIT_LENGTH}
+                      placeholder="Lektionen"
+                      value={input.unit ?? ''}
+                      onChange={(event) => change({ unit: event.target.value })}
+                    />
+                  </div>
+                </div>
+                <p className={HINT}>
+                  Fortschritt trägst du selbst ein (+1, beliebige Menge, Rückgängig).
+                </p>
+              </>
+            )}
           </div>
         </Card>
       )}
 
       <Card>
         <div className="flex flex-col gap-4">
-          {input.kind !== 'total' && (
+          {!hasPeriod({ kind: input.kind, habitMetric: input.habitMetric ?? null }) && (
             <div>
               <label htmlFor={deadlineId} className={LABEL}>
                 Zieldatum (optional)
@@ -399,25 +548,27 @@ export function GoalForm({
               />
             </div>
           )}
-          <div>
-            <label htmlFor={titleId} className={LABEL}>
-              Name (optional)
-            </label>
-            <input
-              id={titleId}
-              className={inputField}
-              maxLength={80}
-              placeholder={autoTitle || 'Wird automatisch vergeben'}
-              value={input.title}
-              onChange={(event) => change({ title: event.target.value })}
-            />
-          </div>
+          {input.kind !== 'custom' && (
+            <div>
+              <label htmlFor={titleId} className={LABEL}>
+                Name (optional)
+              </label>
+              <input
+                id={titleId}
+                className={inputField}
+                maxLength={80}
+                placeholder={autoTitle || 'Wird automatisch vergeben'}
+                value={input.title}
+                onChange={(event) => change({ title: event.target.value })}
+              />
+            </div>
+          )}
           {progress && preview && (
             <CurrentHint
               goal={preview}
               progress={progress}
               units={units}
-              isBodyweight={isBodyweight}
+              subject={subject}
               hasTarget={input.target > 0}
             />
           )}
@@ -462,6 +613,144 @@ export function GoalForm({
   );
 }
 
+/** Zeitraum (Woche/Monat/Jahr wiederkehrend oder eigener mit Beginn und Ende) */
+function PeriodFields({
+  input,
+  today,
+  deadlineId,
+  onChange,
+}: {
+  input: GoalInput;
+  today: string;
+  deadlineId: string;
+  onChange: (changes: Partial<GoalInput>) => void;
+}) {
+  const startId = useId();
+  return (
+    <>
+      <SegmentedControl
+        label="Zeitraum"
+        options={PERIOD_OPTIONS}
+        value={input.period ?? 'month'}
+        onChange={(period) =>
+          onChange({
+            period,
+            startDate: period === 'custom' ? input.startDate : today,
+            deadline: period === 'custom' ? (input.deadline ?? null) : null,
+          })
+        }
+      />
+      {input.period === 'custom' && (
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label htmlFor={startId} className={LABEL}>
+              Beginn
+            </label>
+            <input
+              id={startId}
+              type="date"
+              className={inputField}
+              value={input.startDate}
+              onChange={(event) =>
+                event.target.value && onChange({ startDate: event.target.value })
+              }
+            />
+          </div>
+          <div>
+            <label htmlFor={deadlineId} className={LABEL}>
+              Ende
+            </label>
+            <input
+              id={deadlineId}
+              type="date"
+              className={inputField}
+              min={input.startDate}
+              value={input.deadline ?? ''}
+              onChange={(event) => onChange({ deadline: event.target.value || null })}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function habitMetricHint(input: GoalInput, habit: GoalHabit): string {
+  switch (input.habitMetric) {
+    case 'amount':
+      return `Zählt die Summe im Zeitraum${habit.unit ? ` (${habit.unit})` : ''}.`;
+    case 'days':
+      return 'Zählt die Tage, an denen die Gewohnheit erledigt war.';
+    case 'streak':
+      return 'Tage am Stück ohne Überschreiten des Tageslimits. Ein Rückfall setzt die Serie zurück.';
+    case 'limit':
+      return 'Höchstens so viel im Zeitraum – weniger ist besser. 0 = ganz ohne.';
+    default:
+      return '';
+  }
+}
+
+function HabitTarget({
+  input,
+  habit,
+  onChange,
+}: {
+  input: GoalInput;
+  habit: GoalHabit;
+  onChange: (target: number) => void;
+}) {
+  const days = PERIOD_DAYS[input.period ?? 'month'];
+  switch (input.habitMetric) {
+    case 'amount':
+      return (
+        <Stepper
+          label="Ziel"
+          value={input.target || null}
+          unit={habit.unit || undefined}
+          step={habit.step > 0 ? habit.step : 1}
+          min={0.01}
+          max={1_000_000}
+          decimals={2}
+          startValue={Math.round(habit.target * days)}
+          allowEmpty
+          onChange={(target) => onChange(target ?? 0)}
+        />
+      );
+    case 'limit':
+      return (
+        <Stepper
+          label="Höchstens"
+          value={input.target}
+          unit={habit.unit || undefined}
+          step={habit.step > 0 ? habit.step : 1}
+          min={0}
+          max={1_000_000}
+          decimals={2}
+          startValue={Math.round(habit.target * days)}
+          allowEmpty
+          onChange={(target) => onChange(target ?? 0)}
+        />
+      );
+    default:
+      return (
+        <Stepper
+          label="Ziel"
+          value={input.target || null}
+          unit="Tage"
+          step={1}
+          min={1}
+          max={10_000}
+          decimals={0}
+          startValue={
+            input.habitMetric === 'streak' ? 30 : Math.min(days, input.period === 'week' ? 5 : 20)
+          }
+          allowEmpty
+          onChange={(target) => onChange(target ?? 0)}
+        />
+      );
+  }
+}
+
 function TotalTarget({
   input,
   units,
@@ -472,6 +761,7 @@ function TotalTarget({
   onChange: (target: number) => void;
 }) {
   const value = input.target || null;
+  const days = PERIOD_DAYS[input.period ?? 'month'];
   switch (input.totalMetric) {
     case 'distance': {
       if (input.sport === 'swim') {
@@ -521,6 +811,38 @@ function TotalTarget({
           onChange={(hours) => onChange(hours === null ? 0 : Math.round(hours * 3600))}
         />
       );
+    case 'steps':
+      return (
+        <Stepper
+          label="Ziel"
+          value={value}
+          unit="Schritte"
+          step={10_000}
+          min={1}
+          max={100_000_000}
+          decimals={0}
+          startValue={Math.round((units.stepsGoal * days) / 10_000) * 10_000}
+          allowEmpty
+          onChange={(target) => onChange(target ?? 0)}
+        />
+      );
+    case 'stepsGoalDays':
+    case 'waterGoalDays':
+    case 'sleepGoalDays':
+      return (
+        <Stepper
+          label="Ziel"
+          value={value}
+          unit="Tage"
+          step={1}
+          min={1}
+          max={10_000}
+          decimals={0}
+          startValue={input.period === 'week' ? 5 : input.period === 'year' ? 250 : 20}
+          allowEmpty
+          onChange={(target) => onChange(target ?? 0)}
+        />
+      );
     default:
       return (
         <Stepper
@@ -539,30 +861,60 @@ function TotalTarget({
   }
 }
 
+/** Welches Tagesziel zählt (aus den Einstellungen) */
+function DailyGoalHint({ input, settings }: { input: GoalInput; settings: Settings }) {
+  const goal =
+    input.totalMetric === 'stepsGoalDays'
+      ? `${formatDecimal(settings.stepsGoal, 0)} Schritte`
+      : input.totalMetric === 'waterGoalDays'
+        ? `${formatDecimal(settings.waterGoalMl / 1000, 2)} l Wasser`
+        : input.totalMetric === 'sleepGoalDays'
+          ? `${formatWorkoutDuration(settings.sleepGoalSeconds)} Schlaf`
+          : null;
+  if (input.totalMetric === 'steps') {
+    return <p className={HINT}>Summe der Schritte aus dem Alltag (Körper).</p>;
+  }
+  if (!goal) return null;
+  return (
+    <p className={HINT}>
+      Zählt Tage mit mindestens {goal} (Tagesziel aus den Einstellungen; eine Änderung gilt auch
+      rückwirkend).
+    </p>
+  );
+}
+
 /** Wo man gerade steht – hilft beim Wählen eines realistischen Ziels */
 function CurrentHint({
   goal,
   progress,
   units,
-  isBodyweight,
+  subject,
   hasTarget,
 }: {
   goal: Goal;
   progress: GoalProgress;
   units: Settings;
-  isBodyweight: boolean;
+  subject: GoalSubject;
   hasTarget: boolean;
 }) {
   if (progress.current === null) return null;
-  const value = formatGoalValue(goal, progress.current, units, isBodyweight);
-  const text =
-    goal.kind === 'total'
-      ? `Im ${progress.recurring ? 'laufenden' : 'gewählten'} Zeitraum bisher: ${value}`
-      : goal.kind === 'bodyWeight'
-        ? `Aktuelles Gewicht: ${value}`
-        : `Bisher bester Wert: ${value}`;
+  const format = (value: number) => formatGoalValue(goal, value, units, subject);
+  const value = format(progress.current);
+  let text: string;
+  if (goal.kind === 'custom') {
+    if (goal.customType === 'check' || progress.current === 0) return null;
+    text = `Bisher eingetragen: ${value}`;
+  } else if (goal.kind === 'habit' && goal.habitMetric === 'streak') {
+    text = `Aktuelle Serie: ${value}${progress.best ? ` (beste: ${format(progress.best)})` : ''}`;
+  } else if (hasPeriod(goal)) {
+    text = `Im ${progress.recurring ? 'laufenden' : 'gewählten'} Zeitraum bisher: ${value}`;
+  } else if (goal.kind === 'bodyWeight') {
+    text = `Aktuelles Gewicht: ${value}`;
+  } else {
+    text = `Bisher bester Wert: ${value}`;
+  }
   const reached =
-    hasTarget && progress.achievedOn && goal.kind !== 'total'
+    hasTarget && progress.achievedOn && !hasPeriod(goal) && goal.kind !== 'custom'
       ? ` (Ziel schon am ${formatGoalDate(progress.achievedOn)} erreicht)`
       : '';
   return (

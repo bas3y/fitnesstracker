@@ -1,4 +1,11 @@
-import type { DailyLog, DayKey, EnduranceSession, EnduranceSport, MealEntry } from '../db/types';
+import type {
+  DailyLog,
+  DayKey,
+  EnduranceSession,
+  EnduranceSport,
+  Habit,
+  MealEntry,
+} from '../db/types';
 import { shiftDay } from './daily';
 import { sessionDay, sessionTotals, type DayRange, type SessionTotals } from './endurance';
 import { newEffortRecords } from './enduranceStats';
@@ -22,13 +29,27 @@ export type ReviewEnduranceSession = Pick<
 
 type ReviewMealEntry = Pick<MealEntry, 'date' | 'meal' | 'grams' | 'nutrients' | 'createdAt'>;
 
+export interface ReviewHabit extends HabitHistoryItem {
+  habit: HabitHistoryItem['habit'] & Pick<Habit, 'id' | 'name' | 'icon' | 'unit'>;
+}
+
+/** Summe einer Gewohnheit mit Menge (`count`) bzw. Rückfälle (`quit`) im Zeitraum */
+export interface ReviewHabitTotal {
+  habitId: string;
+  name: string;
+  icon: string;
+  unit: string;
+  kind: 'count' | 'quit';
+  amount: number;
+}
+
 export interface ReviewInput {
   /** Alle beendeten Workouts (für Rekorde auch die früheren) */
   strength: StatsSession[];
   /** Alle Einheiten (für Bestzeiten auch die früheren) */
   endurance: readonly ReviewEnduranceSession[];
   logs: readonly DailyLog[];
-  habits: readonly HabitHistoryItem[];
+  habits: readonly ReviewHabit[];
   /** Mindestens die Einträge im Zeitraum */
   meals: readonly ReviewMealEntry[];
   bodyWeightKg: number | null;
@@ -58,6 +79,8 @@ export interface ReviewSummary {
   };
   /** Ø erledigte Gewohnheiten in % je Tag mit fälligen Gewohnheiten */
   habitCompletion: number | null;
+  /** Gewohnheiten mit Menge und Aufhören (archivierte nur mit Einträgen im Zeitraum) */
+  habitTotals: ReviewHabitTotal[];
   nutrition: {
     /** Tage mit Mahlzeiten oder Protein */
     days: number;
@@ -154,6 +177,15 @@ export function reviewSummary(input: ReviewInput, range: DayRange, today: DayKey
       weightKg: logs.findLast((log) => log.weightKg !== null)?.weightKg ?? null,
     },
     habitCompletion: average(completion.map((day) => day.value)),
+    habitTotals: input.habits.flatMap(({ habit, entries }): ReviewHabitTotal[] => {
+      if (habit.kind !== 'count' && habit.kind !== 'quit') return [];
+      const amount = entries
+        .filter((entry) => entry.itemId === null && inside(entry.date))
+        .reduce((total, entry) => total + entry.amount, 0);
+      if (habit.archivedAt !== null && amount === 0) return [];
+      const { id: habitId, name, icon, unit, kind } = habit;
+      return [{ habitId, name, icon, unit, kind, amount }];
+    }),
     nutrition: {
       days: nutritionDays.length,
       kcal: average([...mealsByDay.values()].map((entries) => nutritionDay(entries).total.kcal)),
@@ -178,6 +210,7 @@ export function hasReviewData(summary: ReviewSummary): boolean {
     summary.trainingDays > 0 ||
     Object.values(daily).some((value) => value !== null) ||
     summary.habitCompletion !== null ||
+    summary.habitTotals.some((habit) => habit.amount > 0) ||
     summary.nutrition.days > 0
   );
 }

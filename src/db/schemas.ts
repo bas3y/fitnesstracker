@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import { isValidBarcode, normalizeBarcode } from '../domain/barcode';
+import { isSingleEmoji } from '../domain/emoji';
 import { BEST_EFFORT_METERS } from '../domain/track';
 import {
+  CUSTOM_GOAL_TYPES,
+  HABIT_GOAL_METRICS,
   ENDURANCE_SPORTS,
   EQUIPMENT,
   EXERCISE_CATEGORIES,
@@ -623,14 +626,16 @@ export type GearValues = z.output<typeof gearFieldsSchema>;
 
 export const MAX_GOAL_TARGET = 1_000_000_000;
 export const MAX_GOAL_MIN_REPS = 100;
+export const MAX_GOAL_UNIT_LENGTH = 20;
 
 /** Felder eines Ziels ohne Metadaten – für Backup */
 export const goalFieldsSchema = z.object({
   kind: z.enum(GOAL_KINDS),
   title: z.string().trim().max(80, 'Name höchstens 80 Zeichen'),
+  /** 0 nur bei einer Obergrenze („ganz ohne“) */
   target: z
     .number({ message: 'Bitte einen Zielwert eingeben' })
-    .positive('Bitte einen Zielwert eingeben')
+    .min(0, 'Bitte einen Zielwert eingeben')
     .max(MAX_GOAL_TARGET, 'Zielwert zu groß'),
   startDate: dayKeySchema,
   deadline: dayKeySchema.nullable(),
@@ -642,15 +647,45 @@ export const goalFieldsSchema = z.object({
   startValue: z.number().positive().nullable(),
   totalMetric: z.enum(TOTAL_GOAL_METRICS).nullable(),
   period: z.enum(GOAL_PERIODS).nullable(),
+  habitId: z.string().min(1).nullable(),
+  habitMetric: z.enum(HABIT_GOAL_METRICS).nullable(),
+  customType: z.enum(CUSTOM_GOAL_TYPES).nullable(),
+  unit: z.string().trim().max(MAX_GOAL_UNIT_LENGTH, 'Einheit höchstens 20 Zeichen'),
+  icon: z.string().trim().max(32),
 });
 
 type GoalFields = z.output<typeof goalFieldsSchema>;
+
+/** Gewohnheit, Menge (außer Serie): Zeitraum Pflicht */
+const usesPeriod = (goal: Pick<GoalFields, 'kind' | 'habitMetric'>) =>
+  goal.kind === 'total' || (goal.kind === 'habit' && goal.habitMetric !== 'streak');
+
+/** Zielwert ist eine Anzahl (ganze Zahl) */
+function isCountTarget(goal: Pick<GoalFields, 'kind' | 'totalMetric' | 'habitMetric'>): boolean {
+  if (goal.kind === 'total')
+    return goal.totalMetric !== 'distance' && goal.totalMetric !== 'duration';
+  return goal.kind === 'habit' && (goal.habitMetric === 'days' || goal.habitMetric === 'streak');
+}
 
 function goalIssue(goal: GoalFields): { path: keyof GoalFields; message: string } | null {
   if (goal.deadline !== null && goal.deadline < goal.startDate) {
     return { path: 'deadline', message: 'Das Zieldatum liegt vor dem Beginn' };
   }
+  if (goal.kind === 'custom' && goal.icon && !isSingleEmoji(goal.icon)) {
+    return { path: 'icon', message: 'Bitte genau ein Emoji eingeben' };
+  }
   switch (goal.kind) {
+    case 'habit':
+      if (goal.habitId === null)
+        return { path: 'habitId', message: 'Bitte eine Gewohnheit wählen' };
+      if (goal.habitMetric === null) {
+        return { path: 'habitMetric', message: 'Bitte eine Kennzahl wählen' };
+      }
+      return periodIssue(goal);
+    case 'custom':
+      if (!goal.title) return { path: 'title', message: 'Bitte einen Namen eingeben' };
+      if (goal.customType === null) return { path: 'customType', message: 'Bitte die Form wählen' };
+      return null;
     case 'strength':
       if (goal.exerciseId === null)
         return { path: 'exerciseId', message: 'Bitte eine Übung wählen' };
@@ -674,12 +709,24 @@ function goalIssue(goal: GoalFields): { path: keyof GoalFields; message: string 
       if (goal.totalMetric === null) {
         return { path: 'totalMetric', message: 'Bitte eine Kennzahl wählen' };
       }
-      if (goal.period === null) return { path: 'period', message: 'Bitte einen Zeitraum wählen' };
-      if (goal.period === 'custom' && goal.deadline === null) {
-        return { path: 'deadline', message: 'Bitte das Ende des Zeitraums angeben' };
-      }
-      return null;
+      return periodIssue(goal);
   }
+}
+
+function periodIssue(goal: GoalFields): { path: keyof GoalFields; message: string } | null {
+  if (!usesPeriod(goal)) return null;
+  if (goal.period === null) return { path: 'period', message: 'Bitte einen Zeitraum wählen' };
+  if (goal.period === 'custom' && goal.deadline === null) {
+    return { path: 'deadline', message: 'Bitte das Ende des Zeitraums angeben' };
+  }
+  return null;
+}
+
+/** Zielwert 0 ist nur bei einer Obergrenze sinnvoll, Ja/Nein braucht keinen */
+function targetIssue(goal: GoalFields): string | null {
+  if (goal.kind === 'custom' && goal.customType === 'check') return null;
+  if (goal.kind === 'habit' && goal.habitMetric === 'limit') return null;
+  return goal.target > 0 ? null : 'Bitte einen Zielwert eingeben';
 }
 
 /**
@@ -687,28 +734,29 @@ function goalIssue(goal: GoalFields): { path: keyof GoalFields; message: string 
  * zuletzt dran (das Feld erscheint z. B. erst nach der Wahl der Übung).
  */
 export const goalInputSchema = goalFieldsSchema
-  .extend({ target: z.number().min(0).max(MAX_GOAL_TARGET, 'Zielwert zu groß') })
   .superRefine((goal, context) => {
-    const issue =
-      goalIssue(goal) ??
-      (goal.target > 0
-        ? null
-        : { path: 'target' as const, message: 'Bitte einen Zielwert eingeben' });
-    if (issue) context.addIssue({ code: 'custom', path: [issue.path], message: issue.message });
+    const issue = goalIssue(goal);
+    if (issue) {
+      context.addIssue({ code: 'custom', path: [issue.path], message: issue.message });
+      return;
+    }
+    const target = targetIssue(goal);
+    if (target) context.addIssue({ code: 'custom', path: ['target'], message: target });
   })
   .transform((goal): GoalFields => {
     const strength = goal.kind === 'strength';
     const total = goal.kind === 'total';
-    const recurring = total && goal.period !== 'custom';
+    const habit = goal.kind === 'habit';
+    const custom = goal.kind === 'custom';
+    const withPeriod = usesPeriod(goal);
+    const recurring = withPeriod && goal.period !== 'custom';
     const sportUsed =
       goal.kind === 'effort' ||
       (total && (goal.totalMetric === 'distance' || goal.totalMetric === 'duration'));
+    const check = custom && goal.customType === 'check';
     return {
       ...goal,
-      target:
-        goal.kind === 'total' && goal.totalMetric !== 'distance' && goal.totalMetric !== 'duration'
-          ? Math.round(goal.target)
-          : goal.target,
+      target: check ? 1 : isCountTarget(goal) ? Math.round(goal.target) : goal.target,
       deadline: recurring ? null : goal.deadline,
       exerciseId: strength ? goal.exerciseId : null,
       strengthMetric: strength ? goal.strengthMetric : null,
@@ -717,7 +765,12 @@ export const goalInputSchema = goalFieldsSchema
       effortMeters: goal.kind === 'effort' ? goal.effortMeters : null,
       startValue: goal.kind === 'bodyWeight' ? goal.startValue : null,
       totalMetric: total ? goal.totalMetric : null,
-      period: total ? goal.period : null,
+      period: withPeriod ? goal.period : null,
+      habitId: habit ? goal.habitId : null,
+      habitMetric: habit ? goal.habitMetric : null,
+      customType: custom ? goal.customType : null,
+      unit: custom && !check ? goal.unit : '',
+      icon: custom ? goal.icon : '',
     };
   });
 
@@ -739,9 +792,16 @@ export function emptyGoalInput(kind: GoalInput['kind'], today: string): GoalInpu
     effortMeters: kind === 'effort' ? 10_000 : null,
     startValue: null,
     totalMetric: kind === 'total' ? 'trainings' : null,
-    period: kind === 'total' ? 'month' : null,
+    period: kind === 'total' || kind === 'habit' ? 'month' : null,
+    habitId: null,
+    habitMetric: null,
+    customType: kind === 'custom' ? 'number' : null,
+    unit: '',
+    icon: '',
   };
 }
+
+export const MAX_GOAL_ENTRY_AMOUNT = 1_000_000;
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 
