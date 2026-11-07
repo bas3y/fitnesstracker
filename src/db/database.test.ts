@@ -823,7 +823,57 @@ describe('AppDatabase-Migration', () => {
       icon: '',
     });
     expect(await v24.goalEntries.where('goalId').equals('g1').count()).toBe(0);
-    expect(v24.verno).toBe(24);
+    expect(v24.verno).toBeGreaterThanOrEqual(24);
     await v24.delete();
+  });
+
+  it('Version 25 ergänzt Journal, Bücher und die Lese-Gewohnheit in den Einstellungen', async () => {
+    const name = 'migration-test-v25';
+    const v24 = new Dexie(name);
+    v24.version(24).stores({
+      settings: 'id, updatedAt',
+      exercises: 'id, builtinKey, source, category, updatedAt',
+      foods: 'id, builtinKey, source, category, barcode, updatedAt',
+      workouts: 'id, startedAt, updatedAt',
+      workoutExercises: 'id, workoutId, exerciseId, updatedAt',
+      sets: 'id, workoutId, workoutExerciseId, updatedAt',
+      plans: 'id, updatedAt',
+      planDays: 'id, planId, updatedAt',
+      planExercises: 'id, planId, planDayId, exerciseId, updatedAt',
+      dailyLogs: 'id, date, updatedAt',
+      bodyMeasurements: 'id, date, updatedAt',
+      habits: 'id, updatedAt',
+      habitChecks: 'id, habitId, date, updatedAt',
+      todos: 'id, date, updatedAt',
+      supplements: 'id, updatedAt',
+      supplementIntakes: 'id, supplementId, date, updatedAt',
+      mealEntries: 'id, date, foodId, updatedAt',
+      savedMeals: 'id, updatedAt',
+      enduranceSessions: 'id, sport, startedAt, gearId, updatedAt',
+      gear: 'id, updatedAt',
+      enduranceTracks: 'id, sessionId, updatedAt',
+      goals: 'id, updatedAt',
+      goalEntries: 'id, goalId, updatedAt',
+    });
+    await v24.table('settings').add({ id: 'app-settings', name: 'Niklas', proteinOnly: true });
+    await v24.table('goalEntries').add({ id: 'e1', goalId: 'g1', date: '2026-11-07', amount: 2 });
+    v24.close();
+
+    const v25 = new AppDatabase(name);
+    expect(await v25.settings.get('app-settings')).toMatchObject({
+      name: 'Niklas',
+      proteinOnly: true,
+      readingHabitId: null,
+    });
+    expect(await v25.goalEntries.get('e1')).toMatchObject({ amount: 2 });
+    expect(
+      await v25.journalEntries.where('[kind+date]').equals(['day', '2026-11-07']).count(),
+    ).toBe(0);
+    expect(await v25.books.count()).toBe(0);
+    expect(await v25.readingLogs.where('bookId').equals('x').count()).toBe(0);
+    expect(await v25.bookNotes.count()).toBe(0);
+    expect(await v25.journalPrompts.count()).toBe(0);
+    expect(v25.verno).toBe(25);
+    await v25.delete();
   });
 });

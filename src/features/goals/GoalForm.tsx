@@ -826,6 +826,36 @@ function TotalTarget({
           onChange={(target) => onChange(target ?? 0)}
         />
       );
+    case 'pages':
+      return (
+        <Stepper
+          label="Ziel"
+          value={value}
+          unit="Seiten"
+          step={100}
+          min={1}
+          max={10_000_000}
+          decimals={0}
+          startValue={input.period === 'week' ? 100 : input.period === 'year' ? 5000 : 500}
+          allowEmpty
+          onChange={(target) => onChange(target ?? 0)}
+        />
+      );
+    case 'books':
+      return (
+        <Stepper
+          label="Ziel"
+          value={value}
+          unit="Bücher"
+          step={1}
+          min={1}
+          max={10_000}
+          decimals={0}
+          startValue={input.period === 'year' ? 12 : input.period === 'week' ? 1 : 2}
+          allowEmpty
+          onChange={(target) => onChange(target ?? 0)}
+        />
+      );
     case 'stepsGoalDays':
     case 'waterGoalDays':
     case 'sleepGoalDays':
@@ -873,6 +903,12 @@ function DailyGoalHint({ input, settings }: { input: GoalInput; settings: Settin
           : null;
   if (input.totalMetric === 'steps') {
     return <p className={HINT}>Summe der Schritte aus dem Alltag (Körper).</p>;
+  }
+  if (input.totalMetric === 'pages') {
+    return <p className={HINT}>Summe der eingetragenen Seiten aller Bücher (Alltag › Lesen).</p>;
+  }
+  if (input.totalMetric === 'books') {
+    return <p className={HINT}>Zählt Bücher, die im Zeitraum als gelesen markiert wurden.</p>;
   }
   if (!goal) return null;
   return (

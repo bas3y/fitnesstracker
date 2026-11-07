@@ -22,6 +22,7 @@ import { TodoAddForm } from '../daily/TodoParts';
 import { useDailyLog } from '../daily/useDaily';
 import { newSessionPath } from '../endurance/paths';
 import { NUTRITION_PATH } from '../nutrition/paths';
+import { JOURNAL_PATH, READING_PATH } from '../self/paths';
 import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { useActiveWorkout } from '../training/useWorkouts';
 
@@ -119,6 +120,18 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
       case 'meal':
         return (
           <Link to={NUTRITION_PATH} state={FROM_DASHBOARD} className={TILE}>
+            {tile(action)}
+          </Link>
+        );
+      case 'journal':
+        return (
+          <Link to={JOURNAL_PATH} state={FROM_DASHBOARD} className={TILE}>
+            {tile(action)}
+          </Link>
+        );
+      case 'reading':
+        return (
+          <Link to={READING_PATH} state={FROM_DASHBOARD} className={TILE}>
             {tile(action)}
           </Link>
         );

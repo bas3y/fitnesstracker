@@ -71,6 +71,10 @@ export interface GoalData {
   habits: readonly GoalHabitData[];
   /** Selbst eingetragener Fortschritt eigener Ziele */
   entries: readonly GoalEntryValue[];
+  /** Gelesene Seiten je Eintrag */
+  reading: readonly DatedValue[];
+  /** Tage, an denen ein Buch beendet wurde (je Buch einer) */
+  finishedBooks: readonly DayKey[];
 }
 
 export interface DatedValue {
@@ -313,6 +317,10 @@ function totalPoints(goal: Goal, data: GoalData): DatedValue[] {
         date: sessionDay(session),
         value: session.durationSeconds,
       }));
+    case 'pages':
+      return [...data.reading];
+    case 'books':
+      return data.finishedBooks.map((date) => ({ date, value: 1 }));
     default:
       return dailyPoints(goal, data);
   }
@@ -664,6 +672,10 @@ export function formatGoalValue(
           return formatHours(value);
         case 'steps':
           return `${Math.round(value).toLocaleString('de-DE')} ${value === 1 ? 'Schritt' : 'Schritte'}`;
+        case 'pages':
+          return formatCount(value, 'Seite', 'Seiten');
+        case 'books':
+          return formatCount(value, 'Buch', 'Bücher');
         default:
           return formatDays(value);
       }

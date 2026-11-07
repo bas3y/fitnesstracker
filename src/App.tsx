@@ -79,6 +79,16 @@ const RecipeCreatePage = lazyPage(
   () => import('./features/nutrition/FoodEditPage'),
   'RecipeCreatePage',
 );
+const BookCreatePage = lazyPage(() => import('./features/self/BookEditPage'), 'BookCreatePage');
+const BookEditPage = lazyPage(() => import('./features/self/BookEditPage'), 'BookEditPage');
+const BookPage = lazyPage(() => import('./features/self/BookPage'), 'BookPage');
+const JournalHistoryPage = lazyPage(
+  () => import('./features/self/JournalHistoryPage'),
+  'JournalHistoryPage',
+);
+const JournalPage = lazyPage(() => import('./features/self/JournalPage'), 'JournalPage');
+const ReadingPage = lazyPage(() => import('./features/self/ReadingPage'), 'ReadingPage');
+const ReflectionPage = lazyPage(() => import('./features/self/ReflectionPage'), 'ReflectionPage');
 const PlanDayPage = lazyPage(() => import('./features/plans/PlanDayPage'), 'PlanDayPage');
 const PlanDetailPage = lazyPage(() => import('./features/plans/PlanDetailPage'), 'PlanDetailPage');
 const PlanListPage = lazyPage(() => import('./features/plans/PlanListPage'), 'PlanListPage');
@@ -188,6 +198,13 @@ export function App() {
           <Route path="daily/foods/scan" element={<ScanFoodPage />} />
           <Route path="daily/foods/:id" element={<FoodDetailPage />} />
           <Route path="daily/foods/:id/edit" element={<FoodEditPage />} />
+          <Route path="daily/journal" element={<JournalPage />} />
+          <Route path="daily/journal/history" element={<JournalHistoryPage />} />
+          <Route path="daily/reflection" element={<ReflectionPage />} />
+          <Route path="daily/reading" element={<ReadingPage />} />
+          <Route path="daily/reading/new" element={<BookCreatePage />} />
+          <Route path="daily/reading/:id" element={<BookPage />} />
+          <Route path="daily/reading/:id/edit" element={<BookEditPage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="stats/goals" element={<GoalsPage />} />
           <Route path="stats/goals/new" element={<GoalCreatePage />} />

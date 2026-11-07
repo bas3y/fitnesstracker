@@ -1,4 +1,5 @@
 import type {
+  BookStatus,
   BodyMeasure,
   DailyImportField,
   DashboardWidget,
@@ -87,6 +88,8 @@ export const TOTAL_GOAL_METRIC_LABELS: Record<TotalGoalMetric, string> = {
   stepsGoalDays: 'Tage mit erreichtem Schrittziel',
   waterGoalDays: 'Tage mit erreichtem Wasserziel',
   sleepGoalDays: 'Tage mit erreichtem Schlafziel',
+  pages: 'Gelesene Seiten',
+  books: 'Gelesene Bücher',
 };
 
 export const GOAL_PERIOD_LABELS: Record<GoalPeriod, string> = {
@@ -103,6 +106,13 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   snack: 'Snacks',
 };
 
+export const BOOK_STATUS_LABELS: Record<BookStatus, string> = {
+  reading: 'Lese ich',
+  want: 'Will ich lesen',
+  finished: 'Gelesen',
+  abandoned: 'Abgebrochen',
+};
+
 export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: string }> = {
   training: { name: 'Training', icon: '🏋️' },
   water: { name: '+250 ml Wasser', icon: '💧' },
@@ -114,6 +124,8 @@ export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: stri
   meal: { name: 'Mahlzeit', icon: '🍽️' },
   protein: { name: '+20 g Protein', icon: '🥤' },
   endurance: { name: 'Ausdauer', icon: '🏃' },
+  journal: { name: 'Journal', icon: '📓' },
+  reading: { name: 'Lesen', icon: '📚' },
 };
 
 export const BODY_MEASURE_LABELS: Record<BodyMeasure, string> = {

@@ -9,6 +9,7 @@ import { lowStockSupplements, supplementDay } from '../../domain/supplements';
 import { doneOn, todayTodos } from '../../domain/todos';
 import { NUTRITION_PATH } from '../nutrition/paths';
 import { useNutritionDay } from '../nutrition/useNutrition';
+import { SelfSection } from '../self/SelfSection';
 import { useSettings } from '../settings/useSettings';
 import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { useSupplementOverview } from '../supplements/useSupplements';
@@ -45,6 +46,7 @@ export function DailyPage() {
           <span className={MUTED}>Graphen über Tage und Wochen</span>
         </Tile>
       </ul>
+      <SelfSection {...day} />
     </Page>
   );
 }

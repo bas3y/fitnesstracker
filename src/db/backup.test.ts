@@ -14,14 +14,25 @@ import { addGoalEntry, createGoal, listGoals, loadGoalData } from './goals';
 import { createRecipe, createUserFood, setFoodFavorite } from './foods';
 import { addMealEntry, listMealEntries, listSavedMeals, saveMeal } from './nutrition';
 import { addHabitAmount, createHabit, loadHabit, pauseHabit, setHabitChecked } from './habits';
+import { addJournalPrompt, getJournalEntry, listJournalPrompts, saveJournalEntry } from './journal';
 import { addPlanExercise, createPlan, deletePlan, loadPlanDetail } from './plans';
+import {
+  addBookNote,
+  addReadingLog,
+  createBook,
+  listBookLogs,
+  listBookNotes,
+  setReadingHabit,
+} from './reading';
 import { create } from './repository';
 import {
   DAILY_GOAL_DEFAULTS,
   EMPTY_EXERCISE_INPUT,
   EMPTY_FOOD_INPUT,
   EMPTY_HABIT_INPUT,
+  EMPTY_JOURNAL_VALUES,
   EMPTY_SUPPLEMENT_INPUT,
+  emptyBookInput,
   emptyGoalInput,
   NUTRITION_GOAL_DEFAULTS,
   type EnduranceSessionInput,
@@ -114,6 +125,11 @@ describe('parseBackup', () => {
         enduranceTracks: 0,
         goals: 0,
         goalEntries: 0,
+        journalPrompts: 0,
+        journalEntries: 0,
+        books: 0,
+        readingLogs: 0,
+        bookNotes: 0,
       });
   });
 
@@ -644,6 +660,61 @@ describe('Ziele im Backup', () => {
       },
     ];
     expect(parseBackup(data).ok).toBe(false);
+  });
+});
+
+describe('Persönliche Entwicklung im Backup', () => {
+  it('stellt Journal, Fragen, Bücher, Seiten und Notizen wieder her', async () => {
+    const habit = await createHabit({
+      ...EMPTY_HABIT_INPUT,
+      name: 'Lesen',
+      kind: 'count',
+      target: 20,
+      unit: 'Seiten',
+    });
+    await setReadingHabit(habit.id);
+    const prompt = await addJournalPrompt('day', 'Was habe ich gelernt?');
+    await saveJournalEntry('day', '2026-11-07', {
+      ...EMPTY_JOURNAL_VALUES,
+      text: 'Notiz',
+      gratitude: ['Sonne'],
+      answers: { [prompt.id]: 'Viel' },
+    });
+    await saveJournalEntry('week', '2026-11-07', { ...EMPTY_JOURNAL_VALUES, rating: 4 });
+    const book = await createBook({ ...emptyBookInput('2026-11-01'), title: 'Buch' });
+    await addReadingLog(book.id, '2026-11-07', 12);
+    await addBookNote(book.id, { text: 'Zitat', page: 3 });
+
+    const data = await validBackup();
+    await resetDatabase();
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    await restoreBackup(result.backup);
+
+    expect(await getJournalEntry('day', '2026-11-07')).toMatchObject({
+      text: 'Notiz',
+      gratitude: ['Sonne'],
+      answers: { [prompt.id]: 'Viel' },
+    });
+    expect((await getJournalEntry('week', '2026-11-03'))?.rating).toBe(4);
+    expect(await listJournalPrompts()).toMatchObject([{ id: prompt.id }]);
+    expect(await listBookLogs(book.id)).toMatchObject([{ pages: 12, habitId: habit.id }]);
+    expect(await listBookNotes(book.id)).toMatchObject([{ text: 'Zitat', page: 3 }]);
+    expect((await getSettings())?.readingHabitId).toBe(habit.id);
+  });
+
+  it('ergänzt Sicherungen aus DB-Version 24', async () => {
+    const data = await validBackup();
+    data.dbVersion = 24;
+    delete data.tables.settings[0].readingHabitId;
+    for (const table of ['journalPrompts', 'journalEntries', 'books', 'readingLogs', 'bookNotes']) {
+      delete data.tables[table];
+    }
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.settings[0]?.readingHabitId).toBeNull();
+    expect(result.backup.tables.books).toEqual([]);
+    expect(result.backup.tables.journalEntries).toEqual([]);
   });
 });
 

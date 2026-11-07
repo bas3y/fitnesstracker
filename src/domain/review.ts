@@ -1,12 +1,17 @@
 import type {
+  Book,
   DailyLog,
   DayKey,
   EnduranceSession,
   EnduranceSport,
   Habit,
+  JournalEntry,
   MealEntry,
+  ReadingLog,
 } from '../db/types';
 import { shiftDay } from './daily';
+import { averageWeekRating, countJournal } from './journal';
+import { booksFinishedInRange, pagesInRange } from './reading';
 import { sessionDay, sessionTotals, type DayRange, type SessionTotals } from './endurance';
 import { newEffortRecords } from './enduranceStats';
 import { habitCompletion, type HabitHistoryItem } from './habits';
@@ -53,6 +58,9 @@ export interface ReviewInput {
   /** Mindestens die Einträge im Zeitraum */
   meals: readonly ReviewMealEntry[];
   bodyWeightKg: number | null;
+  journal: readonly Pick<JournalEntry, 'kind' | 'date' | 'rating'>[];
+  readingLogs: readonly Pick<ReadingLog, 'bookId' | 'date' | 'pages'>[];
+  books: readonly Pick<Book, 'status' | 'finishedOn'>[];
 }
 
 export interface ReviewSummary {
@@ -88,6 +96,16 @@ export interface ReviewSummary {
     kcal: number | null;
     /** Ø je Tag mit Mahlzeiten oder Protein */
     protein: number | null;
+  };
+  /** Persönliche Entwicklung */
+  growth: {
+    journalDays: number;
+    /** Wochen mit Reflexion (Montag im Zeitraum) */
+    reflections: number;
+    /** Ø Bewertung dieser Wochen */
+    weekRating: number | null;
+    pages: number;
+    books: number;
   };
 }
 
@@ -195,6 +213,13 @@ export function reviewSummary(input: ReviewInput, range: DayRange, today: DayKey
         ),
       ),
     },
+    growth: {
+      journalDays: countJournal(input.journal, 'day', range),
+      reflections: countJournal(input.journal, 'week', range),
+      weekRating: averageWeekRating(input.journal, range),
+      pages: pagesInRange(input.readingLogs, range),
+      books: booksFinishedInRange(input.books, range),
+    },
   };
 }
 
@@ -211,6 +236,7 @@ export function hasReviewData(summary: ReviewSummary): boolean {
     Object.values(daily).some((value) => value !== null) ||
     summary.habitCompletion !== null ||
     summary.habitTotals.some((habit) => habit.amount > 0) ||
-    summary.nutrition.days > 0
+    summary.nutrition.days > 0 ||
+    Object.values(summary.growth).some((value) => value !== null && value > 0)
   );
 }

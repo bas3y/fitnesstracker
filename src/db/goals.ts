@@ -4,6 +4,7 @@ import { listDailyLogs, loadBodyWeights } from './daily';
 import { db } from './database';
 import { listEnduranceSessions } from './endurance';
 import { loadHabits } from './habits';
+import { listBooks, listReadingLogs } from './reading';
 import { create, listActive, nowIso, softDelete, update } from './repository';
 import {
   DAILY_GOAL_DEFAULTS,
@@ -96,14 +97,22 @@ export function setGoalChecked(
 
 /** Alles außer dem Training (das lädt die Startseite ohnehin) */
 export async function loadGoalExtras(): Promise<Omit<GoalData, 'strength' | 'endurance'>> {
-  const [weights, logs, settings, habits, entries] = await Promise.all([
+  const [weights, logs, settings, habits, entries, readingLogs, books] = await Promise.all([
     loadBodyWeights(),
     listDailyLogs(),
     getSettings(),
     loadHabits(),
     listActive(db.goalEntries),
+    listReadingLogs(),
+    listBooks(),
   ]);
   return {
+    reading: readingLogs
+      .map(({ date, pages }) => ({ date, value: pages }))
+      .sort((a, b) => a.date.localeCompare(b.date)),
+    finishedBooks: books.flatMap((book) =>
+      book.status === 'finished' && book.finishedOn ? [book.finishedOn] : [],
+    ),
     weights,
     logs,
     dailyGoals: {

@@ -166,6 +166,7 @@ function ReviewContent({
       <DailyCard current={current} previous={previous} settings={settings} />
       <NutritionCard current={current} previous={previous} settings={settings} />
       <HabitsCard current={current} previous={previous} />
+      <GrowthCard current={current} previous={previous} />
       <GoalsCard range={range} today={today} settings={settings} />
     </>
   );
@@ -448,6 +449,32 @@ function HabitsCard({ current, previous }: { current: ReviewSummary; previous: R
   return (
     <Card title="Gewohnheiten">
       <ReviewRows rows={rows} label="Gewohnheiten im Vergleich" />
+    </Card>
+  );
+}
+
+/** Journal, Wochenreflexion, Lesen */
+function GrowthCard({ current, previous }: { current: ReviewSummary; previous: ReviewSummary }) {
+  const pick = (key: keyof ReviewSummary['growth']) => ({
+    current: current.growth[key],
+    previous: previous.growth[key],
+  });
+  const rows: Row[] = [
+    { label: 'Tage mit Journal', ...pick('journalDays'), format: count, better: 'higher' },
+    { label: 'Wochenreflexionen', ...pick('reflections'), format: count, better: 'higher' },
+    {
+      label: 'Ø Bewertung der Woche',
+      ...pick('weekRating'),
+      format: (value) => `${formatDecimal(value, 1)} / 5`,
+      better: 'higher',
+    },
+    { label: 'Gelesene Seiten', ...pick('pages'), format: count, better: 'higher' },
+    { label: 'Gelesene Bücher', ...pick('books'), format: count, better: 'higher' },
+  ];
+  if (rows.every((row) => !row.current && !row.previous)) return null;
+  return (
+    <Card title="Persönliche Entwicklung">
+      <ReviewRows rows={rows} label="Persönliche Entwicklung im Vergleich" />
     </Card>
   );
 }

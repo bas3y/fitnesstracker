@@ -10,6 +10,8 @@ import {
   DEFAULT_QUICK_ACTIONS,
   ENDURANCE_SPORTS,
   LEGACY_DASHBOARD_WIDGETS,
+  type Book,
+  type BookNote,
   type BodyMeasurement,
   type DailyLog,
   type EnduranceSession,
@@ -21,10 +23,13 @@ import {
   type GoalEntry,
   type Habit,
   type HabitCheck,
+  type JournalEntry,
+  type JournalPrompt,
   type MealEntry,
   type Plan,
   type PlanDay,
   type PlanExercise,
+  type ReadingLog,
   type SavedMeal,
   type Settings,
   type Supplement,
@@ -72,6 +77,11 @@ export class AppDatabase extends Dexie {
   enduranceTracks!: Table<EnduranceTrack, string>;
   goals!: Table<Goal, string>;
   goalEntries!: Table<GoalEntry, string>;
+  journalPrompts!: Table<JournalPrompt, string>;
+  journalEntries!: Table<JournalEntry, string>;
+  books!: Table<Book, string>;
+  readingLogs!: Table<ReadingLog, string>;
+  bookNotes!: Table<BookNote, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -441,6 +451,23 @@ export class AppDatabase extends Dexie {
             goal.customType ??= null;
             goal.unit ??= '';
             goal.icon ??= '';
+          }),
+      );
+    // Persönliche Entwicklung: Journal, Wochenreflexion, Lesen
+    this.version(25)
+      .stores({
+        journalPrompts: 'id, updatedAt',
+        journalEntries: 'id, [kind+date], updatedAt',
+        books: 'id, updatedAt',
+        readingLogs: 'id, bookId, date, updatedAt',
+        bookNotes: 'id, bookId, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.readingHabitId ??= null;
           }),
       );
   }

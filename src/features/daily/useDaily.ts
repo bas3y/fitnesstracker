@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useBackTo } from '../../components/backNavigation';
 import {
   getBodyMeasurement,
@@ -33,10 +33,11 @@ export function useBodyMeasurements() {
 /** Gewählter Tag steht in der URL; ohne Angabe heute, auch über Mitternacht hinweg */
 export function useDayParam() {
   const [params, setParams] = useSearchParams();
+  const { state } = useLocation();
   const today = dayKey(useNow(true, 60_000));
   const value = params.get('date');
   const date = value && isDayKey(value) && value <= today ? value : today;
-  // Andere Parameter (z. B. Zeitraum des Verlaufs) bleiben erhalten
+  // Andere Parameter (z. B. Zeitraum des Verlaufs) und die Herkunft für „Zurück“ bleiben erhalten
   const setDate = (next: DayKey) =>
     setParams(
       (current) => {
@@ -45,7 +46,7 @@ export function useDayParam() {
         else params.set('date', next);
         return params;
       },
-      { replace: true },
+      { replace: true, state },
     );
   return { date, today, setDate };
 }

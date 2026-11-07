@@ -3,6 +3,7 @@ import { db } from './database';
 import { nowIso } from './repository';
 import {
   bodyMeasureSchema,
+  bookFieldsSchema,
   DAILY_GOAL_DEFAULTS,
   dailyLogValuesSchema,
   dayKeySchema,
@@ -13,11 +14,14 @@ import {
   goalFieldsSchema,
   habitFieldsSchema,
   heartRateSettingSchema,
+  journalPromptTextSchema,
+  journalValuesSchema,
   mealAmountSchema,
   NUTRITION_GOAL_DEFAULTS,
   nutrientsSchema,
   nutritionGoalsSchema,
   planExerciseValuesSchema,
+  readingPagesSchema,
   recipeSchema,
   savedMealItemSchema,
   savedMealNameSchema,
@@ -40,6 +44,7 @@ import {
   DEFAULT_QUICK_ACTIONS,
   ENDURANCE_SOURCES,
   ENDURANCE_SPORTS,
+  JOURNAL_KINDS,
   LOAD_TYPES,
   MEAL_TYPES,
   PLAN_SCHEDULES,
@@ -108,6 +113,8 @@ const settingsSchema = baseEntitySchema.extend({
   // Seit DB-Version 21; wer eine ältere Sicherung einspielt, kennt die App schon
   proteinOnly: z.boolean().default(false),
   welcomeDismissed: z.boolean().default(true),
+  // Seit DB-Version 25
+  readingHabitId: z.string().nullable().default(null),
 });
 
 const catalogEntryFields = {
@@ -282,6 +289,29 @@ const goalEntrySchema = baseEntitySchema.extend({
   date: dayKeySchema,
   amount: z.number().positive(),
 });
+// Seit DB-Version 25
+const journalPromptSchema = baseEntitySchema.extend({
+  kind: z.enum(JOURNAL_KINDS),
+  text: journalPromptTextSchema,
+  order: z.number(),
+  archivedAt: timestamp.nullable(),
+});
+const journalEntrySchema = baseEntitySchema.extend(journalValuesSchema.shape).extend({
+  kind: z.enum(JOURNAL_KINDS),
+  date: dayKeySchema,
+});
+const bookSchema = baseEntitySchema.extend(bookFieldsSchema.shape);
+const readingLogSchema = baseEntitySchema.extend({
+  bookId: z.string().min(1),
+  date: dayKeySchema,
+  pages: readingPagesSchema,
+  habitId: z.string().nullable(),
+});
+const bookNoteSchema = baseEntitySchema.extend({
+  bookId: z.string().min(1),
+  text: z.string().min(1),
+  page: readingPagesSchema.nullable(),
+});
 
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar
 export const backupSchema = z.object({
@@ -317,6 +347,11 @@ export const backupSchema = z.object({
     enduranceTracks: z.array(enduranceTrackSchema).default([]),
     goals: z.array(goalSchema).default([]),
     goalEntries: z.array(goalEntrySchema).default([]),
+    journalPrompts: z.array(journalPromptSchema).default([]),
+    journalEntries: z.array(journalEntrySchema).default([]),
+    books: z.array(bookSchema).default([]),
+    readingLogs: z.array(readingLogSchema).default([]),
+    bookNotes: z.array(bookNoteSchema).default([]),
   }),
 });
 
@@ -347,6 +382,11 @@ export const TABLE_LABELS: Record<TableName, string> = {
   enduranceTracks: 'Verläufe von Einheiten',
   goals: 'Ziele',
   goalEntries: 'Einträge zu eigenen Zielen',
+  journalPrompts: 'Eigene Journal-Fragen',
+  journalEntries: 'Journal-Einträge',
+  books: 'Bücher',
+  readingLogs: 'Gelesene Seiten',
+  bookNotes: 'Notizen zu Büchern',
 };
 
 export async function createBackup(): Promise<Backup> {

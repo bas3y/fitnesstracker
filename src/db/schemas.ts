@@ -3,6 +3,7 @@ import { isValidBarcode, normalizeBarcode } from '../domain/barcode';
 import { isSingleEmoji } from '../domain/emoji';
 import { BEST_EFFORT_METERS } from '../domain/track';
 import {
+  BOOK_STATUSES,
   CUSTOM_GOAL_TYPES,
   HABIT_GOAL_METRICS,
   ENDURANCE_SPORTS,
@@ -23,6 +24,7 @@ import {
   SWIM_STROKES,
   TODO_PRIORITIES,
   TRAINING_KINDS,
+  type DayKey,
   type EnduranceSport,
   type NutritionGoals,
 } from './types';
@@ -802,6 +804,101 @@ export function emptyGoalInput(kind: GoalInput['kind'], today: string): GoalInpu
 }
 
 export const MAX_GOAL_ENTRY_AMOUNT = 1_000_000;
+
+// ---------- Journal ----------
+
+export const MAX_JOURNAL_TEXT = 20_000;
+export const MAX_JOURNAL_ANSWER = 5_000;
+export const MAX_GRATITUDE_LENGTH = 300;
+export const GRATITUDE_COUNT = 3;
+export const MAX_JOURNAL_PROMPTS = 20;
+
+export const journalPromptTextSchema = z
+  .string()
+  .trim()
+  .min(1, 'Bitte eine Frage eingeben')
+  .max(200, 'Höchstens 200 Zeichen');
+
+/** Inhalt eines Eintrags (ohne Art und Tag) – für Speichern und Backup */
+export const journalValuesSchema = z.object({
+  text: z.string().max(MAX_JOURNAL_TEXT, 'Text zu lang'),
+  gratitude: z.array(z.string().max(MAX_GRATITUDE_LENGTH)).max(GRATITUDE_COUNT),
+  answers: z.record(z.string().min(1), z.string().max(MAX_JOURNAL_ANSWER)),
+  rating: z.number().int().min(1).max(5).nullable(),
+});
+
+export type JournalValues = z.output<typeof journalValuesSchema>;
+
+export const EMPTY_JOURNAL_VALUES: JournalValues = {
+  text: '',
+  gratitude: [],
+  answers: {},
+  rating: null,
+};
+
+// ---------- Lesen ----------
+
+export const MAX_BOOK_PAGES = 20_000;
+
+const pageCount = z
+  .number()
+  .int()
+  .min(1, 'Mindestens 1 Seite')
+  .max(MAX_BOOK_PAGES, 'Zu viele Seiten');
+
+export const bookFieldsSchema = z.object({
+  title: z.string().trim().min(1, 'Bitte einen Titel eingeben').max(200, 'Höchstens 200 Zeichen'),
+  author: z.string().trim().max(120, 'Höchstens 120 Zeichen'),
+  totalPages: pageCount.nullable(),
+  status: z.enum(BOOK_STATUSES),
+  startPage: z.number().int().min(0).max(MAX_BOOK_PAGES),
+  startedOn: dayKeySchema.nullable(),
+  finishedOn: dayKeySchema.nullable(),
+  rating: z.number().int().min(1).max(5).nullable(),
+});
+
+/** Formular: Daten passend zum Status, schon gelesene Seiten nicht über das Buch hinaus */
+export const bookInputSchema = bookFieldsSchema
+  .refine((book) => book.totalPages === null || book.startPage <= book.totalPages, {
+    path: ['startPage'],
+    message: 'Mehr Seiten, als das Buch hat',
+  })
+  .refine((book) => !book.startedOn || !book.finishedOn || book.finishedOn >= book.startedOn, {
+    path: ['finishedOn'],
+    message: 'Liegt vor dem Beginn',
+  })
+  .transform((book) => {
+    const done = book.status === 'finished' || book.status === 'abandoned';
+    return {
+      ...book,
+      startedOn: book.status === 'want' ? null : book.startedOn,
+      finishedOn: done ? book.finishedOn : null,
+    };
+  });
+
+export type BookInput = z.input<typeof bookInputSchema>;
+
+export function emptyBookInput(today: DayKey): BookInput {
+  return {
+    title: '',
+    author: '',
+    totalPages: null,
+    status: 'reading',
+    startPage: 0,
+    startedOn: today,
+    finishedOn: null,
+    rating: null,
+  };
+}
+
+export const readingPagesSchema = pageCount;
+
+export const bookNoteInputSchema = z.object({
+  text: z.string().trim().min(1, 'Bitte eine Notiz eingeben').max(5_000, 'Höchstens 5000 Zeichen'),
+  page: pageCount.nullable(),
+});
+
+export type BookNoteInput = z.input<typeof bookNoteInputSchema>;
 
 const builtinKey = z.string().regex(/^[a-z0-9-]+$/, 'Schlüssel nur aus a-z, 0-9 und -');
 

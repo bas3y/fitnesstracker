@@ -30,7 +30,8 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 15c – Strichcode-Scanner für Lebensmittel (online) + Push & Handytest 14–15c
 - [x] Schritt 16 – Ziele & Rückblicke
 - [x] Schritt 16b – Ziele für Gewohnheiten, Alltag & eigene Ziele, eigene Emojis
-- [ ] Schritt 17 – Self-Improvement
+- [x] Schritt 17 – Self-Improvement (Journal, Wochenreflexion, Lesen)
+- [ ] Schritt 17b – Fokus-/Meditations-Timer & Fortschrittsfotos
 - [ ] Schritt 18 – Motivation & Trainingsblöcke
 - [ ] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
@@ -918,7 +919,42 @@ Mit dem Nutzer beim Start abgestimmt: Zielarten **Kraft, Bestzeit, Körpergewich
   - Vor dem nächsten Push an ein Backup erinnern (DB-Version 22 → 24).
 
 ### Schritt 17 – Self-Improvement
-Journal/Dankbarkeit, Wochenreflexion, Lesen (Bücher, Seiten, Notizen), Pomodoro/Meditation-Timer, Fortschrittsfotos (lokal gespeichert, komprimiert, Speicherhinweis, im Backup optional).
+Journal/Dankbarkeit, Wochenreflexion, Lesen (Bücher, Seiten, Notizen). Timer und Fortschrittsfotos → Schritt 17b.
+
+Mit dem Nutzer beim Start abgestimmt: **aufgeteilt in 17 + 17b**; Ort = **eine große Kachel unter den Alltag-Kacheln** (wie „Krafttraining“ auf der Trainingsseite, nur darunter); Journal = **Freitext + 3× Dankbarkeit + eigene Fragen**, die man **auf der Seite selbst unter „Anpassen“** anlegt (nicht in den Einstellungen); Lesen/Timer **mit Zielen und einer Gewohnheit verknüpfbar**.
+
+**Notizen:**
+- Gebaut:
+  - Dexie v25: Tabellen `journalPrompts`, `journalEntries` (Index `[kind+date]`), `books`, `readingLogs`, `bookNotes`; `Settings.readingHabitId` (Upgrade setzt `null`). Backup mit allen fünf Tabellen, Sicherungen bis v24 importierbar (leere Tabellen, `readingHabitId: null`).
+  - **Große Kachel** `SelfSection` „🌱 Persönliche Entwicklung“ unter den Alltag-Kacheln, je Zeile der Stand des gewählten Tages: Journal („Geschrieben · 2× dankbar“), Wochenreflexion („1 von 3 Fragen“, „Erledigt · 4/5“), Lesen (Seiten des Tages, aktuelles Buch mit Seite/Prozent).
+  - **Journal** (`/daily/journal`, mit `DayNavigator`): „Wie war dein Tag?“, „Dankbar für“ (3 Felder), eigene Fragen. Speichert automatisch (600 ms nach dem Tippen, beim Verlassen des Felds/der Seite, wenn die App in den Hintergrund geht), Status „Gespeichert“. Leerer Eintrag wird gelöscht. „Anpassen“: eigene Fragen anlegen (mit Vorschlägen), in der Zeile umbenennen, ziehen, entfernen (archiviert; Antworten an alten Tagen bleiben mit „(entfernte Frage)“ sichtbar), höchstens 20 je Art.
+  - **Wochenreflexion** (`/daily/reflection`, Woche aus dem gewählten Tag, ‹ › je Woche, nicht in die Zukunft): Bewertung 1–5, feste Fragen „Was lief diese Woche gut?“, „Was möchte ich ändern?“, „Worauf konzentriere ich mich nächste Woche?“, eigene Wochenfragen (eigenes „Anpassen“), Notizen. Gespeichert unter dem Montag.
+  - **Alle Einträge** (`/daily/journal/history`): Tage und Wochen, neueste zuerst, Suche über alle Felder (Umlaute/ß egal, alle Wörter müssen vorkommen), Vorschau, Tippen öffnet den Tag bzw. die Woche.
+  - **Lesen** (`/daily/reading`): Seiten heute/diese Woche, „Lese ich gerade“ mit Fortschrittsbalken und „Seiten eintragen“ (Dialog „Bis Seite“ | „Seiten gelesen“, Tag wählbar), „Will ich lesen“, „Gelesen (n)“ mit Datum und Sternen, „Abgebrochen“ zum Aufklappen, Karte „Mit Gewohnheit verknüpfen“ (nur aktive Zähl-Gewohnheiten). Buch-Seite: Status-Buttons (Jetzt beginnen / Gelesen / Abbrechen / Weiterlesen), Bewertung, Notizen & Zitate mit Seite, Verlauf der Einträge (Löschen mit Rückfrage). Formular mit Titel, Autor, Seitenzahl, Status, „Vorher schon gelesen bis Seite“, Daten, Bewertung; Löschen samt Einträgen/Notizen.
+  - Automatik beim Eintragen (`addReadingLog`): „Will ich lesen“/„Abgebrochen“ → „Lese ich“, ein früherer Tag verschiebt den Beginn, die letzte Seite beendet das Buch (Hinweis „Buch gelesen!“). Seiten zählen bei der verknüpften Gewohnheit mit (`readingLogs.habitId`), Löschen eines Eintrags/Buchs zieht sie dort wieder ab.
+  - **Ziele:** Menge um „Gelesene Seiten“ und „Gelesene Bücher“ erweitert (`TOTAL_GOAL_METRICS` `pages`/`books`, `GoalData.reading`/`finishedBooks`, Namen „500 Seiten pro Monat“, „12 Bücher pro Jahr“).
+  - **Rückblick:** Karte „Persönliche Entwicklung“ (Tage mit Journal, Wochenreflexionen, Ø Bewertung der Woche, gelesene Seiten, gelesene Bücher) mit Vergleich (`ReviewSummary.growth`).
+  - **Schnellzugriff:** Buttons „Journal“ und „Lesen“ (nicht in der Standardauswahl).
+  - `useDayParam().setDate` behält jetzt die Herkunft (`state`), „Zurück“ führt also auch nach einem Tageswechsel zur aufrufenden Seite (gilt für alle Alltag-Unterseiten).
+  - Tests: `domain/journal.test.ts`, `domain/reading.test.ts`, Lese-Ziele in `goals.test.ts`, `growth` in `review.test.ts`, `db/journal.test.ts`, `db/reading.test.ts` (Gewohnheit zählt mit/zieht ab, archivierte nicht, Buch löschen, `loadGoalData`), Migration v24→v25, Backup (Wiederherstellen + Sicherung aus v24). E2E `e2e/self.spec.ts` offline in beiden Viewports (Journal mit Autospeichern, Anpassen mit Fehler/Vorschlag/Entfernen, Neuladen, Wochenreflexion mit Blättern und Zurück zur Herkunft, Suche; Lesen mit Gewohnheit, Buch-Formular mit Fehler, Bis Seite/Seiten gelesen, Notiz, Buch beendet, Bewertung, Eintrag löschen zieht ab, Ziel „Gelesene Seiten“, Neuladen). 748 Unit-Tests, 104/104 E2E grün. Hauptbundle 331 → 334 KB (Typen/Labels, Schnellzugriff), Seiten als eigene Chunks.
+- Abweichungen:
+  - Wochenreflexion als eigene Seite (erreichbar über die große Kachel und das Journal) statt als Teil des Journals; Bewertung der Woche zusätzlich zum Plan.
+  - Nur Gewohnheiten der Art „Zählen“ lassen sich mit dem Lesen verknüpfen (Seiten sind eine Menge). Seiten, die vor der Verknüpfung eingetragen wurden, werden nicht nachgetragen.
+  - Löschen eines Buchs zieht dessen Seiten bei der Gewohnheit wieder ab (gleiche Regel wie beim einzelnen Eintrag).
+  - „Vorher schon gelesen bis Seite“ zählt nicht zu Zielen und Rückblick (dort nur in der App eingetragene Seiten).
+  - Fortschritt nur in Seiten (kein Prozent-/Minuten-Modus, keine E-Books/Hörbücher als eigene Art).
+- Offene Punkte:
+  - Schritt 17b: Timer und Fortschrittsfotos als weitere Zeilen in `SelfSection`.
+  - Kein Startseiten-Widget für Journal/Lesen (Schnellzugriff vorhanden); ggf. Schritt 18 (Streaks: Journal-Serie).
+  - Journal im PDF-Bericht → Schritt 19 (Inhalte stehen in `journalEntries`).
+  - Handytest: Autospeichern beim Wechsel in eine andere App (iOS/Android), Bildschirmtastatur bei langen Texten, Ziehen der Fragen, Datumsfeld im Seiten-Dialog.
+  - Vor dem nächsten Push an ein Backup erinnern (DB-Version 22 → 25).
+
+### Schritt 17b – Fokus-/Meditations-Timer & Fortschrittsfotos
+**Ziel:** Rest aus Schritt 17 (mit dem Nutzer abgestimmt: aufgeteilt). Beide Bereiche als weitere Zeilen in der großen Kachel `SelfSection`.
+- **Timer:** Pomodoro (Fokus/Pause, Runden) und Meditation (Dauer, Gong am Ende), läuft über Zeitstempel weiter (wie der Pausen-Timer), Sitzungen speichern (Art, Dauer, Tag, optional Notiz). Mit einer Gewohnheit verknüpfbar (Minuten zählen mit, wie beim Lesen) und neue Ziel-Kennzahl „Fokus-/Meditationsminuten“, Rückblick.
+- **Fortschrittsfotos:** lokal in IndexedDB (Blob), beim Speichern verkleinert/komprimiert (Canvas, JPEG/WebP), Ansicht je Datum, Vergleich zweier Fotos, Speicherhinweis (`navigator.storage.estimate`), im Backup **optional** (Schalter beim Export, sonst zu groß).
+- Vor dem nächsten Push an ein Backup erinnern.
 
 **Notizen:**
 - Gebaut:

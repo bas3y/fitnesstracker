@@ -127,6 +127,25 @@ const input: ReviewInput = {
   ],
   meals: [meal('2026-11-01', 2000, 100), meal('2026-11-01', 500, 20), meal('2026-11-03', 1500, 80)],
   bodyWeightKg: 80,
+  journal: [
+    { kind: 'day', date: '2026-10-30', rating: null },
+    { kind: 'day', date: '2026-11-01', rating: null },
+    { kind: 'day', date: '2026-11-04', rating: null },
+    // Wochen ab Montag 2.11. und 26.10. (Montag liegt im Oktober)
+    { kind: 'week', date: '2026-11-02', rating: 4 },
+    { kind: 'week', date: '2026-10-26', rating: 2 },
+  ],
+  readingLogs: [
+    { bookId: 'b1', date: '2026-10-31', pages: 30 },
+    { bookId: 'b1', date: '2026-11-01', pages: 25 },
+    { bookId: 'b2', date: '2026-11-06', pages: 15 },
+  ],
+  books: [
+    { status: 'finished', finishedOn: '2026-11-03' },
+    { status: 'finished', finishedOn: '2026-10-01' },
+    { status: 'abandoned', finishedOn: '2026-11-04' },
+    { status: 'reading', finishedOn: null },
+  ],
 };
 
 describe('reviewSummary', () => {
@@ -180,6 +199,23 @@ describe('reviewSummary', () => {
 
   it('mittelt die Ernährung, Protein auch ohne Mahlzeiten', () => {
     expect(november.nutrition).toEqual({ days: 3, kcal: 2000, protein: (120 + 30 + 80) / 3 });
+  });
+
+  it('zählt Journal, Wochenreflexionen und Lesen im Zeitraum', () => {
+    expect(november.growth).toEqual({
+      journalDays: 2,
+      reflections: 1,
+      weekRating: 4,
+      pages: 40,
+      books: 1,
+    });
+    expect(reviewSummary(input, OCTOBER, TODAY).growth).toEqual({
+      journalDays: 1,
+      reflections: 1,
+      weekRating: 2,
+      pages: 30,
+      books: 1,
+    });
   });
 
   it('erkennt leere Zeiträume', () => {

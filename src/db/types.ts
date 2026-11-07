@@ -61,6 +61,8 @@ export interface Settings extends BaseEntity {
   maxHeartRate: number | null;
   /** Mit Ruhepuls werden die Zonen nach Karvonen (Herzfrequenzreserve) berechnet */
   restingHeartRate: number | null;
+  /** Zähl-Gewohnheit, die gelesene Seiten automatisch mitzählt (seit DB-Version 25) */
+  readingHabitId: string | null;
 }
 
 export const DASHBOARD_WIDGETS = [
@@ -108,6 +110,8 @@ export const QUICK_ACTIONS = [
   'meal',
   'protein',
   'endurance',
+  'journal',
+  'reading',
 ] as const;
 export type QuickAction = (typeof QUICK_ACTIONS)[number];
 export const DEFAULT_QUICK_ACTIONS: readonly QuickAction[] = [
@@ -702,10 +706,13 @@ export const TOTAL_GOAL_METRICS = [
   'stepsGoalDays',
   'waterGoalDays',
   'sleepGoalDays',
+  'pages',
+  'books',
 ] as const;
 /**
  * `workouts` = Krafttrainings, `trainings` = Krafttrainings + Ausdauer-Einheiten,
- * `steps` = Schritte gesamt, `…GoalDays` = Tage mit erreichtem Tagesziel (aktuelle Einstellungen)
+ * `steps` = Schritte gesamt, `…GoalDays` = Tage mit erreichtem Tagesziel (aktuelle Einstellungen),
+ * `pages` = gelesene Seiten, `books` = beendete Bücher (seit DB-Version 25)
  */
 export type TotalGoalMetric = (typeof TOTAL_GOAL_METRICS)[number];
 
@@ -768,6 +775,72 @@ export interface GoalEntry extends BaseEntity {
   date: DayKey;
   /** Ja/Nein: 1 */
   amount: number;
+}
+
+export const JOURNAL_KINDS = ['day', 'week'] as const;
+/** `day` = Tagebuch, `week` = Wochenreflexion */
+export type JournalKind = (typeof JOURNAL_KINDS)[number];
+
+/** Eigene Frage im Journal bzw. in der Wochenreflexion (seit DB-Version 25) */
+export interface JournalPrompt extends BaseEntity {
+  kind: JournalKind;
+  text: string;
+  order: number;
+  /** Entfernt: nicht mehr gefragt, alte Antworten bleiben lesbar */
+  archivedAt: Timestamp | null;
+}
+
+/**
+ * Journal-Eintrag (seit DB-Version 25); höchstens ein aktiver je Art und Tag bzw. Woche.
+ * Ein leerer Eintrag wird gelöscht.
+ */
+export interface JournalEntry extends BaseEntity {
+  kind: JournalKind;
+  /** Tag bzw. Montag der Woche */
+  date: DayKey;
+  /** Tag: freier Text, Woche: Notizen */
+  text: string;
+  /** Nur Tag: bis zu drei Dinge, für die man dankbar ist (leere Felder als `''`) */
+  gratitude: string[];
+  /** Antworten je Frage: eigene Fragen über ihre ID, feste Wochenfragen über ihren Schlüssel */
+  answers: Record<string, string>;
+  /** Nur Woche: 1–5 */
+  rating: number | null;
+}
+
+export const BOOK_STATUSES = ['reading', 'want', 'finished', 'abandoned'] as const;
+export type BookStatus = (typeof BOOK_STATUSES)[number];
+
+/** Buch im Lese-Log (seit DB-Version 25) */
+export interface Book extends BaseEntity {
+  title: string;
+  author: string;
+  /** `null` = unbekannt */
+  totalPages: number | null;
+  status: BookStatus;
+  /** Schon gelesene Seiten vor dem Erfassen in der App (zählen nicht zu Zielen) */
+  startPage: number;
+  startedOn: DayKey | null;
+  /** Gelesen bzw. abgebrochen am */
+  finishedOn: DayKey | null;
+  /** 1–5 */
+  rating: number | null;
+}
+
+/** Gelesene Seiten an einem Tag (seit DB-Version 25) */
+export interface ReadingLog extends BaseEntity {
+  bookId: string;
+  date: DayKey;
+  pages: number;
+  /** Gewohnheit, bei der die Seiten mitgezählt wurden (wird beim Löschen wieder abgezogen) */
+  habitId: string | null;
+}
+
+/** Notiz oder Zitat zu einem Buch (seit DB-Version 25) */
+export interface BookNote extends BaseEntity {
+  bookId: string;
+  text: string;
+  page: number | null;
 }
 
 /** Ausrüstung (z. B. Laufschuhe) mit Kilometerstand */

@@ -79,6 +79,8 @@ const EMPTY: GoalData = {
   dailyGoals: { stepsGoal: 10_000, waterGoalMl: 2500, sleepGoalSeconds: 8 * 3600 },
   habits: [],
   entries: [],
+  reading: [],
+  finishedBooks: [],
 };
 
 const habitOf = (values: Partial<GoalHabit> & Pick<GoalHabit, 'id' | 'kind'>): GoalHabit => ({
@@ -732,6 +734,42 @@ describe('Alltagswerte als Menge', () => {
     expect(daily('stepsGoalDays')).toBe(2);
     expect(daily('waterGoalDays')).toBe(1);
     expect(daily('sleepGoalDays')).toBe(1);
+  });
+});
+
+describe('Lesen als Menge', () => {
+  const data: GoalData = {
+    ...EMPTY,
+    reading: [
+      { date: '2026-10-30', value: 50 },
+      { date: '2026-11-01', value: 30 },
+      { date: '2026-11-02', value: 20 },
+    ],
+    finishedBooks: ['2026-10-30', '2026-11-02'],
+  };
+  const total = (values: Partial<GoalInput>) =>
+    goal({ kind: 'total', period: 'month', target: 10, ...values });
+
+  it('summiert gelesene Seiten und zählt beendete Bücher im Zeitraum', () => {
+    expect(goalProgress(total({ totalMetric: 'pages' }), data, TODAY).current).toBe(50);
+    expect(goalProgress(total({ totalMetric: 'books' }), data, TODAY).current).toBe(1);
+    const year = goalProgress(
+      total({ totalMetric: 'books', period: 'year', target: 2 }),
+      data,
+      TODAY,
+    );
+    // Wiederkehrende Ziele bleiben aktiv
+    expect(year).toMatchObject({ current: 2, percent: 100, achievedOn: '2026-11-02' });
+  });
+
+  it('benennt Lese-Ziele', () => {
+    expect(goalTitle(total({ totalMetric: 'pages', target: 500 }), {}, UNITS)).toBe(
+      '500 Seiten pro Monat',
+    );
+    expect(goalTitle(total({ totalMetric: 'books', period: 'year', target: 12 }), {}, UNITS)).toBe(
+      '12 Bücher pro Jahr',
+    );
+    expect(formatGoalValue(total({ totalMetric: 'books' }), 1, UNITS)).toBe('1 Buch');
   });
 });
 

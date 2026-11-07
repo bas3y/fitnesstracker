@@ -50,6 +50,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   trainingTiles: [...ENDURANCE_SPORTS],
   maxHeartRate: null,
   restingHeartRate: null,
+  readingHabitId: null,
 };
 
 export function getSettings(): Promise<Settings | undefined> {
