@@ -1049,7 +1049,8 @@ Ablauf:
 
 **Notizen:**
 - Gebaut:
-- Ergebnis Handytest:
+  - **Push (07.11.2026):** Nutzer hat das Backup auf dem Handy bestätigt. Vorher lint, typecheck, 841 Unit-Tests und Build grün. Schritte 16–18b gepusht (`527d828..2a0a16a`, DB-Version 22 → 28), Run 42401136943 grün (build + deploy), neuer `sw.js` live.
+- Ergebnis Handytest: steht aus
 - Offene Punkte:
 
 ### Schritt 19 – PDF-Export/Berichte
