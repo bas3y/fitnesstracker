@@ -1,4 +1,4 @@
-# Fitnesstracker
+# Basey – Fitness & Lifestyle
 
 Offline-Fitness- und Lifestyle-Tracker als Progressive Web App (PWA) für Android und iPhone.
 Nach dem ersten Laden läuft die App komplett ohne Internet, alle Daten bleiben auf dem Gerät.

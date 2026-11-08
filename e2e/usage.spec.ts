@@ -178,7 +178,7 @@ test('Willkommen beim ersten Öffnen, App weitergeben und Anleitung (offline)', 
   await page.goto('./');
   await goOffline(page, context);
 
-  const welcome = page.getByRole('region', { name: 'Willkommen!' });
+  const welcome = page.getByRole('region', { name: 'Willkommen bei Basey!' });
   await expect(welcome).toContainText('nur auf diesem Gerät');
   await welcome.getByRole('link', { name: 'Installieren' }).click();
   await expect(

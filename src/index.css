@@ -60,6 +60,17 @@
   --soft-fg: var(--on-primary-soft);
 }
 
+/* Basey: Taupe und Anthrazit wie das Logo (Standard für neue Installationen) */
+:root[data-palette='basey'] {
+  --p-light: #e8d9c2;
+  --p-mid: #bea98e;
+  --p-strong: #6f5b43;
+  --p-deep: #1a1714;
+  --p-accent-dark: #bea98e;
+  --p-on-accent-dark: #0c0c0c;
+  --p-accent-text: var(--p-strong);
+}
+
 :root[data-palette='red'] {
   --p-light: #fbe4e3;
   --p-mid: #d72638;
@@ -179,6 +190,62 @@
   /* Kopie vom :root, sonst verweist --primary-soft im Block auf sich selbst */
   --tone-bg: var(--soft-bg);
   --tone-fg: var(--soft-fg);
+}
+
+/*
+ * Animationen (seit 18f): dezent und kurz, nur ohne „Bewegung reduzieren“.
+ * `anim-fade-in` (Hintergrund von Fenstern), `anim-pop-in` (Fenster), `anim-slide-down` (Hinweise),
+ * `anim-check` (Abhaken), `bar-fill` (Fortschrittsbalken: wächst beim Erscheinen, gleitet bei Änderung).
+ * Seitenwechsel: `usePageTransition` im Layout.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .anim-fade-in {
+    animation: anim-fade-in 0.18s ease-out both;
+  }
+  .anim-pop-in {
+    animation: anim-pop-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  }
+  .anim-slide-down {
+    animation: anim-slide-down 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+  }
+  .anim-check {
+    animation: anim-check 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  }
+  .bar-fill {
+    transform-origin: left;
+    transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: anim-bar-grow 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+@keyframes anim-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes anim-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+}
+@keyframes anim-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
+@keyframes anim-check {
+  from {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+}
+@keyframes anim-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
 }
 
 @theme {

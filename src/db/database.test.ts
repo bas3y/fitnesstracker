@@ -1086,7 +1086,23 @@ describe('AppDatabase-Migration', () => {
       dashboardWidgets: ['habits', 'week'],
       widgetSizes: {},
     });
-    expect(current.verno).toBe(31);
+    expect(current.verno).toBeGreaterThanOrEqual(31);
+    await current.delete();
+  });
+
+  it('adds the default logo variant in v32 and keeps the palette', async () => {
+    const name = 'migration-v31-v32';
+    const v31 = new Dexie(name);
+    v31.version(31).stores({ settings: 'id, updatedAt' });
+    await v31.table('settings').add({ id: 'app-settings', palette: 'blue', widgetSizes: {} });
+    v31.close();
+
+    const current = new AppDatabase(name);
+    expect(await current.settings.get('app-settings')).toMatchObject({
+      palette: 'blue',
+      logoVariant: 'charcoal',
+    });
+    expect(current.verno).toBe(32);
     await current.delete();
   });
 });

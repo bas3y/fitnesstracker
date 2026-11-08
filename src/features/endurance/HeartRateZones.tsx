@@ -61,7 +61,10 @@ export function HeartRateZonesCard({
                 </span>
               </div>
               <div className="mt-1 h-2 rounded-full bg-subtle-strong">
-                <div className="h-2 rounded-full bg-danger" style={{ width: `${share * 100}%` }} />
+                <div
+                  className="bar-fill h-2 rounded-full bg-danger"
+                  style={{ width: `${share * 100}%` }}
+                />
               </div>
             </li>
           );

@@ -54,7 +54,7 @@ describe('createWorkoutsCsvFile', () => {
     const file = (await createWorkoutsCsvFile('kg', new Date(2026, 9, 31)))!;
     const lines = (await file.text()).trim().split('\r\n');
 
-    expect(file.name).toBe('fitnesstracker-workouts-2026-10-31.csv');
+    expect(file.name).toBe('basey-workouts-2026-10-31.csv');
     expect(file.type).toContain('text/csv');
     expect(lines).toHaveLength(2);
     expect(lines[1]).toContain(';Bankdrücken;1;nein;50;;8;');

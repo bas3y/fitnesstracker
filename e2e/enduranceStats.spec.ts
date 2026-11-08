@@ -85,7 +85,7 @@ test('Ausdauer: Bestzeiten, Teilen-Bild, Statistik, Widget und Kalorien (offline
   await expect(efforts.getByRole('img', { name: 'Bestzeit' })).toHaveCount(2);
   await page.getByRole('button', { name: 'Teilen-Bild' }).click();
   const story = await saveImage(page);
-  expect(story.suggestedFilename()).toMatch(/^fitnesstracker-\d{4}-\d{2}-\d{2}\.png$/);
+  expect(story.suggestedFilename()).toMatch(/^basey-\d{4}-\d{2}-\d{2}\.png$/);
   expect(await pngSize(story)).toEqual({ width: 1080, height: 1920 });
   const dialog = page.getByRole('dialog', { name: 'Teilen-Bild' });
   await dialog.getByRole('button', { name: 'Sticker' }).click();

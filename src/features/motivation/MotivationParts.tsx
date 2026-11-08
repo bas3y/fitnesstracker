@@ -143,7 +143,7 @@ export function BadgeDialog({
           </p>
           <div className="mt-1 h-2 rounded-full bg-subtle">
             <div
-              className="h-2 rounded-full bg-primary"
+              className="bar-fill h-2 rounded-full bg-primary"
               style={{ width: `${tierShare(state) * 100}%` }}
             />
           </div>

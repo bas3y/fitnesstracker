@@ -2,6 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react';
 import type { BackState } from '../../components/backNavigation';
 import { Link } from 'react-router-dom';
+import type { LogoVariant } from '../../brand/logo';
+import { BaseyLogo } from '../../components/BaseyLogo';
 import { Chip } from '../../components/Chip';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Card, CustomizeToggle, LinkRow, type CardTone } from '../../components/Page';
@@ -255,22 +257,27 @@ export function HomePage() {
         </div>
         <CustomizeToggle editing={editing} onChange={setEditing} />
       </div>
-      {settings && !settings.welcomeDismissed && !editing && <WelcomeCard />}
+      {settings && !settings.welcomeDismissed && !editing && (
+        <WelcomeCard logo={settings.logoVariant} />
+      )}
       {data && (editing ? <WidgetEditor data={data} /> : <WidgetList data={data} />)}
     </div>
   );
 }
 
 /** Beim ersten Öffnen: Was die App ist und wo die Daten liegen */
-function WelcomeCard() {
+function WelcomeCard({ logo }: { logo: LogoVariant }) {
   return (
     <section
       aria-labelledby="welcome-heading"
       className="mb-4 rounded-2xl border border-primary bg-primary-soft p-4"
     >
-      <h2 id="welcome-heading" className="mb-2 text-lg font-semibold">
-        Willkommen!
-      </h2>
+      <div className="mb-2 flex items-center gap-3">
+        <BaseyLogo variant={logo} className="h-11 w-11" />
+        <h2 id="welcome-heading" className="text-lg font-semibold">
+          Willkommen bei Basey!
+        </h2>
+      </div>
       <ul className="mb-3 flex list-disc flex-col gap-1 pl-5 text-sm">
         <li>Die App ist leer und gehört ganz dir: Training, Ernährung und Alltag an einem Ort.</li>
         <li>Alles bleibt nur auf diesem Gerät – ohne Konto, ohne Server, auch ohne Internet.</li>
@@ -603,7 +610,7 @@ function WeekBar({ value, goal }: { value: number; goal: number }) {
       aria-valuenow={percent}
       className="h-2 overflow-hidden rounded-full bg-subtle-strong"
     >
-      <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+      <div className="bar-fill h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
     </div>
   );
 }

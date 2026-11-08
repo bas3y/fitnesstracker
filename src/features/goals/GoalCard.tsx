@@ -63,7 +63,7 @@ export function GoalBar({
       aria-valuenow={percent}
       className="relative h-3 overflow-hidden rounded-full bg-subtle-strong"
     >
-      <div className={`h-full rounded-full ${fill}`} style={{ width: `${percent}%` }} />
+      <div className={`bar-fill h-full rounded-full ${fill}`} style={{ width: `${percent}%` }} />
       {expectedPercent !== null && (
         <div
           aria-hidden="true"

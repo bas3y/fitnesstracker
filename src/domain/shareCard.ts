@@ -127,10 +127,10 @@ export function workoutShareContent({
   };
 }
 
-/** z. B. `fitnesstracker-2026-11-04-sticker.png` */
+/** z. B. `basey-2026-11-04-sticker.png` */
 export function shareFileName(startedAt: string, format: ShareFormat): string {
   const date = new Date(startedAt);
   const pad = (n: number) => String(n).padStart(2, '0');
   const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  return `fitnesstracker-${day}${format === 'sticker' ? '-sticker' : ''}.png`;
+  return `basey-${day}${format === 'sticker' ? '-sticker' : ''}.png`;
 }

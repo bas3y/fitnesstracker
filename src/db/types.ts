@@ -1,3 +1,4 @@
+import type { LogoVariant } from '../brand/logo';
 import type { IconName } from '../components/iconPaths';
 
 /** ISO-8601-Zeitstempel, z. B. `2026-10-28T09:15:00.000Z` */
@@ -14,8 +15,8 @@ export interface BaseEntity {
 export type WeightUnit = 'kg' | 'lb';
 export type DistanceUnit = 'km' | 'mi';
 export type ThemePreference = 'system' | 'light' | 'dark';
-/** Farbpaletten (seit DB-Version 29), Farben in `src/index.css` */
-export const COLOR_PALETTES = ['green', 'red', 'blue', 'graphite', 'violet'] as const;
+/** Farbpaletten (seit DB-Version 29, `basey` seit 32), Farben in `src/index.css` */
+export const COLOR_PALETTES = ['basey', 'green', 'red', 'blue', 'graphite', 'violet'] as const;
 export type ColorPalette = (typeof COLOR_PALETTES)[number];
 
 export interface Settings extends BaseEntity {
@@ -26,6 +27,8 @@ export interface Settings extends BaseEntity {
   theme: ThemePreference;
   /** Farbpalette (seit DB-Version 29) */
   palette: ColorPalette;
+  /** Variante des Basey-Logos in der App und beim Start (seit DB-Version 32) */
+  logoVariant: LogoVariant;
   lastBackupAt: Timestamp | null;
   /** Stand der mitgelieferten Daten (`0` = noch nicht eingespielt) */
   seedVersion: number;

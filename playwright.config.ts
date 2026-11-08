@@ -12,6 +12,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'on-first-retry',
+    // Ohne Animationen: Ladebildschirm verschwindet sofort, Fenster stehen gleich still (eigener Test in branding.spec.ts)
+    reducedMotion: 'reduce',
   },
   projects: [
     { name: 'android', use: { ...devices['Pixel 7'] } },

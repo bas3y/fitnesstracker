@@ -1,3 +1,6 @@
+import { logoDataUrl } from '../../brand/logo';
+import { storedLogoVariant } from '../../brand/splash';
+import { WORDMARK_NAME } from '../../brand/wordmark';
 import { ICON_PATHS } from '../../components/iconPaths';
 import { SHARE_SIZES, type ShareCardContent, type ShareFormat } from '../../domain/shareCard';
 import { projectRoute } from '../../domain/track';
@@ -150,6 +153,29 @@ function drawBadge(
   ctx.fillText(fitText(ctx, badge, width - size - 16), x + size + 16, y);
 }
 
+function loadImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = src;
+  });
+}
+
+/** Logo + Schriftzug „Basey“ unten links (`y` = Oberkante) */
+async function drawBrand(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  const size = 64;
+  const logo = await loadImage(logoDataUrl(storedLogoVariant(), { id: 'share', size: 220 }));
+  if (logo) ctx.drawImage(logo, x, y, size, size);
+  const scale = 36 / WORDMARK_NAME.height;
+  ctx.save();
+  ctx.translate(x + (logo ? size + 20 : 0), y + (size - WORDMARK_NAME.height * scale) / 2);
+  ctx.scale(scale, scale);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.fill(new Path2D(WORDMARK_NAME.d));
+  ctx.restore();
+}
+
 /** Bild als PNG; der Sticker hat einen transparenten Hintergrund und Schatten hinter der Schrift */
 export async function renderShareImage(
   content: ShareCardContent,
@@ -175,9 +201,7 @@ export async function renderShareImage(
     if (hasMiddle) drawMiddle({ x: PADDING, y: 400, width: inner, height: 820 });
     drawStats(ctx, content.stats, { x: PADDING, y: 1280, width: inner, height: 320 });
     if (content.badge) drawBadge(ctx, content.badge, PADDING, 1680, inner);
-    setFont(ctx, 30, 600);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
-    ctx.fillText('Fitnesstracker', PADDING, 1760);
+    await drawBrand(ctx, PADDING, 1730);
   } else {
     ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
     ctx.shadowBlur = 14;

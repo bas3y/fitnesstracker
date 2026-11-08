@@ -145,7 +145,7 @@ describe('Teilen-Bild', () => {
   });
 
   it('benennt die Datei nach Tag und Format', () => {
-    expect(shareFileName(STARTED, 'story')).toBe('fitnesstracker-2026-11-04.png');
-    expect(shareFileName(STARTED, 'sticker')).toBe('fitnesstracker-2026-11-04-sticker.png');
+    expect(shareFileName(STARTED, 'story')).toBe('basey-2026-11-04.png');
+    expect(shareFileName(STARTED, 'sticker')).toBe('basey-2026-11-04-sticker.png');
   });
 });

@@ -11,6 +11,6 @@ export async function createWorkoutsCsvFile(
 ): Promise<File | null> {
   const [workouts, sessions] = await Promise.all([listWorkoutHistory(), loadStatsSessions()]);
   if (sessions.length === 0) return null;
-  const name = `fitnesstracker-workouts-${toDateInput(date.toISOString())}.csv`;
+  const name = `basey-workouts-${toDateInput(date.toISOString())}.csv`;
   return new File([workoutsToCsv(workouts, sessions, unit)], name, { type: 'text/csv' });
 }

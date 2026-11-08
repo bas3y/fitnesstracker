@@ -86,7 +86,7 @@ export function MotivationWidget({
           <div className="mt-1 flex items-center gap-2">
             <div className="h-2 flex-1 rounded-full bg-subtle">
               <div
-                className="h-2 rounded-full bg-primary"
+                className="bar-fill h-2 rounded-full bg-primary"
                 style={{ width: `${tierShare(badge) * 100}%` }}
               />
             </div>

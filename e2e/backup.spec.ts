@@ -44,7 +44,7 @@ test('Einstellungen überstehen Backup, Löschen der DB und Import (offline)', a
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Backup exportieren' }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/^fitnesstracker-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  expect(download.suggestedFilename()).toMatch(/^basey-backup-\d{4}-\d{2}-\d{2}\.json$/);
   const backupPath = testInfo.outputPath('backup.json');
   await download.saveAs(backupPath);
   await expect(page.getByText('Letztes Backup: heute')).toBeVisible();
@@ -83,5 +83,5 @@ test('Ungültige Datei wird beim Import abgelehnt', async ({ page }) => {
     mimeType: 'application/json',
     buffer: Buffer.from('{"app":"etwas-anderes"}'),
   });
-  await expect(page.getByRole('alert')).toContainText('Keine Fitnesstracker-Sicherung');
+  await expect(page.getByRole('alert')).toContainText('Keine Basey-Sicherung');
 });

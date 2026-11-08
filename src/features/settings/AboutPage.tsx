@@ -1,11 +1,19 @@
 import type { ReactNode } from 'react';
 import { Card, Page } from '../../components/Page';
+import { BaseyLogo } from '../../components/BaseyLogo';
+import { BaseyWordmark } from '../../components/BaseyWordmark';
 import { SEED_VERSION } from '../../db/seed';
+import { useSettings } from './useSettings';
 
 export function AboutPage() {
+  const settings = useSettings();
   return (
     <Page title="Über & Lizenzen" backTo="/settings">
-      <Card title="Fitnesstracker">
+      <Card>
+        <div className="mb-3 flex items-center gap-4">
+          <BaseyLogo variant={settings?.logoVariant} className="h-16 w-16" />
+          <BaseyWordmark tagline className="w-32" />
+        </div>
         <p className="text-sm text-muted">
           Offline-App für Training und Alltag. Alle Daten bleiben auf diesem Gerät – es gibt keinen
           Server und kein Konto. Stand der mitgelieferten Daten: Version {SEED_VERSION}.
@@ -49,7 +57,8 @@ export function AboutPage() {
       <Card title="Software">
         <p className="text-sm text-muted">
           Gebaut mit React, React Router, Dexie, Zod, Tailwind CSS und Workbox (jeweils MIT- bzw.
-          Apache-2.0-Lizenz).
+          Apache-2.0-Lizenz). Schriftzug „Basey“ aus der Schrift Inter Tight (SIL Open Font
+          License).
         </p>
       </Card>
     </Page>

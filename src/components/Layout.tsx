@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Link, Outlet } from 'react-router-dom';
+import { applyLogoVariant, hideSplash } from '../brand/splash';
 import { ensureSettings } from '../db/settings';
 import { getBackupReminder } from '../domain/backupReminder';
 import { useApplyTheme } from '../features/settings/theme';
@@ -9,6 +10,7 @@ import { SupplementReminder } from '../features/supplements/SupplementReminder';
 import { ActiveWorkoutBanner } from '../features/training/ActiveWorkoutBanner';
 import { RestTimerAlarm } from '../features/training/RestTimer';
 import { BottomNav } from './BottomNav';
+import { usePageTransition } from './usePageTransition';
 import { ToastHost } from './Toast';
 
 // Abzeichen/Ziele berechnen braucht viel Logik: nicht im Hauptbundle
@@ -26,6 +28,14 @@ export function Layout() {
     void ensureSettings();
   }, []);
 
+  const logoVariant = settings?.logoVariant;
+  useEffect(() => {
+    if (!logoVariant) return;
+    applyLogoVariant(logoVariant);
+    hideSplash();
+  }, [logoVariant]);
+
+  const main = usePageTransition();
   const reminder = settings ? getBackupReminder(settings, new Date()) : null;
 
   return (
@@ -50,7 +60,7 @@ export function Layout() {
       <Suspense fallback={null}>
         <CelebrationWatcher />
       </Suspense>
-      <main>
+      <main ref={main}>
         <Suspense fallback={null}>
           <Outlet />
         </Suspense>

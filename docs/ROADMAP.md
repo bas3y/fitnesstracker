@@ -37,7 +37,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [ ] Schritt 18c – Push & Handytest 16–18b
 - [x] Schritt 18d – Design-Grundlage & Farbpaletten
 - [x] Schritt 18e – Seiten aufräumen & übersichtlicher machen
-- [ ] Schritt 18f – Neues Logo, Animationen & Ladebildschirm
+- [x] Schritt 18f – Neues Logo, Animationen & Ladebildschirm
 - [ ] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
 
@@ -1121,11 +1121,35 @@ Mit dem Nutzer beim Start abgestimmt (Entwürfe als Artifact „Fitnesstracker 1
 - **Ladebildschirm:** beim Start (bis Einstellungen/DB geladen sind) Logo statt leerer Seite, passend zu Palette und Hell/Dunkel (schon in `index.html`, damit nichts aufblitzt); iOS-Startbild (`apple-touch-startup-image`) prüfen.
 - **Animationen:** dezent und kurz (z. B. Logo beim Start, Seitenwechsel, Abhaken, Fortschrittsbalken, Erfolgs-Hinweis), offline und ohne Paket wenn möglich; `prefers-reduced-motion` beachten.
 - Beim Start mit dem Nutzer klären: welches Logo, welche Stellen animiert werden, wie lange der Ladebildschirm steht.
+- **Entschieden (Planung 18f, 2026-11-08):** Die App heißt jetzt **„Basey“** (Untertitel „Fitness & Lifestyle“). Eigenes Logo vom Nutzer: Ring mit Kugel in der Öffnung, vier Varianten (Taupe Silk, Graphite Mesh, Stone Grip, Charcoal Satin), Wortmarke dunkel/hell. Quelle: Artifact „Basey Logo“ (https://claude.ai/artifact/M9K5wxyMXuqFkisNHGN1bL, Dateien `project/Icons.dc.html`, `Lockup.dc.html`, `Main.dc.html`). Dort ist alles reines SVG (Ring = Bogenpfad mit Maske/Unschärfe-Lichtern + Rauschen, Kugel = eigener `circle` mit Radialverlauf) → direkt übernehmbar, Ring und Kugel getrennt animierbar. Wortmarke nutzt „Inter Tight“ von Google Fonts → für die App als SVG-Pfade umwandeln (offline, keine Schrift laden). Das zweite Artifact „Basey Logo – B+Y Monogramm“ wird **nicht** verwendet.
+  - **App-Icon:** Standard **Charcoal Satin** (Manifest, Startbildschirm, fest). Variante in der App wählbar (Einstellungen → Darstellung) für Ladebildschirm, Willkommen, Über, Teilen-Bild. iOS: `apple-touch-icon` folgt der gewählten Variante (wirkt beim Hinzufügen zum Home-Bildschirm), Android bleibt beim Manifest-Icon. Favicon/kleine Größen als vereinfachte flache Fassung.
+  - **Startanimation „Ring dreht ein“:** Ring dreht mit Schwung in Position, Kugel ploppt auf, Schriftzug „Basey“ blendet ein, dann Überblendung in die App. Inline in `index.html` (kein Aufblitzen), nur beim Kaltstart, ca. 0,8–1,5 s, `prefers-reduced-motion` = statisches Logo. Android-/iOS-Startbild nahtlos (gleicher Hintergrund, gleiche Logo-Position).
+  - **Umbenennung:** Manifest, `<title>`, iOS-Titel, Über-Seite, Teilen-Text/-Bild, Dateinamen `basey-backup-…`/`basey-workouts-…`/`basey-….png`. Backups mit alter Kennung `fitnesstracker` bleiben importierbar. Repo/URL `/fitnesstracker/` bleibt (sonst Neuinstallation nötig).
+  - **Palette „Basey“** (Taupe/Anthrazit) als Standard für neue Installationen; Manifest-`theme_color`/`background_color` passend zum Logo.
+  - **Weitere Animationen:** Seitenwechsel, Abhaken, Fortschrittsbalken, Erfolgs-Hinweis (dezent, ohne Paket, reduzierte Bewegung beachtet).
+  - **Logo im Teilen-Bild** statt Text „Fitnesstracker“.
+  - Wortmarke als Grafik (keine Online-Schrift).
 
 **Notizen:**
 - Gebaut:
+  - **Logo als Code:** `src/brand/logo.ts` (`logoSvg(variant, { id, shape: 'rounded' | 'square' | 'none', scale, size, label })`, `LOGO_VARIANTS` mit `charcoal` zuerst = Standard, `LOGO_COLORS`, `LOGO_VARIANT_LABELS`, `logoDataUrl`), SVG 1:1 aus dem Artifact (Maske, Unschärfe-Lichter, Rauschen, Mesh-/Stein-Textur), Ring/Kugel in `<g class="logo-ring">`/`<g class="logo-ball">`. Ohne Imports, damit Node (`npm run icons`) und `vite.config.ts` die Datei direkt laden. React: `BaseyLogo` (`src/components/`, eindeutige IDs per `useId`).
+  - **Wortmarke:** `scripts/generate-wordmark.mjs` wandelt „Basey“ (Inter Tight 700, Laufweite −0,045 em) und „Fitness & Lifestyle“ (500) per opentype.js in Pfade → `src/brand/wordmark.ts` (generiert), Zusammenbau `wordmarkSvg` (`src/brand/wordmarkSvg.ts`), React `BaseyWordmark` (eigene Datei, nicht im Hauptbundle). Keine Schrift wird geladen.
+  - **Icons:** `npm run icons` erzeugt aus `logo.ts` `favicon.svg`, `pwa-192/512` (abgerundet), `maskable-512` (vollflächig, Motiv 80 %), `apple-touch-icon.png` + `apple-touch-icon-<variante>.png` (je 180 px, vollflächig).
+  - **Ladebildschirm:** Vite-Plugin `basey-splash` (`vite.config.ts`) ersetzt `<!-- splash-css -->`/`<!-- splash -->` in `index.html` durch `SPLASH_CSS`/`splashHtml()` (`src/brand/splashHtml.ts`): immer dunkel (`#0C0C0C`, wie Android-Startbild und `theme_color`), je Variante ein `<template>`, ein Inline-Script nimmt `localStorage.logo` und setzt auch das `apple-touch-icon`. Animation „Ring dreht ein“: Kachel blendet ein, Ring dreht von −200° mit Überschwingen (0,8 s), Kugel ploppt (ab 0,55 s), Schriftzug blendet ein (ab 0,7 s). `hideSplash()` (`src/brand/splash.ts`) wird im `Layout` gerufen, sobald die Einstellungen geladen sind, frühestens nach 1,15 s ab Seitenstart, dann 0,3 s Ausblenden. Notbremse nach 6 s. „Bewegung reduzieren“: keine Animation, sofort weg.
+  - **Logo-Variante wählbar:** `Settings.logoVariant` (Dexie v32, Standard `charcoal`, Backup-Schema mit Default), Einstellungen → Darstellung → Karte „App-Logo“ (`LogoPicker`). `applyLogoVariant` spiegelt nach `localStorage.logo` und tauscht `apple-touch-icon` (iPhone: gilt beim Hinzufügen zum Home-Bildschirm); Android behält Charcoal Satin (Manifest).
+  - **Umbenennung:** Manifest `Basey`/`Basey`, `<title>`, iOS-Titel, Beschreibung, Willkommens-Karte „Willkommen bei Basey!“ mit Logo, Über-Seite mit Logo + Wortmarke, Teilen-Text, Dateinamen `basey-backup-…json`, `basey-workouts-…csv`, `basey-….png`. Teilen-Bild (Story): Logo (gewählte Variante) + Schriftzug statt Text „Fitnesstracker“.
+  - **Palette „Basey“** (`--p-*`: `#e8d9c2`, `#bea98e`, `#6f5b43`, `#1a1714`; Akzent dunkel `#bea98e`) als erste in `COLOR_PALETTES`, Standard neuer Installationen (`DEFAULT_SETTINGS`, `index.html` ohne gespeicherten Wert). Paletten-Auswahl jetzt 3 × 2.
+  - **Animationen** (`src/index.css`, nur bei `prefers-reduced-motion: no-preference`): `anim-fade-in`/`anim-pop-in` (`Dialog`, `ConfirmDialog`), `anim-slide-down` (Hinweise/Erfolge im `ToastHost`), `anim-check` (`StatusCircle` springt nur nach dem Abhaken, nicht beim Öffnen), `bar-fill` (Fortschrittsbalken wachsen beim Erscheinen und gleiten bei Änderung: Tagesziele, Ziele, Startseite, Abzeichen, Pulszonen, Statistik). Seitenwechsel: `usePageTransition` blendet `<main>` 180 ms ein (nur Deckkraft, damit feste Leisten nicht wandern; nur bei Pfadwechsel, nicht bei `?…`).
+  - Tests: `src/brand/logo.test.ts`, `splash.test.ts`, Migration v31→v32, Backup (Logo-Variante); E2E `e2e/branding.spec.ts` (Ladebildschirm mit Animation, Logo wählen offline, iPhone-Icon nach Neuladen, Über-Seite), `design.spec.ts` auf Standard „Basey“ umgestellt. **Playwright läuft jetzt mit `reducedMotion: 'reduce'`** (Ladebildschirm sofort weg, keine Fenster-Animation); Tests mit Animation per `test.use({ reducedMotion: 'no-preference' })`.
 - Abweichungen:
+  - Ladebildschirm immer dunkel statt passend zu Hell/Dunkel: So geht das Android-Startbild (feste `background_color`) nahtlos über, und das Logo wirkt wie im Entwurf auf Schwarz. Danach blendet die App in ihrem Theme ein.
+  - Favicon ist das volle Logo (keine vereinfachte flache Fassung): bleibt auch bei 32 px gut erkennbar.
+  - Backup-Kennung `app` bleibt intern `fitnesstracker` (alte und neue App-Stände lesen gegenseitig ihre Sicherungen), nur die Fehlermeldung heißt „Keine Basey-Sicherung“. IndexedDB-Name bleibt `fitnesstracker` (Daten bleiben erhalten), ebenso `package.json`-Name und Repo/URL.
+  - Kein eigenes iOS-Startbild (`apple-touch-startup-image` bräuchte je Gerätegröße ein Bild); iOS zeigt kurz Weiß/Schwarz, dann den Ladebildschirm.
 - Offene Punkte:
+  - **Handytest** (mit dem 18c-Push): Startanimation auf echten Geräten (Dauer, Übergang vom Android-Startbild), Icon auf dem Home-Bildschirm (Android maskable, iPhone mit gewählter Variante), Name „Basey“ unter dem Icon (bestehende Android-Installation aktualisiert Name/Icon nach einiger Zeit, iPhone erst nach Neuinstallation), Lesbarkeit der Palette „Basey“.
+  - Vor dem Push an ein Backup erinnern (DB-Version 28 → 32).
+  - Ideen für später: Schriftzug auch im Seitenkopf der Startseite; Logo im Sticker-Format des Teilen-Bilds; eigene iOS-Startbilder.
 
 ### Schritt 19 – PDF-Export/Berichte
 Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.

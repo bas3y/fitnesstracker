@@ -34,6 +34,8 @@ import { notificationState, requestNotifications } from '../supplements/notifica
 import { BackupSection } from './BackupSection';
 import { ExportSection } from './ExportSection';
 import { PalettePicker } from './PalettePicker';
+import { LogoPicker } from './LogoPicker';
+import { DEFAULT_LOGO_VARIANT, LOGO_VARIANT_LABELS } from '../../brand/logo';
 import {
   ABOUT_PATH,
   isSettingsSection,
@@ -263,23 +265,36 @@ function UnitsCard({ settings }: { settings: Settings }) {
 
 function AppearanceCard({ settings }: { settings: Settings }) {
   return (
-    <Card>
-      <div className="flex flex-col gap-4">
-        <SegmentedControl
-          label="Theme"
-          options={(['system', 'light', 'dark'] as const).map((value) => ({
-            value,
-            label: THEME_LABELS[value],
-          }))}
-          value={settings.theme}
-          onChange={(theme) => void updateSettings({ theme })}
+    <>
+      <Card>
+        <div className="flex flex-col gap-4">
+          <SegmentedControl
+            label="Theme"
+            options={(['system', 'light', 'dark'] as const).map((value) => ({
+              value,
+              label: THEME_LABELS[value],
+            }))}
+            value={settings.theme}
+            onChange={(theme) => void updateSettings({ theme })}
+          />
+          <PalettePicker
+            value={settings.palette}
+            onChange={(palette) => void updateSettings({ palette })}
+          />
+        </div>
+      </Card>
+      <Card title="App-Logo">
+        <LogoPicker
+          value={settings.logoVariant}
+          onChange={(logoVariant) => void updateSettings({ logoVariant })}
         />
-        <PalettePicker
-          value={settings.palette}
-          onChange={(palette) => void updateSettings({ palette })}
-        />
-      </div>
-    </Card>
+        <p className="mt-3 text-xs text-muted">
+          Gilt in der App und beim Start. Auf dem iPhone bekommt das Symbol auf dem Home-Bildschirm
+          die Variante, die beim Hinzufügen gewählt ist. Android zeigt immer{' '}
+          {LOGO_VARIANT_LABELS[DEFAULT_LOGO_VARIANT]}.
+        </p>
+      </Card>
+    </>
   );
 }
 

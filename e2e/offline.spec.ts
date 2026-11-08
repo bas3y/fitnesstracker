@@ -27,7 +27,7 @@ test('Manifest ist installierbar konfiguriert', async ({ request }) => {
   const response = await request.get('./manifest.webmanifest');
   expect(response.ok()).toBe(true);
   const manifest = await response.json();
-  expect(manifest.name).toBe('Fitnesstracker');
+  expect(manifest.name).toBe('Basey');
   expect(manifest.display).toBe('standalone');
   const sizes = manifest.icons.map((icon: { sizes: string }) => icon.sizes);
   expect(sizes).toEqual(expect.arrayContaining(['192x192', '512x512']));

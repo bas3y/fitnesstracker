@@ -165,7 +165,7 @@ test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offl
   const csvPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Workouts als CSV exportieren' }).click();
   const csv = await csvPromise;
-  expect(csv.suggestedFilename()).toMatch(/^fitnesstracker-workouts-\d{4}-\d{2}-\d{2}\.csv$/);
+  expect(csv.suggestedFilename()).toMatch(/^basey-workouts-\d{4}-\d{2}-\d{2}\.csv$/);
   const csvPath = testInfo.outputPath('workouts.csv');
   await csv.saveAs(csvPath);
   const lines = (await readFile(csvPath, 'utf8')).trim().split('\r\n');

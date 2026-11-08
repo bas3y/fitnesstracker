@@ -4,6 +4,7 @@ import { CheckIcon } from '../../components/icons';
 
 /** Vorschaufarben je Palette: hell, Akzent hell, Akzent, dunkel (wie in `src/index.css`) */
 const SWATCHES: Record<ColorPalette, readonly string[]> = {
+  basey: ['#e8d9c2', '#bea98e', '#6f5b43', '#1a1714'],
   green: ['#d1f2eb', '#50c878', '#0b6e4f', '#013220'],
   red: ['#fbe4e3', '#d72638', '#9b111e', '#3f0d12'],
   blue: ['#d6e6f3', '#a6c5d7', '#0f52ba', '#000926'],
@@ -19,7 +20,7 @@ export function PalettePicker({
   onChange: (palette: ColorPalette) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label="Farbpalette" className="grid grid-cols-5 gap-2">
+    <div role="radiogroup" aria-label="Farbpalette" className="grid grid-cols-3 gap-2">
       {COLOR_PALETTES.map((palette) => {
         const checked = palette === value;
         return (

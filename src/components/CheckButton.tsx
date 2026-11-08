@@ -1,8 +1,12 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { CHECK_HINT, checkNameClass } from './checkStyles';
 import { CheckIcon, IconBadge, type IconName } from './icons';
 
 export function StatusCircle({ done, warn = false }: { done: boolean; warn?: boolean }) {
+  // Nur nach dem Abhaken springen, nicht beim Öffnen der Seite
+  const [initial] = useState(done);
+  const [changed, setChanged] = useState(false);
+  if (!changed && done !== initial) setChanged(true);
   return (
     <span
       aria-hidden="true"
@@ -10,7 +14,7 @@ export function StatusCircle({ done, warn = false }: { done: boolean; warn?: boo
         warn
           ? 'border-mark bg-mark text-surface'
           : done
-            ? 'border-primary bg-primary text-on-primary'
+            ? `border-primary bg-primary text-on-primary ${changed ? 'anim-check' : ''}`
             : 'border-line-strong'
       }`}
     >

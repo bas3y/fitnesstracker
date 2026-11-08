@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { DEFAULT_LOGO_VARIANT } from '../brand/logo';
 import { toIconName } from '../domain/iconChoice';
 import { trackSummary } from '../domain/track';
 import {
@@ -565,6 +566,17 @@ export class AppDatabase extends Dexie {
           .toCollection()
           .modify((settings) => {
             settings.widgetSizes ??= {};
+          }),
+      );
+    // Basey: Logo-Variante (bestehende Geräte behalten ihre Palette)
+    this.version(32)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.logoVariant ??= DEFAULT_LOGO_VARIANT;
           }),
       );
   }

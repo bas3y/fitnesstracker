@@ -3,15 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#f1f6f4" />
-    <meta name="description" content="Offline Fitness- und Lifestyle-Tracker" />
+    <meta name="theme-color" content="#0c0c0c" />
+    <meta
+      name="description"
+      content="Basey – Fitness & Lifestyle, offline, deine Daten bleiben auf dem Gerät"
+    />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Fitness" />
+    <meta name="apple-mobile-web-app-title" content="Basey" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180" />
-    <title>Fitnesstracker</title>
+    <title>Basey</title>
+    <!-- splash-css -->
     <script>
       // Dark Mode und Palette vor dem ersten Rendern setzen (vermeidet Aufblitzen); Werte spiegeln die Einstellungen
       var theme = null;
@@ -26,12 +30,15 @@
       ) {
         document.documentElement.classList.add('dark');
       }
-      if (palette && /^[a-z]+$/.test(palette)) {
-        document.documentElement.setAttribute('data-palette', palette);
-      }
+      // Ohne gespeicherten Wert (neue Installation): Standardpalette
+      document.documentElement.setAttribute(
+        'data-palette',
+        palette && /^[a-z]+$/.test(palette) ? palette : 'basey',
+      );
     </script>
   </head>
   <body>
+    <!-- splash -->
     <div id="root"></div>
     <script type="module" src="./src/main.tsx"></script>
   </body>

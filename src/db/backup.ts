@@ -45,6 +45,7 @@ import {
   workoutBlockSchema,
 } from './schemas';
 import { ensureTrackSummaries } from './endurance';
+import { DEFAULT_LOGO_VARIANT, LOGO_VARIANTS } from '../brand/logo';
 import { toIconName } from '../domain/iconChoice';
 import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
@@ -67,6 +68,7 @@ import {
   type PhotoFile,
 } from './types';
 
+/** Kennung im Backup; bleibt nach der Umbenennung in „Basey“, damit alte und neue Stände zueinander passen */
 export const BACKUP_APP = 'fitnesstracker';
 export const BACKUP_VERSION = 1;
 
@@ -143,6 +145,8 @@ const settingsSchema = baseEntitySchema.extend({
   palette: z.enum(COLOR_PALETTES).default('green'),
   // Seit DB-Version 31
   widgetSizes: z.partialRecord(z.enum(DASHBOARD_WIDGETS), z.enum(WIDGET_SIZES)).default({}),
+  // Seit DB-Version 32
+  logoVariant: z.enum(LOGO_VARIANTS).default(DEFAULT_LOGO_VARIANT),
 });
 
 const catalogEntryFields = {
@@ -379,7 +383,7 @@ const photoFileSchema = baseEntitySchema.extend({
 // Neue Tabellen hier ergänzen; `default([])` hält ältere Backups ohne die Tabelle importierbar.
 // Fotos sind optional: Fehlen sie, bleiben beim Import die Fotos auf dem Gerät erhalten.
 export const backupSchema = z.object({
-  app: z.literal(BACKUP_APP, { message: 'Keine Fitnesstracker-Sicherung' }),
+  app: z.literal(BACKUP_APP, { message: 'Keine Basey-Sicherung' }),
   backupVersion: z
     .number()
     .int()
@@ -571,7 +575,7 @@ export async function restoreBackup(backup: Backup): Promise<void> {
 
 export function backupFileName(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `fitnesstracker-backup-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}.json`;
+  return `basey-backup-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}.json`;
 }
 
 export function backupToFile(backup: Backup, date = new Date()): File {

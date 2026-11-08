@@ -8,15 +8,16 @@ test('Farbpalette und Dunkelmodus wählen, bleiben nach dem Neuladen (offline)',
   await page.goto('./#/settings/appearance');
   await goOffline(page, context);
   const root = page.locator('html');
-  await expect(root).toHaveAttribute('data-palette', 'green');
+  // Neue Installation: Palette „Basey“
+  await expect(root).toHaveAttribute('data-palette', 'basey');
 
   const palettes = page.getByRole('radiogroup', { name: 'Farbpalette' });
-  await expect(palettes.getByRole('radio')).toHaveCount(5);
-  await expect(palettes.getByRole('radio', { name: 'Grün' })).toHaveAttribute(
+  await expect(palettes.getByRole('radio')).toHaveCount(6);
+  await expect(palettes.getByRole('radio', { name: 'Basey' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  const greenPage = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const defaultPage = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
   await palettes.getByRole('radio', { name: 'Violett' }).click();
   await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dunkel' }).click();
@@ -24,7 +25,7 @@ test('Farbpalette und Dunkelmodus wählen, bleiben nach dem Neuladen (offline)',
   await expect(root).toHaveClass(/dark/);
   await expect
     .poll(() => page.evaluate(() => getComputedStyle(document.body).backgroundColor))
-    .not.toBe(greenPage);
+    .not.toBe(defaultPage);
   await expect(palettes.getByRole('radio', { name: 'Violett' })).toHaveAttribute(
     'aria-checked',
     'true',

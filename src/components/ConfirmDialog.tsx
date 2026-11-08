@@ -24,7 +24,7 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"
+      className="anim-fade-in fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onCancel();
       }}
@@ -38,7 +38,7 @@ export function ConfirmDialog({
         onKeyDown={(event) => {
           if (event.key === 'Escape') onCancel();
         }}
-        className="w-full max-w-sm rounded-2xl bg-surface p-4 shadow-lg outline-none"
+        className="anim-pop-in w-full max-w-sm rounded-2xl bg-surface p-4 shadow-lg outline-none"
       >
         <h2 id={titleId} className="mb-2 text-lg font-semibold">
           {title}

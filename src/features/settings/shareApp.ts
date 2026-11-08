@@ -4,13 +4,13 @@ export function appUrl(): string {
 }
 
 export const SHARE_APP_TEXT =
-  'Fitnesstracker für Training, Ernährung und Alltag – läuft ohne Internet, deine Daten bleiben auf deinem Handy.';
+  'Basey – Fitness & Lifestyle: Training, Ernährung und Alltag. Läuft ohne Internet, deine Daten bleiben auf deinem Handy.';
 
 export type ShareLinkResult = 'shared' | 'copied' | 'cancelled' | 'failed';
 
 /** Teilen-Dialog des Handys, sonst Link in die Zwischenablage */
 export async function shareAppLink(url = appUrl()): Promise<ShareLinkResult> {
-  const data = { title: 'Fitnesstracker', text: SHARE_APP_TEXT, url };
+  const data = { title: 'Basey', text: SHARE_APP_TEXT, url };
   if (navigator.share && (navigator.canShare?.(data) ?? true)) {
     try {
       await navigator.share(data);

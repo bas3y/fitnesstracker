@@ -3,23 +3,32 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { SPLASH_BACKGROUND, SPLASH_CSS, splashHtml } from './src/brand/splashHtml.ts';
 
-const THEME_COLOR = '#10b981';
-const BACKGROUND_COLOR = '#0f172a';
+// Android zeigt beim Start Icon + Hintergrundfarbe, danach übernimmt der Ladebildschirm
+const THEME_COLOR = SPLASH_BACKGROUND;
+const BACKGROUND_COLOR = SPLASH_BACKGROUND;
 
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
   plugins: [
     react(),
     tailwindcss(),
+    {
+      name: 'basey-splash',
+      transformIndexHtml: (html) =>
+        html
+          .replace('<!-- splash-css -->', `<style>${SPLASH_CSS}</style>`)
+          .replace('<!-- splash -->', splashHtml()),
+    },
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon*.png'],
       manifest: {
-        name: 'Fitnesstracker',
-        short_name: 'Fitness',
-        description: 'Offline Fitness- und Lifestyle-Tracker',
+        name: 'Basey',
+        short_name: 'Basey',
+        description: 'Fitness & Lifestyle – offline, deine Daten bleiben auf dem Gerät',
         lang: 'de',
         display: 'standalone',
         orientation: 'portrait',
