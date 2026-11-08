@@ -1058,9 +1058,9 @@ Ablauf:
   - Alltag: Gewohnheitsserie überlappt mit „Schritte“.
   - Training: Am Ende des Workouts unten ein „Fertig“-Button, damit man nicht über „Zurück“/nach oben muss.
 - Korrekturen (08.11.2026):
-  - Erfolge: Lange Abzeichen-Namen („Gewohnheitsserie“, „Fortschrittsfotos“, „Trainingsserie“ …) haben ihre Rasterspalte verbreitert und stießen an den Nachbarn. Jetzt gleich breite Spalten (`min-w-0`) und Silbentrennung (`hyphens-auto`, Notfall `overflow-wrap:anywhere`). E2E prüft die Kacheln bei 320 px Breite.
+  - Erfolge: Lange Abzeichen-Namen („Gewohnheitsserie“, „Fortschrittsfotos“, „Trainingsserie“ …) haben ihre Rasterspalte verbreitert und stießen an den Nachbarn. Jetzt gleich breite Spalten (`min-w-0`) und feste Trennstellen per weichem Trennzeichen (`NAME_BREAKS` in `MotivationParts.tsx`, z. B. „Fortschritts-fotos“, Nutzerwunsch; `hyphens-manual`, Notfall `overflow-wrap:anywhere`), unter 360 px kleinere Schrift ohne Innenabstand. E2E prüft die Kacheln bei 320 px Breite.
   - Workout-Übersicht (nach „Speichern“ und im Verlauf): unten primärer „Fertig“-Link zur Herkunft (wie „Zurück“), „Teilen-Bild“ ist jetzt ein normaler Button.
-  - Noch nicht gepusht.
+  - Noch nicht gepusht: Nutzerwunsch, erst nach 18d/18e (wenn das Design stimmt) zusammen pushen und auf dem Handy testen. 18c wird dann mit diesem Push abgeschlossen.
 
 ### Schritt 18d – Design-Grundlage & Farbpaletten
 **Ziel:** Neues, einheitliches Design als Grundlage (Nutzerwunsch nach 18c). Vor Schritt 19, damit die Berichte gleich im neuen Look entstehen.

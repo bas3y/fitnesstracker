@@ -5,6 +5,7 @@ import {
   formatBadgeValue,
   nextTier,
   tierShare,
+  type BadgeId,
   type BadgeState,
   type BadgeUnits,
 } from '../../domain/badges';
@@ -24,6 +25,19 @@ const TIER_RINGS = [
   'border-sky-500 bg-sky-50 dark:bg-sky-950/40',
   'border-violet-500 bg-violet-50 dark:bg-violet-950/40',
 ];
+
+/** Feste Trennstellen (weiches Trennzeichen) für lange Namen in den schmalen Kacheln */
+const NAME_BREAKS: Partial<Record<BadgeId, string>> = {
+  workouts: 'Kraft­training',
+  records: 'Rekord­jäger',
+  trainingStreak: 'Trainings­serie',
+  habitStreak: 'Gewohnheits­serie',
+  water: 'Wasser­ziel',
+  sleep: 'Schlaf­ziel',
+  protein: 'Protein­ziel',
+  meditation: 'Medi­tation',
+  photos: 'Fortschritts­fotos',
+};
 
 function tierRing(level: number): string {
   return TIER_RINGS[Math.min(level, TIER_RINGS.length - 1)]!;
@@ -84,7 +98,7 @@ export function BadgeTile({ state, onOpen }: { state: BadgeState; onOpen: () => 
     <button
       type="button"
       aria-label={`${badge.name}: ${level === 0 ? 'gesperrt' : `Stufe ${level} von ${tiers.length}`}`}
-      className="flex min-h-11 w-full min-w-0 flex-col items-center gap-1 rounded-xl p-2 text-center active:bg-slate-100 dark:active:bg-slate-700"
+      className="flex min-h-11 w-full min-w-0 flex-col items-center gap-1 rounded-xl px-0 py-2 text-center min-[360px]:px-1 active:bg-slate-100 dark:active:bg-slate-700"
       onClick={onOpen}
     >
       <span
@@ -93,8 +107,8 @@ export function BadgeTile({ state, onOpen }: { state: BadgeState; onOpen: () => 
       >
         {badge.icon}
       </span>
-      <span className="w-full text-sm leading-tight font-medium hyphens-auto [overflow-wrap:anywhere]">
-        {badge.name}
+      <span className="w-full text-xs leading-tight font-medium hyphens-manual min-[360px]:text-sm [overflow-wrap:anywhere]">
+        {NAME_BREAKS[badge.id] ?? badge.name}
       </span>
       <span className="text-xs text-slate-500 dark:text-slate-400">
         {level === 0 ? 'Gesperrt' : `${level} / ${tiers.length}`}
