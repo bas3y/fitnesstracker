@@ -1062,7 +1062,7 @@ Ablauf:
   - Erfolge: Lange Abzeichen-Namen („Gewohnheitsserie“, „Fortschrittsfotos“, „Trainingsserie“ …) haben ihre Rasterspalte verbreitert und stießen an den Nachbarn. Jetzt gleich breite Spalten (`min-w-0`) und feste Trennstellen per weichem Trennzeichen (`NAME_BREAKS` in `MotivationParts.tsx`, z. B. „Fortschritts-fotos“, Nutzerwunsch; `hyphens-manual`, Notfall `overflow-wrap:anywhere`), unter 360 px kleinere Schrift ohne Innenabstand. E2E prüft die Kacheln bei 320 px Breite.
   - Workout-Übersicht (nach „Speichern“ und im Verlauf): unten primärer „Fertig“-Link zur Herkunft (wie „Zurück“), „Teilen-Bild“ ist jetzt ein normaler Button.
   - Noch nicht gepusht: Nutzerwunsch, erst nach 18d/18e (wenn das Design stimmt) zusammen pushen und auf dem Handy testen. 18c wird dann mit diesem Push abgeschlossen. Nach 18e kam noch 18f (Logo) dazu: Push erst danach.
-- **Push 2 (08.11.2026):** Nutzer hat das Backup bestätigt und den Push freigegeben. Vorher lint, typecheck, 869 Unit-Tests, Build und 118 E2E grün. Korrekturen 18c + 18d + 18e + 18f gepusht (DB-Version 28 → 33). Handytest steht aus (Punkte unter 18d, 18e, 18f „Offene Punkte“).
+- **Push 2 (08.11.2026):** Nutzer hat das Backup bestätigt und den Push freigegeben. Vorher lint, typecheck, 869 Unit-Tests, Build und 118 E2E grün. Korrekturen 18c + 18d + 18e + 18f gepusht (`2a0a16a..737e1fc`, DB-Version 28 → 33), Run 42507760591 grün, live (Titel „Basey“, Ladebildschirm). Handytest steht aus (Punkte unter 18d, 18e, 18f „Offene Punkte“).
 
 ### Schritt 18d – Design-Grundlage & Farbpaletten
 **Ziel:** Neues, einheitliches Design als Grundlage (Nutzerwunsch nach 18c). Vor Schritt 19, damit die Berichte gleich im neuen Look entstehen.
