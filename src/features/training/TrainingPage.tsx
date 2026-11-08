@@ -102,7 +102,7 @@ function StrengthSection({ today }: { today: string }) {
     <section aria-labelledby="strength-heading">
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <h2 id="strength-heading" className="text-lg font-semibold">
-          🏋️ Krafttraining
+          Krafttraining
         </h2>
         {week != null && (
           <span className={MUTED}>{week === 1 ? '1 Workout' : `${week} Workouts`} diese Woche</span>
@@ -147,8 +147,7 @@ function TileEditor({ tiles }: { tiles: EnduranceSport[] }) {
   const change = (next: (current: EnduranceSport[]) => EnduranceSport[]) =>
     updateSettingsFrom((current) => ({ trainingTiles: next(current.trainingTiles) }));
   const hidden = ENDURANCE_SPORTS.filter((sport) => !tiles.includes(sport));
-  const label = (sport: EnduranceSport) =>
-    `${ENDURANCE_SPORT_LABELS[sport].icon} ${ENDURANCE_SPORT_LABELS[sport].name}`;
+  const label = (sport: EnduranceSport) => ENDURANCE_SPORT_LABELS[sport].name;
 
   return (
     <div className="mb-4">

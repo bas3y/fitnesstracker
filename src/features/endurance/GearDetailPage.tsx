@@ -84,12 +84,7 @@ function GearDetail({
       )}
       <Card>
         <p className={`mb-2 ${MUTED}`}>
-          {gear.sports
-            .map(
-              (sport) =>
-                `${ENDURANCE_SPORT_LABELS[sport].icon} ${ENDURANCE_SPORT_LABELS[sport].name}`,
-            )
-            .join(', ')}
+          {gear.sports.map((sport) => ENDURANCE_SPORT_LABELS[sport].name).join(', ')}
         </p>
         <p
           data-testid="gear-distance"
@@ -127,7 +122,7 @@ function GearDetail({
               key={session.id}
               to={sessionPath(session.id)}
               state={from}
-              label={`${ENDURANCE_SPORT_LABELS[session.sport].icon} ${sessionTitle(session)}`}
+              label={sessionTitle(session)}
               hint={`${formatWorkoutDate(session.startedAt)} · ${formatSessionSummary(session, unit)}`}
             />
           ))}

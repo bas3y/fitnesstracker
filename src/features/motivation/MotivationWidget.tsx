@@ -51,8 +51,8 @@ export function MotivationWidget({ settings, today }: { settings: Settings; toda
       {badge && next && (
         <div data-testid="next-badge" className="mt-3">
           <p className="text-sm">
-            <span className="font-medium">Nächstes Abzeichen:</span> {badge.badge.icon}{' '}
-            {badge.badge.name} – {formatBadgeTier(badge.badge.id, next.threshold, settings)}
+            <span className="font-medium">Nächstes Abzeichen:</span> {badge.badge.name} –{' '}
+            {formatBadgeTier(badge.badge.id, next.threshold, settings)}
           </p>
           <div className="mt-1 flex items-center gap-2">
             <div className="h-2 flex-1 rounded-full bg-subtle">

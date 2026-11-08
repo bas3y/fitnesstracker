@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { toIconName } from '../domain/iconChoice';
 import { trackSummary } from '../domain/track';
 import {
   DAILY_GOAL_DEFAULTS,
@@ -538,6 +539,23 @@ export class AppDatabase extends Dexie {
             settings.palette ??= 'green';
           }),
       );
+    // Symbole statt Emojis bei Gewohnheiten und eigenen Zielen
+    this.version(30)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx
+          .table<Habit, string>('habits')
+          .toCollection()
+          .modify((habit) => {
+            habit.icon = toIconName(habit.icon ?? '', 'star');
+          });
+        await tx
+          .table<Goal, string>('goals')
+          .toCollection()
+          .modify((goal) => {
+            goal.icon = toIconName(goal.icon ?? '', '');
+          });
+      });
   }
 }
 

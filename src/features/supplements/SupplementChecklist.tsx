@@ -19,6 +19,7 @@ import { GoalBar } from '../daily/GoalBar';
 import { useNow } from '../training/useWorkouts';
 import { SUPPLEMENTS_PATH } from './paths';
 import { useSupplementOverview } from './useSupplements';
+import { Icon } from '../../components/icons';
 
 const MUTED = 'text-sm text-muted';
 const LINK = 'font-semibold text-primary-text';
@@ -150,7 +151,7 @@ export function StockWarning({ id, name, days }: { id: string; name: string; day
       state={from}
       className="flex min-h-11 items-center gap-2 rounded-xl bg-warn-soft px-3 py-2 text-sm font-medium text-on-warn-soft"
     >
-      <span aria-hidden="true">⚠️</span>
+      <Icon name="alert" className="h-4 w-4" />
       <span className="min-w-0 flex-1">
         {name}: {formatDaysLeft(days)}
       </span>

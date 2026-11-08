@@ -45,6 +45,7 @@ import {
   workoutBlockSchema,
 } from './schemas';
 import { ensureTrackSummaries } from './endurance';
+import { toIconName } from '../domain/iconChoice';
 import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
 import {
@@ -258,6 +259,8 @@ const bodyMeasurementSchema = baseEntitySchema.extend({
 
 const habitSchema = baseEntitySchema.extend(habitFieldsSchema.shape).extend({
   order: z.number(),
+  // Bis DB-Version 29 Emojis
+  icon: z.string().transform((icon) => toIconName(icon, 'star')),
   // Seit DB-Version 14
   kind: habitFieldsSchema.shape.kind.default('check'),
   target: habitFieldsSchema.shape.target.default(1),
@@ -312,7 +315,11 @@ const goalSchema = baseEntitySchema.extend(goalFieldsSchema.shape).extend({
   habitMetric: goalFieldsSchema.shape.habitMetric.default(null),
   customType: goalFieldsSchema.shape.customType.default(null),
   unit: goalFieldsSchema.shape.unit.default(''),
-  icon: goalFieldsSchema.shape.icon.default(''),
+  // Bis DB-Version 29 Emojis
+  icon: z
+    .string()
+    .default('')
+    .transform((icon) => toIconName(icon, '')),
 });
 const goalEntrySchema = baseEntitySchema.extend({
   goalId: z.string().min(1),

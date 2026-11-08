@@ -87,7 +87,7 @@ function HabitDetail({ item, backTo }: { item: HabitWithChecks; backTo: string }
   ].filter(Boolean);
 
   return (
-    <Page title={`${habit.icon} ${habit.name}`} backTo={backTo}>
+    <Page title={habit.name} backTo={backTo}>
       {(paused || archived) && (
         <p
           role="status"

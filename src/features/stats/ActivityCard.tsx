@@ -92,7 +92,7 @@ export function ActivityCard({
             ))}
             {cardioDay?.sessions.map(({ id, sport }) => (
               <Link key={id} to={sessionPath(id)} state={from} className={LINK}>
-                {ENDURANCE_SPORT_LABELS[sport].icon} {ENDURANCE_SPORT_LABELS[sport].name} öffnen ›
+                {ENDURANCE_SPORT_LABELS[sport].name} öffnen ›
               </Link>
             ))}
           </div>

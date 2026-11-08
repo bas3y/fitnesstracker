@@ -62,8 +62,8 @@ export function JournalHistoryPage() {
                   >
                     <span className="block font-semibold">
                       {week
-                        ? `🪞 ${formatPeriod('week', weekRange(entry.date))}`
-                        : `📓 ${formatDayLabel(entry.date, today)}`}
+                        ? formatPeriod('week', weekRange(entry.date))
+                        : formatDayLabel(entry.date, today)}
                       {week && entry.rating !== null && (
                         <span className={`ml-2 font-normal ${HINT}`}>
                           Bewertung {entry.rating}/5

@@ -20,7 +20,7 @@ import {
   type SessionEffort,
 } from '../../domain/enduranceStats';
 import { formatDecimal } from '../../domain/format';
-import { ENDURANCE_SPORT_LABELS, SWIM_STROKE_LABELS } from '../../domain/labels';
+import { SWIM_STROKE_LABELS } from '../../domain/labels';
 import { enduranceShareContent } from '../../domain/shareCard';
 import { formatClock, formatTime, formatWorkoutDate } from '../../domain/workout';
 import { useSettings } from '../settings/useSettings';
@@ -181,7 +181,6 @@ function SessionDetail({
   const from = useFromHere();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const { icon } = ENDURANCE_SPORT_LABELS[session.sport];
   const efforts = useMemo(
     () => (sessions ? sessionEfforts(session, sessions) : []),
     [session, sessions],
@@ -192,7 +191,7 @@ function SessionDetail({
   );
 
   return (
-    <Page title={`${icon} ${sessionTitle(session)}`} backTo={backTo}>
+    <Page title={sessionTitle(session)} backTo={backTo}>
       <p className={`-mt-2 mb-4 ${MUTED}`}>
         {formatWorkoutDate(session.startedAt)}, {formatTime(session.startedAt)} Uhr
         {origin && ` · ${origin}`}

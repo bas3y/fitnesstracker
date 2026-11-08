@@ -1,3 +1,5 @@
+import type { IconName } from '../components/iconPaths';
+
 /** ISO-8601-Zeitstempel, z. B. `2026-10-28T09:15:00.000Z` */
 export type Timestamp = string;
 
@@ -439,8 +441,8 @@ export interface HabitPause {
 
 export interface Habit extends BaseEntity {
   name: string;
-  /** Emoji */
-  icon: string;
+  /** Symbol (bis DB-Version 29 ein Emoji) */
+  icon: IconName;
   kind: HabitKind;
   /** `count`: Tagesziel; `quit`: Tageslimit (0 = ganz aufhören); `check`/`items`: 1 */
   target: number;
@@ -843,8 +845,8 @@ export interface Goal extends BaseEntity {
   customType: CustomGoalType | null;
   /** Nur `custom` mit Zahl, z. B. „Lektionen“ */
   unit: string;
-  /** Emoji; leer = Symbol der Art */
-  icon: string;
+  /** Symbol (bis DB-Version 29 ein Emoji); leer = Symbol der Art */
+  icon: IconName | '';
 }
 
 /** Selbst eingetragener Fortschritt eines eigenen Ziels (seit DB-Version 24) */

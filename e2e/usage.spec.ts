@@ -79,7 +79,7 @@ test('Krafttraining nachtragen, Karten samt Inhalt ziehen, laufendes Workout ble
   await expect(page.getByText('70 kg × 6')).toBeVisible();
 
   // Verlauf: das nachgetragene Training, das laufende bleibt
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Verlauf' })).toBeVisible();
   const history = page.getByRole('list', { name: 'Workouts' });
   await expect(history.getByRole('listitem')).toHaveCount(1);
@@ -170,7 +170,7 @@ test('Willkommen beim ersten Öffnen, App weitergeben und Anleitung (offline)', 
   await page.goto('./');
   await goOffline(page, context);
 
-  const welcome = page.getByRole('region', { name: '👋 Willkommen!' });
+  const welcome = page.getByRole('region', { name: 'Willkommen!' });
   await expect(welcome).toContainText('nur auf diesem Gerät');
   await welcome.getByRole('link', { name: 'Installieren' }).click();
   await expect(
@@ -185,7 +185,7 @@ test('Willkommen beim ersten Öffnen, App weitergeben und Anleitung (offline)', 
   expect(shared.url).toBe(new URL('./', page.url()).href);
 
   // Zurück zur Startseite, Hinweis schließen bleibt nach dem Neuladen
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await welcome.getByRole('button', { name: 'Los geht’s' }).click();
   await expect(welcome).toHaveCount(0);
   await page.reload();

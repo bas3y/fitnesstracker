@@ -15,8 +15,8 @@ const MUTED = 'text-sm text-muted';
 
 function gearHint(gear: Gear, sessions: EnduranceSession[], unit: DistanceUnit): string {
   const { distanceMeters } = gearUsage(gear, sessions);
-  const icons = gear.sports.map((sport) => ENDURANCE_SPORT_LABELS[sport].icon).join('');
-  const worn = isGearWorn(gear, distanceMeters) ? ' · ⚠️ Warnschwelle erreicht' : '';
+  const icons = gear.sports.map((sport) => ENDURANCE_SPORT_LABELS[sport].name).join(', ');
+  const worn = isGearWorn(gear, distanceMeters) ? ' · Warnschwelle erreicht' : '';
   return `${icons} ${formatDistance(distanceMeters, 'run', unit, 0)}${worn}`;
 }
 

@@ -92,7 +92,7 @@ function History({
     ...(hasTasks ? [{ value: 'habits' as const, label: 'Gewohnheiten' }] : []),
     ...quits.map(({ habit }) => ({
       value: `quit:${habit.id}` as const,
-      label: `${habit.icon} ${habit.name}`,
+      label: habit.name,
     })),
   ];
   // Gelöschte Gewohnheit oder Wechsel zurück: auf Gewicht zurückfallen

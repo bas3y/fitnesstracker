@@ -202,7 +202,7 @@ describe('supplementDays', () => {
 
 describe('streakOverview', () => {
   it('laufende Serien zuerst, Bereiche ohne Serie fehlen, archivierte Gewohnheiten auch', () => {
-    const habit = motivationHabit({ id: 'h', kind: 'check', name: 'Dehnen', icon: '🤸' });
+    const habit = motivationHabit({ id: 'h', kind: 'check', name: 'Dehnen', icon: 'yoga' });
     const archived = motivationHabit({
       id: 'x',
       kind: 'check',
@@ -244,7 +244,7 @@ describe('streakOverview', () => {
       ['meditation', 1, 1, true],
       ['journal', 0, 2, false],
     ]);
-    expect(items[1]).toMatchObject({ name: 'Dehnen', icon: '🤸', habitId: 'h', area: 'habit' });
+    expect(items[1]).toMatchObject({ name: 'Dehnen', icon: 'yoga', habitId: 'h', area: 'habit' });
   });
 
   it('Aufhören-Gewohnheit: Tage im Limit, heute zählt sofort', () => {

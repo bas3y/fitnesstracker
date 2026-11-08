@@ -210,9 +210,9 @@ test('Zurück führt dorthin, woher man kam (offline)', async ({ page, context }
   await expect(page.getByRole('heading', { name: 'Workout bearbeiten' })).toBeVisible();
   await page.getByRole('link', { name: 'Fertig' }).click();
   await page.getByRole('link', { name: 'Bearbeiten' }).click();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Bearbeiten' })).toBeVisible();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(dashboardHeading(page)).toBeVisible();
 
   // Heatmap auf dem Dashboard
@@ -221,7 +221,7 @@ test('Zurück führt dorthin, woher man kam (offline)', async ({ page, context }
     .getByRole('button', { name: /: 1 Satz$/ })
     .click();
   await page.getByRole('link', { name: 'Workout öffnen' }).click();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(dashboardHeading(page)).toBeVisible();
 
   // Heatmap in der Statistik: Filter bleiben erhalten
@@ -232,14 +232,14 @@ test('Zurück führt dorthin, woher man kam (offline)', async ({ page, context }
     .getByRole('button', { name: /: 1 Satz$/ })
     .click();
   await page.getByRole('link', { name: 'Workout öffnen' }).click();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('button', { name: '4 Wo.' })).toHaveAttribute('aria-pressed', 'true');
 
   // Über den Verlauf bleibt es beim Verlauf
   await openNav(page, 'Training');
   await page.getByRole('link', { name: /^Verlauf/ }).click();
   await page.getByRole('list', { name: 'Workouts' }).getByRole('link').first().click();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Verlauf' })).toBeVisible();
 
   // Laufendes Workout vom Dashboard aus öffnen
@@ -248,7 +248,7 @@ test('Zurück führt dorthin, woher man kam (offline)', async ({ page, context }
   await confirmStart(page);
   await openNav(page, 'Dashboard');
   await page.getByRole('status').filter({ hasText: 'Workout läuft' }).click();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(dashboardHeading(page)).toBeVisible();
 });
 
@@ -338,7 +338,7 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
   await page.getByRole('button', { name: 'Workout starten' }).click();
   await confirmStart(page);
   await expect(page).toHaveURL(/#\/training\/workout$/);
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(dashboardHeading(page)).toBeVisible();
 
   // Alles entfernen

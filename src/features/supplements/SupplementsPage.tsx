@@ -68,7 +68,7 @@ export function SupplementsPage() {
         renderItem={(supplement, { handle }) => (
           <LinkRow
             to={`${SUPPLEMENTS_PATH}/${supplement.id}`}
-            label={`💊 ${supplement.name}`}
+            label={supplement.name}
             hint={supplementHint(supplement)}
             handle={handle}
             action={
@@ -103,7 +103,7 @@ export function SupplementsPage() {
                 <li key={supplement.id}>
                   <LinkRow
                     to={`${SUPPLEMENTS_PATH}/${supplement.id}`}
-                    label={`💊 ${supplement.name}`}
+                    label={supplement.name}
                     hint="Archiviert"
                   />
                 </li>
@@ -193,9 +193,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
               className="flex min-h-14 w-full flex-col justify-center rounded-xl border border-line-strong px-4 py-2 text-left"
               onClick={() => setSelected(habit)}
             >
-              <span className="font-medium">
-                {habit.icon} {habit.name}
-              </span>
+              <span className="font-medium">{habit.name}</span>
               <span className="text-sm text-muted">{formatHabitTarget(habit)}</span>
             </button>
           </li>

@@ -130,7 +130,7 @@ test('Gesundheitsdaten: Apple Health + Garmin importieren, eigene Werte bleiben 
   await expect(page.getByText('✓ Import abgeschlossen: 2 Tage aktualisiert')).toBeVisible();
 
   // „Zurück“ führt zum gewählten Tag
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`date=${twoDaysAgo}`));
   await expect(page.getByLabel('Schritte gesamt', { exact: true })).toHaveValue('4000');
   await expect(page.getByRole('list', { name: 'Schlafphasen' })).toContainText(

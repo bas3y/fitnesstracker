@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { CHECK_HINT, checkNameClass } from './checkStyles';
-import { CheckIcon } from './icons';
+import { CheckIcon, IconBadge, type IconName } from './icons';
 
 export function StatusCircle({ done, warn = false }: { done: boolean; warn?: boolean }) {
   return (
@@ -28,7 +28,7 @@ export function CheckButton({
   onChange,
 }: {
   label: string;
-  icon?: string;
+  icon?: IconName;
   checked: boolean;
   hint: ReactNode;
   onChange: (checked: boolean) => void;
@@ -43,11 +43,7 @@ export function CheckButton({
       onClick={() => onChange(!checked)}
     >
       <StatusCircle done={checked} />
-      {icon && (
-        <span aria-hidden="true" className="text-xl">
-          {icon}
-        </span>
-      )}
+      {icon && <IconBadge name={icon} className="h-8 w-8" iconClassName="h-4.5 w-4.5" />}
       <span className="min-w-0">
         <span className={checkNameClass(checked)}>{label}</span>
         {hint && <span className={CHECK_HINT}>{hint}</span>}

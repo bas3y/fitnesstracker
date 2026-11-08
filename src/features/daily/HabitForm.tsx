@@ -2,7 +2,7 @@ import { useId, useState, type FormEvent } from 'react';
 import { inputField, primaryButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
-import { EmojiPicker } from '../../components/EmojiPicker';
+import { IconPicker } from '../../components/IconPicker';
 import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Stepper } from '../../components/Stepper';
@@ -19,7 +19,6 @@ import { dayKey } from '../../domain/daily';
 import {
   HABIT_FREQUENCY_LABELS,
   HABIT_GROUP_LABELS,
-  HABIT_ICONS,
   HABIT_KIND_HINTS,
   HABIT_KIND_LABELS,
 } from '../../domain/habits';
@@ -60,7 +59,7 @@ export function HabitForm({
       target: kind === 'count' ? Math.max(input.target, 1) : kind === 'quit' ? 0 : 1,
       startDate: kind === 'quit' ? (input.startDate ?? dayKey(new Date())) : input.startDate,
       items: kind === 'items' && input.items.length === 0 ? [newItem()] : input.items,
-      icon: kind === 'quit' && input.icon === '⭐' ? '🚭' : input.icon,
+      icon: kind === 'quit' && input.icon === 'star' ? 'ban' : input.icon,
     });
   };
 
@@ -108,11 +107,7 @@ export function HabitForm({
             </div>
           </div>
 
-          <EmojiPicker
-            value={input.icon}
-            suggestions={HABIT_ICONS}
-            onChange={(icon) => change({ icon })}
-          />
+          <IconPicker value={input.icon} onChange={(icon) => icon && change({ icon })} />
 
           <div>
             <p className={LABEL}>Gruppe</p>

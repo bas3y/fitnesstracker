@@ -71,7 +71,7 @@ export function NutritionSummary({
       </p>
       {data.burnedKcal > 0 && !settings.proteinOnly && (
         <p data-testid="burned-kcal" className={`-mt-2 mb-3 ${MUTED}`}>
-          🔥 Beim Training verbrannt: {formatKcal(data.burnedKcal)}
+          Beim Training verbrannt: {formatKcal(data.burnedKcal)}
           {settings.addBurnedCalories ? ' (im Ziel enthalten)' : ''}
         </p>
       )}

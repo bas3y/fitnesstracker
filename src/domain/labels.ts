@@ -1,3 +1,4 @@
+import type { IconName } from '../components/iconPaths';
 import type {
   BlockKind,
   BookStatus,
@@ -44,13 +45,13 @@ export const DAILY_IMPORT_FIELD_LABELS: Record<DailyImportField, string> = {
   hrv: 'HRV',
 };
 
-export const ENDURANCE_SPORT_LABELS: Record<EnduranceSport, { name: string; icon: string }> = {
-  run: { name: 'Laufen', icon: '🏃' },
-  ride: { name: 'Radfahren', icon: '🚴' },
-  swim: { name: 'Schwimmen', icon: '🏊' },
-  hike: { name: 'Wandern', icon: '🥾' },
-  mobility: { name: 'Mobility & Yoga', icon: '🧘' },
-  other: { name: 'Sonstiges', icon: '⏱️' },
+export const ENDURANCE_SPORT_LABELS: Record<EnduranceSport, { name: string; icon: IconName }> = {
+  run: { name: 'Laufen', icon: 'run' },
+  ride: { name: 'Radfahren', icon: 'bike' },
+  swim: { name: 'Schwimmen', icon: 'swim' },
+  hike: { name: 'Wandern', icon: 'mountain' },
+  mobility: { name: 'Mobility & Yoga', icon: 'yoga' },
+  other: { name: 'Sonstiges', icon: 'timer' },
 };
 
 export const SWIM_STROKE_LABELS: Record<SwimStroke, string> = {
@@ -79,23 +80,23 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   motivation: { name: 'Serien & Abzeichen', hint: 'Laufende Serien und nächstes Abzeichen' },
 };
 
-export const GOAL_KIND_LABELS: Record<GoalKind, { name: string; icon: string; hint: string }> = {
-  strength: { name: 'Kraft', icon: '🏋️', hint: 'z. B. Bankdrücken 100 kg' },
-  effort: { name: 'Bestzeit', icon: '⏱️', hint: 'z. B. 10 km unter 50 Minuten' },
-  bodyWeight: { name: 'Gewicht', icon: '⚖️', hint: 'Zielgewicht, ab- oder zunehmen' },
+export const GOAL_KIND_LABELS: Record<GoalKind, { name: string; icon: IconName; hint: string }> = {
+  strength: { name: 'Kraft', icon: 'dumbbell', hint: 'z. B. Bankdrücken 100 kg' },
+  effort: { name: 'Bestzeit', icon: 'timer', hint: 'z. B. 10 km unter 50 Minuten' },
+  bodyWeight: { name: 'Gewicht', icon: 'scale', hint: 'Zielgewicht, ab- oder zunehmen' },
   total: {
     name: 'Menge',
-    icon: '📅',
+    icon: 'calendar',
     hint: 'z. B. 12 Trainings im Monat, 500 km im Jahr, 300.000 Schritte im Monat',
   },
   habit: {
     name: 'Gewohnheit',
-    icon: '✅',
+    icon: 'todo',
     hint: 'z. B. 1000 Seiten lesen, an 100 Tagen meditieren, 30 Tage rauchfrei',
   },
   custom: {
     name: 'Eigenes',
-    icon: '🎯',
+    icon: 'target',
     hint: 'Fortschritt selbst eintragen, z. B. 50 Lektionen Spanisch oder Führerschein machen',
   },
 };
@@ -136,26 +137,26 @@ export const BOOK_STATUS_LABELS: Record<BookStatus, string> = {
   abandoned: 'Abgebrochen',
 };
 
-export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: string }> = {
-  training: { name: 'Training', icon: '🏋️' },
-  water: { name: '+250 ml Wasser', icon: '💧' },
-  weight: { name: 'Gewicht', icon: '⚖️' },
-  steps: { name: 'Schritte', icon: '👣' },
-  todo: { name: 'To-do', icon: '✅' },
-  measurements: { name: 'Körpermaße', icon: '📏' },
-  supplements: { name: 'Supplements', icon: '💊' },
-  meal: { name: 'Mahlzeit', icon: '🍽️' },
-  protein: { name: '+20 g Protein', icon: '🥤' },
-  endurance: { name: 'Ausdauer', icon: '🏃' },
-  journal: { name: 'Journal', icon: '📓' },
-  reading: { name: 'Lesen', icon: '📚' },
-  timer: { name: 'Timer', icon: '⏱️' },
-  photo: { name: 'Foto', icon: '📸' },
+export const QUICK_ACTION_LABELS: Record<QuickAction, { name: string; icon: IconName }> = {
+  training: { name: 'Training', icon: 'dumbbell' },
+  water: { name: '+250 ml Wasser', icon: 'drop' },
+  weight: { name: 'Gewicht', icon: 'scale' },
+  steps: { name: 'Schritte', icon: 'footprints' },
+  todo: { name: 'To-do', icon: 'todo' },
+  measurements: { name: 'Körpermaße', icon: 'ruler' },
+  supplements: { name: 'Supplements', icon: 'pill' },
+  meal: { name: 'Mahlzeit', icon: 'utensils' },
+  protein: { name: '+20 g Protein', icon: 'shaker' },
+  endurance: { name: 'Ausdauer', icon: 'run' },
+  journal: { name: 'Journal', icon: 'journal' },
+  reading: { name: 'Lesen', icon: 'book' },
+  timer: { name: 'Timer', icon: 'timer' },
+  photo: { name: 'Foto', icon: 'camera' },
 };
 
-export const TIMER_KIND_LABELS: Record<TimerKind, { name: string; icon: string }> = {
-  focus: { name: 'Fokus', icon: '🎯' },
-  meditation: { name: 'Meditation', icon: '🧘' },
+export const TIMER_KIND_LABELS: Record<TimerKind, { name: string; icon: IconName }> = {
+  focus: { name: 'Fokus', icon: 'target' },
+  meditation: { name: 'Meditation', icon: 'yoga' },
 };
 
 export const TIMER_PHASE_LABELS: Record<TimerPhaseType, string> = {

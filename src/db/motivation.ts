@@ -1,7 +1,7 @@
 import { evaluateBadges } from '../domain/badges';
 import { celebrate, type CelebrationResult } from '../domain/celebrations';
 import { dayKey } from '../domain/daily';
-import { goalIcon, goalName, goalProgress, goalSubject } from '../domain/goals';
+import { goalName, goalProgress, goalSubject } from '../domain/goals';
 import type { MotivationData } from '../domain/streaks';
 import { db } from './database';
 import { listGoals, loadGoalData } from './goals';
@@ -87,7 +87,6 @@ export async function checkCelebrations(
       goal,
       progress: goalProgress(goal, data, today),
       name: goalName(goal, subject, settings),
-      icon: goalIcon(goal, subject),
     };
   });
   const result = celebrate(

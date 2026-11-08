@@ -67,3 +67,13 @@ export async function skipRest(page: Page) {
   await timer.getByRole('button', { name: 'Überspringen' }).click();
   await expect(timer).toHaveCount(0);
 }
+
+/** Symbol im Formular wählen (Fenster „Symbol wählen“) */
+export async function chooseIcon(page: Page, label: string) {
+  await page.getByRole('button', { name: /Symbol ändern/ }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: `Symbol ${label}`, exact: true })
+    .click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+}

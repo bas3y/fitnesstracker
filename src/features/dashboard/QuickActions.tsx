@@ -25,6 +25,7 @@ import { NUTRITION_PATH } from '../nutrition/paths';
 import { JOURNAL_PATH, PHOTOS_PATH, READING_PATH, TIMER_PATH } from '../self/paths';
 import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { useActiveWorkout } from '../training/useWorkouts';
+import { Icon, type IconName } from '../../components/icons';
 
 const WATER_ML = 250;
 const PROTEIN_G = 20;
@@ -41,13 +42,11 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
   const log = useDailyLog(today);
   const water = log?.waterMl ?? 0;
 
-  const tile = (action: QuickAction, content?: { name: string; icon: string }) => {
+  const tile = (action: QuickAction, content?: { name: string; icon: IconName }) => {
     const { name, icon } = content ?? QUICK_ACTION_LABELS[action];
     return (
       <>
-        <span aria-hidden="true" className="text-2xl">
-          {icon}
-        </span>
+        <Icon name={icon} className="h-6 w-6 text-primary-text" />
         <span>{name}</span>
       </>
     );
@@ -58,7 +57,7 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
       case 'training':
         return activeWorkout ? (
           <Link to="/training/workout" state={FROM_DASHBOARD} className={TILE}>
-            {tile(action, { name: 'Fortsetzen', icon: '▶️' })}
+            {tile(action, { name: 'Fortsetzen', icon: 'play' })}
           </Link>
         ) : (
           <Link to="/training" className={TILE}>
@@ -220,9 +219,10 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
             {ENDURANCE_SPORTS.map((sport) => (
               <li key={sport} className="grid">
                 <Link to={newSessionPath(sport)} state={FROM_DASHBOARD} className={TILE}>
-                  <span aria-hidden="true" className="text-2xl">
-                    {ENDURANCE_SPORT_LABELS[sport].icon}
-                  </span>
+                  <Icon
+                    name={ENDURANCE_SPORT_LABELS[sport].icon}
+                    className="h-6 w-6 text-primary-text"
+                  />
                   <span>{ENDURANCE_SPORT_LABELS[sport].name}</span>
                 </Link>
               </li>

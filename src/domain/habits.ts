@@ -31,30 +31,6 @@ export const HABIT_GROUP_TITLES: Record<HabitGroup, string> = {
   other: 'Gewohnheiten',
 };
 
-/** Auswahl im Formular; als Emoji offline auf jedem Gerät verfügbar */
-export const HABIT_ICONS = [
-  '⭐',
-  '💧',
-  '🥗',
-  '🍎',
-  '💊',
-  '🏃',
-  '🧘',
-  '🤸',
-  '🚶',
-  '📚',
-  '✍️',
-  '🧠',
-  '😴',
-  '🛏️',
-  '🪥',
-  '🚿',
-  '📵',
-  '🚭',
-  '🌞',
-  '🧹',
-] as const;
-
 export const HABIT_KIND_LABELS: Record<HabitKind, string> = {
   check: 'Abhaken',
   count: 'Zählen',

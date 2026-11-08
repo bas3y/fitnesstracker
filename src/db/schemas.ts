@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isValidBarcode, normalizeBarcode } from '../domain/barcode';
-import { isSingleEmoji } from '../domain/emoji';
+import { ICON_NAMES } from '../domain/iconChoice';
 import { BEST_EFFORT_METERS } from '../domain/track';
 import {
   BLOCK_KINDS,
@@ -243,7 +243,7 @@ export const habitItemSchema = z.object({
 /** Felder einer Gewohnheit ohne Metadaten, Pausen und Archiv – für Formular und Backup */
 export const habitFieldsSchema = z.object({
   name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(80, 'Höchstens 80 Zeichen'),
-  icon: z.string().min(1),
+  icon: z.enum(ICON_NAMES),
   kind: z.enum(HABIT_KINDS),
   target: z.number().min(0).max(MAX_HABIT_AMOUNT),
   unit: habitUnit,
@@ -295,7 +295,7 @@ export type HabitValues = z.output<typeof habitInputSchema>;
 
 export const EMPTY_HABIT_INPUT: HabitInput = {
   name: '',
-  icon: '⭐',
+  icon: 'star',
   kind: 'check',
   target: 1,
   unit: '',
@@ -693,7 +693,8 @@ export const goalFieldsSchema = z.object({
   habitMetric: z.enum(HABIT_GOAL_METRICS).nullable(),
   customType: z.enum(CUSTOM_GOAL_TYPES).nullable(),
   unit: z.string().trim().max(MAX_GOAL_UNIT_LENGTH, 'Einheit höchstens 20 Zeichen'),
-  icon: z.string().trim().max(32),
+  /** Leer = Symbol der Zielart */
+  icon: z.union([z.enum(ICON_NAMES), z.literal('')]),
 });
 
 type GoalFields = z.output<typeof goalFieldsSchema>;
@@ -712,9 +713,6 @@ function isCountTarget(goal: Pick<GoalFields, 'kind' | 'totalMetric' | 'habitMet
 function goalIssue(goal: GoalFields): { path: keyof GoalFields; message: string } | null {
   if (goal.deadline !== null && goal.deadline < goal.startDate) {
     return { path: 'deadline', message: 'Das Zieldatum liegt vor dem Beginn' };
-  }
-  if (goal.kind === 'custom' && goal.icon && !isSingleEmoji(goal.icon)) {
-    return { path: 'icon', message: 'Bitte genau ein Emoji eingeben' };
   }
   switch (goal.kind) {
     case 'habit':

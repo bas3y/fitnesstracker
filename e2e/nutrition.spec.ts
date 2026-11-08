@@ -197,7 +197,7 @@ test('Lebensmittel und Rezepte: anlegen, Favorit, ausblenden (offline)', async (
   await expect(card(page, 'Nährwerte')).toContainText('65 kcal');
 
   // Rezept mit Gewicht nach dem Kochen
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await page.getByRole('link', { name: '+ Rezept' }).click();
   await page.getByLabel('Name', { exact: true }).fill('Overnight Oats');
   await page.getByRole('button', { name: '+ Zutat' }).click();
@@ -222,7 +222,7 @@ test('Lebensmittel und Rezepte: anlegen, Favorit, ausblenden (offline)', async (
   await expect(page.getByRole('button', { name: '★ Favorit' })).toBeVisible();
 
   // Mitgeliefertes Lebensmittel ausblenden
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await page.getByRole('searchbox', { name: 'Lebensmittel suchen' }).fill('Banane');
   await page
     .getByRole('link', { name: /^Banane/ })

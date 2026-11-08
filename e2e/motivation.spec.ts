@@ -27,7 +27,7 @@ async function logWorkout(page: Page) {
 
 async function openAchievements(page: Page) {
   await nav(page, 'Statistik');
-  await page.getByRole('link', { name: '🏆 Erfolge' }).click();
+  await page.getByRole('link', { name: 'Erfolge', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Erfolge' })).toBeVisible();
 }
 
@@ -80,7 +80,7 @@ test('Serien, Abzeichen und Erfolgs-Hinweise (offline)', async ({ page, context 
   // Erstes Training → Hinweis mit Abzeichen (nach dem stillen ersten Abgleich)
   await logWorkout(page);
   await slow(toast(page)).toContainText('Neues Abzeichen!');
-  await slow(toast(page)).toContainText('🏋️ Krafttraining: Erstes Krafttraining');
+  await slow(toast(page)).toContainText('Krafttraining: Erstes Krafttraining');
   await toast(page).click();
   await slow(toast(page)).toHaveCount(0);
 
@@ -96,7 +96,7 @@ test('Serien, Abzeichen und Erfolgs-Hinweise (offline)', async ({ page, context 
 
   // Abzeichen ansehen
   await page.getByRole('button', { name: 'Krafttraining: Stufe 1 von 6' }).click();
-  const dialog = page.getByRole('dialog', { name: '🏋️ Krafttraining' });
+  const dialog = page.getByRole('dialog', { name: 'Krafttraining' });
   await expect(dialog).toContainText('Bisher: 1');
   await expect(dialog).toContainText('Nächste Stufe: 10 Krafttrainings');
   const today = new Date().toLocaleDateString('de-DE', {
@@ -115,7 +115,7 @@ test('Serien, Abzeichen und Erfolgs-Hinweise (offline)', async ({ page, context 
   await page.getByLabel('Wie war dein Tag?').fill('Guter Tag');
   await page.getByLabel('Wie war dein Tag?').blur();
   await expect(page.getByText('Gespeichert', { exact: true })).toBeVisible();
-  await slow(toast(page)).toContainText('📓 Journal: Erster Eintrag');
+  await slow(toast(page)).toContainText('Journal: Erster Eintrag');
   await toast(page).click();
 
   await page.goto('./#/stats/goals/new');
@@ -128,8 +128,8 @@ test('Serien, Abzeichen und Erfolgs-Hinweise (offline)', async ({ page, context 
   await page.getByRole('button', { name: 'Ziel anlegen' }).click();
   await page.getByRole('button', { name: 'Erledigt: Führerschein' }).click();
   await slow(toast(page)).toContainText('Geschafft!');
-  await slow(toast(page)).toContainText('🎯 Führerschein');
-  await slow(toast(page)).toContainText('🎯 Ziele: Erstes Ziel erreicht');
+  await slow(toast(page)).toContainText('Führerschein');
+  await slow(toast(page)).toContainText('Ziele: Erstes Ziel erreicht');
 
   // Startseite nach dem Neuladen: Serien im Widget, kein erneuter Hinweis
   await nav(page, 'Dashboard');

@@ -26,6 +26,7 @@ import { BestEffortsCard } from './BestEfforts';
 import { useNow } from '../training/useWorkouts';
 import { GEAR_PATH, gearPath, IMPORT_PATH, newSessionPath, sessionPath } from './paths';
 import { parseSport, useEnduranceSessions, useGearList } from './useEndurance';
+import { Icon } from '../../components/icons';
 
 const MUTED = 'text-sm text-muted';
 
@@ -43,8 +44,7 @@ function Activity({ sport }: { sport: EnduranceSport }) {
   const from = useFromHere();
   const now = useNow(true, 60_000);
   const today = dayKey(now);
-  const { name, icon } = ENDURANCE_SPORT_LABELS[sport];
-  const title = `${icon} ${name}`;
+  const title = ENDURANCE_SPORT_LABELS[sport].name;
   if (!settings || !allSessions || !gear) {
     return (
       <Page title={title} backTo={backTo}>
@@ -82,9 +82,10 @@ function Activity({ sport }: { sport: EnduranceSport }) {
           key={item.id}
           to={gearPath(item.id)}
           state={from}
-          className="mb-4 block rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-on-warn-soft"
+          className="mb-4 flex items-start gap-2 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-on-warn-soft"
         >
-          ⚠️ {item.name} hat {formatDistance(distanceMeters, sport, unit, 0)}: Zeit für neue
+          <Icon name="alert" className="mt-0.5 h-4 w-4" />
+          {item.name} hat {formatDistance(distanceMeters, sport, unit, 0)}: Zeit für neue
           Ausrüstung?
         </Link>
       ))}

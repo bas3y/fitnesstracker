@@ -1,3 +1,4 @@
+import type { IconName } from '../components/iconPaths';
 import type { DailyLog, DayKey, MealEntry, NutritionGoals, Supplement } from '../db/types';
 import { dayKey, shiftDay } from './daily';
 import { sessionDay } from './endurance';
@@ -221,18 +222,18 @@ export type StreakArea = (typeof STREAK_AREAS)[number];
 
 export const STREAK_AREA_LABELS: Record<
   Exclude<StreakArea, 'habit'>,
-  { name: string; icon: string }
+  { name: string; icon: IconName }
 > = {
-  training: { name: 'Training', icon: '🔥' },
-  steps: { name: 'Schrittziel', icon: '👟' },
-  water: { name: 'Wasserziel', icon: '💧' },
-  sleep: { name: 'Schlafziel', icon: '😴' },
-  protein: { name: 'Proteinziel', icon: '🥩' },
-  supplements: { name: 'Supplements', icon: '💊' },
-  journal: { name: 'Journal', icon: '📓' },
-  meditation: { name: 'Meditation', icon: '🧘' },
-  focus: { name: 'Fokus', icon: '⏱️' },
-  reading: { name: 'Lesen', icon: '📖' },
+  training: { name: 'Training', icon: 'flame' },
+  steps: { name: 'Schrittziel', icon: 'footprints' },
+  water: { name: 'Wasserziel', icon: 'drop' },
+  sleep: { name: 'Schlafziel', icon: 'moon' },
+  protein: { name: 'Proteinziel', icon: 'egg' },
+  supplements: { name: 'Supplements', icon: 'pill' },
+  journal: { name: 'Journal', icon: 'journal' },
+  meditation: { name: 'Meditation', icon: 'yoga' },
+  focus: { name: 'Fokus', icon: 'timer' },
+  reading: { name: 'Lesen', icon: 'bookOpen' },
 };
 
 export interface StreakItem extends Streak {
@@ -240,7 +241,7 @@ export interface StreakItem extends Streak {
   key: string;
   area: StreakArea;
   name: string;
-  icon: string;
+  icon: IconName;
   /** Nur Gewohnheiten */
   habitId: string | null;
 }

@@ -1,3 +1,4 @@
+import type { IconName } from '../components/iconPaths';
 import type { DayKey, DistanceUnit, Goal, WeightUnit } from '../db/types';
 import { dayKey } from './daily';
 import { goalProgress } from './goals';
@@ -45,7 +46,7 @@ export interface BadgeUnits {
 export interface BadgeDef {
   id: BadgeId;
   category: BadgeCategory;
-  icon: string;
+  icon: IconName;
   name: string;
   /** Schwellen je Stufe, intern (Anzahl, Meter, kg, Sekunden, Tage, Wochen) */
   tiers: readonly number[];
@@ -57,74 +58,86 @@ export const BADGES: readonly BadgeDef[] = [
   {
     id: 'workouts',
     category: 'training',
-    icon: '🏋️',
+    icon: 'dumbbell',
     name: 'Krafttraining',
     tiers: [1, 10, 50, 100, 250, 500],
   },
   {
     id: 'endurance',
     category: 'training',
-    icon: '🏃',
+    icon: 'run',
     name: 'Ausdauer',
     tiers: [1, 10, 50, 100, 250],
   },
   {
     id: 'distance',
     category: 'training',
-    icon: '🛣️',
+    icon: 'road',
     name: 'Strecke',
     tiers: [10e3, 100e3, 500e3, 1000e3, 5000e3],
   },
   {
     id: 'volume',
     category: 'training',
-    icon: '💪',
+    icon: 'kettlebell',
     name: 'Bewegte Last',
     tiers: [1e3, 1e4, 1e5, 5e5, 1e6],
   },
   {
     id: 'records',
     category: 'training',
-    icon: '🏆',
+    icon: 'trophy',
     name: 'Rekordjäger',
     tiers: [1, 10, 50, 100, 250],
   },
   {
     id: 'trainingStreak',
     category: 'training',
-    icon: '🔥',
+    icon: 'flame',
     name: 'Trainingsserie',
     tiers: [4, 12, 26, 52],
   },
   {
     id: 'habitStreak',
     category: 'daily',
-    icon: '✅',
+    icon: 'todo',
     name: 'Gewohnheitsserie',
     tiers: [7, 30, 100, 365],
   },
-  { id: 'steps', category: 'daily', icon: '👟', name: 'Schritte', tiers: [1e5, 1e6, 5e6, 1e7] },
-  { id: 'water', category: 'daily', icon: '💧', name: 'Wasserziel', tiers: [7, 30, 100, 365] },
-  { id: 'sleep', category: 'daily', icon: '😴', name: 'Schlafziel', tiers: [7, 30, 100, 365] },
-  { id: 'protein', category: 'daily', icon: '🥩', name: 'Proteinziel', tiers: [7, 30, 100, 365] },
-  { id: 'journal', category: 'self', icon: '📓', name: 'Journal', tiers: [1, 7, 30, 100, 365] },
-  { id: 'books', category: 'self', icon: '📚', name: 'Bücher', tiers: [1, 5, 10, 25, 50] },
+  {
+    id: 'steps',
+    category: 'daily',
+    icon: 'footprints',
+    name: 'Schritte',
+    tiers: [1e5, 1e6, 5e6, 1e7],
+  },
+  { id: 'water', category: 'daily', icon: 'drop', name: 'Wasserziel', tiers: [7, 30, 100, 365] },
+  { id: 'sleep', category: 'daily', icon: 'moon', name: 'Schlafziel', tiers: [7, 30, 100, 365] },
+  { id: 'protein', category: 'daily', icon: 'egg', name: 'Proteinziel', tiers: [7, 30, 100, 365] },
+  {
+    id: 'journal',
+    category: 'self',
+    icon: 'journal',
+    name: 'Journal',
+    tiers: [1, 7, 30, 100, 365],
+  },
+  { id: 'books', category: 'self', icon: 'book', name: 'Bücher', tiers: [1, 5, 10, 25, 50] },
   {
     id: 'meditation',
     category: 'self',
-    icon: '🧘',
+    icon: 'yoga',
     name: 'Meditation',
     tiers: [HOUR, 10 * HOUR, 50 * HOUR, 100 * HOUR],
   },
   {
     id: 'focus',
     category: 'self',
-    icon: '⏱️',
+    icon: 'timer',
     name: 'Fokus',
     tiers: [5 * HOUR, 25 * HOUR, 100 * HOUR, 500 * HOUR],
   },
-  { id: 'goals', category: 'self', icon: '🎯', name: 'Ziele', tiers: [1, 5, 10, 25] },
-  { id: 'photos', category: 'self', icon: '📸', name: 'Fortschrittsfotos', tiers: [1, 10, 50] },
+  { id: 'goals', category: 'self', icon: 'target', name: 'Ziele', tiers: [1, 5, 10, 25] },
+  { id: 'photos', category: 'self', icon: 'camera', name: 'Fortschrittsfotos', tiers: [1, 10, 50] },
 ];
 
 export function badgeById(id: string): BadgeDef | undefined {

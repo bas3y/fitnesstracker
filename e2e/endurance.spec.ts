@@ -33,14 +33,14 @@ test('Ausdauer: Kacheln, Einheiten erfassen, Ausrüstung und Anpassen (offline)'
   await page.reload();
 
   // Übersicht: Krafttraining oben, darunter sechs Aktivitäten
-  await expect(page.getByRole('heading', { name: '🏋️ Krafttraining' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Krafttraining', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Workout starten' })).toBeVisible();
   await expect(tiles(page)).toHaveCount(6);
   await expect(tile(page, 'Laufen')).toContainText('Diese Woche noch nichts');
 
   // Laufschuh anlegen, der kurz vor der Warnschwelle steht
   await tile(page, 'Laufen').click();
-  await expect(page.getByRole('heading', { name: '🏃 Laufen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Laufen', exact: true })).toBeVisible();
   await expect(page.getByText(/^Noch keine Einheit/)).toBeVisible();
   await page.getByRole('link', { name: /^Ausrüstung/ }).click();
   await page.getByRole('link', { name: '+ Neue Ausrüstung' }).click();
@@ -49,7 +49,7 @@ test('Ausdauer: Kacheln, Einheiten erfassen, Ausrüstung und Anpassen (offline)'
   await expect(page.getByLabel('Warnung ab', { exact: true })).toHaveValue('700');
   await page.getByRole('button', { name: 'Anlegen' }).click();
   await expect(page.getByRole('link', { name: /^Pegasus/ })).toContainText('695 km');
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
 
   // Lauf erfassen: Pace wird live berechnet, der einzige Schuh ist vorausgewählt
   await page.getByRole('link', { name: '+ Einheit erfassen' }).click();
@@ -91,9 +91,9 @@ test('Ausdauer: Kacheln, Einheiten erfassen, Ausrüstung und Anpassen (offline)'
   await expect(page.getByText(/Warnschwelle von 700 km erreicht/)).toBeVisible();
   await page.getByRole('button', { name: 'Ausmustern' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Ausgemustert' })).toBeVisible();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(facts).toBeVisible();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('link', { name: /Pegasus hat/ })).toHaveCount(0);
 
   // Schwimmen: Distanz aus Bahnen × Bahnlänge
@@ -171,7 +171,7 @@ test('Ausdauer über den Schnellzugriff erfassen, zählt als Trainingstag (offli
     .getByRole('dialog', { name: 'Ausdauer erfassen' })
     .getByRole('link', { name: /Radfahren/ })
     .click();
-  await expect(page.getByRole('heading', { name: '🚴 Radfahren erfassen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Radfahren erfassen' })).toBeVisible();
   await page.getByLabel('Datum').fill(todayInput());
   await page.getByLabel('Beginn').fill('00:00');
   await fillDuration(page, '60');

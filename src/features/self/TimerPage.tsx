@@ -47,6 +47,7 @@ import { playGong, primeAudio } from '../training/restAlarm';
 import { useNow } from '../training/useWorkouts';
 import { useTimerSessions } from './useSelf';
 import { useWakeLock } from './useWakeLock';
+import { IconBadge } from '../../components/icons';
 
 const HINT = 'text-sm text-muted';
 const MEDITATION_CHIPS = [5, 10, 15, 20, 30];
@@ -113,8 +114,8 @@ function TimerSetup({ presets }: { presets: TimerPresets }) {
           label="Art"
           value={kind}
           options={[
-            { value: 'focus', label: `${TIMER_KIND_LABELS.focus.icon} Fokus` },
-            { value: 'meditation', label: `${TIMER_KIND_LABELS.meditation.icon} Meditation` },
+            { value: 'focus', label: 'Fokus' },
+            { value: 'meditation', label: 'Meditation' },
           ]}
           onChange={setKind}
         />
@@ -417,9 +418,7 @@ function SessionList({
                 key={session.id}
                 className="mb-2 flex items-start gap-2 rounded-2xl bg-surface p-3"
               >
-                <span aria-hidden="true" className="text-2xl">
-                  {label.icon}
-                </span>
+                <IconBadge name={label.icon} />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">
                     {label.name} · {formatTimerDuration(session.durationSeconds)}
@@ -616,7 +615,7 @@ function HabitLinks({ settings }: { settings: Settings }) {
   const labels = Object.fromEntries(
     linkable.map((habit) => [
       habit.id,
-      `${habit.icon} ${habit.name}${habit.kind === 'count' ? ` (${habit.unit || 'Menge'})` : ''}`,
+      `${habit.name}${habit.kind === 'count' ? ` (${habit.unit || 'Menge'})` : ''}`,
     ]),
   );
   const valid = (id: string | null) => (linkable.some((habit) => habit.id === id) ? id : null);

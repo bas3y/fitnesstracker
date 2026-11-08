@@ -1,3 +1,4 @@
+import type { IconName } from '../components/iconPaths';
 import type {
   Book,
   DailyLog,
@@ -44,7 +45,7 @@ export interface ReviewHabit extends HabitHistoryItem {
 export interface ReviewHabitTotal {
   habitId: string;
   name: string;
-  icon: string;
+  icon: IconName;
   unit: string;
   kind: 'count' | 'quit';
   amount: number;

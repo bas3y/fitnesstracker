@@ -25,6 +25,7 @@ import { useSettings } from '../settings/useSettings';
 import { TRAINING_PATH } from '../training/paths';
 import { IMPORT_PATH, sessionPath } from './paths';
 import { takeSharedFiles } from './sharedFiles';
+import { Icon } from '../../components/icons';
 
 const MUTED = 'text-sm text-muted';
 
@@ -101,7 +102,7 @@ export function ImportPage() {
         title: summary.records.length === 1 ? 'Neue Bestzeit' : 'Neue Bestzeiten',
         lines: summary.records.map(
           ({ sport, meters, seconds }) =>
-            `${ENDURANCE_SPORT_LABELS[sport].icon} ${formatEffortDistance(meters)}: ${formatClock(seconds)}`,
+            `${ENDURANCE_SPORT_LABELS[sport].name} ${formatEffortDistance(meters)}: ${formatClock(seconds)}`,
         ),
       });
     }
@@ -313,8 +314,9 @@ function PreviewRow({
           onChange={(event) => onChange(key, { selected: event.target.checked })}
         />
         <span className="min-w-0 flex-1">
-          <span className="block font-semibold">
-            {ENDURANCE_SPORT_LABELS[sport].icon} {title}
+          <span className="flex flex-wrap items-center gap-x-1.5 font-semibold">
+            <Icon name={ENDURANCE_SPORT_LABELS[sport].icon} className="h-5 w-5 text-primary-text" />
+            {title}
             {merge && (
               <span className="ml-2 rounded-full bg-info-soft px-2 py-0.5 text-xs font-medium text-on-info-soft">
                 ergänzt deine Einheit

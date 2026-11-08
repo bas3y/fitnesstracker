@@ -35,7 +35,7 @@ test('Ziele anlegen, Fortschritt sehen, auf der Startseite zeigen, erreichen und
   await logBench(page, '80', '5');
 
   await nav(page, 'Statistik');
-  await page.getByRole('link', { name: '🎯 Ziele' }).click();
+  await page.getByRole('link', { name: 'Ziele', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Ziele' })).toBeVisible();
   await expect(page.getByText('Noch keine Ziele.')).toBeVisible();
 

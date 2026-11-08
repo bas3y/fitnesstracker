@@ -60,7 +60,7 @@ const run = (
 const habit: ReviewHabit['habit'] = {
   id: 'meditate',
   name: 'Meditieren',
-  icon: '🧘',
+  icon: 'yoga',
   unit: '',
   kind: 'check',
   target: 1,
@@ -109,7 +109,7 @@ const input: ReviewInput = {
       entries: [{ date: '2026-11-05', itemId: null, amount: 1 }],
     },
     {
-      habit: { ...habit, id: 'read', name: 'Lesen', icon: '📚', unit: 'Seiten', kind: 'count' },
+      habit: { ...habit, id: 'read', name: 'Lesen', icon: 'book', unit: 'Seiten', kind: 'count' },
       entries: [
         { date: '2026-10-10', itemId: null, amount: 40 },
         { date: '2026-11-02', itemId: null, amount: 20 },
@@ -196,8 +196,8 @@ describe('reviewSummary', () => {
 
   it('summiert Gewohnheiten mit Menge und Rückfälle, archivierte nur mit Einträgen', () => {
     expect(november.habitTotals).toEqual([
-      { habitId: 'read', name: 'Lesen', icon: '📚', unit: 'Seiten', kind: 'count', amount: 50 },
-      { habitId: 'smoke', name: 'Rauchen', icon: '🧘', unit: '', kind: 'quit', amount: 0 },
+      { habitId: 'read', name: 'Lesen', icon: 'book', unit: 'Seiten', kind: 'count', amount: 50 },
+      { habitId: 'smoke', name: 'Rauchen', icon: 'yoga', unit: '', kind: 'quit', amount: 0 },
     ]);
     const october = reviewSummary(input, OCTOBER, TODAY).habitTotals;
     expect(october.map((item) => item.amount)).toEqual([40, 3]);

@@ -61,7 +61,7 @@ test('Journal mit eigener Frage, Wochenreflexion und Suche (offline)', async ({
   await expect(page.getByRole('button', { name: 'Nächste Woche' })).toBeDisabled();
 
   // Zurück zum Journal (Herkunft), dann Suche
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await page.getByRole('link', { name: /^Alle Einträge/ }).click();
   const entries = page.getByRole('list', { name: 'Einträge' });
   await expect(entries.getByRole('listitem')).toHaveCount(2);
@@ -106,7 +106,7 @@ test('Lesen: Buch, Seiten mit Gewohnheit, Notiz, beenden, Ziel (offline)', async
   await expect(selfRow(page, 'Lesen')).toContainText('Bücher, Seiten, Notizen');
   await selfRow(page, 'Lesen').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Lesen' })).toBeVisible();
-  await page.getByLabel('Seiten zählen auch bei').selectOption({ label: '⭐ Lesen (Seiten)' });
+  await page.getByLabel('Seiten zählen auch bei').selectOption({ label: 'Lesen (Seiten)' });
 
   // Buch anlegen (mit Fehler ohne Titel)
   await page.getByRole('link', { name: '+ Buch hinzufügen' }).click();

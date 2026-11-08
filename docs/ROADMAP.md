@@ -35,7 +35,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 18 – Motivation (Serien, Abzeichen, Erfolgs-Hinweise)
 - [x] Schritt 18b – Trainingsblöcke (Aufbau/Deload/Peak) in Plänen
 - [ ] Schritt 18c – Push & Handytest 16–18b
-- [ ] Schritt 18d – Design-Grundlage & Farbpaletten
+- [x] Schritt 18d – Design-Grundlage & Farbpaletten
 - [ ] Schritt 18e – Seiten aufräumen & übersichtlicher machen
 - [ ] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
@@ -1069,10 +1069,27 @@ Ablauf:
 - Mehrere Farbpaletten wählbar (Einstellung, Dexie-Version + Backup-Default), dazu weiterhin Hell/Dunkel/System.
 - Grundbausteine neu gestalten: Karten, Buttons, Eingaben, Bottom-Navigation, Kopfzeile, Abstände, Schrift (gebündelt, offline).
 
+Mit dem Nutzer beim Start abgestimmt (Entwürfe A/B/C als Artifact): **Variante C „Kräftig“** (Apple-Schlichtheit, Systemschrift, wichtigste Karten als Farbblock), **fünf Paletten** nach Vorlagen des Nutzers (je hell/Akzent hell/Akzent/dunkel; im Dunkelmodus werden hell und dunkel getauscht), **Standard Grün**, **alle Emojis durch Liniensymbole ersetzen** (auch bei eigenen Gewohnheiten/Zielen: Symbol-Auswahl statt Emoji), in der roten Palette **eigene Gefahrenfarbe** (Orange-Rot).
+
 **Notizen:**
 - Gebaut:
+  - **Design-Tokens** in `src/index.css`: Paletten setzen nur `--p-light/--p-mid/--p-strong/--p-deep` (+ Akzent im Dunkelmodus, Gefahr), alles andere wird per `color-mix` berechnet. Tailwind-Farben über `@theme inline`: `page`, `surface`, `subtle(-strong)`, `pressed`, `line(-strong)`, `fg`, `muted`, `faint`, `primary` (+ `on-primary`, `primary-text`, `primary-press`, `primary-soft`, `on-primary-soft`), `hero`/`hero-2` (Farbblöcke), `danger(-soft)`, `warn(-soft)`, `info(-soft)`, `mark` (Blöcke/Warnkreis), `star`, `scrim`. Rundungen etwas weicher (`rounded-xl` 14 px, `rounded-2xl` 20 px), keine `shadow-sm` mehr auf Karten.
+  - **Farbblöcke:** Klassen `tone-hero`/`tone-accent`/`tone-soft` setzen die Tokens im Block neu (Buttons, Texte, Balken passen sich an). `Card`/`Tile` haben Prop `tone`. Eingesetzt: Trainingsstart-/Planvorschlagskarte, Pausen-Leiste, laufender Timer, Erfolgs-Hinweis, erste zwei Alltag-Kacheln.
+  - Alle ~1150 festen Farbklassen in 134 Dateien per Skript auf Tokens umgestellt (`dark:`-Klassen entfallen), Rest von Hand. Bewusst fest geblieben: Abzeichen-Stufen (Bronze/Silber/Gold …) und Schlafphasen-Farben. Diagramme (`var(--primary)`/`var(--mark)`), Heatmap (Stufen über Deckkraft), Strecke und Teilen-Bild (liest `--p-*`) folgen der Palette.
+  - **Einstellung** `Settings.palette` (Dexie v29, `COLOR_PALETTES`, `PALETTE_LABELS`), Auswahl `PalettePicker` unter „Darstellung“. `applyTheme(theme, palette)` setzt `data-palette` am `<html>`, spiegelt in localStorage (`index.html` setzt beides vor dem ersten Rendern) und passt `meta[name=theme-color]` an. Backup: ohne Palette → Grün.
+  - **Grundbausteine:** Kopfzeile (großer Titel, „Zurück“ mit Pfeil-Symbol), `Card`, `LinkRow` (Pfeil-Symbol), `Tile` (Symbol-Kachel), Buttons (`primaryButton` 48 px, `secondaryButton` gefüllt statt Rahmen, `dangerButton` getönt), Eingaben (gefüllt, Rahmen beim Fokus), `Stepper` (getönte Tasten), `SegmentedControl` (iOS-Stil), `Chip`, `DeleteRowButton`, `Toast`, `UpdatePrompt`, `BottomNav`.
+  - **Symbole:** `src/components/iconPaths.ts` (~90 Liniensymbole als Pfade, auch für Canvas), `<Icon name>`/`<IconBadge name>` (`src/components/icons.tsx`), Namen/Gruppen/Zuordnung in `src/domain/iconChoice.ts` (`ICON_LABELS`, `ICON_GROUPS`, `toIconName`). Alle Emojis aus Labels, Abzeichen, Serien, Kacheln, Titeln, Hinweisen und Teilen-Bild entfernt (Pokal im Teilen-Bild als Symbol gezeichnet). `EmojiPicker`/`domain/emoji.ts` ersetzt durch `IconPicker` (Fenster mit Gruppen, optional „Standard“).
+  - **Migration Dexie v30:** gespeicherte Emojis bei Gewohnheiten (`Habit.icon`, unbekannt → `star`) und eigenen Zielen (`Goal.icon`, unbekannt → leer = Symbol der Art) werden zu Symbol-Namen; Backup-Import macht dasselbe.
+  - Tests: `iconChoice.test.ts`, Migrationen v28→v29 und v29→v30, Backup (Palette, Emojis aus alten Sicherungen); E2E `e2e/design.spec.ts` (Palette + Dunkel offline, nach Neuladen sofort gesetzt, Farbblock), E2E-Helfer `chooseIcon`; bestehende E2E von Emoji-Texten auf Namen umgestellt („Zurück“ jetzt mit `exact: true`).
 - Abweichungen:
+  - Statt 2 Commits sind es Teil 1 (Tokens/Paletten/Bausteine) und Teil 2 (Symbole); DB-Versionen getrennt (v29 Palette, v30 Symbole).
+  - Typografische Zeichen bleiben Text (✓, ★/☆, ✕ in Texten, ▾/▸, ‹/› im Tagesnavigator, →); nur Emojis wurden ersetzt.
+  - Emojis eigener Gewohnheiten/Ziele ohne passendes Symbol (z. B. Flaggen) werden zum Standard-Symbol – der Nutzer wählt ggf. neu.
+  - Kein eigenes Schriftpaket (Systemschrift, Nutzerwunsch).
 - Offene Punkte:
+  - **Handytest** (mit 18e und dem 18c-Push): Kontrast der Paletten auf echten Displays (v. a. Graphit-Akzent in Hell, Violett in Dunkel), Statusleistenfarbe auf Android, Lesbarkeit der Farbblöcke.
+  - Seiten selbst umsortieren/vereinfachen → 18e (z. B. „Anpassen“-Buttons im Kopf, ▾/▸ durch Symbole ersetzen, Wochen-/Tagesübersichten im Stil der Entwürfe).
+  - Vor dem nächsten Push an ein Backup erinnern (DB-Version 28 → 30).
 
 ### Schritt 18e – Seiten aufräumen & übersichtlicher machen
 **Ziel:** Bereich für Bereich (Startseite, Training, Alltag, Statistik, Einstellungen) neu sortieren und übersichtlicher machen, auf Basis von 18d. Vorher mit dem Nutzer durchgehen, was ihn je Seite stört.

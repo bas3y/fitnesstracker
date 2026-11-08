@@ -55,8 +55,7 @@ function CreateSession({ sport }: { sport: EnduranceSport }) {
   const sessions = useEnduranceSessions();
   const gear = useGearList();
   const backTo = useBackTo(activityPath(sport));
-  const { name, icon } = ENDURANCE_SPORT_LABELS[sport];
-  const title = `${icon} ${name} erfassen`;
+  const title = `${ENDURANCE_SPORT_LABELS[sport].name} erfassen`;
   if (!settings || !sessions || !gear) return <Page title={title}>{null}</Page>;
 
   return (
@@ -70,7 +69,7 @@ function CreateSession({ sport }: { sport: EnduranceSport }) {
           const session = await createEnduranceSession(values);
           showToast({
             variant: 'info',
-            title: `${icon} ${sessionTitle(session)} gespeichert`,
+            title: `${sessionTitle(session)} gespeichert`,
             lines: [formatSessionSummary(session, settings.distanceUnit)],
           });
           navigate(backTo, { replace: true });

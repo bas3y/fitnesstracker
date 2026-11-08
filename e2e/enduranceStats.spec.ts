@@ -74,8 +74,8 @@ test('Ausdauer: Bestzeiten, Teilen-Bild, Statistik, Widget und Kalorien (offline
   await expect(page.getByText('Neue Bestzeit')).toHaveCount(0);
   await importRun(page, localStart(0, 0), 3.2);
   const toast = page.getByRole('status').filter({ hasText: 'Neue Bestzeiten' });
-  await expect(toast).toContainText('🏃 1 km: 5:13');
-  await expect(toast).toContainText('🏃 5 km: 26:03');
+  await expect(toast).toContainText('Laufen 1 km: 5:13');
+  await expect(toast).toContainText('Laufen 5 km: 26:03');
 
   // Detailseite: Bestzeiten mit Pokal, Teilen-Bild als Story und Sticker
   await page.getByRole('link', { name: 'Einheit ansehen' }).click();
@@ -126,7 +126,7 @@ test('Ausdauer: Bestzeiten, Teilen-Bild, Statistik, Widget und Kalorien (offline
   await page.getByLabel('Sportart').selectOption('');
   await expect(page.getByText(/Wähle oben eine Sportart/)).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Bestzeiten 🏃 Laufen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Bestzeiten Laufen' })).toBeVisible();
   // Kraft bleibt erreichbar
   await page.getByRole('group', { name: 'Bereich' }).getByRole('button', { name: 'Kraft' }).click();
   await expect(page.getByText(/Noch keine beendeten Trainings/)).toBeVisible();
@@ -139,18 +139,18 @@ test('Ausdauer: Bestzeiten, Teilen-Bild, Statistik, Widget und Kalorien (offline
   await page.getByRole('button', { name: 'Fertig' }).click();
   const week = page.getByRole('list', { name: 'Ausdauer diese Woche' });
   await expect(week).toContainText('Laufen');
-  await expect(page.getByTestId('week-endurance')).toContainText('🏃');
+  await expect(page.getByTestId('week-endurance')).toContainText('Laufen');
   await page
     .getByRole('button', { name: /30 min Ausdauer$/ })
     .last()
     .click();
-  await page.getByRole('link', { name: '🏃 Laufen öffnen' }).click();
+  await page.getByRole('link', { name: 'Laufen öffnen' }).click();
   await expect(page.getByRole('list', { name: 'Bestzeiten in dieser Einheit' })).toBeVisible();
 
   // Ernährung: verbrannte Kalorien erhöhen das Ziel
   await page.goto('./#/daily/nutrition');
   await expect(page.getByTestId('burned-kcal')).toHaveText(
-    '🔥 Beim Training verbrannt: 400 kcal (im Ziel enthalten)',
+    'Beim Training verbrannt: 400 kcal (im Ziel enthalten)',
   );
   await expect(page.getByTestId('nutrition-summary')).toContainText('von 2900 kcal');
 });

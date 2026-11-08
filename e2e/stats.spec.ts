@@ -206,7 +206,7 @@ test('Statistik: Filter, Fortschritt, Verlauf und Pausen-Auswertung (offline)', 
   await expect(chart.locator('.recharts-line-dots circle')).toHaveCount(4);
 
   // Zurück: Filter bleiben erhalten
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Statistik' })).toBeVisible();
   await expect(page.getByLabel('Muskelgruppe', { exact: true })).toHaveValue('chest');
   await expect(page.getByRole('button', { name: '4 Wo.' })).toHaveAttribute('aria-pressed', 'true');

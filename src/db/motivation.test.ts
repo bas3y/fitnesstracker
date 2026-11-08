@@ -81,7 +81,7 @@ describe('checkCelebrations', () => {
     await addGoalEntry(goal.id, 1, '2026-11-07');
     expect(await checkCelebrations(TODAY)).toEqual({
       title: 'Geschafft!',
-      lines: ['🎯 Führerschein', '🎯 Ziele: Erstes Ziel erreicht'],
+      lines: ['Führerschein', 'Ziele: Erstes Ziel erreicht'],
     });
     expect(await checkCelebrations(TODAY)).toBeNull();
 

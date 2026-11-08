@@ -6,7 +6,6 @@ export interface CelebratedGoal {
   goal: Pick<Goal, 'id'>;
   progress: Pick<GoalProgress, 'achievedOn' | 'recurring' | 'range'>;
   name: string;
-  icon: string;
 }
 
 export interface CelebrationResult {
@@ -49,11 +48,9 @@ export function celebrate(
     const known = next.badges[badge.id] ?? 0;
     if (level <= known) continue;
     next.badges[badge.id] = level;
-    badgeLines.push(
-      `${badge.icon} ${badge.name}: ${formatBadgeTier(badge.id, badge.tiers[level - 1]!, units)}`,
-    );
+    badgeLines.push(`${badge.name}: ${formatBadgeTier(badge.id, badge.tiers[level - 1]!, units)}`);
   }
-  for (const { goal, progress, name, icon } of goals) {
+  for (const { goal, progress, name } of goals) {
     const key = goalCelebrationKey(progress);
     const known = current?.goals[goal.id];
     if (key === null) {
@@ -61,7 +58,7 @@ export function celebrate(
       continue;
     }
     next.goals[goal.id] = key;
-    if (known !== key) goalLines.push(`${icon} ${name}`);
+    if (known !== key) goalLines.push(name);
   }
 
   const changed =

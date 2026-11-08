@@ -79,7 +79,7 @@ function SupplementDetail({
   const adherence = supplementAdherence(item, trainingDays, today);
 
   return (
-    <Page title={`💊 ${supplement.name}`} backTo={backTo}>
+    <Page title={supplement.name} backTo={backTo}>
       {archived && (
         <p
           role="status"

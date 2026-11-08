@@ -1,3 +1,4 @@
+import { ICON_PATHS } from '../../components/iconPaths';
 import { SHARE_SIZES, type ShareCardContent, type ShareFormat } from '../../domain/shareCard';
 import { projectRoute } from '../../domain/track';
 
@@ -134,9 +135,19 @@ function drawBadge(
   y: number,
   width: number,
 ) {
+  const size = 44;
+  ctx.save();
+  ctx.translate(x, y - size + 6);
+  ctx.scale(size / 24, size / 24);
+  ctx.strokeStyle = BADGE_COLOR;
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const d of ICON_PATHS.trophy) ctx.stroke(new Path2D(d));
+  ctx.restore();
   setFont(ctx, 42, 700);
   ctx.fillStyle = BADGE_COLOR;
-  ctx.fillText(fitText(ctx, badge, width), x, y);
+  ctx.fillText(fitText(ctx, badge, width - size - 16), x + size + 16, y);
 }
 
 /** Bild als PNG; der Sticker hat einen transparenten Hintergrund und Schatten hinter der Schrift */

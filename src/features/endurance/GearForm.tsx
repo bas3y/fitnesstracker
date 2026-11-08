@@ -13,6 +13,7 @@ import {
 import type { DistanceUnit } from '../../db/types';
 import { ENDURANCE_SPORT_LABELS } from '../../domain/labels';
 import { displayToMeters, metersToDisplay, roundTo } from '../../domain/units';
+import { Icon } from '../../components/icons';
 
 const LABEL = 'mb-1 block text-sm font-medium';
 const HINT = 'text-sm text-muted';
@@ -83,7 +84,8 @@ export function GearForm({
                     })
                   }
                 >
-                  {ENDURANCE_SPORT_LABELS[sport].icon} {ENDURANCE_SPORT_LABELS[sport].name}
+                  <Icon name={ENDURANCE_SPORT_LABELS[sport].icon} className="h-4 w-4" />
+                  {ENDURANCE_SPORT_LABELS[sport].name}
                 </Chip>
               ))}
             </div>

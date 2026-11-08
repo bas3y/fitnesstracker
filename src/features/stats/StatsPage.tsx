@@ -44,6 +44,7 @@ import { ActivityCard } from './ActivityCard';
 import { EnduranceStats } from './EnduranceStats';
 import { ReviewStats } from './ReviewStats';
 import { exerciseStatsPath, useStatsFilter, type StatsView } from './statsFilter';
+import { Icon } from '../../components/icons';
 
 const HINT = 'text-sm text-muted';
 const HEADER_LINK =
@@ -70,10 +71,12 @@ export function StatsPage() {
       action={
         <div className="flex shrink-0 gap-2">
           <Link to={ACHIEVEMENTS_PATH} state={from} className={HEADER_LINK}>
-            🏆 Erfolge
+            <Icon name="trophy" className="h-4 w-4" />
+            Erfolge
           </Link>
           <Link to={GOALS_PATH} state={from} className={HEADER_LINK}>
-            🎯 Ziele
+            <Icon name="target" className="h-4 w-4" />
+            Ziele
           </Link>
         </div>
       }

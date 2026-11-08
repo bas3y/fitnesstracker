@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { dailyTile, dragTo, fillStepper, goOffline } from './helpers';
+import { chooseIcon, dailyTile, dragTo, fillStepper, goOffline } from './helpers';
 
 const card = (page: Page, name: string) =>
   page.locator('section').filter({ has: page.getByRole('heading', { name, exact: true }) });
@@ -100,18 +100,18 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
   await expect(habits.getByText('6 von max. 5 Zigaretten')).toBeVisible();
 
   // Verlauf über die Alltag-Übersicht (Recharts-Chunk offline)
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await dailyTile(page, 'Verlauf').click();
   const history = page.locator('main');
   const metrics = history.getByRole('group', { name: 'Kennzahl' });
   await metrics.getByRole('button', { name: 'Gewohnheiten' }).click();
   await expect(history.getByTestId('daily-summary')).toHaveText('Ø 100 % erledigt');
-  await metrics.getByRole('button', { name: '🚭 Rauchen' }).click();
+  await metrics.getByRole('button', { name: 'Rauchen' }).click();
   await expect(history.getByTestId('daily-summary')).toHaveText(
     'Ø 6 Zigaretten pro Tag · im Limit an 0 von 1 Tagen',
   );
-  await expect(page.getByRole('img', { name: '🚭 Rauchen im Verlauf' })).toBeVisible();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await expect(page.getByRole('img', { name: 'Rauchen im Verlauf' })).toBeVisible();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(dailyTile(page, 'Gewohnheiten')).toContainText('2 von 2');
   await dailyTile(page, 'Gewohnheiten').click();
 
@@ -119,14 +119,14 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
   await page.getByRole('link', { name: 'Details: Rauchen' }).click();
   const stats = page.getByTestId('habit-stats');
   await expect(stats.getByRole('definition')).toHaveText(['0 Tage', '0 Tage', '6 Zigaretten']);
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
 
   // Pausieren: nicht mehr in der Checkliste
   await showDone(habits);
   await page.getByRole('link', { name: 'Details: Lesen' }).click();
   await page.getByRole('button', { name: 'Pausieren' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Pausiert' })).toBeVisible();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Details: Lesen' })).toHaveCount(0);
   await expect(habits.getByText('1 von 1 erledigt')).toBeVisible();
 
@@ -135,13 +135,13 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
   await list.getByRole('link', { name: /Lesen/ }).click();
   await page.getByRole('button', { name: 'Fortsetzen' }).click();
   await expect(page.getByRole('button', { name: 'Pausieren' })).toBeVisible();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
 
   // Archivieren: aus der Liste ins Archiv, wiederherstellbar
   await list.getByRole('link', { name: /Supplements/ }).click();
   await page.getByRole('button', { name: 'Archivieren' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Archiviert' })).toBeVisible();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(list.getByRole('listitem')).toHaveCount(2);
   await page.getByRole('button', { name: 'Archiv (1)' }).click();
   await page
@@ -149,7 +149,7 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
     .getByRole('link', { name: /Supplements/ })
     .click();
   await page.getByRole('button', { name: 'Wiederherstellen' }).click();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(list.getByRole('listitem')).toHaveCount(3);
 });
 
@@ -170,7 +170,7 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
       .getByRole('group', { name: 'Gruppe' })
       .getByRole('button', { name: 'Morgen' })
       .click();
-    await page.getByRole('button', { name: 'Symbol 🧘' }).click();
+    await chooseIcon(page, 'Yoga');
   });
   await addHabit(page, 'Laufen gehen', async () => {
     await page
@@ -227,7 +227,7 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
   await expect(checkbox(page, 'Meditieren')).toHaveCount(0);
   await showDone(morning);
   await expect(checkbox(page, 'Meditieren')).toHaveAttribute('aria-checked', 'true');
-  await expect(morning.getByText('🔥 1 Tag')).toBeVisible();
+  await expect(morning.getByText('1 Tag in Folge')).toBeVisible();
 
   const others = card(page, 'Gewohnheiten');
   await checkbox(page, 'Laufen gehen').click();
@@ -247,7 +247,7 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
   await expect(checkbox(page, 'Meditieren')).toHaveAttribute('aria-checked', 'false');
   await checkbox(page, 'Meditieren').click();
   await showDone(morning);
-  await expect(morning.getByText('🔥 2 Tage')).toBeVisible();
+  await expect(morning.getByText('2 Tage in Folge')).toBeVisible();
 
   // Bleibt nach dem Neuladen erhalten
   await page.reload();
@@ -257,7 +257,7 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
 
   // Detailseite über die Zeile; „Zurück“ führt zum gewählten Tag
   await page.getByRole('link', { name: 'Details: Meditieren' }).click();
-  await expect(page.getByRole('heading', { name: '🧘 Meditieren' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Meditieren' })).toBeVisible();
   const stats = page.getByTestId('habit-stats');
   await expect(stats).toContainText('Aktuell');
   await expect(stats.getByRole('definition').first()).toHaveText('2 Tage');
@@ -282,7 +282,7 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
   await page.getByRole('button', { name: 'Nächster Monat' }).click();
   await expect(today).toBeVisible();
 
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Gestern' })).toBeVisible();
   await showDone(morning);
 
@@ -292,7 +292,7 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
   await page.getByLabel('Name', { exact: true }).fill('Atemübung');
   await page.getByRole('group', { name: 'Gruppe' }).getByRole('button', { name: 'Abend' }).click();
   await page.getByRole('button', { name: 'Speichern' }).click();
-  await expect(page.getByRole('heading', { name: '🧘 Atemübung' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Atemübung' })).toBeVisible();
   await expect(stats.getByRole('definition').first()).toHaveText('2 Tage');
 
   // Löschen mit Rückfrage

@@ -19,6 +19,7 @@ import { BODY_PATH, DAILY_HISTORY_PATH, withDate } from './paths';
 import { useDailyLog, useDayParam } from './useDaily';
 import { HABITS_PATH, useHabits } from './useHabits';
 import { TODOS_PATH, useTodos } from './useTodos';
+import { Icon } from '../../components/icons';
 
 const MUTED = 'text-sm text-muted';
 
@@ -42,7 +43,7 @@ export function DailyPage() {
         {settings && <NutritionTile {...day} settings={settings} />}
         {settings && <SupplementsTile {...day} settings={settings} />}
         <BodyTile {...day} />
-        <Tile to={withDate(DAILY_HISTORY_PATH, date, today)} icon="📈" name="Verlauf">
+        <Tile to={withDate(DAILY_HISTORY_PATH, date, today)} icon="trend" name="Verlauf">
           <span className={MUTED}>Graphen über Tage und Wochen</span>
         </Tile>
       </ul>
@@ -66,7 +67,7 @@ function HabitsTile({ date, today }: TileProps) {
   const habits = useHabits();
   const progress = habits && habitDayProgress(habits, date);
   return (
-    <Tile to={withDate(HABITS_PATH, date, today)} icon="🔁" name="Gewohnheiten">
+    <Tile to={withDate(HABITS_PATH, date, today)} icon="repeat" name="Gewohnheiten" tone="accent">
       {habits &&
         progress &&
         (habits.every(({ habit }) => habit.archivedAt !== null) ? (
@@ -93,7 +94,7 @@ function TodosTile({ date, today }: TileProps) {
     return doneOn(todos, today).length > 0 ? 'Alles erledigt' : 'Keine offen';
   })();
   return (
-    <Tile to={withDate(TODOS_PATH, date, today)} icon="✅" name="To-dos">
+    <Tile to={withDate(TODOS_PATH, date, today)} icon="todo" name="To-dos" tone="soft">
       {status && <span className={MUTED}>{status}</span>}
     </Tile>
   );
@@ -107,7 +108,7 @@ function NutritionTile({ date, today, settings }: TileProps & { settings: Settin
     ? [total?.protein, goal?.protein, 'g Protein', 'Proteinziel']
     : [total?.kcal, goal?.kcal, 'kcal', 'Kalorienziel'];
   return (
-    <Tile to={withDate(NUTRITION_PATH, date, today)} icon="🍽️" name="Ernährung">
+    <Tile to={withDate(NUTRITION_PATH, date, today)} icon="utensils" name="Ernährung">
       {value != null && target != null && (
         <>
           <span className={`tabular-nums ${MUTED}`}>
@@ -144,13 +145,16 @@ function SupplementsTile({ date, today, settings }: TileProps & { settings: Sett
           <Progress label="Supplements genommen" done={taken} total={due.length} />
         )}
         {lowStock > 0 && (
-          <span className="text-sm font-medium text-on-warn-soft">⚠️ Bestand niedrig</span>
+          <span className="flex items-center gap-1 text-sm font-medium text-warn">
+            <Icon name="alert" className="h-4 w-4" />
+            Bestand niedrig
+          </span>
         )}
       </>
     );
   })();
   return (
-    <Tile to={withDate(SUPPLEMENTS_PATH, date, today)} icon="💊" name="Supplements">
+    <Tile to={withDate(SUPPLEMENTS_PATH, date, today)} icon="pill" name="Supplements">
       {content}
     </Tile>
   );
@@ -176,7 +180,7 @@ function BodyTile({ date, today }: TileProps) {
     lines.push('Eingetragen');
   }
   return (
-    <Tile to={withDate(BODY_PATH, date, today)} icon="❤️" name="Körper & Befinden">
+    <Tile to={withDate(BODY_PATH, date, today)} icon="heart" name="Körper & Befinden">
       {log !== undefined &&
         (lines.length === 0 ? (
           <span className={MUTED}>Noch nichts eingetragen</span>

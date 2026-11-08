@@ -61,7 +61,7 @@ export const motivationHabit = (
   values: Partial<GoalHabit> & Pick<GoalHabit, 'id' | 'kind'>,
 ): GoalHabit => ({
   name: 'Gewohnheit',
-  icon: '✅',
+  icon: 'todo',
   target: 1,
   unit: '',
   step: 1,

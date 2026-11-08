@@ -2,7 +2,6 @@ import type { DistanceUnit, EnduranceSession, Exercise, WeightUnit, WorkoutSet }
 import { formatDistance, formatPace, paceLabel, sessionTitle } from './endurance';
 import { formatEffortDistance, type SessionEffort } from './enduranceStats';
 import { formatDecimal } from './format';
-import { ENDURANCE_SPORT_LABELS } from './labels';
 import { bestSet, exerciseKind, sessionVolumeKg } from './strength';
 import { kgToDisplay } from './units';
 import { formatClock, formatSetSummary, formatWorkoutDate, formatWorkoutDuration } from './workout';
@@ -59,14 +58,14 @@ export function enduranceShareContent(
   ];
   const bests = efforts.filter((effort) => effort.isBest);
   return {
-    title: `${ENDURANCE_SPORT_LABELS[sport].icon} ${sessionTitle(session)}`,
+    title: sessionTitle(session),
     subtitle: formatWorkoutDate(session.startedAt),
     stats: stats.filter((stat) => stat !== null).slice(0, MAX_STATS),
     route: route && route.length >= 2 ? route : null,
     lines: [],
     badge:
       bests.length > 0
-        ? `🏆 Bestzeit ${bests.map((effort) => `${formatEffortDistance(effort.meters)} ${formatClock(effort.seconds)}`).join(' · ')}`
+        ? `Bestzeit ${bests.map((effort) => `${formatEffortDistance(effort.meters)} ${formatClock(effort.seconds)}`).join(' · ')}`
         : null,
   };
 }
@@ -111,7 +110,7 @@ export function workoutShareContent({
   });
   const more = lines.length - MAX_SHARE_LINES;
   return {
-    title: `🏋️ ${title ?? 'Krafttraining'}`,
+    title: title ?? 'Krafttraining',
     subtitle: formatWorkoutDate(startedAt),
     stats: [
       { label: 'Dauer', value: formatWorkoutDuration(durationSeconds) },
@@ -124,8 +123,7 @@ export function workoutShareContent({
     route: null,
     lines:
       more > 0 ? [...lines.slice(0, MAX_SHARE_LINES - 1), `+ ${more + 1} weitere Übungen`] : lines,
-    badge:
-      recordCount > 0 ? `🏆 ${recordCount === 1 ? '1 Rekord' : `${recordCount} Rekorde`}` : null,
+    badge: recordCount > 0 ? `${recordCount === 1 ? '1 Rekord' : `${recordCount} Rekorde`}` : null,
   };
 }
 

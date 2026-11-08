@@ -12,7 +12,11 @@ async function addSupplement(page: Page, name: string, fill: () => Promise<void>
   await page.getByLabel('Name', { exact: true }).fill(name);
   await fill();
   await page.getByRole('button', { name: 'Anlegen' }).click();
-  await expect(page.getByRole('link', { name: new RegExp(`^💊 ${name}`) })).toBeVisible();
+  await expect(
+    page
+      .getByRole('list', { name: 'Supplements', exact: true })
+      .getByRole('link', { name: new RegExp(`^${name}`) }),
+  ).toBeVisible();
 }
 
 test('Supplements: anlegen, abhaken, Bestand, Trainingstage, Erinnerung und Widget (offline)', async ({
@@ -49,9 +53,11 @@ test('Supplements: anlegen, abhaken, Bestand, Trainingstage, Erinnerung und Widg
       .getByRole('button', { name: 'Kraft' })
       .click();
   });
-  await expect(page.getByRole('link', { name: /^💊 Pre-Workout/ })).toContainText(
-    'Trainingstage (Kraft) · Vor dem Training',
-  );
+  await expect(
+    page
+      .getByRole('list', { name: 'Supplements', exact: true })
+      .getByRole('link', { name: /^Pre-Workout/ }),
+  ).toContainText('Trainingstage (Kraft) · Vor dem Training');
 
   // Ohne Training ist das Pre-Workout nur vorab abhakbar; Bestand reicht 12 g / 5 g = 2 Tage
   const intakes = card(page, 'Einnahmen');
@@ -77,7 +83,7 @@ test('Supplements: anlegen, abhaken, Bestand, Trainingstage, Erinnerung und Widg
   await expect(stock).toHaveText('7 g · Reicht noch 1 Tag');
   await page.getByRole('button', { name: 'Neue Packung (+500 g)' }).click();
   await expect(stock).toHaveText('507 g · Reicht noch 101 Tage');
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Supplements', level: 1 })).toBeVisible();
   await expect(intakes.getByRole('list', { name: 'Niedriger Bestand' })).toHaveCount(0);
 
@@ -102,7 +108,7 @@ test('Supplements: anlegen, abhaken, Bestand, Trainingstage, Erinnerung und Widg
   await page.getByRole('button', { name: 'Vorheriger Tag' }).click();
   await expect(daily.getByText('0 von 1 genommen')).toBeVisible();
   await expect(daily.getByRole('checkbox', { name: 'Pre-Workout' })).toHaveCount(0);
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Gestern' })).toBeVisible();
   await expect(dailyTile(page, 'Supplements')).toContainText('0 von 1');
 
@@ -154,7 +160,7 @@ test('Supplements aus einer Gewohnheit übernehmen (offline)', async ({ page, co
   await page.getByRole('checkbox', { name: 'Vitamin D' }).click();
   await expect(card(page, 'Gewohnheiten').getByText('1 von 1 erledigt')).toBeVisible();
 
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await dailyTile(page, 'Supplements').click();
   await page.getByRole('button', { name: 'Aus Gewohnheit übernehmen' }).click();
   await page
@@ -167,14 +173,16 @@ test('Supplements aus einer Gewohnheit übernehmen (offline)', async ({ page, co
   await toast.click();
 
   // Heutige Einnahme ist mit übernommen, die Gewohnheit ist archiviert
-  await expect(page.getByRole('link', { name: /^💊 Vitamin D/ })).toContainText(
-    'Täglich · Morgens',
-  );
+  await expect(
+    page
+      .getByRole('list', { name: 'Supplements', exact: true })
+      .getByRole('link', { name: /^Vitamin D/ }),
+  ).toContainText('Täglich · Morgens');
   await expect(
     card(page, 'Einnahmen').getByRole('checkbox', { name: 'Vitamin D' }),
   ).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByRole('button', { name: 'Aus Gewohnheit übernehmen' })).toHaveCount(0);
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(dailyTile(page, 'Gewohnheiten')).toContainText('Noch keine');
   await expect(dailyTile(page, 'Supplements')).toContainText('1 von 1');
 });

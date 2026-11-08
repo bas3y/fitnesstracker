@@ -75,7 +75,7 @@ test('To-dos: Priorität, Übertrag, Bearbeiten und Liste (offline)', async ({ p
   await page.getByRole('button', { name: 'Aufgabe löschen' }).click();
   await expect(page.getByRole('list', { name: 'Geplant' })).toHaveCount(0);
 
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Fitnesstracker', level: 1 })).toBeVisible();
 
   // Kachel auf der Alltag-Übersicht
@@ -83,7 +83,7 @@ test('To-dos: Priorität, Übertrag, Bearbeiten und Liste (offline)', async ({ p
   await expect(dailyTile(page, 'To-dos')).toContainText('1 offen');
   await dailyTile(page, 'To-dos').click();
   await expect(page.getByRole('list', { name: 'Heute' })).toContainText('Wocheneinkauf');
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Alltag', level: 1 })).toBeVisible();
 });
 
@@ -128,7 +128,7 @@ test('Startseite: Schnellzugriff, Gewohnheiten und To-dos als Widgets (offline)'
   await expect(page.getByLabel('Körpergewicht an diesem Tag', { exact: true })).toHaveValue('81,5');
 
   // Gewohnheit direkt auf der Startseite abhaken
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await dailyTile(page, 'Gewohnheiten').click();
   await page.getByRole('link', { name: '+ Neue Gewohnheit' }).click();
   await page.getByLabel('Name', { exact: true }).fill('Dehnen');

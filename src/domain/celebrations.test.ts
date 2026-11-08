@@ -26,7 +26,6 @@ function goal(id: string, achievedOn: string | null, recurringFrom?: string): Ce
       range: recurringFrom ? { from: recurringFrom, to: '2026-11-08' } : null,
     },
     name: `Ziel ${id}`,
-    icon: '🎯',
   };
 }
 
@@ -48,7 +47,7 @@ describe('celebrate', () => {
     );
     expect(result.toast).toEqual({
       title: 'Geschafft!',
-      lines: ['🎯 Ziel g', '🏋️ Krafttraining: 10 Krafttrainings'],
+      lines: ['Ziel g', 'Krafttraining: 10 Krafttrainings'],
     });
     expect(result.next).toEqual({ badges: { workouts: 2 }, goals: { g: 'once' } });
 
@@ -70,7 +69,7 @@ describe('celebrate', () => {
     expect(goalCelebrationKey(week1.progress)).toBe('2026-11-02');
     const current = { badges: {}, goals: { w: '2026-10-26' } };
     const result = celebrate(current, [], [week1], UNITS);
-    expect(result.toast).toEqual({ title: 'Ziel erreicht!', lines: ['🎯 Ziel w'] });
+    expect(result.toast).toEqual({ title: 'Ziel erreicht!', lines: ['Ziel w'] });
     expect(goalCelebrationKey(goal('x', null).progress)).toBeNull();
   });
 

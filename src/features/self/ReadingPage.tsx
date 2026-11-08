@@ -153,7 +153,7 @@ function CurrentBook({ book, logs, onLog }: { book: Book; logs: ReadingLog[]; on
   return (
     <li className="mb-3 rounded-2xl bg-surface p-4">
       <Link to={bookPath(book.id)} className="mb-2 block">
-        <span className="block font-semibold">📖 {book.title}</span>
+        <span className="block font-semibold">{book.title}</span>
         {book.author && <span className={`block ${HINT}`}>{book.author}</span>}
         <span className={`mt-1 block tabular-nums ${HINT}`}>
           {formatBookProgress(book, progress)}
@@ -191,10 +191,7 @@ function HabitLink({ settings }: { settings: Settings }) {
     ? settings.readingHabitId
     : null;
   const labels = Object.fromEntries(
-    counting.map((habit) => [
-      habit.id,
-      `${habit.icon} ${habit.name}${habit.unit ? ` (${habit.unit})` : ''}`,
-    ]),
+    counting.map((habit) => [habit.id, `${habit.name}${habit.unit ? ` (${habit.unit})` : ''}`]),
   );
   return (
     <Card title="Mit Gewohnheit verknüpfen">

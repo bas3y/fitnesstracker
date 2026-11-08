@@ -26,6 +26,7 @@ import {
 } from '../../domain/habits';
 import { GoalBar } from './GoalBar';
 import { HABITS_PATH, useHabits } from './useHabits';
+import { IconBadge, type IconName } from '../../components/icons';
 
 const ROUND_BUTTON =
   'flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-subtle px-2 text-sm font-semibold tabular-nums active:bg-subtle-strong';
@@ -136,10 +137,10 @@ function ChecklistBody({
 function streakHint({ habit, entries, dates }: HabitWithChecks, date: DayKey, today: DayKey) {
   if (habit.kind === 'quit') {
     const { current } = quitStreak(habit, entries, today);
-    return current > 0 ? `🔥 ${formatStreak(current, 'days')}` : null;
+    return current > 0 ? `${formatStreak(current, 'days')} in Folge` : null;
   }
   const { current, unit } = habitStreak(habit, dates, today);
-  const parts = current > 0 ? [`🔥 ${formatStreak(current, unit)}`] : [];
+  const parts = current > 0 ? [`${formatStreak(current, unit)} in Folge`] : [];
   if (habit.frequency === 'weekly') {
     parts.push(`${checksInWeek(dates, date)} von ${habit.timesPerWeek} diese Woche`);
   }
@@ -253,9 +254,7 @@ function ItemsRow({
           onClick={() => setOpen(!open)}
         >
           <StatusCircle done={done} />
-          <span aria-hidden="true" className="text-xl">
-            {habit.icon}
-          </span>
+          <IconBadge name={habit.icon} className="h-8 w-8" iconClassName="h-4.5 w-4.5" />
           <span className="min-w-0">
             <span className={nameClass(done)}>{habit.name}</span>
             <span className={HINT}>
@@ -340,7 +339,7 @@ function AmountRow({
   onAdd,
 }: {
   name: string;
-  icon?: string;
+  icon?: IconName;
   done: boolean;
   warn?: boolean;
   amount: number;
@@ -354,11 +353,7 @@ function AmountRow({
     <div className="flex min-h-14 min-w-0 flex-1 items-center gap-1 py-2">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <StatusCircle done={done} warn={warn} />
-        {icon && (
-          <span aria-hidden="true" className="text-xl">
-            {icon}
-          </span>
-        )}
+        {icon && <IconBadge name={icon} className="h-8 w-8" iconClassName="h-4.5 w-4.5" />}
         <span className="min-w-0">
           <span className="block font-medium">{name}</span>
           <span className={HINT} data-testid="habit-amount">

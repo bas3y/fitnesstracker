@@ -36,6 +36,7 @@ import { GOALS_PATH } from '../goals/paths';
 import { useGoalData, useGoalExercises, useGoals } from '../goals/useGoals';
 import { useSettings } from '../settings/useSettings';
 import { useStatsFilter } from './statsFilter';
+import { Icon } from '../../components/icons';
 
 const HINT = 'text-sm text-muted';
 const NAV_BUTTON =
@@ -311,7 +312,7 @@ function TrainingCard({
               {current.endurance.bySport
                 .map(
                   ({ sport, totals }) =>
-                    `${ENDURANCE_SPORT_LABELS[sport].icon} ${formatTotals(totals, sport, settings.distanceUnit)}`,
+                    `${ENDURANCE_SPORT_LABELS[sport].name} ${formatTotals(totals, sport, settings.distanceUnit)}`,
                 )
                 .join(' · ')}
             </p>
@@ -431,7 +432,7 @@ function NutritionCard({
 function HabitsCard({ current, previous }: { current: ReviewSummary; previous: ReviewSummary }) {
   const previousById = new Map(previous.habitTotals.map((habit) => [habit.habitId, habit]));
   const rows: Row[] = current.habitTotals.map((habit) => ({
-    label: `${habit.icon} ${habit.name}${habit.kind === 'quit' ? ' (Rückfälle)' : ''}`,
+    label: `${habit.name}${habit.kind === 'quit' ? ' (Rückfälle)' : ''}`,
     current: habit.amount,
     previous: previousById.get(habit.habitId)?.amount ?? 0,
     format: (value) => formatHabitAmount(value, habit.unit),
@@ -515,9 +516,12 @@ function GoalsCard({
       ) : (
         <ul aria-label="Erreichte Ziele" className="flex flex-col gap-1">
           {achieved.map(({ goal, on }) => (
-            <li key={goal.id}>
-              🏆 {goalName(goal, goalSubject(goal, exercises, data), settings)}{' '}
-              <span className={HINT}>({formatGoalDate(on)})</span>
+            <li key={goal.id} className="flex items-start gap-2">
+              <Icon name="trophy" className="mt-0.5 h-4 w-4 text-primary-text" />
+              <span>
+                {goalName(goal, goalSubject(goal, exercises, data), settings)}{' '}
+                <span className={HINT}>({formatGoalDate(on)})</span>
+              </span>
             </li>
           ))}
         </ul>

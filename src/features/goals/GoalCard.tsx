@@ -21,6 +21,7 @@ import {
 } from '../../domain/goals';
 import { kgToDisplay } from '../../domain/units';
 import { goalEditPath } from './paths';
+import { Icon } from '../../components/icons';
 
 const HINT = 'text-sm text-muted';
 const ACTION =
@@ -221,9 +222,7 @@ export function GoalCard({
         className={`block rounded-2xl active:bg-page ${compact ? 'p-3' : 'p-4'}`}
       >
         <div className="mb-2 flex items-start gap-2">
-          <span aria-hidden="true" className="text-lg leading-6">
-            {goalIcon(goal, subject)}
-          </span>
+          <Icon name={goalIcon(goal, subject)} className="mt-0.5 h-5 w-5 text-primary-text" />
           <span className="min-w-0 flex-1 font-semibold leading-6">{name}</span>
           <span className="shrink-0 font-bold tabular-nums leading-6">
             {limit

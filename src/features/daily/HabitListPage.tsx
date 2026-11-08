@@ -59,7 +59,7 @@ export function HabitListPage() {
         renderItem={(habit, { handle }) => (
           <LinkRow
             to={`${HABITS_PATH}/${habit.id}`}
-            label={`${habit.icon} ${habit.name}`}
+            label={habit.name}
             hint={habitHint(habit)}
             handle={handle}
             action={<DeleteRowButton name={habit.name} onClick={() => setDeleting(habit)} />}
@@ -86,11 +86,7 @@ export function HabitListPage() {
             <ul aria-label="Archiv">
               {archived.map((habit) => (
                 <li key={habit.id}>
-                  <LinkRow
-                    to={`${HABITS_PATH}/${habit.id}`}
-                    label={`${habit.icon} ${habit.name}`}
-                    hint="Archiviert"
-                  />
+                  <LinkRow to={`${HABITS_PATH}/${habit.id}`} label={habit.name} hint="Archiviert" />
                 </li>
               ))}
             </ul>

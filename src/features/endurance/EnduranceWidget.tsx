@@ -42,9 +42,7 @@ export function EnduranceWidget({
                 state={from}
                 className="flex min-h-11 items-center justify-between gap-3"
               >
-                <span>
-                  {ENDURANCE_SPORT_LABELS[sport].icon} {ENDURANCE_SPORT_LABELS[sport].name}
-                </span>
+                <span>{ENDURANCE_SPORT_LABELS[sport].name}</span>
                 <span className="tabular-nums">
                   <span className="font-semibold">{formatTotals(totals, sport, unit)}</span>{' '}
                   <span className={MUTED}>· {formatSessionCount(totals.count)}</span>
@@ -62,9 +60,7 @@ export function EnduranceWidget({
         >
           <span className="min-w-0">
             <span className={`block ${MUTED}`}>Letzte Einheit</span>
-            <span className="block font-medium">
-              {ENDURANCE_SPORT_LABELS[last.sport].icon} {sessionTitle(last)}
-            </span>
+            <span className="block font-medium">{sessionTitle(last)}</span>
             <span className={`block ${MUTED}`}>
               {formatWorkoutDate(last.startedAt)} · {formatSessionSummary(last, unit)}
             </span>

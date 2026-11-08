@@ -1,3 +1,4 @@
+import type { IconName } from '../components/iconPaths';
 import type {
   DailyLog,
   DayKey,
@@ -715,9 +716,9 @@ function periodSuffix(goal: Pick<Goal, 'period' | 'deadline' | 'startDate'>): st
   }
 }
 
-/** Symbol für Karte und Liste: eigenes Emoji, Symbol der Gewohnheit oder der Art */
-export function goalIcon(goal: Pick<Goal, 'kind' | 'icon'>, subject: GoalSubject = {}): string {
-  if (goal.kind === 'custom') return goal.icon || '🎯';
+/** Symbol für Karte und Liste: eigenes Symbol, Symbol der Gewohnheit oder der Art */
+export function goalIcon(goal: Pick<Goal, 'kind' | 'icon'>, subject: GoalSubject = {}): IconName {
+  if (goal.kind === 'custom') return goal.icon || 'target';
   if (goal.kind === 'habit' && subject.habit) return subject.habit.icon;
   return GOAL_KIND_LABELS[goal.kind].icon;
 }

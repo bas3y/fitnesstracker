@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { dangerButton, inputField, primaryButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
 import { DurationInput } from '../../components/DurationInput';
-import { EmojiPicker } from '../../components/EmojiPicker';
+import { IconPicker } from '../../components/IconPicker';
+import { Icon } from '../../components/icons';
 import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Select } from '../../components/Select';
@@ -74,7 +75,6 @@ const SPORT_NAMES = Object.fromEntries(
 ) as Record<EnduranceSport, string>;
 
 /** Vorschläge für eigene Ziele */
-const CUSTOM_GOAL_ICONS = ['🎯', '📖', '🗣️', '🎸', '🎓', '🚗', '💰', '✈️', '🏠', '💼', '🎨', '🌱'];
 
 /** Tage je Zeitraum für Vorschläge */
 const PERIOD_DAYS: Record<GoalPeriod, number> = { week: 7, month: 30, year: 365, custom: 30 };
@@ -220,9 +220,7 @@ export function GoalForm({
                 }`}
                 onClick={() => changeKind(kind)}
               >
-                <span aria-hidden="true" className="text-lg leading-6">
-                  {GOAL_KIND_LABELS[kind].icon}
-                </span>
+                <Icon name={GOAL_KIND_LABELS[kind].icon} className="mb-0.5 h-5 w-5" />
                 {GOAL_KIND_LABELS[kind].name}
               </button>
             ))}
@@ -315,7 +313,7 @@ export function GoalForm({
               label="Sportart"
               options={EFFORT_SPORTS.map((sport) => ({
                 value: sport,
-                label: `${ENDURANCE_SPORT_LABELS[sport].icon} ${ENDURANCE_SPORT_LABELS[sport].name}`,
+                label: ENDURANCE_SPORT_LABELS[sport].name,
               }))}
               value={input.sport ?? 'run'}
               onChange={(sport) => {
@@ -415,9 +413,7 @@ export function GoalForm({
                 label="Gewohnheit"
                 value={input.habitId ?? null}
                 options={selectableHabits.map((item) => item.id)}
-                labels={Object.fromEntries(
-                  selectableHabits.map((item) => [item.id, `${item.icon} ${item.name}`]),
-                )}
+                labels={Object.fromEntries(selectableHabits.map((item) => [item.id, item.name]))}
                 emptyLabel="Bitte wählen"
                 onChange={(habitId) =>
                   change(
@@ -472,10 +468,10 @@ export function GoalForm({
                 onChange={(event) => change({ title: event.target.value })}
               />
             </div>
-            <EmojiPicker
+            <IconPicker
               value={input.icon ?? ''}
-              suggestions={CUSTOM_GOAL_ICONS}
               optional
+              fallback={GOAL_KIND_LABELS.custom.icon}
               onChange={(icon) => change({ icon })}
             />
             <SegmentedControl

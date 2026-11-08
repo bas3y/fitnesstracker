@@ -12,6 +12,7 @@ import {
 import { formatGoalDate } from '../../domain/goals';
 import { formatStreak } from '../../domain/habits';
 import type { StreakItem } from '../../domain/streaks';
+import { Icon } from '../../components/icons';
 
 const HINT = 'text-sm text-muted';
 
@@ -72,8 +73,8 @@ export function StreakRow({
   const [count, unit] = formatStreak(item.current, item.unit).split(' ');
   return (
     <li className="flex min-h-14 items-center gap-3 py-2">
-      <span aria-hidden="true" className="w-8 shrink-0 text-center text-2xl">
-        {item.icon}
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-on-primary-soft">
+        <Icon name={item.icon} className="h-5 w-5" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{item.name}</p>
@@ -82,8 +83,10 @@ export function StreakRow({
       </div>
       <div className={`shrink-0 text-right ${item.current > 0 ? '' : 'text-faint'}`}>
         <p className="text-xl leading-tight font-bold tabular-nums">
-          {item.todayDone && <span aria-hidden="true">🔥 </span>}
-          {count}
+          <span className="inline-flex items-center gap-1">
+            {item.todayDone && <Icon name="flame" className="h-5 w-5 text-mark" />}
+            {count}
+          </span>
         </p>
         <p className="text-xs text-muted">{unit}</p>
       </div>
@@ -102,9 +105,9 @@ export function BadgeTile({ state, onOpen }: { state: BadgeState; onOpen: () => 
     >
       <span
         aria-hidden="true"
-        className={`flex h-14 w-14 items-center justify-center rounded-full border-4 text-2xl ${tierRing(level)}`}
+        className={`flex h-14 w-14 items-center justify-center rounded-full border-4 ${tierRing(level)}`}
       >
-        {badge.icon}
+        <Icon name={badge.icon} className="h-7 w-7" />
       </span>
       <span className="w-full text-xs leading-tight font-medium hyphens-manual min-[360px]:text-sm [overflow-wrap:anywhere]">
         {NAME_BREAKS[badge.id] ?? badge.name}
@@ -128,7 +131,7 @@ export function BadgeDialog({
   const { badge, value, tiers } = state;
   const next = nextTier(state);
   return (
-    <Dialog title={`${badge.icon} ${badge.name}`} onClose={onClose}>
+    <Dialog title={badge.name} onClose={onClose}>
       <p className={HINT}>{BADGE_HINTS[badge.id]}</p>
       <p>
         Bisher: <span className="font-semibold">{formatBadgeValue(badge.id, value, units)}</span>

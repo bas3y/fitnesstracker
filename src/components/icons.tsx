@@ -32,6 +32,26 @@ export function Icon({
   );
 }
 
+/** Symbol auf hellem Akzent-Quadrat (Listenzeilen, Kacheln) */
+export function IconBadge({
+  name,
+  className = 'h-9 w-9',
+  iconClassName = 'h-5 w-5',
+}: {
+  name: IconName;
+  className?: string;
+  iconClassName?: string;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex shrink-0 items-center justify-center rounded-xl bg-primary-soft text-on-primary-soft ${className}`}
+    >
+      <Icon name={name} className={iconClassName} />
+    </span>
+  );
+}
+
 export const HomeIcon = (props: IconProps) => <Icon {...props} name="home" />;
 export const DumbbellIcon = (props: IconProps) => <Icon {...props} name="dumbbell" />;
 export const SunIcon = (props: IconProps) => <Icon {...props} name="sun" />;

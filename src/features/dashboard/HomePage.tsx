@@ -59,6 +59,7 @@ import { HISTORY_PATH } from '../training/paths';
 import { TrainingStartCard } from '../training/TrainingStartCard';
 import { useNow, useWorkoutHistory } from '../training/useWorkouts';
 import { QuickActions } from './QuickActions';
+import { Icon } from '../../components/icons';
 
 // Serien und Abzeichen rechnen viel: eigener Chunk, nicht im Hauptbundle
 const MotivationWidget = lazy(() =>
@@ -203,7 +204,7 @@ function WelcomeCard() {
       className="mb-4 rounded-2xl border border-primary bg-primary-soft p-4"
     >
       <h2 id="welcome-heading" className="mb-2 text-lg font-semibold">
-        👋 Willkommen!
+        Willkommen!
       </h2>
       <ul className="mb-3 flex list-disc flex-col gap-1 pl-5 text-sm">
         <li>Die App ist leer und gehört ganz dir: Training, Ernährung und Alltag an einem Ort.</li>
@@ -340,7 +341,8 @@ function QuickActionPicker({ selected }: { selected: QuickAction[] }) {
           className="px-3"
           onClick={() => void toggle(action)}
         >
-          {QUICK_ACTION_LABELS[action].icon} {QUICK_ACTION_LABELS[action].name}
+          <Icon name={QUICK_ACTION_LABELS[action].icon} className="h-4 w-4" />
+          {QUICK_ACTION_LABELS[action].name}
         </Chip>
       ))}
     </div>
@@ -434,7 +436,7 @@ function WeekCard({
           {cardio
             .map(
               ({ sport, totals }) =>
-                `${ENDURANCE_SPORT_LABELS[sport].icon} ${formatTotals(totals, sport, settings.distanceUnit)}`,
+                `${ENDURANCE_SPORT_LABELS[sport].name} ${formatTotals(totals, sport, settings.distanceUnit)}`,
             )
             .join(' · ')}
         </p>

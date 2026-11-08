@@ -118,8 +118,8 @@ test('Import: FIT, GPX und ZIP mit Vorschau, Ergänzen und Duplikaten (offline)'
   await expect(page.getByRole('img', { name: 'Pulsverlauf' })).toBeVisible();
   await expect(page.getByTestId('hr-zones')).toContainText('Z4 Schwelle');
   await expect(page.getByRole('heading', { name: 'Kilometer' })).toBeVisible();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
-  await page.getByRole('link', { name: '‹ Zurück' }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
 
   // Neue Einheit mit gewählter Sportart
   await tile(page, 'Wandern').click();

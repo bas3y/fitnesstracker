@@ -70,7 +70,7 @@ test('Timer: Fokus mit Runden, Meditation mit Gewohnheit, Nachtragen, Ziel (offl
   await expect(sessions).toContainText('Konzentriert');
 
   // Meditation zählt bei der Gewohnheit; vorzeitig beenden und speichern
-  await page.getByLabel('Meditation zählt bei').selectOption({ label: '⭐ Meditieren' });
+  await page.getByLabel('Meditation zählt bei').selectOption({ label: 'Meditieren' });
   await page
     .getByRole('group', { name: 'Art' })
     .getByRole('button', { name: /Meditation/ })
@@ -216,7 +216,7 @@ test.describe('Fortschrittsfotos', () => {
     await expect(page.getByRole('region', { name: 'Vorher' }).getByRole('img')).toBeVisible();
     await page.getByRole('button', { name: 'Seiten tauschen' }).click();
     await expect(page.getByTestId('photo-gap')).toHaveText('30 Tage später');
-    await page.getByRole('link', { name: '‹ Zurück' }).click();
+    await page.getByRole('link', { name: 'Zurück', exact: true }).click();
     await expect(filter.getByRole('button', { name: 'Vorne' })).toHaveAttribute(
       'aria-pressed',
       'true',

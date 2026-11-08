@@ -1051,4 +1051,26 @@ describe('AppDatabase-Migration', () => {
     });
     await current.delete();
   });
+
+  it('replaces habit and goal emojis with icons in v30', async () => {
+    const name = 'migration-v29-v30';
+    const v29 = new Dexie(name);
+    v29.version(29).stores({ habits: 'id, updatedAt', goals: 'id, updatedAt' });
+    await v29.table('habits').bulkAdd([
+      { id: 'h1', name: 'Lesen', icon: '📚' },
+      { id: 'h2', name: 'Unbekannt', icon: '🦄' },
+    ]);
+    await v29.table('goals').bulkAdd([
+      { id: 'g1', kind: 'custom', icon: '🎸' },
+      { id: 'g2', kind: 'custom', icon: '🇪🇸' },
+      { id: 'g3', kind: 'strength', icon: '' },
+    ]);
+    v29.close();
+
+    const current = new AppDatabase(name);
+    expect((await current.habits.toArray()).map((habit) => habit.icon)).toEqual(['book', 'star']);
+    expect((await current.goals.toArray()).map((goal) => goal.icon)).toEqual(['music', '', '']);
+    expect(current.verno).toBe(30);
+    await current.delete();
+  });
 });

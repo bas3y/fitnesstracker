@@ -73,7 +73,7 @@ describe('Teilen-Bild', () => {
       ],
       'km',
     );
-    expect(content.title).toBe('🏃 Morgenlauf');
+    expect(content.title).toBe('Morgenlauf');
     expect(content.stats).toEqual([
       { label: 'Distanz', value: '5 km' },
       { label: 'Zeit', value: '25:00' },
@@ -81,7 +81,7 @@ describe('Teilen-Bild', () => {
       { label: 'Höhenmeter', value: '42 m' },
     ]);
     expect(content.route).toBe(route);
-    expect(content.badge).toBe('🏆 Bestzeit 5 km 25:00');
+    expect(content.badge).toBe('Bestzeit 5 km 25:00');
   });
 
   it('kommt ohne Strecke und Distanz aus', () => {
@@ -91,7 +91,7 @@ describe('Teilen-Bild', () => {
       [],
       'km',
     );
-    expect(content.title).toBe('🧘 Mobility & Yoga');
+    expect(content.title).toBe('Mobility & Yoga');
     expect(content.route).toBeNull();
     expect(content.badge).toBeNull();
     expect(content.stats.map((stat) => stat.label)).toEqual(['Zeit', 'Puls Ø', 'Kalorien']);
@@ -113,7 +113,7 @@ describe('Teilen-Bild', () => {
       bodyWeightKg: null,
       unit: 'kg',
     });
-    expect(content.title).toBe('🏋️ Push');
+    expect(content.title).toBe('Push');
     expect(content.stats).toEqual([
       { label: 'Dauer', value: '1 h 00 min' },
       { label: 'Übungen', value: '1' },
@@ -121,7 +121,7 @@ describe('Teilen-Bild', () => {
       { label: 'Volumen', value: '1150 kg' },
     ]);
     expect(content.lines).toEqual(['Bankdrücken: 85 kg × 6']);
-    expect(content.badge).toBe('🏆 2 Rekorde');
+    expect(content.badge).toBe('2 Rekorde');
   });
 
   it('kürzt lange Übungslisten', () => {
@@ -138,7 +138,7 @@ describe('Teilen-Bild', () => {
       bodyWeightKg: null,
       unit: 'kg',
     });
-    expect(content.title).toBe('🏋️ Krafttraining');
+    expect(content.title).toBe('Krafttraining');
     expect(content.lines).toHaveLength(MAX_SHARE_LINES);
     expect(content.lines.at(-1)).toBe('+ 4 weitere Übungen');
     expect(content.badge).toBeNull();

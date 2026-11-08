@@ -26,6 +26,7 @@ import {
   useReadingLogs,
   useTimerSessions,
 } from './useSelf';
+import { IconBadge, type IconName } from '../../components/icons';
 
 const MUTED = 'block text-sm text-muted';
 
@@ -34,7 +35,7 @@ export function SelfSection({ date, today }: { date: DayKey; today: DayKey }) {
   return (
     <section aria-labelledby="self-heading" className="mb-4">
       <h2 id="self-heading" className="mb-2 text-lg font-semibold">
-        🌱 Persönliche Entwicklung
+        Persönliche Entwicklung
       </h2>
       <ul
         aria-label="Persönliche Entwicklung"
@@ -57,7 +58,7 @@ function Row({
   children,
 }: {
   to: string;
-  icon: string;
+  icon: IconName;
   name: string;
   children?: ReactNode;
 }) {
@@ -67,9 +68,7 @@ function Row({
         to={to}
         className="flex min-h-16 items-center gap-3 px-4 py-3 first:rounded-t-2xl last:rounded-b-2xl active:bg-page"
       >
-        <span aria-hidden="true" className="text-2xl">
-          {icon}
-        </span>
+        <IconBadge name={icon} />
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">{name}</span>
           {children}
@@ -93,7 +92,7 @@ function JournalRow({ date, today }: { date: DayKey; today: DayKey }) {
         ? 'Heute noch nichts geschrieben'
         : 'Nichts geschrieben';
   return (
-    <Row to={withDate(JOURNAL_PATH, date, today)} icon="📓" name="Journal">
+    <Row to={withDate(JOURNAL_PATH, date, today)} icon="journal" name="Journal">
       {text && <span className={MUTED}>{text}</span>}
     </Row>
   );
@@ -115,7 +114,7 @@ function ReflectionRow({ date, today }: { date: DayKey; today: DayKey }) {
         ? `Erledigt${entry?.rating ? ` · ${entry.rating}/5` : ''}`
         : `${progress.answered} von ${progress.total} Fragen`;
   return (
-    <Row to={withDate(REFLECTION_PATH, date, today)} icon="🪞" name="Wochenreflexion">
+    <Row to={withDate(REFLECTION_PATH, date, today)} icon="mirror" name="Wochenreflexion">
       {text && <span className={MUTED}>{text}</span>}
     </Row>
   );
@@ -140,7 +139,7 @@ function ReadingRow({ date, today }: { date: DayKey; today: DayKey }) {
     }
   }
   return (
-    <Row to={withDate(READING_PATH, date, today)} icon="📚" name="Lesen">
+    <Row to={withDate(READING_PATH, date, today)} icon="book" name="Lesen">
       {lines.map((line) => (
         <span key={line} className={`${MUTED} truncate tabular-nums`}>
           {line}
@@ -171,7 +170,7 @@ function TimerRow({ date, today }: { date: DayKey; today: DayKey }) {
         : 'Pomodoro und Meditation mit Gong';
   }
   return (
-    <Row to={withDate(TIMER_PATH, date, today)} icon="⏱️" name="Fokus & Meditation">
+    <Row to={withDate(TIMER_PATH, date, today)} icon="timer" name="Fokus & Meditation">
       {text && <span className={`${MUTED} tabular-nums`}>{text}</span>}
     </Row>
   );
@@ -191,7 +190,7 @@ function PhotosRow({ date, today }: { date: DayKey; today: DayKey }) {
           : 'Vorher/Nachher vergleichen';
   }
   return (
-    <Row to={withDate(PHOTOS_PATH, date, today)} icon="📸" name="Fortschrittsfotos">
+    <Row to={withDate(PHOTOS_PATH, date, today)} icon="camera" name="Fortschrittsfotos">
       {text && <span className={MUTED}>{text}</span>}
     </Row>
   );

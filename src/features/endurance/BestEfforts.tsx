@@ -26,9 +26,9 @@ export function BestEffortsCard({
   const from = useFromHere();
   const efforts = bestEffortsOf(sessions, sport);
   if (efforts.length === 0) return null;
-  const { icon, name } = ENDURANCE_SPORT_LABELS[sport];
+  const { name } = ENDURANCE_SPORT_LABELS[sport];
   return (
-    <Card title={showSport ? `Bestzeiten ${icon} ${name}` : 'Bestzeiten'}>
+    <Card title={showSport ? `Bestzeiten ${name}` : 'Bestzeiten'}>
       <ul aria-label={`Bestzeiten ${name}`} className="flex flex-col">
         {efforts.map(({ meters, seconds, sessionId, startedAt }) => (
           <li key={meters}>

@@ -647,7 +647,7 @@ describe('Ziele im Backup', () => {
     const goal = await createGoal({
       ...emptyGoalInput('custom', '2026-11-01'),
       title: 'Spanisch',
-      icon: '🇪🇸',
+      icon: 'globe',
       unit: 'Lektionen',
       target: 50,
     });
@@ -657,7 +657,7 @@ describe('Ziele im Backup', () => {
     const result = parseBackup(data);
     if (!result.ok) throw new Error(result.error);
     await restoreBackup(result.backup);
-    expect(await listGoals()).toMatchObject([{ id: goal.id, icon: '🇪🇸', unit: 'Lektionen' }]);
+    expect(await listGoals()).toMatchObject([{ id: goal.id, icon: 'globe', unit: 'Lektionen' }]);
     expect((await loadGoalData()).entries).toEqual([
       { goalId: goal.id, date: '2026-11-02', amount: 3 },
     ]);
@@ -878,6 +878,31 @@ describe('Timer und Fortschrittsfotos', () => {
 
     data.tables.settings[0].palette = 'pink';
     expect(parseBackup(data).ok).toBe(false);
+  });
+
+  it('ersetzt Emojis aus Sicherungen bis DB-Version 29 durch Symbole', async () => {
+    const habit = await createHabit({ ...EMPTY_HABIT_INPUT, name: 'Lesen', icon: 'book' });
+    const goal = await createGoal({
+      ...emptyGoalInput('custom', '2026-11-01'),
+      title: 'Gitarre',
+      icon: 'music',
+      target: 10,
+    });
+    const data = await validBackup();
+    data.dbVersion = 29;
+    data.tables.habits[0].icon = '🧘';
+    data.tables.goals[0].icon = '🇪🇸';
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.habits).toMatchObject([{ id: habit.id, icon: 'yoga' }]);
+    expect(result.backup.tables.goals).toMatchObject([{ id: goal.id, icon: '' }]);
+
+    data.tables.habits[0].icon = '🦄';
+    data.tables.goals[0].icon = '🎸';
+    const other = parseBackup(data);
+    if (!other.ok) throw new Error(other.error);
+    expect(other.backup.tables.habits[0]).toMatchObject({ icon: 'star' });
+    expect(other.backup.tables.goals[0]).toMatchObject({ icon: 'music' });
   });
 });
 

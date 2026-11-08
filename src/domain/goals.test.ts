@@ -86,7 +86,7 @@ const EMPTY: GoalData = {
 
 const habitOf = (values: Partial<GoalHabit> & Pick<GoalHabit, 'id' | 'kind'>): GoalHabit => ({
   name: values.id === 'read' ? 'Lesen' : 'Gewohnheit',
-  icon: '📚',
+  icon: 'book',
   target: 1,
   unit: '',
   step: 1,
@@ -564,18 +564,17 @@ describe('Schema: Gewohnheiten und eigene Ziele', () => {
       goalInputSchema.parse({ ...custom, title: 'Führerschein', customType: 'check', unit: 'x' }),
     ).toMatchObject({ target: 1, unit: '', customType: 'check' });
     expect(
-      goalInputSchema.safeParse({ ...custom, title: 'Spanisch', target: 50, icon: 'ab' }).error
-        ?.issues[0]?.message,
-    ).toBe('Bitte genau ein Emoji eingeben');
+      goalInputSchema.safeParse({ ...custom, title: 'Spanisch', target: 50, icon: '🎸' }).success,
+    ).toBe(false);
     expect(
       goalInputSchema.parse({
         ...custom,
         title: 'Spanisch',
         target: 50,
-        icon: '🇪🇸',
+        icon: 'globe',
         unit: 'Lektionen',
       }),
-    ).toMatchObject({ icon: '🇪🇸', unit: 'Lektionen', habitId: null, period: null });
+    ).toMatchObject({ icon: 'globe', unit: 'Lektionen', habitId: null, period: null });
   });
 });
 
@@ -849,8 +848,13 @@ describe('Eigene Ziele', () => {
 });
 
 describe('Anzeige: neue Zielarten', () => {
-  const reading = { name: 'Lesen', icon: '📚', unit: 'Seiten', kind: 'count' as const };
-  const smoking = { name: 'Rauchen', icon: '🚭', unit: 'Zigaretten', kind: 'quit' as const };
+  const reading = { name: 'Lesen', icon: 'book' as const, unit: 'Seiten', kind: 'count' as const };
+  const smoking = {
+    name: 'Rauchen',
+    icon: 'ban' as const,
+    unit: 'Zigaretten',
+    kind: 'quit' as const,
+  };
 
   it('erzeugt verständliche Namen', () => {
     const title = (
@@ -901,10 +905,10 @@ describe('Anzeige: neue Zielarten', () => {
 
   it('wählt das Symbol', () => {
     const custom = goal({ kind: 'custom', title: 'Spanisch', target: 50 });
-    expect(goalIcon(custom)).toBe('🎯');
-    expect(goalIcon({ ...custom, icon: '🇪🇸' })).toBe('🇪🇸');
+    expect(goalIcon(custom)).toBe('target');
+    expect(goalIcon({ ...custom, icon: 'globe' })).toBe('globe');
     const habit = goal({ kind: 'habit', habitId: 'r', habitMetric: 'amount', target: 10 });
-    expect(goalIcon(habit, { habit: reading })).toBe('📚');
-    expect(goalIcon(goal({ kind: 'bodyWeight', startValue: 90, target: 85 }))).toBe('⚖️');
+    expect(goalIcon(habit, { habit: reading })).toBe('book');
+    expect(goalIcon(goal({ kind: 'bodyWeight', startValue: 90, target: 85 }))).toBe('scale');
   });
 });
