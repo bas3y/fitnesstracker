@@ -142,7 +142,7 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            className={primaryButton}
+            className={secondaryButton}
             disabled={records === undefined}
             onClick={() => setSharing(true)}
           >
@@ -154,6 +154,9 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
           <DeleteWorkoutButton id={workout.id} />
         </div>
       </Card>
+      <Link to={backTo} className={`${primaryButton} mb-4`}>
+        Fertig
+      </Link>
       {sharing && (
         <ShareImageDialog
           content={shareContent}

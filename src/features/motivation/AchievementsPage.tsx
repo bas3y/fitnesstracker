@@ -88,7 +88,7 @@ export function AchievementsPage() {
               {badges
                 .filter((state) => state.badge.category === category)
                 .map((state) => (
-                  <div role="listitem" key={state.badge.id}>
+                  <div role="listitem" key={state.badge.id} className="min-w-0">
                     <BadgeTile state={state} onOpen={() => setOpenBadge(state.badge.id)} />
                   </div>
                 ))}

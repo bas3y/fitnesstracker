@@ -52,6 +52,31 @@ test('Serien, Abzeichen und Erfolgs-Hinweise (offline)', async ({ page, context 
   await expect(page.getByText('0 von', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Krafttraining: gesperrt' })).toBeVisible();
 
+  // Lange Namen (z. B. „Gewohnheitsserie“) bleiben auch auf schmalen Handys in ihrer Kachel
+  const viewport = page.viewportSize()!;
+  await page.setViewportSize({ width: 320, height: viewport.height });
+  const overflowing = await page.getByRole('button', { name: /: gesperrt$/ }).evaluateAll((tiles) =>
+    tiles
+      .filter((tile) => {
+        // Rasterzelle: gleich breite Spalten, Inhalt darf sie nicht verbreitern
+        const cell = tile.parentElement!.getBoundingClientRect();
+        const columns = tile.parentElement!.parentElement!.getBoundingClientRect().width / 3;
+        if (cell.width > columns + 1) return true;
+        const box = cell;
+        return [...tile.children].some((child) => {
+          const inner = child.getBoundingClientRect();
+          return (
+            inner.left < box.left - 0.5 ||
+            inner.right > box.right + 0.5 ||
+            child.scrollWidth > child.clientWidth + 1
+          );
+        });
+      })
+      .map((tile) => tile.getAttribute('aria-label')),
+  );
+  expect(overflowing).toEqual([]);
+  await page.setViewportSize(viewport);
+
   // Erstes Training → Hinweis mit Abzeichen (nach dem stillen ersten Abgleich)
   await logWorkout(page);
   await slow(toast(page)).toContainText('Neues Abzeichen!');

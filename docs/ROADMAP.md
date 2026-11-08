@@ -35,6 +35,8 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 18 – Motivation (Serien, Abzeichen, Erfolgs-Hinweise)
 - [x] Schritt 18b – Trainingsblöcke (Aufbau/Deload/Peak) in Plänen
 - [ ] Schritt 18c – Push & Handytest 16–18b
+- [ ] Schritt 18d – Design-Grundlage & Farbpaletten
+- [ ] Schritt 18e – Seiten aufräumen & übersichtlicher machen
 - [ ] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
 
@@ -1051,6 +1053,33 @@ Ablauf:
 - Gebaut:
   - **Push (07.11.2026):** Nutzer hat das Backup auf dem Handy bestätigt. Vorher lint, typecheck, 841 Unit-Tests und Build grün. Schritte 16–18b gepusht (`527d828..2a0a16a`, DB-Version 22 → 28), Run 42401136943 grün (build + deploy), neuer `sw.js` live.
 - Ergebnis Handytest: steht aus
+- Offene Punkte (Nutzer beim Handytest, 08.11.2026):
+  - Erfolge-Seite: zwei Überschriften überlappen sich.
+  - Alltag: Gewohnheitsserie überlappt mit „Schritte“.
+  - Training: Am Ende des Workouts unten ein „Fertig“-Button, damit man nicht über „Zurück“/nach oben muss.
+- Korrekturen (08.11.2026):
+  - Erfolge: Lange Abzeichen-Namen („Gewohnheitsserie“, „Fortschrittsfotos“, „Trainingsserie“ …) haben ihre Rasterspalte verbreitert und stießen an den Nachbarn. Jetzt gleich breite Spalten (`min-w-0`) und Silbentrennung (`hyphens-auto`, Notfall `overflow-wrap:anywhere`). E2E prüft die Kacheln bei 320 px Breite.
+  - Workout-Übersicht (nach „Speichern“ und im Verlauf): unten primärer „Fertig“-Link zur Herkunft (wie „Zurück“), „Teilen-Bild“ ist jetzt ein normaler Button.
+  - Noch nicht gepusht.
+
+### Schritt 18d – Design-Grundlage & Farbpaletten
+**Ziel:** Neues, einheitliches Design als Grundlage (Nutzerwunsch nach 18c). Vor Schritt 19, damit die Berichte gleich im neuen Look entstehen.
+- Zum Start 2–3 Design-Entwürfe zum Vergleich zeigen, Richtung mit dem Nutzer klären (Vorbilder, Farben, schlicht/verspielt).
+- Farben über Design-Tokens (CSS-Variablen + Tailwind) statt fester Farbklassen.
+- Mehrere Farbpaletten wählbar (Einstellung, Dexie-Version + Backup-Default), dazu weiterhin Hell/Dunkel/System.
+- Grundbausteine neu gestalten: Karten, Buttons, Eingaben, Bottom-Navigation, Kopfzeile, Abstände, Schrift (gebündelt, offline).
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
+- Offene Punkte:
+
+### Schritt 18e – Seiten aufräumen & übersichtlicher machen
+**Ziel:** Bereich für Bereich (Startseite, Training, Alltag, Statistik, Einstellungen) neu sortieren und übersichtlicher machen, auf Basis von 18d. Vorher mit dem Nutzer durchgehen, was ihn je Seite stört.
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
 - Offene Punkte:
 
 ### Schritt 19 – PDF-Export/Berichte

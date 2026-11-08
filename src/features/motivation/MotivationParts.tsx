@@ -84,7 +84,7 @@ export function BadgeTile({ state, onOpen }: { state: BadgeState; onOpen: () => 
     <button
       type="button"
       aria-label={`${badge.name}: ${level === 0 ? 'gesperrt' : `Stufe ${level} von ${tiers.length}`}`}
-      className="flex min-h-11 flex-col items-center gap-1 rounded-xl p-2 text-center active:bg-slate-100 dark:active:bg-slate-700"
+      className="flex min-h-11 w-full min-w-0 flex-col items-center gap-1 rounded-xl p-2 text-center active:bg-slate-100 dark:active:bg-slate-700"
       onClick={onOpen}
     >
       <span
@@ -93,7 +93,9 @@ export function BadgeTile({ state, onOpen }: { state: BadgeState; onOpen: () => 
       >
         {badge.icon}
       </span>
-      <span className="text-sm leading-tight font-medium">{badge.name}</span>
+      <span className="w-full text-sm leading-tight font-medium hyphens-auto [overflow-wrap:anywhere]">
+        {badge.name}
+      </span>
       <span className="text-xs text-slate-500 dark:text-slate-400">
         {level === 0 ? 'Gesperrt' : `${level} / ${tiers.length}`}
       </span>
