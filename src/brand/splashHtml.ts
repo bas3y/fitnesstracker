@@ -1,18 +1,27 @@
 // Mit Dateiendung: vite.config.ts lädt diese Datei direkt
-import { LOGO_VARIANTS, logoSvg } from './logo.ts';
+import { LOGO_COLORS, LOGO_VARIANTS, logoSvg } from './logo.ts';
 import { wordmarkSvg } from './wordmarkSvg.ts';
 
 /** Hintergrund von Ladebildschirm, Android-Startbild und Statusleiste beim Start */
 export const SPLASH_BACKGROUND = '#0C0C0C';
 
+/** Klasse am `<html>`, solange der Ladebildschirm steht (App unsichtbar, Hintergrund dunkel) */
+export const SPLASH_ACTIVE_CLASS = 'splash-on';
+
 /**
  * Ladebildschirm für `index.html` (per Vite-Plugin eingefügt, damit nichts aufblitzt):
  * je Logo-Variante eine Vorlage, das Script wählt die gespeicherte. Ausblenden: `hideSplash()`.
+ * Kachel, Ring und Kugel sind eigene Ebenen (HTML-Elemente), damit die Animation auf der
+ * Grafikkarte läuft und nicht ruckelt, während die App im Hintergrund lädt.
  */
 export function splashHtml(): string {
   const templates = LOGO_VARIANTS.map(
     (variant) =>
-      `<template data-logo="${variant}">${logoSvg(variant, { id: `splash-${variant}` })}</template>`,
+      `<template data-logo="${variant}">` +
+      `<div class="splash-layer splash-tile" style="background:${LOGO_COLORS[variant].tile}"></div>` +
+      `<div class="splash-layer splash-ring">${logoSvg(variant, { id: `splr-${variant}`, shape: 'none', parts: 'ring' })}</div>` +
+      `<div class="splash-layer splash-ball">${logoSvg(variant, { id: `splb-${variant}`, shape: 'none', parts: 'ball' })}</div>` +
+      `</template>`,
   ).join('');
   return `<div id="splash" aria-hidden="true">
       <div class="splash-logo"></div>
@@ -21,6 +30,8 @@ export function splashHtml(): string {
     ${templates}
     <script>
       (function () {
+        var root = document.documentElement;
+        root.classList.add('${SPLASH_ACTIVE_CLASS}');
         var variant = null;
         try {
           variant = localStorage.getItem('logo');
@@ -37,17 +48,29 @@ export function splashHtml(): string {
         }
         // Notbremse, falls die App nicht startet
         setTimeout(function () {
+          root.classList.remove('${SPLASH_ACTIVE_CLASS}');
           var splash = document.getElementById('splash');
           if (splash) splash.remove();
-        }, 6000);
+        }, 7000);
       })();
     </script>`;
 }
 
 export const SPLASH_CSS = `
+      html.${SPLASH_ACTIVE_CLASS},
+      html.${SPLASH_ACTIVE_CLASS} body {
+        background: ${SPLASH_BACKGROUND};
+      }
+      html.${SPLASH_ACTIVE_CLASS} #root {
+        visibility: hidden;
+      }
       #splash {
         position: fixed;
-        inset: 0;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        height: 100lvh;
         z-index: 1000;
         display: flex;
         flex-direction: column;
@@ -62,33 +85,42 @@ export const SPLASH_CSS = `
         pointer-events: none;
       }
       #splash .splash-logo {
+        position: relative;
         width: 112px;
         height: 112px;
         animation: splash-tile 0.45s ease-out both;
+        will-change: transform, opacity;
       }
-      #splash .splash-logo svg {
+      #splash .splash-layer {
+        position: absolute;
+        inset: 0;
+      }
+      #splash .splash-tile {
+        border-radius: 22.7%;
+      }
+      #splash .splash-layer svg {
         display: block;
         width: 100%;
         height: 100%;
       }
+      #splash .splash-ring {
+        will-change: transform, opacity;
+        animation: splash-ring 1.05s cubic-bezier(0.2, 0.9, 0.25, 1.12) both;
+      }
+      #splash .splash-ball {
+        transform-origin: 50% 22.7%;
+        will-change: transform, opacity;
+        animation: splash-ball 0.5s 0.75s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+      }
       #splash .splash-word {
         width: 148px;
+        will-change: transform, opacity;
         animation: splash-word 0.55s 0.95s ease-out both;
       }
       #splash .splash-word svg {
         display: block;
         width: 100%;
         height: auto;
-      }
-      #splash .logo-ring {
-        transform-box: view-box;
-        transform-origin: 110px 110px;
-        animation: splash-ring 1.05s cubic-bezier(0.2, 0.9, 0.25, 1.12) both;
-      }
-      #splash .logo-ball {
-        transform-box: view-box;
-        transform-origin: 110px 50px;
-        animation: splash-ball 0.5s 0.75s cubic-bezier(0.3, 1.6, 0.5, 1) both;
       }
       @keyframes splash-tile {
         from { opacity: 0; transform: scale(0.88); }

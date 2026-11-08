@@ -8,6 +8,10 @@ test.describe('mit Animationen', () => {
     await page.goto('./');
     const splash = page.locator('#splash');
     await expect(splash.locator('.splash-logo .logo-ring')).toHaveCount(1);
+    // Die App darunter scheint nicht durch (unten auf dem Handy war die Startseite zu sehen)
+    await expect(page.locator('#root')).toBeHidden();
+    // Ring und Kugel sind eigene Ebenen (flüssige Animation auf der Grafikkarte)
+    await expect(splash.locator('.splash-ring .logo-ball')).toHaveCount(0);
     await expect(splash.locator('.splash-logo .logo-ball')).toHaveCount(1);
     // Für Screenreader verborgen (`aria-hidden`), deshalb per Selektor
     await expect(splash.locator('.splash-word svg[aria-label="Basey"]')).toBeAttached();

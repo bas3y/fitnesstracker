@@ -284,6 +284,26 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /*
+   * iPhone (Safari) gibt Datum-/Zeitfeldern eine eigene Mindestbreite und zentriert den Wert:
+   * In halben Spalten (Datum + Beginn) liefen sie ineinander.
+   */
+  input[type='date'],
+  input[type='time'],
+  input[type='datetime-local'] {
+    min-width: 0;
+    max-width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input::-webkit-date-and-time-value {
+    min-width: 0;
+    text-align: left;
+  }
+  .grid > :has(> input[type='date'], > input[type='time']) {
+    min-width: 0;
+  }
+
   body {
     @apply bg-page text-fg antialiased;
     font-family: -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, sans-serif;

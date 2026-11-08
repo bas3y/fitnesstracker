@@ -79,6 +79,8 @@ export interface LogoSvgOptions {
   size?: number;
   /** Text für Screenreader; ohne ist das Logo nur Schmuck */
   label?: string;
+  /** Nur Ring oder nur Kugel (Ebenen der Startanimation); Standard beides */
+  parts?: 'all' | 'ring' | 'ball';
 }
 
 /**
@@ -86,7 +88,7 @@ export interface LogoSvgOptions {
  * für die Startanimation.
  */
 export function logoSvg(variant: LogoVariant, options: LogoSvgOptions = {}): string {
-  const { id = 'logo', shape = 'rounded', scale = 1, size, label } = options;
+  const { id = 'logo', shape = 'rounded', scale = 1, size, label, parts = 'all' } = options;
   const c = LOGO_COLORS[variant];
   const arc = (attrs: string) => `<path d="${ARC}" fill="none" stroke-linecap="round" ${attrs}/>`;
   const texture =
@@ -111,6 +113,30 @@ export function logoSvg(variant: LogoVariant, options: LogoSvgOptions = {}): str
     scale === 1
       ? ''
       : ` transform="translate(${LOGO_CENTER} ${LOGO_CENTER}) scale(${scale}) translate(-${LOGO_CENTER} -${LOGO_CENTER})"`;
+  const ring =
+    `<g class="logo-ring">` +
+    arc(
+      `stroke="#000" stroke-width="38" opacity="0.5" transform="translate(2.5 6.1)" filter="url(#${id}-b2)"`,
+    ) +
+    `<g mask="url(#${id}-m)">` +
+    arc(`stroke="${c.base}" stroke-width="38"`) +
+    arc(
+      `stroke="${c.mid}" stroke-width="27.4" transform="translate(-2.3 -3)" filter="url(#${id}-b1)"`,
+    ) +
+    arc(
+      `stroke="${c.rim}" stroke-width="5.3" opacity="0.55" transform="translate(11.4 12.9)" filter="url(#${id}-b1)"`,
+    ) +
+    arc(
+      `stroke="${c.shine}" stroke-width="9.1" opacity="0.9" transform="translate(-6.5 -8.4)" filter="url(#${id}-b2)"`,
+    ) +
+    texture +
+    `<rect width="220" height="220" filter="url(#${id}-gr)" opacity="0.1"/>` +
+    `</g></g>`;
+  const ball =
+    `<g class="logo-ball">` +
+    `<circle cx="112.2" cy="55" r="11" fill="#000" opacity="0.4" filter="url(#${id}-bs)"/>` +
+    `<circle cx="110" cy="50" r="11" fill="url(#${id}-bg)"/>` +
+    `</g>`;
   const sizeAttrs = size ? ` width="${size}" height="${size}"` : '';
   const a11y = label ? ` role="img" aria-label="${label}"` : ' aria-hidden="true"';
   return (
@@ -126,30 +152,9 @@ export function logoSvg(variant: LogoVariant, options: LogoSvgOptions = {}): str
     `</defs>` +
     background +
     `<g${motif}>` +
-    `<g class="logo-ring">` +
-    arc(
-      'stroke="#000" stroke-width="38" opacity="0.5" transform="translate(2.5 6.1)" filter="url(#' +
-        id +
-        '-b2)"',
-    ) +
-    `<g mask="url(#${id}-m)">` +
-    arc(`stroke="${c.base}" stroke-width="38"`) +
-    arc(
-      `stroke="${c.mid}" stroke-width="27.4" transform="translate(-2.3 -3)" filter="url(#${id}-b1)"`,
-    ) +
-    arc(
-      `stroke="${c.rim}" stroke-width="5.3" opacity="0.55" transform="translate(11.4 12.9)" filter="url(#${id}-b1)"`,
-    ) +
-    arc(
-      `stroke="${c.shine}" stroke-width="9.1" opacity="0.9" transform="translate(-6.5 -8.4)" filter="url(#${id}-b2)"`,
-    ) +
-    texture +
-    `<rect width="220" height="220" filter="url(#${id}-gr)" opacity="0.1"/>` +
-    `</g></g>` +
-    `<g class="logo-ball">` +
-    `<circle cx="112.2" cy="55" r="11" fill="#000" opacity="0.4" filter="url(#${id}-bs)"/>` +
-    `<circle cx="110" cy="50" r="11" fill="url(#${id}-bg)"/>` +
-    `</g></g></svg>`
+    (parts === 'ball' ? '' : ring) +
+    (parts === 'ring' ? '' : ball) +
+    `</g></svg>`
   );
 }
 

@@ -25,11 +25,13 @@ describe('logo variant storage', () => {
 describe('hideSplash', () => {
   it('fades out and removes the splash after the animation', () => {
     vi.useFakeTimers();
+    document.documentElement.classList.add('splash-on');
     document.body.innerHTML = '<div id="splash"></div>';
     hideSplash();
     hideSplash();
     vi.advanceTimersByTime(5000);
     expect(document.getElementById('splash')).toBeNull();
+    expect(document.documentElement.classList.contains('splash-on')).toBe(false);
     vi.useRealTimers();
   });
 });

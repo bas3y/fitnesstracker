@@ -47,6 +47,8 @@ export function hideSplash(): void {
   hiding = true;
   const wait = reducedMotion() ? 0 : Math.max(0, SPLASH_ANIMATION_MS - performance.now());
   window.setTimeout(() => {
+    // App unter dem ausblendenden Ladebildschirm zeigen (`SPLASH_ACTIVE_CLASS` in splashHtml.ts)
+    document.documentElement.classList.remove('splash-on');
     splash.classList.add('splash-hidden');
     window.setTimeout(() => splash.remove(), reducedMotion() ? 0 : FADE_MS);
   }, wait);

@@ -11,6 +11,7 @@ import { ActiveWorkoutBanner } from '../features/training/ActiveWorkoutBanner';
 import { RestTimerAlarm } from '../features/training/RestTimer';
 import { BottomNav } from './BottomNav';
 import { usePageTransition } from './usePageTransition';
+import { useScrollMemory } from './useScrollMemory';
 import { ToastHost } from './Toast';
 
 // Abzeichen/Ziele berechnen braucht viel Logik: nicht im Hauptbundle
@@ -36,6 +37,7 @@ export function Layout() {
   }, [logoVariant]);
 
   const main = usePageTransition();
+  useScrollMemory();
   const reminder = settings ? getBackupReminder(settings, new Date()) : null;
 
   return (

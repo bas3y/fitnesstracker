@@ -36,6 +36,15 @@ describe('logoSvg', () => {
     );
   });
 
+  it('draws only the ring or only the ball for animation layers', () => {
+    const ring = logoSvg('taupe', { shape: 'none', parts: 'ring' });
+    expect(ring).toContain('logo-ring');
+    expect(ring).not.toContain('logo-ball');
+    const ball = logoSvg('taupe', { shape: 'none', parts: 'ball' });
+    expect(ball).toContain('logo-ball');
+    expect(ball).not.toContain('logo-ring');
+  });
+
   it('builds a data URL', () => {
     expect(logoDataUrl('stone')).toMatch(/^data:image\/svg\+xml;charset=utf-8,%3Csvg/);
   });

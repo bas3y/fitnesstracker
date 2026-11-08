@@ -24,8 +24,11 @@ import { goalEditPath } from './paths';
 import { Icon } from '../../components/icons';
 
 const HINT = 'text-sm text-muted';
-const ACTION =
-  'flex min-h-11 items-center justify-center rounded-xl bg-subtle px-3 text-sm font-semibold text-fg active:bg-subtle-strong';
+// Farben getrennt halten: zwei bg-/text-Klassen gleichzeitig entscheidet die CSS-Reihenfolge, nicht die Angabe
+const ACTION_BASE =
+  'flex min-h-11 items-center justify-center rounded-xl px-3 text-sm font-semibold';
+const ACTION = `${ACTION_BASE} bg-subtle text-fg active:bg-subtle-strong`;
+const ACTION_PRIMARY = `${ACTION_BASE} bg-primary text-on-primary active:bg-primary-press`;
 
 const PERIOD_NAMES = { week: 'Woche', month: 'Monat', year: 'Jahr' } as const;
 const PERIOD_DONE = {
@@ -296,7 +299,7 @@ function GoalEntryActions({
         <button
           type="button"
           aria-label={`${done ? 'Zurücknehmen' : 'Erledigt'}: ${name}`}
-          className={done ? ACTION : `${ACTION} bg-primary text-on-primary active:bg-primary-press`}
+          className={done ? ACTION : ACTION_PRIMARY}
           onClick={() => void setGoalChecked(goal.id, !done)}
         >
           {done ? 'Zurücknehmen' : '✓ Erledigt'}
