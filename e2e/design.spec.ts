@@ -12,7 +12,7 @@ test('Farbpalette und Dunkelmodus wählen, bleiben nach dem Neuladen (offline)',
   await expect(root).toHaveAttribute('data-palette', 'basey');
 
   const palettes = page.getByRole('radiogroup', { name: 'Farbpalette' });
-  await expect(palettes.getByRole('radio')).toHaveCount(6);
+  await expect(palettes.getByRole('radio')).toHaveCount(5);
   await expect(palettes.getByRole('radio', { name: 'Basey' })).toHaveAttribute(
     'aria-checked',
     'true',

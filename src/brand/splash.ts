@@ -1,8 +1,11 @@
 import { DEFAULT_LOGO_VARIANT, isLogoVariant, type LogoVariant } from './logo';
 
-/** Dauer der Startanimation in `index.html` (siehe `SPLASH_CSS`), danach darf ausgeblendet werden */
-export const SPLASH_ANIMATION_MS = 1150;
-const FADE_MS = 300;
+/**
+ * Mindestdauer des Ladebildschirms ab Seitenstart: Animation (siehe `SPLASH_CSS`, ca. 1,5 s) plus
+ * kurzes Stehenbleiben des fertigen Logos – auch wenn die App schon früher bereit ist
+ */
+export const SPLASH_ANIMATION_MS = 2200;
+const FADE_MS = 400;
 
 /** Spiegel in localStorage, damit `index.html` die Logo-Variante vor dem Laden der App kennt */
 export const LOGO_STORAGE_KEY = 'logo';

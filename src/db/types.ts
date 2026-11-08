@@ -15,8 +15,8 @@ export interface BaseEntity {
 export type WeightUnit = 'kg' | 'lb';
 export type DistanceUnit = 'km' | 'mi';
 export type ThemePreference = 'system' | 'light' | 'dark';
-/** Farbpaletten (seit DB-Version 29, `basey` seit 32), Farben in `src/index.css` */
-export const COLOR_PALETTES = ['basey', 'green', 'red', 'blue', 'graphite', 'violet'] as const;
+/** Farbpaletten (seit DB-Version 29, `basey` seit 32, `graphite` bis 32), Farben in `src/index.css` */
+export const COLOR_PALETTES = ['basey', 'green', 'red', 'blue', 'violet'] as const;
 export type ColorPalette = (typeof COLOR_PALETTES)[number];
 
 export interface Settings extends BaseEntity {

@@ -579,6 +579,17 @@ export class AppDatabase extends Dexie {
             settings.logoVariant ??= DEFAULT_LOGO_VARIANT;
           }),
       );
+    // Basey wird für alle Geräte einmalig zur Farbpalette (Graphit entfällt, war zu ähnlich)
+    this.version(33)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.palette = 'basey';
+          }),
+      );
   }
 }
 

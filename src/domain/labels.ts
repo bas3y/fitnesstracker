@@ -35,7 +35,6 @@ export const PALETTE_LABELS: Record<ColorPalette, string> = {
   green: 'Grün',
   red: 'Rot',
   blue: 'Blau',
-  graphite: 'Graphit',
   violet: 'Violett',
 };
 

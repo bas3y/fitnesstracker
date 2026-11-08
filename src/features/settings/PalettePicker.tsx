@@ -8,7 +8,6 @@ const SWATCHES: Record<ColorPalette, readonly string[]> = {
   green: ['#d1f2eb', '#50c878', '#0b6e4f', '#013220'],
   red: ['#fbe4e3', '#d72638', '#9b111e', '#3f0d12'],
   blue: ['#d6e6f3', '#a6c5d7', '#0f52ba', '#000926'],
-  graphite: ['#bea98e', '#4a4a4a', '#2c2c2c', '#0c0c0c'],
   violet: ['#e6c7e6', '#a3779d', '#663399', '#2e1a47'],
 };
 
@@ -20,7 +19,7 @@ export function PalettePicker({
   onChange: (palette: ColorPalette) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label="Farbpalette" className="grid grid-cols-3 gap-2">
+    <div role="radiogroup" aria-label="Farbpalette" className="grid grid-cols-5 gap-2">
       {COLOR_PALETTES.map((palette) => {
         const checked = palette === value;
         return (

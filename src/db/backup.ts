@@ -142,7 +142,10 @@ const settingsSchema = baseEntitySchema.extend({
   trainingWeekTarget: trainingWeekTargetSchema.default(TRAINING_WEEK_TARGET_DEFAULT),
   celebrations: celebrationsSchema.nullable().default(null),
   // Seit DB-Version 29
-  palette: z.enum(COLOR_PALETTES).default('green'),
+  // Graphit gibt es seit DB-Version 33 nicht mehr → Basey
+  palette: z
+    .preprocess((value) => (value === 'graphite' ? 'basey' : value), z.enum(COLOR_PALETTES))
+    .default('green'),
   // Seit DB-Version 31
   widgetSizes: z.partialRecord(z.enum(DASHBOARD_WIDGETS), z.enum(WIDGET_SIZES)).default({}),
   // Seit DB-Version 32

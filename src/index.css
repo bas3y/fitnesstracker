@@ -94,16 +94,6 @@
   --p-accent-text: var(--p-strong);
 }
 
-:root[data-palette='graphite'] {
-  --p-light: #bea98e;
-  --p-mid: #4a4a4a;
-  --p-strong: #2c2c2c;
-  --p-deep: #0c0c0c;
-  --p-accent-dark: #bea98e;
-  --p-on-accent-dark: #0c0c0c;
-  --p-accent-text: #7a6347;
-}
-
 :root[data-palette='violet'] {
   --p-light: #e6c7e6;
   --p-mid: #a3779d;

@@ -1062,6 +1062,7 @@ Ablauf:
   - Erfolge: Lange Abzeichen-Namen („Gewohnheitsserie“, „Fortschrittsfotos“, „Trainingsserie“ …) haben ihre Rasterspalte verbreitert und stießen an den Nachbarn. Jetzt gleich breite Spalten (`min-w-0`) und feste Trennstellen per weichem Trennzeichen (`NAME_BREAKS` in `MotivationParts.tsx`, z. B. „Fortschritts-fotos“, Nutzerwunsch; `hyphens-manual`, Notfall `overflow-wrap:anywhere`), unter 360 px kleinere Schrift ohne Innenabstand. E2E prüft die Kacheln bei 320 px Breite.
   - Workout-Übersicht (nach „Speichern“ und im Verlauf): unten primärer „Fertig“-Link zur Herkunft (wie „Zurück“), „Teilen-Bild“ ist jetzt ein normaler Button.
   - Noch nicht gepusht: Nutzerwunsch, erst nach 18d/18e (wenn das Design stimmt) zusammen pushen und auf dem Handy testen. 18c wird dann mit diesem Push abgeschlossen. Nach 18e kam noch 18f (Logo) dazu: Push erst danach.
+- **Push 2 (08.11.2026):** Nutzer hat das Backup bestätigt und den Push freigegeben. Vorher lint, typecheck, 869 Unit-Tests, Build und 118 E2E grün. Korrekturen 18c + 18d + 18e + 18f gepusht (DB-Version 28 → 33). Handytest steht aus (Punkte unter 18d, 18e, 18f „Offene Punkte“).
 
 ### Schritt 18d – Design-Grundlage & Farbpaletten
 **Ziel:** Neues, einheitliches Design als Grundlage (Nutzerwunsch nach 18c). Vor Schritt 19, damit die Berichte gleich im neuen Look entstehen.
@@ -1148,7 +1149,10 @@ Mit dem Nutzer beim Start abgestimmt (Entwürfe als Artifact „Fitnesstracker 1
   - Kein eigenes iOS-Startbild (`apple-touch-startup-image` bräuchte je Gerätegröße ein Bild); iOS zeigt kurz Weiß/Schwarz, dann den Ladebildschirm.
 - Offene Punkte:
   - **Handytest** (mit dem 18c-Push): Startanimation auf echten Geräten (Dauer, Übergang vom Android-Startbild), Icon auf dem Home-Bildschirm (Android maskable, iPhone mit gewählter Variante), Name „Basey“ unter dem Icon (bestehende Android-Installation aktualisiert Name/Icon nach einiger Zeit, iPhone erst nach Neuinstallation), Lesbarkeit der Palette „Basey“.
-  - Vor dem Push an ein Backup erinnern (DB-Version 28 → 32).
+  - ~~Vor dem Push an ein Backup erinnern~~ (erledigt, Push 2 unter 18c).
+- Nachtrag (08.11.2026, Nutzerwunsch nach dem Ansehen):
+  - **Basey für alle:** Dexie v33 stellt jedes Gerät einmalig auf die Palette „Basey“ (danach frei wählbar). Palette **Graphit entfernt** (zu ähnlich zu Basey); Backups mit `graphite` werden beim Import zu `basey`.
+  - **Ladebildschirm länger:** Animation langsamer (Ring 1,05 s, Kugel ab 0,75 s, Schriftzug ab 0,95 s), steht mindestens 2,2 s ab Seitenstart, auch wenn die App früher bereit ist (`SPLASH_ANIMATION_MS`), dann 0,4 s Ausblenden.
   - Ideen für später: Schriftzug auch im Seitenkopf der Startseite; Logo im Sticker-Format des Teilen-Bilds; eigene iOS-Startbilder.
 
 ### Schritt 19 – PDF-Export/Berichte

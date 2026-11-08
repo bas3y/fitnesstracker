@@ -876,6 +876,11 @@ describe('Timer und Fortschrittsfotos', () => {
     if (!result.ok) throw new Error(result.error);
     expect(result.backup.tables.settings[0]).toMatchObject({ palette: 'green' });
 
+    data.tables.settings[0].palette = 'graphite';
+    const graphite = parseBackup(data);
+    if (!graphite.ok) throw new Error(graphite.error);
+    expect(graphite.backup.tables.settings[0]).toMatchObject({ palette: 'basey' });
+
     data.tables.settings[0].palette = 'pink';
     expect(parseBackup(data).ok).toBe(false);
   });

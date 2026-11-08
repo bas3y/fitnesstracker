@@ -55,7 +55,7 @@ export const SPLASH_CSS = `
         justify-content: center;
         gap: 28px;
         background: ${SPLASH_BACKGROUND};
-        transition: opacity 0.3s ease;
+        transition: opacity 0.4s ease;
       }
       #splash.splash-hidden {
         opacity: 0;
@@ -64,7 +64,7 @@ export const SPLASH_CSS = `
       #splash .splash-logo {
         width: 112px;
         height: 112px;
-        animation: splash-tile 0.35s ease-out both;
+        animation: splash-tile 0.45s ease-out both;
       }
       #splash .splash-logo svg {
         display: block;
@@ -73,7 +73,7 @@ export const SPLASH_CSS = `
       }
       #splash .splash-word {
         width: 148px;
-        animation: splash-word 0.45s 0.7s ease-out both;
+        animation: splash-word 0.55s 0.95s ease-out both;
       }
       #splash .splash-word svg {
         display: block;
@@ -83,12 +83,12 @@ export const SPLASH_CSS = `
       #splash .logo-ring {
         transform-box: view-box;
         transform-origin: 110px 110px;
-        animation: splash-ring 0.8s cubic-bezier(0.2, 0.9, 0.25, 1.12) both;
+        animation: splash-ring 1.05s cubic-bezier(0.2, 0.9, 0.25, 1.12) both;
       }
       #splash .logo-ball {
         transform-box: view-box;
         transform-origin: 110px 50px;
-        animation: splash-ball 0.45s 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+        animation: splash-ball 0.5s 0.75s cubic-bezier(0.3, 1.6, 0.5, 1) both;
       }
       @keyframes splash-tile {
         from { opacity: 0; transform: scale(0.88); }

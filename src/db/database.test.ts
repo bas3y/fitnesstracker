@@ -1045,9 +1045,10 @@ describe('AppDatabase-Migration', () => {
     v28.close();
 
     const current = new AppDatabase(name);
+    // v29 ergänzt die Palette, v33 stellt alle Geräte auf Basey um
     expect(await current.settings.get('app-settings')).toMatchObject({
       theme: 'dark',
-      palette: 'green',
+      palette: 'basey',
     });
     await current.delete();
   });
@@ -1099,10 +1100,25 @@ describe('AppDatabase-Migration', () => {
 
     const current = new AppDatabase(name);
     expect(await current.settings.get('app-settings')).toMatchObject({
-      palette: 'blue',
       logoVariant: 'charcoal',
     });
-    expect(current.verno).toBe(32);
+    expect(current.verno).toBeGreaterThanOrEqual(32);
+    await current.delete();
+  });
+
+  it('switches every device to the Basey palette once in v33', async () => {
+    const name = 'migration-v32-v33';
+    const v32 = new Dexie(name);
+    v32.version(32).stores({ settings: 'id, updatedAt' });
+    await v32.table('settings').add({ id: 'app-settings', palette: 'graphite', theme: 'dark' });
+    v32.close();
+
+    const current = new AppDatabase(name);
+    expect(await current.settings.get('app-settings')).toMatchObject({
+      palette: 'basey',
+      theme: 'dark',
+    });
+    expect(current.verno).toBe(33);
     await current.delete();
   });
 });
