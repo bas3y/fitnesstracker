@@ -22,9 +22,9 @@ import {
 import { kgToDisplay } from '../../domain/units';
 import { goalEditPath } from './paths';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 const ACTION =
-  'flex min-h-11 items-center justify-center rounded-xl bg-slate-100 px-3 text-sm font-semibold text-slate-800 active:bg-slate-200 dark:bg-slate-700 dark:text-slate-100 dark:active:bg-slate-600';
+  'flex min-h-11 items-center justify-center rounded-xl bg-subtle px-3 text-sm font-semibold text-fg active:bg-subtle-strong';
 
 const PERIOD_NAMES = { week: 'Woche', month: 'Monat', year: 'Jahr' } as const;
 const PERIOD_DONE = {
@@ -52,11 +52,7 @@ export function GoalBar({
 }) {
   const fill =
     color ??
-    (status === 'achieved'
-      ? 'bg-emerald-600'
-      : status === 'missed'
-        ? 'bg-slate-400 dark:bg-slate-500'
-        : 'bg-emerald-500');
+    (status === 'achieved' ? 'bg-primary' : status === 'missed' ? 'bg-faint' : 'bg-primary');
   return (
     <div
       role="progressbar"
@@ -64,13 +60,13 @@ export function GoalBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={percent}
-      className="relative h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"
+      className="relative h-3 overflow-hidden rounded-full bg-subtle-strong"
     >
       <div className={`h-full rounded-full ${fill}`} style={{ width: `${percent}%` }} />
       {expectedPercent !== null && (
         <div
           aria-hidden="true"
-          className="absolute inset-y-0 w-0.5 bg-slate-900/60 dark:bg-white/70"
+          className="absolute inset-y-0 w-0.5 bg-scrim"
           style={{ left: `${Math.min(100, expectedPercent)}%` }}
         />
       )}
@@ -185,10 +181,10 @@ function valueLine(
 
 function barColor(goal: Goal, progress: GoalProgress): string | undefined {
   if (!isLimitGoal(goal)) return undefined;
-  if ((progress.remaining ?? 0) < 0) return 'bg-red-500';
+  if ((progress.remaining ?? 0) < 0) return 'bg-danger';
   const ahead =
     progress.expected !== null && progress.current !== null && progress.current > progress.expected;
-  return ahead ? 'bg-amber-500' : 'bg-emerald-500';
+  return ahead ? 'bg-warn' : 'bg-primary';
 }
 
 /** Ziel mit Balken; `compact` für das Startseiten-Widget */
@@ -217,14 +213,12 @@ export function GoalCard({
   const period = recurringPeriod(goal, progress);
   const exceeded = limit && (progress.remaining ?? 0) < 0;
   return (
-    <div
-      className={`rounded-2xl ${compact ? 'mb-2 border border-slate-200 dark:border-slate-700' : 'mb-3 bg-white shadow-sm dark:bg-slate-800'}`}
-    >
+    <div className={`rounded-2xl ${compact ? 'mb-2 border border-line' : 'mb-3 bg-surface'}`}>
       <Link
         to={goalEditPath(goal.id)}
         state={linkState}
         aria-label={`Ziel: ${name}`}
-        className={`block rounded-2xl active:bg-slate-50 dark:active:bg-slate-700 ${compact ? 'p-3' : 'p-4'}`}
+        className={`block rounded-2xl active:bg-page ${compact ? 'p-3' : 'p-4'}`}
       >
         <div className="mb-2 flex items-start gap-2">
           <span aria-hidden="true" className="text-lg leading-6">
@@ -252,10 +246,10 @@ export function GoalCard({
           <p
             className={`text-sm ${
               exceeded
-                ? 'font-medium text-red-700 dark:text-red-400'
+                ? 'font-medium text-danger'
                 : progress.achievedOn
-                  ? 'font-medium text-emerald-700 dark:text-emerald-400'
-                  : 'text-slate-600 dark:text-slate-300'
+                  ? 'font-medium text-primary-text'
+                  : 'text-muted'
             }`}
           >
             {status}
@@ -303,11 +297,7 @@ function GoalEntryActions({
         <button
           type="button"
           aria-label={`${done ? 'Zurücknehmen' : 'Erledigt'}: ${name}`}
-          className={
-            done
-              ? ACTION
-              : `${ACTION} bg-emerald-700 text-white active:bg-emerald-800 dark:bg-emerald-700`
-          }
+          className={done ? ACTION : `${ACTION} bg-primary text-on-primary active:bg-primary-press`}
           onClick={() => void setGoalChecked(goal.id, !done)}
         >
           {done ? 'Zurücknehmen' : '✓ Erledigt'}

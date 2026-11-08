@@ -30,7 +30,7 @@ export function ScanButton({ to, onClick }: { to?: string; onClick?: () => void 
         </button>
       )}
       {!online && (
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-sm text-muted">
           Ohne Internet nur gespeicherte Strichcodes. Neue Produkte: Nur mit Internet.
         </p>
       )}

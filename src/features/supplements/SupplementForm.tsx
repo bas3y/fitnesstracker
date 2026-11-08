@@ -28,7 +28,7 @@ import {
 } from '../../domain/supplements';
 
 const LABEL = 'mb-1 block text-sm font-medium';
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 function newDose(): SupplementDose {
   return { id: crypto.randomUUID(), amount: 1, timing: 'time', time: '08:00', period: null };
@@ -189,7 +189,7 @@ export function SupplementForm({
           <label className="flex min-h-11 items-center gap-3">
             <input
               type="checkbox"
-              className="h-5 w-5 accent-emerald-600"
+              className="h-5 w-5 accent-primary"
               checked={tracksStock}
               onChange={(event) =>
                 change({
@@ -238,7 +238,7 @@ export function SupplementForm({
           id={notesId}
           rows={2}
           maxLength={500}
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base dark:border-slate-600 dark:bg-slate-900"
+          className="w-full rounded-xl border border-line bg-subtle px-3 outline-none focus:border-primary focus:bg-surface py-2 text-base"
           placeholder="z. B. mit Wasser, nicht zusammen mit Kaffee"
           value={input.notes}
           onChange={(event) => change({ notes: event.target.value })}
@@ -246,7 +246,7 @@ export function SupplementForm({
       </Card>
 
       {error && (
-        <p role="alert" className="mb-3 text-sm font-medium text-red-700 dark:text-red-400">
+        <p role="alert" className="mb-3 text-sm font-medium text-danger">
           {error}
         </p>
       )}
@@ -287,7 +287,7 @@ function DoseFields({
     });
 
   return (
-    <li className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+    <li className="rounded-xl border border-line p-3">
       <div className="flex items-end gap-1">
         <div className="min-w-0 flex-1">
           <Stepper

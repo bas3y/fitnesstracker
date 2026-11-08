@@ -33,6 +33,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   distanceUnit: 'km',
   bodyWeightKg: null,
   theme: 'system',
+  palette: 'green',
   lastBackupAt: null,
   seedVersion: 0,
   activePlanId: null,

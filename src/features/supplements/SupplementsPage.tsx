@@ -22,7 +22,7 @@ import { SUPPLEMENTS_PATH } from './paths';
 import { SupplementChecklist } from './SupplementChecklist';
 import { useSupplementHabitCandidates, useSupplementOverview } from './useSupplements';
 
-const MUTED = 'text-sm text-slate-600 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 function supplementHint(supplement: Supplement): string {
   return [
@@ -115,7 +115,7 @@ export function SupplementsPage() {
 
       <p className={`mb-4 ${MUTED}`}>
         Erinnerungen und Warnschwelle für den Bestand stellst du in den{' '}
-        <Link to="/settings" className="font-semibold text-emerald-700 dark:text-emerald-400">
+        <Link to="/settings" className="font-semibold text-primary-text">
           Einstellungen
         </Link>{' '}
         ein.
@@ -190,15 +190,13 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
           <li key={habit.id}>
             <button
               type="button"
-              className="flex min-h-14 w-full flex-col justify-center rounded-xl border border-slate-300 px-4 py-2 text-left dark:border-slate-600"
+              className="flex min-h-14 w-full flex-col justify-center rounded-xl border border-line-strong px-4 py-2 text-left"
               onClick={() => setSelected(habit)}
             >
               <span className="font-medium">
                 {habit.icon} {habit.name}
               </span>
-              <span className="text-sm text-slate-500 dark:text-slate-400">
-                {formatHabitTarget(habit)}
-              </span>
+              <span className="text-sm text-muted">{formatHabitTarget(habit)}</span>
             </button>
           </li>
         ))}

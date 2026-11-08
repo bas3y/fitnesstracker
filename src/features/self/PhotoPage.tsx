@@ -15,7 +15,7 @@ import { comparePath, PHOTOS_PATH } from './paths';
 import { PhotoFields, PhotoImage } from './PhotoParts';
 import { useProgressPhoto, useProgressPhotos } from './useSelf';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 /** Ein Foto groß, Angaben ändern, löschen, vergleichen */
 export function PhotoPage() {

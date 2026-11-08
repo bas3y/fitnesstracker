@@ -28,7 +28,7 @@ import { GoalBar } from './GoalBar';
 import { HABITS_PATH, useHabits } from './useHabits';
 
 const ROUND_BUTTON =
-  'flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 px-2 text-sm font-semibold tabular-nums active:bg-slate-200 dark:bg-slate-700 dark:active:bg-slate-600';
+  'flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-subtle px-2 text-sm font-semibold tabular-nums active:bg-subtle-strong';
 
 /**
  * `groups`: eine Karte je Gruppe (Gewohnheiten-Seite); `widget`: eine Karte für alles (Startseite).
@@ -54,9 +54,9 @@ export function HabitChecklist({
     return (
       <Card title="Gewohnheiten">
         {sorted.length === 0 ? (
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-muted">
             {habits.length === 0 ? 'Noch keine Gewohnheiten. ' : 'Heute steht nichts an. '}
-            <Link to={HABITS_PATH} className="font-semibold text-emerald-700 dark:text-emerald-400">
+            <Link to={HABITS_PATH} className="font-semibold text-primary-text">
               {habits.length === 0 ? 'Jetzt anlegen' : 'Alle Gewohnheiten'}
             </Link>
           </p>
@@ -105,7 +105,7 @@ function ChecklistBody({
     <>
       {tasks.length > 0 && (
         <>
-          <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mb-2 text-sm text-muted">
             {done.length} von {tasks.length} erledigt
           </p>
           <GoalBar label={title} value={done.length} goal={tasks.length} />
@@ -120,7 +120,7 @@ function ChecklistBody({
           <button
             type="button"
             aria-expanded={showDone}
-            className="flex min-h-11 w-full items-center gap-2 text-left text-sm font-semibold text-slate-600 dark:text-slate-300"
+            className="flex min-h-11 w-full items-center gap-2 text-left text-sm font-semibold text-muted"
             onClick={() => setShowDone(!showDone)}
           >
             <span aria-hidden="true">{showDone ? '▾' : '▸'}</span>
@@ -268,7 +268,7 @@ function ItemsRow({
       {open && (
         <ul
           aria-label={`Unterpunkte ${habit.name}`}
-          className="mb-2 ml-11 border-l-2 border-slate-200 pl-2 dark:border-slate-700"
+          className="mb-2 ml-11 border-l-2 border-line pl-2"
         >
           {habit.items.map((sub) => (
             <SubItemRow
@@ -395,7 +395,7 @@ function DetailsLink({ id, name }: { id: string; name: string }) {
       to={`${HABITS_PATH}/${id}`}
       state={from}
       aria-label={`Details: ${name}`}
-      className="flex h-11 w-9 shrink-0 items-center justify-center text-xl text-slate-400"
+      className="flex h-11 w-9 shrink-0 items-center justify-center text-xl text-faint"
     >
       ›
     </Link>

@@ -5,7 +5,7 @@ import { Card, Page } from '../../components/Page';
 import { SETTINGS_PATH } from './paths';
 import { appUrl, isInstalledApp, shareAppLink } from './shareApp';
 
-const HINT = 'text-sm text-slate-600 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 const STATUS_TEXT = {
   shared: 'Link geteilt.',
@@ -28,7 +28,7 @@ export function ShareAppPage() {
         </p>
         <p
           data-testid="app-url"
-          className="mb-3 rounded-xl bg-slate-100 px-3 py-2 font-mono text-sm break-all select-all dark:bg-slate-900"
+          className="mb-3 rounded-xl bg-subtle px-3 py-2 font-mono text-sm break-all select-all"
         >
           {url}
         </p>
@@ -45,7 +45,7 @@ export function ShareAppPage() {
         {status && (
           <p
             role={status === 'failed' ? 'alert' : 'status'}
-            className="mt-3 text-sm text-emerald-700 dark:text-emerald-400"
+            className="mt-3 text-sm text-primary-text"
           >
             {STATUS_TEXT[status]}
           </p>
@@ -61,7 +61,7 @@ function InstallGuide() {
   return (
     <Card title="Installieren">
       {installed && (
-        <p className="mb-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+        <p className="mb-3 text-sm font-medium text-primary-text">
           ✓ Auf diesem Gerät läuft die installierte App.
         </p>
       )}

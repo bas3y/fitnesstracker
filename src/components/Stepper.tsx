@@ -45,7 +45,7 @@ export function Stepper({
   };
 
   const buttonClass =
-    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl font-semibold text-slate-700 active:bg-slate-200 disabled:opacity-40 dark:bg-slate-700 dark:text-slate-100 dark:active:bg-slate-600';
+    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-xl font-semibold text-on-primary-soft active:bg-pressed disabled:opacity-40';
 
   return (
     <div>
@@ -66,7 +66,7 @@ export function Stepper({
           <input
             id={id}
             inputMode="decimal"
-            className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-center text-lg tabular-nums dark:border-slate-600 dark:bg-slate-900"
+            className="h-11 w-full rounded-xl border border-line bg-subtle px-3 outline-none focus:border-primary focus:bg-surface text-center text-lg tabular-nums"
             value={draft ?? (value === null ? '' : formatDecimal(value, decimals))}
             onChange={(event) => setDraft(event.target.value)}
             onBlur={commit}
@@ -75,7 +75,7 @@ export function Stepper({
             }}
           />
           {unit && (
-            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-600 dark:text-slate-400">
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted">
               {unit}
             </span>
           )}

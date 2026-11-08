@@ -34,7 +34,7 @@ import { useNow } from '../training/useWorkouts';
 import { SUPPLEMENTS_PATH } from './paths';
 import { useSupplement } from './useSupplements';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 const HEATMAP_WEEKS = 17;
 
 export function SupplementDetailPage() {
@@ -53,9 +53,7 @@ export function SupplementDetailPage() {
     return (
       <Page title="Supplement" backTo={backTo}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Dieses Supplement existiert nicht mehr.
-          </p>
+          <p className="text-muted">Dieses Supplement existiert nicht mehr.</p>
         </Card>
       </Page>
     );
@@ -85,7 +83,7 @@ function SupplementDetail({
       {archived && (
         <p
           role="status"
-          className="mb-4 rounded-xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          className="mb-4 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-on-warn-soft"
         >
           Archiviert: erscheint nicht mehr in Liste und Checkliste.
         </p>
@@ -194,7 +192,7 @@ function StockCard({
       <div className="flex flex-col gap-3">
         <p
           data-testid="supplement-stock"
-          className={`text-lg font-semibold tabular-nums ${low ? 'text-orange-700 dark:text-orange-400' : ''}`}
+          className={`text-lg font-semibold tabular-nums ${low ? 'text-mark' : ''}`}
         >
           {formatSupplementAmount(stock, unit)}
           {days !== null && ` · ${formatDaysLeft(days)}`}

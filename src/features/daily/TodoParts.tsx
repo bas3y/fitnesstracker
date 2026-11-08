@@ -11,9 +11,9 @@ import { formatTodoDate, TODO_PRIORITY_LABELS } from '../../domain/todos';
 const LABEL = 'mb-1 block text-sm font-medium';
 
 const PRIORITY_BADGE: Record<TodoPriority, string | null> = {
-  high: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
+  high: 'bg-danger-soft text-danger',
   medium: null,
-  low: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+  low: 'bg-subtle text-muted',
 };
 
 function PriorityChips({
@@ -128,7 +128,7 @@ export function TodoAddForm({
         <button
           type="submit"
           aria-label="Aufgabe hinzufügen"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-2xl text-white active:bg-emerald-800"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-2xl text-on-primary active:bg-primary-press"
         >
           +
         </button>
@@ -140,7 +140,7 @@ export function TodoAddForm({
         </div>
       )}
       {error && (
-        <p role="alert" className="mt-2 text-sm font-medium text-red-700 dark:text-red-400">
+        <p role="alert" className="mt-2 text-sm font-medium text-danger">
           {error}
         </p>
       )}
@@ -168,10 +168,10 @@ export function TodoRow({ todo, today }: { todo: Todo; today: DayKey }) {
           aria-hidden="true"
           className={`flex h-7 w-7 items-center justify-center rounded-lg border-2 ${
             done
-              ? 'border-emerald-700 bg-emerald-700 text-white'
+              ? 'border-primary bg-primary text-on-primary'
               : todo.priority === 'high'
-                ? 'border-red-500'
-                : 'border-slate-300 dark:border-slate-600'
+                ? 'border-danger'
+                : 'border-line-strong'
           }`}
         >
           {done && <CheckIcon className="h-5 w-5" />}
@@ -183,9 +183,7 @@ export function TodoRow({ todo, today }: { todo: Todo; today: DayKey }) {
         className="flex min-h-12 min-w-0 flex-1 flex-col justify-center py-1 text-left"
         onClick={() => setEditing(true)}
       >
-        <span
-          className={`block break-words ${done ? 'text-slate-500 line-through dark:text-slate-400' : ''}`}
-        >
+        <span className={`block break-words ${done ? 'text-muted line-through' : ''}`}>
           {todo.title}
         </span>
         {(badge || dateHint) && (
@@ -196,13 +194,7 @@ export function TodoRow({ todo, today }: { todo: Todo; today: DayKey }) {
               </span>
             )}
             {dateHint && (
-              <span
-                className={
-                  dateHint.startsWith('seit')
-                    ? 'text-orange-700 dark:text-orange-400'
-                    : 'text-slate-500 dark:text-slate-400'
-                }
-              >
+              <span className={dateHint.startsWith('seit') ? 'text-mark' : 'text-muted'}>
                 {dateHint}
               </span>
             )}
@@ -250,7 +242,7 @@ function TodoEditDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -265,7 +257,7 @@ function TodoEditDialog({
           if (event.key === 'Escape') onClose();
         }}
         onSubmit={(event) => void save(event)}
-        className="flex w-full max-w-sm flex-col gap-3 rounded-2xl bg-white p-4 shadow-lg outline-none dark:bg-slate-800"
+        className="flex w-full max-w-sm flex-col gap-3 rounded-2xl bg-surface p-4 shadow-lg outline-none"
       >
         <h2 id={titleId} className="text-lg font-semibold">
           Aufgabe bearbeiten
@@ -294,7 +286,7 @@ function TodoEditDialog({
           onChange={(date) => setInput({ ...input, date })}
         />
         {error && (
-          <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
+          <p role="alert" className="text-sm font-medium text-danger">
             {error}
           </p>
         )}

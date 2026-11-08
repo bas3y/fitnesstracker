@@ -12,7 +12,7 @@ import { useDayBackTo, useDayParam } from '../daily/useDaily';
 import { JOURNAL_PATH, REFLECTION_PATH } from './paths';
 import { useJournalEntries, useJournalPrompts } from './useSelf';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 const SHOWN = 100;
 
 /** Alle Journal-Einträge und Wochenreflexionen, neueste zuerst, mit Suche */
@@ -58,7 +58,7 @@ export function JournalHistoryPage() {
                   <Link
                     to={withDate(week ? REFLECTION_PATH : JOURNAL_PATH, entry.date, today)}
                     state={from}
-                    className="block rounded-2xl bg-white p-4 shadow-sm active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700"
+                    className="block rounded-2xl bg-surface p-4 active:bg-page"
                   >
                     <span className="block font-semibold">
                       {week

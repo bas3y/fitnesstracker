@@ -2,8 +2,18 @@ import { SHARE_SIZES, type ShareCardContent, type ShareFormat } from '../../doma
 import { projectRoute } from '../../domain/track';
 
 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-const ROUTE_COLOR = '#34d399';
 const BADGE_COLOR = '#fbbf24';
+
+/** Farben der gewählten Palette (Canvas kennt keine CSS-Variablen) */
+function paletteColors() {
+  const style = getComputedStyle(document.documentElement);
+  const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
+  return {
+    deep: read('--p-deep', '#013220'),
+    strong: read('--p-strong', '#0b6e4f'),
+    light: read('--p-light', '#d1f2eb'),
+  };
+}
 const PADDING = 80;
 
 interface Box {
@@ -41,8 +51,9 @@ function setFont(ctx: CanvasRenderingContext2D, size: number, weight = 400) {
 
 function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: number) {
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, '#0f172a');
-  gradient.addColorStop(1, '#064e3b');
+  const colors = paletteColors();
+  gradient.addColorStop(0, colors.deep);
+  gradient.addColorStop(1, colors.strong);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 }
@@ -52,7 +63,8 @@ function drawRoute(ctx: CanvasRenderingContext2D, route: [number, number][], box
   if (!points) return;
   ctx.save();
   ctx.translate(box.x, box.y);
-  ctx.strokeStyle = ROUTE_COLOR;
+  const routeColor = paletteColors().light;
+  ctx.strokeStyle = routeColor;
   ctx.lineWidth = 12;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
@@ -65,7 +77,7 @@ function drawRoute(ctx: CanvasRenderingContext2D, route: [number, number][], box
   ctx.beginPath();
   ctx.arc(endX, endY, 16, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = ROUTE_COLOR;
+  ctx.fillStyle = routeColor;
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 6;
   ctx.beginPath();

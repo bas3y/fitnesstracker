@@ -90,10 +90,10 @@ export function ShareImageDialog({
             className={format === 'story' ? 'max-h-[50vh] w-auto rounded-xl' : 'w-full'}
           />
         ) : (
-          <span className="text-sm text-slate-500 dark:text-slate-400">Wird erstellt …</span>
+          <span className="text-sm text-muted">Wird erstellt …</span>
         )}
       </div>
-      <p className="text-sm text-slate-500 dark:text-slate-400">
+      <p className="text-sm text-muted">
         {format === 'story'
           ? 'Hochformat für Instagram-Storys und Chats.'
           : 'Durchsichtig: In der Story über ein eigenes Foto legen.'}

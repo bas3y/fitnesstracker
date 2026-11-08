@@ -50,9 +50,7 @@ export function GoalsWidget({
   return (
     <Card title={DASHBOARD_WIDGET_LABELS.goals.name}>
       {active.length === 0 ? (
-        <p className="mb-2 text-sm text-slate-600 dark:text-slate-400">
-          Keine offenen Ziele – Zeit für ein neues?
-        </p>
+        <p className="mb-2 text-sm text-muted">Keine offenen Ziele – Zeit für ein neues?</p>
       ) : (
         <div data-testid="goals-widget">
           {active.slice(0, SHOWN_GOALS).map(({ goal, progress }) => (
@@ -71,7 +69,7 @@ export function GoalsWidget({
       <Link
         to={GOALS_PATH}
         state={FROM_DASHBOARD}
-        className="flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+        className="flex min-h-11 items-center text-sm font-semibold text-primary-text"
       >
         {active.length > SHOWN_GOALS ? `Alle ${active.length} Ziele ›` : 'Alle Ziele ›'}
       </Link>

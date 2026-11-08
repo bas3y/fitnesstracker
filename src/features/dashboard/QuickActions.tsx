@@ -30,7 +30,7 @@ const WATER_ML = 250;
 const PROTEIN_G = 20;
 const FROM_DASHBOARD: BackState = { from: '/' };
 const TILE =
-  'flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl bg-slate-100 px-2 py-2 text-center text-sm font-semibold active:bg-slate-200 dark:bg-slate-700 dark:active:bg-slate-600';
+  'flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl bg-subtle px-2 py-2 text-center text-sm font-semibold active:bg-subtle-strong';
 
 type OpenDialog = 'weight' | 'steps' | 'todo' | 'endurance' | null;
 
@@ -165,7 +165,7 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
   return (
     <Card title={DASHBOARD_WIDGET_LABELS.quickActions.name}>
       {settings.quickActions.length === 0 ? (
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-muted">
           Keine Buttons gewählt. Über „Anpassen“ wählst du sie aus.
         </p>
       ) : (

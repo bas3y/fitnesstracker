@@ -6,7 +6,7 @@ export function AboutPage() {
   return (
     <Page title="Über & Lizenzen" backTo="/settings">
       <Card title="Fitnesstracker">
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-muted">
           Offline-App für Training und Alltag. Alle Daten bleiben auf diesem Gerät – es gibt keinen
           Server und kein Konto. Stand der mitgelieferten Daten: Version {SEED_VERSION}.
         </p>
@@ -41,13 +41,13 @@ export function AboutPage() {
             origin="Einige in Deutschland übliche Produkte (z. B. Magerquark, Skyr, Haferdrink) fehlen in der USDA-Datenbank. Dafür sind typische Durchschnittswerte gängiger Handelsprodukte hinterlegt."
           />
         </dl>
-        <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mt-4 text-xs text-muted">
           Alle Nährwerte sind Richtwerte und können je nach Produkt abweichen.
         </p>
       </Card>
 
       <Card title="Software">
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-muted">
           Gebaut mit React, React Router, Dexie, Zod, Tailwind CSS und Workbox (jeweils MIT- bzw.
           Apache-2.0-Lizenz).
         </p>
@@ -60,7 +60,7 @@ function Source({ name, origin }: { name: string; origin: ReactNode }) {
   return (
     <div>
       <dt className="font-semibold">{name}</dt>
-      <dd className="text-slate-600 dark:text-slate-400">{origin}</dd>
+      <dd className="text-muted">{origin}</dd>
     </div>
   );
 }
@@ -71,7 +71,7 @@ function Ext({ href, children }: { href: string; children: ReactNode }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="font-medium text-emerald-700 underline dark:text-emerald-400"
+      className="font-medium text-primary-text underline"
     >
       {children}
     </a>

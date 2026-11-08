@@ -2,11 +2,11 @@ import { useLayoutEffect, useRef } from 'react';
 import { formatDayKey, heatLevel, heatmapWeeks, parseDayKey } from '../domain/stats';
 
 const LEVEL_CLASSES = [
-  'bg-slate-100 dark:bg-slate-700',
-  'bg-emerald-200 dark:bg-emerald-900',
-  'bg-emerald-400 dark:bg-emerald-700',
-  'bg-emerald-600 dark:bg-emerald-500',
-  'bg-emerald-800 dark:bg-emerald-300',
+  'bg-subtle-strong',
+  'bg-primary/30',
+  'bg-primary/55',
+  'bg-primary/80',
+  'bg-hero',
 ];
 const WEEKDAY_LABELS = ['Mo', '', 'Mi', '', 'Fr', '', ''];
 const CELL = 'h-4 w-4 shrink-0';
@@ -45,10 +45,7 @@ export function Heatmap({
     <div className="flex gap-[3px]">
       <div aria-hidden="true" className="flex shrink-0 flex-col gap-[3px] pt-5">
         {WEEKDAY_LABELS.map((label, index) => (
-          <span
-            key={index}
-            className="h-4 text-[10px] leading-4 text-slate-500 dark:text-slate-400"
-          >
+          <span key={index} className="h-4 text-[10px] leading-4 text-muted">
             {label}
           </span>
         ))}
@@ -61,7 +58,7 @@ export function Heatmap({
               <div key={weekIndex} className="flex w-4 shrink-0 flex-col gap-[3px]">
                 <span
                   aria-hidden="true"
-                  className="h-4 text-[10px] leading-4 whitespace-nowrap text-slate-500 dark:text-slate-400"
+                  className="h-4 text-[10px] leading-4 whitespace-nowrap text-muted"
                 >
                   {newMonth &&
                     parseDayKey(newMonth.key).toLocaleDateString('de-DE', { month: 'short' })}
@@ -74,7 +71,7 @@ export function Heatmap({
                       aria-label={`${formatDayKey(day.key)}: ${describe(day.value, day.key)}`}
                       aria-pressed={day.key === selectedKey}
                       className={`${CELL} rounded-[3px] ${LEVEL_CLASSES[level(day.value, day.key)]} ${
-                        day.key === selectedKey ? 'outline-2 outline-slate-500' : ''
+                        day.key === selectedKey ? 'outline-2 outline-muted' : ''
                       }`}
                       onClick={() => onSelect?.(day.key)}
                     />

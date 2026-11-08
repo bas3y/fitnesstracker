@@ -15,7 +15,7 @@ import {
 } from '../../domain/nutrition';
 import { Badge } from '../training/ExerciseBrowser';
 
-export const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+export const MUTED = 'text-sm text-muted';
 
 /** Name, Badges und Nährwerte pro 100 g für Listenzeilen */
 export function FoodSummary({ food }: { food: Food }) {
@@ -26,7 +26,7 @@ export function FoodSummary({ food }: { food: Food }) {
         {food.recipe ? <Badge>Rezept</Badge> : food.source === 'user' && <Badge>Eigenes</Badge>}
         {food.hiddenAt !== null && <Badge>Ausgeblendet</Badge>}
       </span>
-      <span className="block truncate text-sm text-slate-500 dark:text-slate-400">
+      <span className="block truncate text-sm text-muted">
         {formatNutrientLine(food)} pro 100 g · {FOOD_CATEGORY_LABELS[food.category]}
       </span>
     </span>
@@ -47,7 +47,7 @@ export function FoodList({ label, children }: { label: string; children: ReactNo
   return (
     <ul
       aria-label={label}
-      className="mb-4 divide-y divide-slate-200 overflow-hidden rounded-2xl bg-white shadow-sm dark:divide-slate-700 dark:bg-slate-800"
+      className="mb-4 divide-y divide-line overflow-hidden rounded-2xl bg-surface"
     >
       {children}
     </ul>

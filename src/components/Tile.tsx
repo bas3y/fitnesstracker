@@ -17,7 +17,7 @@ export function Tile({
     <li className="grid">
       <Link
         to={to}
-        className="flex min-h-32 flex-col gap-1 rounded-2xl bg-white p-4 shadow-sm active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700"
+        className="flex min-h-32 flex-col gap-1 rounded-2xl bg-surface p-4 active:bg-page"
       >
         <span aria-hidden="true" className="text-2xl">
           {icon}

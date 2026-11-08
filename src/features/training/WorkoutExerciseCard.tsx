@@ -102,13 +102,10 @@ export function WorkoutExerciseCard({
 
   const labels = setLabels(sets);
   const iconButton =
-    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg text-slate-600 active:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:active:bg-slate-700';
+    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg text-muted active:bg-subtle disabled:opacity-30';
 
   return (
-    <section
-      aria-label={name}
-      className="mb-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800"
-    >
+    <section aria-label={name} className="mb-4 rounded-2xl bg-surface p-4">
       <div className="-ml-3 flex items-center gap-1">
         {handle}
         <h2 className="mr-auto min-w-0 text-lg leading-tight font-semibold">{name}</h2>
@@ -122,9 +119,9 @@ export function WorkoutExerciseCard({
         </button>
       </div>
 
-      {target && <p className="text-sm text-slate-500 dark:text-slate-400">{target}</p>}
+      {target && <p className="text-sm text-muted">{target}</p>}
       {exercise?.category === 'cardio' && (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-muted">
           Tipp: Mit Distanz, Pace und Puls erfasst du das unter Training → Ausdauer-Kacheln.
         </p>
       )}
@@ -149,14 +146,14 @@ export function WorkoutExerciseCard({
         <div className="mt-1 flex gap-4">
           <button
             type="button"
-            className="min-h-11 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+            className="min-h-11 text-sm font-medium text-primary-text"
             onClick={() => setReplacing(true)}
           >
             Ersetzen
           </button>
           <button
             type="button"
-            className="min-h-11 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+            className="min-h-11 text-sm font-medium text-primary-text"
             onClick={() => void skipWorkoutExercise(workoutExercise.id)}
           >
             Überspringen
@@ -177,7 +174,7 @@ export function WorkoutExerciseCard({
       )}
 
       {confirmRemove && (
-        <div className="my-3 rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/40">
+        <div className="my-3 rounded-xl border border-danger/40 bg-danger-soft p-3">
           <p className="mb-3 text-sm font-medium">„{name}“ mit allen Sätzen entfernen?</p>
           <div className="flex gap-2">
             <button
@@ -325,7 +322,7 @@ function LastTime({
       : null;
   return (
     <>
-      <p className="text-sm text-slate-500 dark:text-slate-400">
+      <p className="text-sm text-muted">
         {last && working.length > 0 ? (
           <>
             Letztes Mal ({formatWorkoutDate(last.workout.startedAt)}):{' '}
@@ -337,7 +334,7 @@ function LastTime({
       </p>
       {suggestion && (
         <div className="mt-1 flex items-center gap-2 text-sm">
-          <p className="mr-auto text-emerald-800 dark:text-emerald-300">
+          <p className="mr-auto text-primary-text">
             Vorschlag:{' '}
             <span className="font-semibold">
               {formatSetSummary(
@@ -356,7 +353,7 @@ function LastTime({
           <button
             type="button"
             aria-label="Vorschlag übernehmen"
-            className="min-h-11 shrink-0 px-2 font-medium text-emerald-700 dark:text-emerald-400"
+            className="min-h-11 shrink-0 px-2 font-medium text-primary-text"
             onClick={() => {
               const { weight, level, reps, durationSeconds } = suggestion;
               void applyToOpenSets(
@@ -402,10 +399,8 @@ function SetRow({
   return (
     <li
       className={`rounded-xl border ${
-        expanded
-          ? 'border-emerald-500 dark:border-emerald-600'
-          : 'border-slate-200 dark:border-slate-700'
-      } ${done && mode === 'live' ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}
+        expanded ? 'border-primary' : 'border-line'
+      } ${done && mode === 'live' ? 'bg-primary-soft' : ''}`}
     >
       <div className="flex items-center">
         <button
@@ -418,15 +413,13 @@ function SetRow({
           <span
             aria-hidden="true"
             className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-              set.isWarmup
-                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
-                : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+              set.isWarmup ? 'bg-warn-soft text-on-warn-soft' : 'bg-subtle text-fg'
             }`}
           >
             {label.short}
           </span>
           <span className="font-medium tabular-nums">{formatSetSummary(set, format)}</span>
-          {isRecord && <TrophyIcon className="h-5 w-5 shrink-0 text-amber-500" />}
+          {isRecord && <TrophyIcon className="h-5 w-5 shrink-0 text-star" />}
         </button>
         {mode === 'live' && (
           <button
@@ -434,9 +427,7 @@ function SetRow({
             aria-label={`${label.long} abhaken`}
             aria-pressed={done}
             className={`mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-              done
-                ? 'bg-emerald-700 text-white'
-                : 'border border-slate-300 text-slate-400 dark:border-slate-600'
+              done ? 'bg-primary text-on-primary' : 'border border-line-strong text-faint'
             }`}
             onClick={() => void (done ? uncompleteSet(set.id) : onComplete())}
           >
@@ -473,7 +464,7 @@ function SetEditor({
   const weightStep = unit === 'kg' ? 2.5 : 5;
 
   return (
-    <div className="flex flex-col gap-3 border-t border-slate-200 p-3 dark:border-slate-700">
+    <div className="flex flex-col gap-3 border-t border-line p-3">
       {canUseLevel && (
         <SegmentedControl
           label="Belastung"
@@ -517,9 +508,7 @@ function SetEditor({
         />
       )}
       {isBodyweight && (
-        <p className="-mt-2 text-xs text-slate-500 dark:text-slate-400">
-          Negativ = Unterstützung (Band, Maschine)
-        </p>
+        <p className="-mt-2 text-xs text-muted">Negativ = Unterstützung (Band, Maschine)</p>
       )}
       {isTimed ? (
         <Stepper
@@ -572,7 +561,7 @@ function SetEditor({
         )}
         <button
           type="button"
-          className="ml-auto min-h-11 px-2 text-sm font-medium text-red-700 dark:text-red-400"
+          className="ml-auto min-h-11 px-2 text-sm font-medium text-danger"
           onClick={() => void deleteSet(set.id)}
         >
           Satz löschen
@@ -605,7 +594,7 @@ function SetEditor({
               }
             />
           )}
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-muted">
             Last in der negativen Phase, falls die Maschine dort mehr gibt
           </p>
         </div>
@@ -637,7 +626,7 @@ function SetEditor({
       {mode === 'live' && set.completedAt === null && (
         <button
           type="button"
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 font-semibold text-white active:bg-emerald-800"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 font-semibold text-on-primary active:bg-primary-press"
           onClick={() => void onComplete()}
         >
           <CheckIcon className="h-5 w-5" />

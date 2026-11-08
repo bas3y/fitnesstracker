@@ -59,16 +59,14 @@ export function ExercisePicker({
         <button
           type="button"
           aria-pressed={onSelectMany ? position >= 0 : undefined}
-          className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left active:bg-slate-50 dark:active:bg-slate-700"
+          className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left active:bg-page"
           onClick={() => (onSelect ? onSelect(exercise) : toggle(exercise))}
         >
           {onSelectMany && (
             <span
               aria-hidden="true"
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold ${
-                position >= 0
-                  ? 'border-emerald-700 bg-emerald-700 text-white'
-                  : 'border-slate-300 dark:border-slate-600'
+                position >= 0 ? 'border-primary bg-primary text-on-primary' : 'border-line-strong'
               }`}
             >
               {position >= 0 && position + 1}
@@ -105,16 +103,16 @@ export function ExercisePicker({
       onKeyDown={(event) => {
         if (event.key === 'Escape') onClose();
       }}
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-50 outline-none dark:bg-slate-900"
+      className="fixed inset-0 z-50 overflow-y-auto bg-page outline-none"
     >
-      <div className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/95 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+      <div className="sticky top-0 z-10 border-b border-line bg-page/95 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between gap-2 px-4 py-2">
           <h2 id={titleId} className="text-lg font-semibold">
             {creating ? 'Eigene Übung anlegen' : title}
           </h2>
           <button
             type="button"
-            className="min-h-11 px-2 font-medium text-emerald-700 dark:text-emerald-400"
+            className="min-h-11 px-2 font-medium text-primary-text"
             onClick={creating ? () => setCreating(false) : onClose}
           >
             {creating ? 'Zurück' : 'Schließen'}
@@ -152,7 +150,7 @@ export function ExercisePicker({
                 <h3 className="mb-2 font-semibold">Vorschläge</h3>
                 <ul
                   aria-label="Vorschläge"
-                  className="mb-4 divide-y divide-slate-200 overflow-hidden rounded-2xl bg-white shadow-sm dark:divide-slate-700 dark:bg-slate-800"
+                  className="mb-4 divide-y divide-line overflow-hidden rounded-2xl bg-surface"
                 >
                   {suggestions.map((exercise) => (
                     <li key={exercise.id}>{renderOption(exercise)}</li>
@@ -171,7 +169,7 @@ export function ExercisePicker({
       </div>
 
       {onSelectMany && !creating && selected.length > 0 && (
-        <div className="sticky bottom-0 z-10 border-t border-slate-200 bg-slate-50/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+        <div className="sticky bottom-0 z-10 border-t border-line bg-page/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
           <div className="mx-auto max-w-md px-4 py-3">
             <button type="button" className={primaryButton} onClick={() => onSelectMany(selected)}>
               {selected.length === 1 ? '1 Übung' : `${selected.length} Übungen`} hinzufügen

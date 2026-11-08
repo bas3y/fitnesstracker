@@ -22,6 +22,7 @@ import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { notificationState, requestNotifications } from '../supplements/notifications';
 import { BackupSection } from './BackupSection';
 import { ExportSection } from './ExportSection';
+import { PalettePicker } from './PalettePicker';
 import { SHARE_APP_PATH } from './paths';
 import { StorageSection } from './StorageSection';
 import { useSettings } from './useSettings';
@@ -61,16 +62,22 @@ export function SettingsPage() {
           <NutritionGoalsCard settings={settings} />
           <SupplementSettingsCard settings={settings} />
           <Card title="Darstellung">
-            <SegmentedControl
-              label="Theme"
-              options={[
-                { value: 'system', label: 'System' },
-                { value: 'light', label: 'Hell' },
-                { value: 'dark', label: 'Dunkel' },
-              ]}
-              value={settings.theme}
-              onChange={(theme) => void updateSettings({ theme })}
-            />
+            <div className="flex flex-col gap-4">
+              <SegmentedControl
+                label="Theme"
+                options={[
+                  { value: 'system', label: 'System' },
+                  { value: 'light', label: 'Hell' },
+                  { value: 'dark', label: 'Dunkel' },
+                ]}
+                value={settings.theme}
+                onChange={(theme) => void updateSettings({ theme })}
+              />
+              <PalettePicker
+                value={settings.palette}
+                onChange={(palette) => void updateSettings({ palette })}
+              />
+            </div>
           </Card>
           <BackupSection settings={settings} />
           <ExportSection unit={settings.weightUnit} />
@@ -88,7 +95,7 @@ export function SettingsPage() {
 }
 
 function TrainingCard({ settings }: { settings: Settings }) {
-  const checkbox = 'h-5 w-5 accent-emerald-600';
+  const checkbox = 'h-5 w-5 accent-primary';
   return (
     <Card title="Training">
       <div className="flex flex-col gap-2">
@@ -114,7 +121,7 @@ function TrainingCard({ settings }: { settings: Settings }) {
                 value !== null && void updateSettings({ restTimerSeconds: value })
               }
             />
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-muted">
               Pläne können je Übung eine eigene Pausenzeit festlegen.
             </p>
             <label className="flex min-h-11 items-center gap-3">
@@ -137,9 +144,7 @@ function TrainingCard({ settings }: { settings: Settings }) {
               />
               Vibration (nicht auf dem iPhone)
             </label>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Signale kommen nur, solange die App geöffnet ist.
-            </p>
+            <p className="text-sm text-muted">Signale kommen nur, solange die App geöffnet ist.</p>
           </>
         )}
         <h3 className="mt-2 font-semibold">Puls</h3>
@@ -167,7 +172,7 @@ function TrainingCard({ settings }: { settings: Settings }) {
           allowEmpty
           onChange={(restingHeartRate) => void updateSettings({ restingHeartRate })}
         />
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-muted">
           Für die Pulszonen importierter Einheiten. Mit Ruhepuls rechnet die App nach
           Herzfrequenzreserve (Karvonen), sonst in % des max. Pulses.
         </p>
@@ -181,7 +186,7 @@ function TrainingCard({ settings }: { settings: Settings }) {
           />
           Pausen-Auswertung
         </label>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-muted">
           Zeigt in der Statistik, wie sich die Pausenlänge auf den nächsten Satz auswirkt. Rechnet
           auch mit bisherigen Trainings und funktioniert ohne Pausen-Timer.
         </p>
@@ -236,7 +241,7 @@ const DAY_TYPES = [
 ] as const;
 
 function NutritionGoalsCard({ settings }: { settings: Settings }) {
-  const hint = 'text-sm text-slate-500 dark:text-slate-400';
+  const hint = 'text-sm text-muted';
   // Aktuellen Stand lesen, damit schnelle Änderungen an zwei Feldern nichts verlieren
   const change = async (day: keyof NutritionGoals, changes: Partial<NutritionGoal>) => {
     const goals = (await getSettings())?.nutritionGoals ?? settings.nutritionGoals;
@@ -249,7 +254,7 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
         <label className="flex min-h-11 items-center gap-3">
           <input
             type="checkbox"
-            className="h-5 w-5 accent-emerald-600"
+            className="h-5 w-5 accent-primary"
             checked={settings.proteinOnly}
             onChange={(event) => void updateSettings({ proteinOnly: event.target.checked })}
           />
@@ -328,7 +333,7 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
             <label className="mt-1 flex min-h-11 items-center gap-3">
               <input
                 type="checkbox"
-                className="h-5 w-5 accent-emerald-600"
+                className="h-5 w-5 accent-primary"
                 checked={settings.addBurnedCalories}
                 onChange={(event) =>
                   void updateSettings({ addBurnedCalories: event.target.checked })
@@ -349,7 +354,7 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
 }
 
 function SupplementSettingsCard({ settings }: { settings: Settings }) {
-  const checkbox = 'h-5 w-5 accent-emerald-600';
+  const checkbox = 'h-5 w-5 accent-primary';
   const [permission, setPermission] = useState(notificationState);
   const toggleNotifications = async (enabled: boolean) => {
     if (enabled && permission !== 'granted') {
@@ -359,7 +364,7 @@ function SupplementSettingsCard({ settings }: { settings: Settings }) {
     }
     await updateSettings({ supplementNotificationsEnabled: enabled });
   };
-  const hint = 'text-sm text-slate-500 dark:text-slate-400';
+  const hint = 'text-sm text-muted';
 
   return (
     <Card title="Supplements">
@@ -433,7 +438,7 @@ function ProfileCard({ settings }: { settings: Settings }) {
           <input
             id="settings-name"
             autoComplete="given-name"
-            className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-600 dark:bg-slate-900"
+            className="h-11 w-full rounded-xl border border-line bg-subtle px-3 outline-none focus:border-primary focus:bg-surface"
             value={nameDraft ?? settings.name}
             onChange={(event) => setNameDraft(event.target.value)}
             onBlur={() => {
@@ -455,9 +460,7 @@ function ProfileCard({ settings }: { settings: Settings }) {
             void setCurrentBodyWeight(value === null ? null : displayToKg(value, unit))
           }
         />
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Wird auch als Gewicht von heute im Alltag eingetragen.
-        </p>
+        <p className="text-sm text-muted">Wird auch als Gewicht von heute im Alltag eingetragen.</p>
       </div>
     </Card>
   );

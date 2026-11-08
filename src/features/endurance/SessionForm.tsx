@@ -33,7 +33,7 @@ import { RatingPicker } from '../daily/RatingPicker';
 import { GEAR_PATH } from './paths';
 
 const LABEL = 'mb-1 block text-sm font-medium';
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 export function SessionForm({
   initial,
@@ -336,7 +336,7 @@ export function SessionForm({
                   Noch keine Ausrüstung für {ENDURANCE_SPORT_LABELS[sport].name}.{' '}
                   <Link
                     to={`${GEAR_PATH}/new?sport=${sport}`}
-                    className="font-semibold text-emerald-700 dark:text-emerald-400"
+                    className="font-semibold text-primary-text"
                   >
                     Anlegen
                   </Link>
@@ -361,7 +361,7 @@ export function SessionForm({
       </Card>
 
       {error && (
-        <p role="alert" className="mb-3 text-sm font-medium text-red-700 dark:text-red-400">
+        <p role="alert" className="mb-3 text-sm font-medium text-danger">
           {error}
         </p>
       )}

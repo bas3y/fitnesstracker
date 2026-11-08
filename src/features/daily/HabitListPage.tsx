@@ -48,7 +48,7 @@ export function HabitListPage() {
         </>
       )}
       {habits && active.length === 0 && (
-        <p className="mb-4 text-slate-600 dark:text-slate-400">
+        <p className="mb-4 text-muted">
           Noch keine Gewohnheiten. Lege die erste an, sie erscheint dann hier als Checkliste.
         </p>
       )}

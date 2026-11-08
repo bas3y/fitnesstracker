@@ -12,8 +12,8 @@ import { BarcodeScanner } from './BarcodeScanner';
 import { fetchOffProduct, OffRequestError } from './openFoodFacts';
 
 const NOTE = 'mb-4 rounded-xl px-4 py-3 text-sm font-medium';
-const INFO = `${NOTE} bg-sky-50 text-sky-900 dark:bg-sky-950 dark:text-sky-200`;
-const WARN = `${NOTE} bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200`;
+const INFO = `${NOTE} bg-info-soft text-on-info-soft`;
+const WARN = `${NOTE} bg-warn-soft text-on-warn-soft`;
 
 type Lookup =
   | { state: 'local' }
@@ -108,7 +108,7 @@ export function BarcodeFoodFlow({
     setLookup({ state: 'local' });
   };
   const codeLine = (
-    <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
+    <p className="mb-3 text-sm text-muted">
       Strichcode <span className="font-medium tabular-nums">{formatBarcode(code)}</span>
     </p>
   );

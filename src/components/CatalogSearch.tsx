@@ -30,23 +30,20 @@ export function CatalogSearch<T extends Searchable & { id: string }>({
     <>
       <SearchInput label={label} placeholder={placeholder} value={query} onChange={setQuery} />
       {items === undefined || items.length === 0 ? (
-        <p role="status" className="text-sm text-slate-500 dark:text-slate-400">
+        <p role="status" className="text-sm text-muted">
           Datenbank wird eingerichtet …
         </p>
       ) : query.trim() === '' ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-muted">
           {items.length} {noun} offline verfügbar.
         </p>
       ) : results.length === 0 ? (
-        <p role="status" className="text-sm text-slate-500 dark:text-slate-400">
+        <p role="status" className="text-sm text-muted">
           Keine Treffer für „{query.trim()}“.
         </p>
       ) : (
         <Card>
-          <ul
-            aria-label="Suchergebnisse"
-            className="-my-2 divide-y divide-slate-200 dark:divide-slate-700"
-          >
+          <ul aria-label="Suchergebnisse" className="-my-2 divide-y divide-line">
             {results.map((item) => (
               <li key={item.id} className="py-2">
                 {renderItem(item)}
@@ -54,7 +51,7 @@ export function CatalogSearch<T extends Searchable & { id: string }>({
             ))}
           </ul>
           {results.length === MAX_RESULTS && (
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-3 text-xs text-muted">
               Nur die ersten {MAX_RESULTS} Treffer – Suche genauer eingeben.
             </p>
           )}

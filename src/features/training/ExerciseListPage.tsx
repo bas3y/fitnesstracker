@@ -41,7 +41,7 @@ function ExerciseListRow({ exercise }: { exercise: Exercise }) {
     <div className="flex items-center">
       <Link
         to={`/training/exercises/${exercise.id}`}
-        className="flex min-h-14 min-w-0 flex-1 items-center py-2 pl-4 active:bg-slate-50 dark:active:bg-slate-700"
+        className="flex min-h-14 min-w-0 flex-1 items-center py-2 pl-4 active:bg-page"
       >
         <ExerciseSummary exercise={exercise} />
       </Link>

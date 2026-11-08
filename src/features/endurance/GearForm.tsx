@@ -15,7 +15,7 @@ import { ENDURANCE_SPORT_LABELS } from '../../domain/labels';
 import { displayToMeters, metersToDisplay, roundTo } from '../../domain/units';
 
 const LABEL = 'mb-1 block text-sm font-medium';
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 export function GearForm({
   initial,
@@ -140,7 +140,7 @@ export function GearForm({
       </Card>
 
       {error && (
-        <p role="alert" className="mb-3 text-sm font-medium text-red-700 dark:text-red-400">
+        <p role="alert" className="mb-3 text-sm font-medium text-danger">
           {error}
         </p>
       )}

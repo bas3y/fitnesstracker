@@ -37,7 +37,7 @@ import { formatWorkoutDate } from '../../domain/workout';
 import { useSettings } from '../settings/useSettings';
 import { useStatsFilter } from './statsFilter';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 const RECORD_HISTORY_LIMIT = 10;
 
 /** Verlauf, Bestwerte und (im erweiterten Modus) Pausen einer Übung; ohne Einheiten unsichtbar */
@@ -140,7 +140,7 @@ function HistoryCard({
               <p className={HINT} data-testid="block-legend">
                 <span
                   aria-hidden="true"
-                  className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-amber-500"
+                  className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-warn"
                 />
                 Orange: Trainingsblock mit angepassten Sätzen (z. B. Deload)
               </p>
@@ -247,7 +247,7 @@ function RestTable({ analysis }: { analysis: RestAnalysis }) {
   return (
     <table className="w-full text-sm">
       <thead>
-        <tr className="text-left text-slate-500 dark:text-slate-400">
+        <tr className="text-left text-muted">
           <th className="py-1 font-medium">Pause</th>
           <th className="py-1 text-right font-medium">Satzpaare</th>
           <th className="py-1 text-right font-medium">Ø Abfall</th>

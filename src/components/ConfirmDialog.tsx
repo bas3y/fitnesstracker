@@ -24,7 +24,7 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onCancel();
       }}
@@ -38,14 +38,12 @@ export function ConfirmDialog({
         onKeyDown={(event) => {
           if (event.key === 'Escape') onCancel();
         }}
-        className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-lg outline-none dark:bg-slate-800"
+        className="w-full max-w-sm rounded-2xl bg-surface p-4 shadow-lg outline-none"
       >
         <h2 id={titleId} className="mb-2 text-lg font-semibold">
           {title}
         </h2>
-        {children && (
-          <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">{children}</div>
-        )}
+        {children && <div className="mb-4 text-sm text-muted">{children}</div>}
         <div className="flex gap-2">
           <button type="button" className={secondaryButton} onClick={onCancel}>
             Abbrechen

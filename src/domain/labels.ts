@@ -2,6 +2,7 @@ import type {
   BlockKind,
   BookStatus,
   BodyMeasure,
+  ColorPalette,
   DailyImportField,
   DashboardWidget,
   EnduranceSport,
@@ -25,6 +26,14 @@ export const BLOCK_KIND_LABELS: Record<BlockKind, string> = {
   deload: 'Deload',
   peak: 'Peak',
   test: 'Test',
+};
+
+export const PALETTE_LABELS: Record<ColorPalette, string> = {
+  green: 'Grün',
+  red: 'Rot',
+  blue: 'Blau',
+  graphite: 'Graphit',
+  violet: 'Violett',
 };
 
 export const DAILY_IMPORT_FIELD_LABELS: Record<DailyImportField, string> = {

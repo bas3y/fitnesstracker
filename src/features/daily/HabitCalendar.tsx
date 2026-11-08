@@ -15,7 +15,7 @@ import {
 import { WEEKDAYS } from '../../domain/plans';
 
 const monthButton =
-  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl font-semibold active:bg-slate-100 disabled:opacity-40 dark:active:bg-slate-700';
+  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl font-semibold active:bg-subtle disabled:opacity-40';
 
 /**
  * Monatsansicht; Antippen trägt einen Tag nach oder nimmt ihn zurück. Bei „Aufhören“ nur Anzeige
@@ -81,7 +81,7 @@ export function HabitCalendar({ item, today }: { item: HabitWithChecks; today: D
           ›
         </button>
       </div>
-      <div aria-hidden="true" className="grid grid-cols-7 text-center text-xs text-slate-500">
+      <div aria-hidden="true" className="grid grid-cols-7 text-center text-xs text-muted">
         {WEEKDAYS.map(({ label }) => (
           <span key={label} className="py-1">
             {label}
@@ -98,10 +98,10 @@ export function HabitCalendar({ item, today }: { item: HabitWithChecks; today: D
 }
 
 const STATE_CLASSES = {
-  done: 'bg-emerald-700 text-white',
-  warn: 'bg-orange-600 text-white',
-  open: 'bg-slate-100 dark:bg-slate-700',
-  off: 'text-slate-300 dark:text-slate-600',
+  done: 'bg-primary text-on-primary',
+  warn: 'bg-mark text-surface',
+  open: 'bg-subtle',
+  off: 'text-faint',
 };
 
 function DayCell({
@@ -132,7 +132,7 @@ function DayCell({
     >
       <span
         className={`flex h-full w-full items-center justify-center rounded-lg text-sm tabular-nums ${STATE_CLASSES[state]} ${
-          day === today ? 'outline-2 outline-slate-500' : ''
+          day === today ? 'outline-2 outline-muted' : ''
         } ${detail === 'pausiert' ? 'opacity-50' : ''}`}
       >
         {Number(day.slice(8))}

@@ -65,7 +65,7 @@ export function EmojiPicker({
         </label>
         <input
           id={inputId}
-          className={`${inputField} w-20 text-center text-lg ${own ? 'border-emerald-700 dark:border-emerald-500' : ''}`}
+          className={`${inputField} w-20 text-center text-lg ${own ? 'border-primary' : ''}`}
           inputMode="text"
           autoComplete="off"
           maxLength={32}
@@ -77,7 +77,7 @@ export function EmojiPicker({
       </div>
       <p
         id={hintId}
-        className={`mt-1 text-sm ${invalid ? 'font-medium text-red-700 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}
+        className={`mt-1 text-sm ${invalid ? 'font-medium text-danger' : 'text-muted'}`}
       >
         {invalid ? 'Bitte genau ein Emoji eingeben' : 'Über die Emoji-Tastatur, genau ein Zeichen'}
       </p>

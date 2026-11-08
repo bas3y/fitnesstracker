@@ -20,7 +20,7 @@ const CelebrationWatcher = lazy(() =>
 
 export function Layout() {
   const settings = useSettings();
-  useApplyTheme(settings?.theme);
+  useApplyTheme(settings?.theme, settings?.palette);
 
   useEffect(() => {
     void ensureSettings();
@@ -34,7 +34,7 @@ export function Layout() {
         <Link
           to="/settings"
           role="status"
-          className="block bg-amber-100 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 text-center text-sm font-medium text-amber-900 dark:bg-amber-900/60 dark:text-amber-100"
+          className="block bg-warn-soft px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 text-center text-sm font-medium text-on-warn-soft"
         >
           {reminder.never
             ? 'Noch kein Backup erstellt'

@@ -35,7 +35,7 @@ import {
   useGearList,
 } from './useEndurance';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 export function SessionDetailPage() {
   const { id } = useParams();
@@ -55,7 +55,7 @@ export function SessionDetailPage() {
     return (
       <Page title="Einheit" backTo={backTo}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">Diese Einheit existiert nicht mehr.</p>
+          <p className="text-muted">Diese Einheit existiert nicht mehr.</p>
         </Card>
       </Page>
     );
@@ -146,7 +146,7 @@ function SessionEffortsCard({
                   role="img"
                   aria-hidden={false}
                   aria-label="Bestzeit"
-                  className="h-5 w-5 text-amber-500"
+                  className="h-5 w-5 text-star"
                 />
               )}
             </span>
@@ -209,11 +209,7 @@ function SessionDetail({
         {gear && (
           <p className={`mt-3 ${MUTED}`}>
             Ausrüstung:{' '}
-            <Link
-              to={gearPath(gear.id)}
-              state={from}
-              className="font-semibold text-emerald-700 dark:text-emerald-400"
-            >
+            <Link to={gearPath(gear.id)} state={from} className="font-semibold text-primary-text">
               {gear.name}
             </Link>
           </p>

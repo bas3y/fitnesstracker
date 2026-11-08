@@ -11,7 +11,7 @@ import {
 import { BLOCK_KIND_LABELS } from '../../domain/labels';
 import { formatDayKey } from '../../domain/stats';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 /** z. B. „Sätze: 50 % Sätze · 90 % Gewicht“ bzw. Hinweis, dass nur angezeigt wird */
 function adjustmentText(
@@ -45,7 +45,7 @@ export function BlockStatusPanel({ plan, today }: { plan: Plan; today: DayKey })
   if (phase === 'running') {
     return (
       <div className="mb-2" data-testid="block-status">
-        <p className="font-semibold text-emerald-800 dark:text-emerald-300">
+        <p className="font-semibold text-primary-text">
           {formatBlockWeek({ ...block, week: status.week })}
         </p>
         {adjustment && <p className={HINT}>{adjustment}</p>}
@@ -54,11 +54,11 @@ export function BlockStatusPanel({ plan, today }: { plan: Plan; today: DayKey })
   }
   return (
     <div
-      className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/40"
+      className="mb-3 rounded-xl border border-warn/50 bg-warn-soft p-3"
       data-testid="block-status"
     >
       <p className="font-semibold">{label} ist geschafft!</p>
-      <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">
+      <p className="mb-3 text-sm text-muted">
         Geplant bis {formatDayKey(status.endDate)}. Bis du wechselst, läuft {label} weiter
         {plan.blockAdjust && !isNeutralAdjustment(block) ? ` (${formatAdjustment(block)})` : ''}.
       </p>

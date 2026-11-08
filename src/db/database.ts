@@ -527,6 +527,17 @@ export class AppDatabase extends Dexie {
             workout.block ??= null;
           });
       });
+    // Farbpaletten
+    this.version(29)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.palette ??= 'green';
+          }),
+      );
   }
 }
 

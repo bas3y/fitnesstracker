@@ -28,7 +28,7 @@ import { DayNavigator } from './DayNavigator';
 import { BODY_PATH, MEASUREMENTS_PATH } from './paths';
 import { useBodyMeasurement, useBodyMeasurements, useDayBackTo, useDayParam } from './useDaily';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 const DEFAULT_START_CM = 50;
 
 export function BodyMeasurementsPage() {

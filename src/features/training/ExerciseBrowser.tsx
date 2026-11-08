@@ -112,7 +112,7 @@ export function ExerciseBrowser({
               <label className="flex min-h-11 items-center gap-3">
                 <input
                   type="checkbox"
-                  className="h-5 w-5 accent-emerald-600"
+                  className="h-5 w-5 accent-primary"
                   checked={filter.includeHidden}
                   onChange={(event) => setFilter({ includeHidden: event.target.checked })}
                 />
@@ -124,19 +124,19 @@ export function ExerciseBrowser({
       )}
 
       {exercises === undefined || exercises.length === 0 ? (
-        <p role="status" className="text-sm text-slate-500 dark:text-slate-400">
+        <p role="status" className="text-sm text-muted">
           Übungen werden geladen …
         </p>
       ) : (
         <>
           <div className="mb-2 flex min-h-11 items-center justify-between gap-2">
-            <p role="status" className="text-sm text-slate-500 dark:text-slate-400">
+            <p role="status" className="text-sm text-muted">
               {results.length === 1 ? '1 Übung' : `${results.length} Übungen`}
             </p>
             {isFiltered && (
               <button
                 type="button"
-                className="min-h-11 px-2 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+                className="min-h-11 px-2 text-sm font-medium text-primary-text"
                 onClick={() => onStateChange(INITIAL_BROWSER_STATE)}
               >
                 Alle zurücksetzen
@@ -145,7 +145,7 @@ export function ExerciseBrowser({
           </div>
           {results.length === 0 ? (
             <Card>
-              <p className="mb-3 text-slate-600 dark:text-slate-400">Keine passenden Übungen.</p>
+              <p className="mb-3 text-muted">Keine passenden Übungen.</p>
               <button
                 type="button"
                 className={secondaryButton}
@@ -157,7 +157,7 @@ export function ExerciseBrowser({
           ) : (
             <ul
               aria-label="Übungsliste"
-              className="mb-4 divide-y divide-slate-200 overflow-hidden rounded-2xl bg-white shadow-sm dark:divide-slate-700 dark:bg-slate-800"
+              className="mb-4 divide-y divide-line overflow-hidden rounded-2xl bg-surface"
             >
               {results.map((exercise) => (
                 <li key={exercise.id}>{renderItem(exercise)}</li>
@@ -180,7 +180,7 @@ export function ExerciseSummary({ exercise }: { exercise: Exercise }) {
         {exercise.source === 'user' && <Badge>Eigene</Badge>}
         {exercise.hiddenAt !== null && <Badge>Ausgeblendet</Badge>}
       </span>
-      <span className="block truncate text-sm text-slate-500 dark:text-slate-400">
+      <span className="block truncate text-sm text-muted">
         {EQUIPMENT_LABELS[exercise.equipment]}
         {muscles && ` · ${muscles}`}
       </span>
@@ -190,7 +190,7 @@ export function ExerciseSummary({ exercise }: { exercise: Exercise }) {
 
 export function Badge({ children }: { children: ReactNode }) {
   return (
-    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+    <span className="shrink-0 rounded-full bg-subtle px-2 py-0.5 text-xs font-medium text-muted">
       {children}
     </span>
   );

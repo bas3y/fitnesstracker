@@ -102,7 +102,7 @@ export function FoodListPage() {
               <li key={food.id} className="flex items-center">
                 <Link
                   to={foodPath(food.id)}
-                  className="flex min-h-14 min-w-0 flex-1 items-center py-2 pl-4 active:bg-slate-50 dark:active:bg-slate-700"
+                  className="flex min-h-14 min-w-0 flex-1 items-center py-2 pl-4 active:bg-page"
                 >
                   <FoodSummary food={food} />
                 </Link>

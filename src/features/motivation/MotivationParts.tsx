@@ -13,11 +13,12 @@ import { formatGoalDate } from '../../domain/goals';
 import { formatStreak } from '../../domain/habits';
 import type { StreakItem } from '../../domain/streaks';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 /** Ring je Stufe: Bronze, Silber, Gold, dann Smaragd, Saphir, Amethyst */
 const TIER_RINGS = [
-  'border-slate-200 bg-slate-100 grayscale opacity-60 dark:border-slate-700 dark:bg-slate-900',
+  'border-line bg-subtle grayscale opacity-60',
+  // Materialfarben, unabhängig von der Palette
   'border-amber-700 bg-amber-50 dark:bg-amber-950/40',
   'border-slate-400 bg-slate-50 dark:border-slate-300 dark:bg-slate-700',
   'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/30',
@@ -79,14 +80,12 @@ export function StreakRow({
         {!compact && <p className={HINT}>{streakStatus(item, trainingWeekTarget)}</p>}
         {compact && <p className={HINT}>{item.todayDone ? 'Geschafft' : 'Noch offen'}</p>}
       </div>
-      <div
-        className={`shrink-0 text-right ${item.current > 0 ? '' : 'text-slate-400 dark:text-slate-500'}`}
-      >
+      <div className={`shrink-0 text-right ${item.current > 0 ? '' : 'text-faint'}`}>
         <p className="text-xl leading-tight font-bold tabular-nums">
           {item.todayDone && <span aria-hidden="true">🔥 </span>}
           {count}
         </p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{unit}</p>
+        <p className="text-xs text-muted">{unit}</p>
       </div>
     </li>
   );
@@ -98,7 +97,7 @@ export function BadgeTile({ state, onOpen }: { state: BadgeState; onOpen: () => 
     <button
       type="button"
       aria-label={`${badge.name}: ${level === 0 ? 'gesperrt' : `Stufe ${level} von ${tiers.length}`}`}
-      className="flex min-h-11 w-full min-w-0 flex-col items-center gap-1 rounded-xl px-0 py-2 text-center min-[360px]:px-1 active:bg-slate-100 dark:active:bg-slate-700"
+      className="flex min-h-11 w-full min-w-0 flex-col items-center gap-1 rounded-xl px-0 py-2 text-center min-[360px]:px-1 active:bg-subtle"
       onClick={onOpen}
     >
       <span
@@ -110,7 +109,7 @@ export function BadgeTile({ state, onOpen }: { state: BadgeState; onOpen: () => 
       <span className="w-full text-xs leading-tight font-medium hyphens-manual min-[360px]:text-sm [overflow-wrap:anywhere]">
         {NAME_BREAKS[badge.id] ?? badge.name}
       </span>
-      <span className="text-xs text-slate-500 dark:text-slate-400">
+      <span className="text-xs text-muted">
         {level === 0 ? 'Gesperrt' : `${level} / ${tiers.length}`}
       </span>
     </button>
@@ -139,9 +138,9 @@ export function BadgeDialog({
           <p className="text-sm">
             Nächste Stufe: {formatBadgeTier(badge.id, next.threshold, units)}
           </p>
-          <div className="mt-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700">
+          <div className="mt-1 h-2 rounded-full bg-subtle">
             <div
-              className="h-2 rounded-full bg-emerald-500"
+              className="h-2 rounded-full bg-primary"
               style={{ width: `${tierShare(state) * 100}%` }}
             />
           </div>
@@ -159,7 +158,7 @@ export function BadgeDialog({
             <span className={`min-w-0 flex-1 ${tier.reached ? 'font-medium' : HINT}`}>
               {formatBadgeTier(badge.id, tier.threshold, units)}
             </span>
-            <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">
+            <span className="shrink-0 text-xs text-muted">
               {tier.reached ? (tier.achievedOn ? formatGoalDate(tier.achievedOn) : 'erreicht') : ''}
             </span>
           </li>

@@ -33,9 +33,7 @@ export function HabitEditPage() {
     return (
       <Page title="Gewohnheit bearbeiten" backTo={HABITS_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Diese Gewohnheit existiert nicht mehr.
-          </p>
+          <p className="text-muted">Diese Gewohnheit existiert nicht mehr.</p>
         </Card>
       </Page>
     );

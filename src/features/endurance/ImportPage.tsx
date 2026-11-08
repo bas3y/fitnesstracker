@@ -26,7 +26,7 @@ import { TRAINING_PATH } from '../training/paths';
 import { IMPORT_PATH, sessionPath } from './paths';
 import { takeSharedFiles } from './sharedFiles';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 interface PreviewItem {
   planned: PlannedImport;
@@ -304,11 +304,11 @@ function PreviewRow({
   const merge = planned.status === 'merge';
   const title = sessionTitle({ title: session.title, sport });
   return (
-    <li className="rounded-xl bg-white p-3 shadow-sm dark:bg-slate-800">
+    <li className="rounded-xl bg-surface p-3">
       <label className="flex min-h-11 items-start gap-3">
         <input
           type="checkbox"
-          className="mt-1 h-5 w-5 shrink-0 accent-emerald-600"
+          className="mt-1 h-5 w-5 shrink-0 accent-primary"
           checked={selected}
           onChange={(event) => onChange(key, { selected: event.target.checked })}
         />
@@ -316,7 +316,7 @@ function PreviewRow({
           <span className="block font-semibold">
             {ENDURANCE_SPORT_LABELS[sport].icon} {title}
             {merge && (
-              <span className="ml-2 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800 dark:bg-sky-950 dark:text-sky-200">
+              <span className="ml-2 rounded-full bg-info-soft px-2 py-0.5 text-xs font-medium text-on-info-soft">
                 ergänzt deine Einheit
               </span>
             )}
@@ -336,7 +336,7 @@ function PreviewRow({
           <span className="shrink-0">Sportart</span>
           <select
             aria-label={`Sportart: ${title}`}
-            className="h-11 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-2 dark:border-slate-600 dark:bg-slate-900"
+            className="h-11 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-2"
             value={sport}
             onChange={(event) => onChange(key, { sport: event.target.value as EnduranceSport })}
           >
@@ -363,7 +363,7 @@ function Done({ summary, onMore }: { summary: ImportSummary; onMore: () => void 
   return (
     <>
       <Card>
-        <p role="status" className="font-semibold text-emerald-700 dark:text-emerald-400">
+        <p role="status" className="font-semibold text-primary-text">
           ✓ Import abgeschlossen: {parts.join(', ')}
         </p>
       </Card>

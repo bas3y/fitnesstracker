@@ -188,7 +188,7 @@ export function SortableList<T extends SortableItem>({
             <button
               type="button"
               aria-label={`${item.name} verschieben`}
-              className="flex h-14 w-10 shrink-0 cursor-grab touch-none items-center justify-center text-xl text-slate-400 select-none"
+              className="flex h-14 w-10 shrink-0 cursor-grab touch-none items-center justify-center text-xl text-faint select-none"
               onPointerDown={(event) => onPointerDown(event, id)}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}

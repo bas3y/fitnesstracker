@@ -23,7 +23,7 @@ export function FavoriteToggle({
     >
       <StarIcon
         filled={isFavorite}
-        className={`h-6 w-6 ${isFavorite ? 'text-amber-500' : 'text-slate-400'}`}
+        className={`h-6 w-6 ${isFavorite ? 'text-star' : 'text-faint'}`}
       />
     </button>
   );

@@ -56,7 +56,7 @@ export function GoalEditPage() {
     return (
       <Page title="Ziel bearbeiten" backTo={GOALS_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">Dieses Ziel gibt es nicht mehr.</p>
+          <p className="text-muted">Dieses Ziel gibt es nicht mehr.</p>
         </Card>
       </Page>
     );

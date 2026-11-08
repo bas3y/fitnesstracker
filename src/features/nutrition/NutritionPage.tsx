@@ -27,7 +27,7 @@ export function NutritionPage() {
           <Card title="Protein eintragen">
             <ProteinQuickAdd key={date} date={date} grams={data.quickProteinGrams} />
           </Card>
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mb-4 text-sm text-muted">
             Du erfasst nur Protein. Mahlzeiten mit Kalorien und Lebensmitteln schaltest du unter
             Einstellungen → Ernährung wieder ein.
           </p>
@@ -48,7 +48,7 @@ export function NutritionPage() {
         ))}
       {data && settings && !proteinOnly && (
         <Card title="Protein schnell eintragen">
-          <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mb-3 text-sm text-muted">
             Ohne Lebensmittel, z. B. ein Shake: zählt zum Protein des Tages, nicht zu den Kalorien.
           </p>
           <ProteinQuickAdd key={date} date={date} grams={data.quickProteinGrams} />

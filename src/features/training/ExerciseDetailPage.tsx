@@ -36,7 +36,7 @@ export function ExerciseDetailPage() {
     return (
       <Page title="Übung nicht gefunden" backTo={LIST_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">Diese Übung gibt es nicht (mehr).</p>
+          <p className="text-muted">Diese Übung gibt es nicht (mehr).</p>
         </Card>
       </Page>
     );
@@ -87,7 +87,7 @@ function ExerciseDetail({ exercise }: { exercise: Exercise }) {
           >
             <StarIcon
               filled={exercise.isFavorite}
-              className={`h-5 w-5 ${exercise.isFavorite ? 'text-amber-500' : ''}`}
+              className={`h-5 w-5 ${exercise.isFavorite ? 'text-star' : ''}`}
             />
             {exercise.isFavorite ? 'Favorit entfernen' : 'Als Favorit markieren'}
           </button>
@@ -107,7 +107,7 @@ function ExerciseDetail({ exercise }: { exercise: Exercise }) {
               >
                 {hidden ? 'Wieder einblenden' : 'Ausblenden'}
               </button>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-muted">
                 {hidden
                   ? 'Ausgeblendete Übungen erscheinen nicht in der Übungsauswahl.'
                   : 'Mitgelieferte Übungen können nicht gelöscht, aber ausgeblendet werden.'}
@@ -123,7 +123,7 @@ function ExerciseDetail({ exercise }: { exercise: Exercise }) {
 function Detail({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="text-sm text-slate-500 dark:text-slate-400">{label}</dt>
+      <dt className="text-sm text-muted">{label}</dt>
       <dd className="font-medium">{children}</dd>
     </div>
   );
@@ -170,7 +170,7 @@ function DeleteButton({ exercise }: { exercise: Exercise }) {
     );
   }
   return (
-    <div className="rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/40">
+    <div className="rounded-xl border border-danger/40 bg-danger-soft p-3">
       <p className="mb-3 text-sm font-medium">„{exercise.name}“ wirklich löschen?</p>
       <div className="flex gap-2">
         <button type="button" className={secondaryButton} onClick={() => setConfirming(false)}>

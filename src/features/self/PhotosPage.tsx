@@ -16,7 +16,7 @@ import { PhotoFields, PhotoImage, PoseChips } from './PhotoParts';
 import { prepareImage } from './prepareImage';
 import { useProgressPhotos } from './useSelf';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 function usePoseFilter(): [PhotoPose | null, (pose: PhotoPose | null) => void] {
   const [params, setParams] = useSearchParams();
@@ -83,7 +83,7 @@ export function PhotosPage() {
         Aufnehmen oder aus der Galerie wählen. Bleibt nur auf diesem Gerät.
       </p>
       {error && (
-        <p role="alert" className="mb-4 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mb-4 text-sm text-danger">
           {error}
         </p>
       )}
@@ -156,7 +156,7 @@ function PhotoGrid({
                     variant="thumb"
                     className="aspect-[3/4] w-full rounded-xl object-cover"
                   />
-                  <span className="absolute bottom-1 left-1 rounded-md bg-slate-900/70 px-1.5 text-xs text-white">
+                  <span className="absolute bottom-1 left-1 rounded-md bg-scrim px-1.5 text-xs text-white">
                     {PHOTO_POSE_LABELS[photo.pose]}
                   </span>
                 </Link>
@@ -207,12 +207,12 @@ function AddPhotoDialog({
     }
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex max-h-[90dvh] w-full max-w-sm flex-col gap-3 overflow-y-auto rounded-2xl bg-white p-4 shadow-lg dark:bg-slate-800"
+        className="flex max-h-[90dvh] w-full max-w-sm flex-col gap-3 overflow-y-auto rounded-2xl bg-surface p-4 shadow-lg"
       >
         <h2 id={titleId} className="text-lg font-semibold">
           Foto speichern
@@ -230,7 +230,7 @@ function AddPhotoDialog({
         </p>
         <PhotoFields value={value} today={today} onChange={setValue} />
         {error && (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         )}

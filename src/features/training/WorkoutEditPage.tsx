@@ -44,7 +44,7 @@ function EditWorkout({ detail }: { detail: WorkoutDetail }) {
       <WorkoutEditor detail={detail} mode="edit" />
       {empty ? (
         <>
-          <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mb-2 text-sm text-muted">
             Ohne Übungen wird das Workout nicht gespeichert.
           </p>
           <button

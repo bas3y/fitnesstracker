@@ -21,7 +21,7 @@ import { useSettings } from '../settings/useSettings';
 import { GEAR_PATH, gearPath, sessionPath } from './paths';
 import { useEnduranceSessions, useGear } from './useEndurance';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 const RECENT_SESSIONS = 5;
 
 export function GearDetailPage() {
@@ -42,9 +42,7 @@ export function GearDetailPage() {
     return (
       <Page title="Ausrüstung" backTo={backTo}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Diese Ausrüstung existiert nicht mehr.
-          </p>
+          <p className="text-muted">Diese Ausrüstung existiert nicht mehr.</p>
         </Card>
       </Page>
     );
@@ -79,7 +77,7 @@ function GearDetail({
       {archived && (
         <p
           role="status"
-          className="mb-4 rounded-xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          className="mb-4 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-on-warn-soft"
         >
           Ausgemustert: steht bei neuen Einheiten nicht mehr zur Auswahl.
         </p>
@@ -95,7 +93,7 @@ function GearDetail({
         </p>
         <p
           data-testid="gear-distance"
-          className={`mb-2 text-2xl font-bold tabular-nums ${worn ? 'text-orange-700 dark:text-orange-400' : ''}`}
+          className={`mb-2 text-2xl font-bold tabular-nums ${worn ? 'text-mark' : ''}`}
         >
           {distance(distanceMeters)}
         </p>

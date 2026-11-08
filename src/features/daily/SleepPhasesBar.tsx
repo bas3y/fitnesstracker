@@ -2,6 +2,7 @@ import type { SleepPhases } from '../../db/types';
 import { SLEEP_PHASE_LABELS, SLEEP_PHASES } from '../../domain/daily';
 import { formatWorkoutDuration } from '../../domain/workout';
 
+// Feste Kategoriefarben, unabhängig von der Palette
 const COLORS: Record<keyof SleepPhases, string> = {
   deep: 'bg-indigo-700 dark:bg-indigo-500',
   light: 'bg-sky-400',
@@ -21,10 +22,7 @@ export function SleepPhasesBar({
   if (total === 0) return null;
   return (
     <div className="flex flex-col gap-2">
-      <div
-        className="flex h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"
-        aria-hidden
-      >
+      <div className="flex h-3 overflow-hidden rounded-full bg-subtle-strong" aria-hidden>
         {SLEEP_PHASES.map((phase) => (
           <div
             key={phase}
@@ -39,7 +37,7 @@ export function SleepPhasesBar({
             <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${COLORS[phase]}`} aria-hidden />
             <span>
               {SLEEP_PHASE_LABELS[phase]}{' '}
-              <span className="tabular-nums text-slate-500 dark:text-slate-400">
+              <span className="tabular-nums text-muted">
                 {formatWorkoutDuration(phases[phase])}
               </span>
             </span>

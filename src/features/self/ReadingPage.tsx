@@ -26,7 +26,7 @@ import { bookPath, NEW_BOOK_PATH } from './paths';
 import { ReadingLogDialog } from './ReadingLogDialog';
 import { useBooks, useReadingLogs } from './useSelf';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 /** Lese-Log: aktuelle Bücher mit Fortschritt, Leseliste, gelesene Bücher */
 export function ReadingPage() {
@@ -151,7 +151,7 @@ function Summary({ logs, date, today }: { logs: ReadingLog[]; date: DayKey; toda
 function CurrentBook({ book, logs, onLog }: { book: Book; logs: ReadingLog[]; onLog: () => void }) {
   const progress = bookProgress(book, logs);
   return (
-    <li className="mb-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800">
+    <li className="mb-3 rounded-2xl bg-surface p-4">
       <Link to={bookPath(book.id)} className="mb-2 block">
         <span className="block font-semibold">📖 {book.title}</span>
         {book.author && <span className={`block ${HINT}`}>{book.author}</span>}

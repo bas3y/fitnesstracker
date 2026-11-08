@@ -69,7 +69,7 @@ export function MealCard({
               <li key={entry.id} className="flex items-center">
                 <button
                   type="button"
-                  className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-xl px-2 py-1 text-left active:bg-slate-50 dark:active:bg-slate-700"
+                  className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-xl px-2 py-1 text-left active:bg-page"
                   onClick={() => setOpen({ entry })}
                 >
                   <span className="block truncate font-medium">{entry.name}</span>
@@ -111,7 +111,7 @@ export function MealCard({
         <button
           type="button"
           aria-label={`${label}: Lieblingsmahlzeiten`}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 text-lg text-amber-500 dark:border-slate-600"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line-strong text-lg text-star"
           onClick={() => setOpen('saved')}
         >
           ★
@@ -225,7 +225,7 @@ function SavedMealsDialog({
             <li key={savedMeal.id} className="flex items-center">
               <button
                 type="button"
-                className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-xl px-2 py-1 text-left active:bg-slate-50 dark:active:bg-slate-700"
+                className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-xl px-2 py-1 text-left active:bg-page"
                 onClick={() => void apply(savedMeal.id, savedMeal.name)}
               >
                 <span className="block truncate font-medium">{savedMeal.name}</span>
@@ -242,7 +242,7 @@ function SavedMealsDialog({
         </ul>
       )}
       {canSave && (
-        <div className="flex flex-col gap-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+        <div className="flex flex-col gap-2 border-t border-line pt-3">
           <label htmlFor={nameId} className="text-sm font-medium">
             {label} von diesem Tag speichern als
           </label>
@@ -254,7 +254,7 @@ function SavedMealsDialog({
             onChange={(event) => setName(event.target.value)}
           />
           {error && (
-            <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
+            <p role="alert" className="text-sm font-medium text-danger">
               {error}
             </p>
           )}

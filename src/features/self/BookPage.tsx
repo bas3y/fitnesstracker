@@ -27,7 +27,7 @@ import { bookEditPath, READING_PATH } from './paths';
 import { ReadingLogDialog } from './ReadingLogDialog';
 import { useBook, useBookLogs, useBookNotes } from './useSelf';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 export function BookPage() {
   const { id = '' } = useParams();
@@ -65,7 +65,7 @@ function BookDetail({ book, logs, backTo }: { book: Book; logs: ReadingLog[]; ba
       action={
         <Link
           to={bookEditPath(book.id)}
-          className="flex min-h-11 shrink-0 items-center rounded-xl border border-slate-300 px-3 text-sm font-semibold dark:border-slate-600"
+          className="flex min-h-11 shrink-0 items-center rounded-xl border border-line-strong px-3 text-sm font-semibold"
         >
           Bearbeiten
         </Link>
@@ -199,15 +199,12 @@ function NotesCard({ book }: { book: Book }) {
             Notiz speichern
           </button>
         </div>
-        {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
       </form>
       {notes && notes.length > 0 && (
         <ul aria-label="Notizen" className="mt-4 flex flex-col gap-2">
           {notes.map((note) => (
-            <li
-              key={note.id}
-              className="flex items-start gap-1 rounded-xl bg-slate-50 py-2 pl-3 dark:bg-slate-900"
-            >
+            <li key={note.id} className="flex items-start gap-1 rounded-xl bg-page py-2 pl-3">
               <span className="min-w-0 flex-1">
                 <span className="block whitespace-pre-line">{note.text}</span>
                 <span className={HINT}>
@@ -237,7 +234,7 @@ function LogsCard({ logs, today }: { logs: ReadingLog[]; today: DayKey }) {
         {newest.map((log) => (
           <li
             key={log.id}
-            className="flex min-h-11 items-center justify-between gap-2 border-b border-slate-100 last:border-0 dark:border-slate-700"
+            className="flex min-h-11 items-center justify-between gap-2 border-b border-line last:border-0"
           >
             <span>
               {formatDayLabel(log.date, today)}

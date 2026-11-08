@@ -11,7 +11,7 @@ import { TRAINING_PATH } from '../training/paths';
 import { GEAR_PATH, gearPath } from './paths';
 import { useEnduranceSessions, useGearList } from './useEndurance';
 
-const MUTED = 'text-sm text-slate-600 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 function gearHint(gear: Gear, sessions: EnduranceSession[], unit: DistanceUnit): string {
   const { distanceMeters } = gearUsage(gear, sessions);

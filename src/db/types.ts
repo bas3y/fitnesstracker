@@ -12,6 +12,9 @@ export interface BaseEntity {
 export type WeightUnit = 'kg' | 'lb';
 export type DistanceUnit = 'km' | 'mi';
 export type ThemePreference = 'system' | 'light' | 'dark';
+/** Farbpaletten (seit DB-Version 29), Farben in `src/index.css` */
+export const COLOR_PALETTES = ['green', 'red', 'blue', 'graphite', 'violet'] as const;
+export type ColorPalette = (typeof COLOR_PALETTES)[number];
 
 export interface Settings extends BaseEntity {
   name: string;
@@ -19,6 +22,8 @@ export interface Settings extends BaseEntity {
   distanceUnit: DistanceUnit;
   bodyWeightKg: number | null;
   theme: ThemePreference;
+  /** Farbpalette (seit DB-Version 29) */
+  palette: ColorPalette;
   lastBackupAt: Timestamp | null;
   /** Stand der mitgelieferten Daten (`0` = noch nicht eingespielt) */
   seedVersion: number;

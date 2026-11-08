@@ -17,14 +17,14 @@ function ChoiceButton({
   return (
     <button
       type="button"
-      className="mb-2 flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-left shadow-sm active:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:active:bg-slate-700"
+      className="mb-2 flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-line-strong bg-surface px-4 py-3 text-left active:bg-page"
       onClick={onClick}
     >
       <span className="min-w-0">
         <span className="block font-semibold">{label}</span>
-        <span className="block text-sm text-slate-500 dark:text-slate-400">{hint}</span>
+        <span className="block text-sm text-muted">{hint}</span>
       </span>
-      <span aria-hidden="true" className="text-xl text-slate-400">
+      <span aria-hidden="true" className="text-xl text-faint">
         ›
       </span>
     </button>
@@ -46,7 +46,7 @@ export function PlanNewPage() {
         onClick={() => void open(createPlan())}
       />
       <h2 className="mt-6 mb-1 text-lg font-semibold">Vorlagen</h2>
-      <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">
+      <p className="mb-3 text-sm text-muted">
         Eine Vorlage wird als eigener Plan angelegt, den du frei ändern kannst.
       </p>
       {PLAN_TEMPLATES.map((template) => (

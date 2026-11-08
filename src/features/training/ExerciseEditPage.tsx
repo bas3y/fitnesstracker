@@ -35,9 +35,7 @@ export function ExerciseEditPage() {
     return (
       <Page title="Übung bearbeiten" backTo={LIST_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Nur eigene Übungen können bearbeitet werden.
-          </p>
+          <p className="text-muted">Nur eigene Übungen können bearbeitet werden.</p>
         </Card>
       </Page>
     );

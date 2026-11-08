@@ -19,7 +19,7 @@ export function ActiveWorkoutBanner({ first }: { first: boolean }) {
       to={WORKOUT_PATH}
       state={from}
       role="status"
-      className={`block bg-emerald-700 px-4 pb-3 text-center text-sm font-medium text-white ${
+      className={`block bg-primary px-4 pb-3 text-center text-sm font-medium text-on-primary ${
         first ? 'pt-[calc(0.75rem+env(safe-area-inset-top))]' : 'pt-3'
       }`}
     >

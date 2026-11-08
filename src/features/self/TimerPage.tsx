@@ -48,7 +48,7 @@ import { useNow } from '../training/useWorkouts';
 import { useTimerSessions } from './useSelf';
 import { useWakeLock } from './useWakeLock';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 const MEDITATION_CHIPS = [5, 10, 15, 20, 30];
 
 /** Fokus-Timer (Pomodoro) und Meditation mit Gong; Sitzungen des gewählten Tages */
@@ -209,8 +209,8 @@ function RunningTimer({ timer }: { timer: ActiveTimer }) {
   return (
     <section
       aria-label="Timer läuft"
-      className={`mb-4 rounded-2xl p-4 text-white shadow-sm ${
-        state.phase.type === 'break' ? 'bg-sky-700' : 'bg-emerald-700'
+      className={`mb-4 rounded-2xl p-5 ${
+        state.phase.type === 'break' ? 'bg-hero-2 text-on-hero-2' : 'bg-hero text-on-hero'
       }`}
     >
       <p className="text-sm font-medium uppercase opacity-80">
@@ -225,9 +225,9 @@ function RunningTimer({ timer }: { timer: ActiveTimer }) {
       >
         {formatClock(state.phaseRemaining)}
       </p>
-      <div className="mb-2 h-2 overflow-hidden rounded-full bg-white/25">
+      <div className="mb-2 h-2 overflow-hidden rounded-full bg-current/25">
         <div
-          className="h-full rounded-full bg-white"
+          className="h-full rounded-full bg-current"
           style={{ width: `${Math.min(100, (phaseDone / state.phase.seconds) * 100)}%` }}
         />
       </div>
@@ -280,7 +280,7 @@ function RunningTimer({ timer }: { timer: ActiveTimer }) {
 }
 
 const LIGHT_BUTTON =
-  'flex min-h-11 items-center justify-center rounded-xl bg-white/15 px-3 font-semibold active:bg-white/25';
+  'flex min-h-11 items-center justify-center rounded-xl bg-current/15 px-3 font-semibold active:bg-current/25';
 
 function EndDialog({
   timer,
@@ -295,7 +295,7 @@ function EndDialog({
   const canSave = seconds >= 60;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 text-slate-900 dark:text-slate-100"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4 text-fg"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -304,7 +304,7 @@ function EndDialog({
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex w-full max-w-sm flex-col gap-2 rounded-2xl bg-white p-4 shadow-lg dark:bg-slate-800"
+        className="flex w-full max-w-sm flex-col gap-2 rounded-2xl bg-surface p-4 shadow-lg"
       >
         <h2 id={titleId} className="text-lg font-semibold">
           Timer beenden?
@@ -415,7 +415,7 @@ function SessionList({
             return (
               <li
                 key={session.id}
-                className="mb-2 flex items-start gap-2 rounded-2xl bg-white p-3 shadow-sm dark:bg-slate-800"
+                className="mb-2 flex items-start gap-2 rounded-2xl bg-surface p-3"
               >
                 <span aria-hidden="true" className="text-2xl">
                   {label.icon}
@@ -430,7 +430,7 @@ function SessionList({
                   )}
                   <button
                     type="button"
-                    className="mt-1 min-h-11 text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+                    className="mt-1 min-h-11 text-sm font-semibold text-primary-text"
                     aria-label={`Notiz: ${label.name} ${formatTimerDuration(session.durationSeconds)}`}
                     onClick={() => setEditing(session)}
                   >
@@ -548,7 +548,7 @@ function AddSessionDialog({ date, onClose }: { date: DayKey; onClose: () => void
         />
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}
@@ -571,7 +571,7 @@ function FormDialog({
   const [busy, setBusy] = useState(false);
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onCancel();
       }}
@@ -580,7 +580,7 @@ function FormDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex w-full max-w-sm flex-col gap-3 rounded-2xl bg-white p-4 shadow-lg dark:bg-slate-800"
+        className="flex w-full max-w-sm flex-col gap-3 rounded-2xl bg-surface p-4 shadow-lg"
         onKeyDown={(event) => {
           if (event.key === 'Escape') onCancel();
         }}

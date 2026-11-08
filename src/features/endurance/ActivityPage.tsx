@@ -27,7 +27,7 @@ import { useNow } from '../training/useWorkouts';
 import { GEAR_PATH, gearPath, IMPORT_PATH, newSessionPath, sessionPath } from './paths';
 import { parseSport, useEnduranceSessions, useGearList } from './useEndurance';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 export function ActivityPage() {
   const sport = parseSport(useParams().sport);
@@ -82,7 +82,7 @@ function Activity({ sport }: { sport: EnduranceSport }) {
           key={item.id}
           to={gearPath(item.id)}
           state={from}
-          className="mb-4 block rounded-xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          className="mb-4 block rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-on-warn-soft"
         >
           ⚠️ {item.name} hat {formatDistance(distanceMeters, sport, unit, 0)}: Zeit für neue
           Ausrüstung?

@@ -41,7 +41,7 @@ import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from './ActivityCard';
 import { useStatsFilter } from './statsFilter';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 const SPORT_NAMES = Object.fromEntries(
   ENDURANCE_SPORTS.map((sport) => [sport, ENDURANCE_SPORT_LABELS[sport].name]),
 ) as Record<EnduranceSport, string>;
@@ -55,13 +55,9 @@ export function EnduranceStats() {
   if (sessions.length === 0) {
     return (
       <Card>
-        <p className="text-slate-600 dark:text-slate-400">
+        <p className="text-muted">
           Noch keine Ausdauer-Einheiten. Erfasse oder importiere sie auf der{' '}
-          <Link
-            to={TRAINING_PATH}
-            state={from}
-            className="font-semibold text-emerald-700 dark:text-emerald-400"
-          >
+          <Link to={TRAINING_PATH} state={from} className="font-semibold text-primary-text">
             Trainingsseite
           </Link>
           .

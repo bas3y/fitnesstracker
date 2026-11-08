@@ -48,14 +48,14 @@ export function RestTimerBar({ workout }: { workout: Workout }) {
 
   const done = remaining === 0;
   const smallButton =
-    'min-h-11 rounded-xl px-3 text-sm font-semibold bg-white/15 active:bg-white/25';
+    'min-h-11 rounded-xl px-3 text-sm font-semibold bg-current/15 active:bg-current/25';
   return (
     <div
       role="timer"
       aria-label="Pause"
       data-bottom-bar
-      className={`fixed inset-x-0 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom))] z-20 text-white ${
-        done ? 'bg-amber-600' : 'bg-emerald-700'
+      className={`fixed inset-x-0 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom))] z-20 ${
+        done ? 'bg-mark text-surface' : 'bg-hero text-on-hero'
       }`}
     >
       <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-2">

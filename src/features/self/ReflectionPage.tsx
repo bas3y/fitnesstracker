@@ -9,7 +9,7 @@ import { CustomizeButton, PromptEditor } from './PromptEditor';
 import { useJournalEntry, useJournalPrompts } from './useSelf';
 
 const weekButton =
-  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-xl font-semibold shadow-sm active:bg-slate-50 disabled:opacity-40 dark:bg-slate-800 dark:active:bg-slate-700';
+  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface text-xl font-semibold active:bg-page disabled:opacity-40';
 
 /** Wochenreflexion je Kalenderwoche (der gewählte Tag bestimmt die Woche) */
 export function ReflectionPage() {
@@ -44,7 +44,7 @@ export function ReflectionPage() {
             <h2 className="min-w-0 flex-1 text-center text-lg font-semibold">
               {current ? 'Diese Woche' : formatPeriod('week', range)}
               {current && (
-                <span className="block text-sm font-normal text-slate-500 dark:text-slate-400">
+                <span className="block text-sm font-normal text-muted">
                   {formatPeriod('week', range)}
                 </span>
               )}

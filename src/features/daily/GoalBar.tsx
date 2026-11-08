@@ -17,9 +17,9 @@ export function GoalBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={percent}
-      className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"
+      className="h-2 overflow-hidden rounded-full bg-subtle-strong"
     >
-      <div className="h-full rounded-full bg-emerald-600" style={{ width: `${percent}%` }} />
+      <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
     </div>
   );
 }

@@ -35,7 +35,7 @@ function NoActiveWorkout() {
   return (
     <Page title="Workout" backTo={backTo}>
       <Card>
-        <p className="mb-3 text-slate-600 dark:text-slate-400">Gerade läuft kein Workout.</p>
+        <p className="mb-3 text-muted">Gerade läuft kein Workout.</p>
         <button type="button" className={primaryButton} onClick={() => setConfirmStart(true)}>
           Workout starten
         </button>
@@ -65,7 +65,7 @@ function ActiveWorkout({ detail }: { detail: WorkoutDetail }) {
 
   return (
     <Page title={detail.planDayName ?? 'Workout'} backTo={backTo}>
-      <p className="-mt-3 mb-4 text-sm text-slate-500 dark:text-slate-400">
+      <p className="-mt-3 mb-4 text-sm text-muted">
         Gestartet {formatTime(workout.startedAt)} ·{' '}
         <span className="tabular-nums" aria-label="Dauer">
           {formatClock(workoutDurationSeconds(workout, now))}
@@ -73,11 +73,9 @@ function ActiveWorkout({ detail }: { detail: WorkoutDetail }) {
       </p>
       {workout.block && (
         <p className="-mt-2 mb-4 text-sm" data-testid="workout-block">
-          <span className="font-semibold text-emerald-800 dark:text-emerald-300">
-            {formatBlockWeek(workout.block)}
-          </span>
+          <span className="font-semibold text-primary-text">{formatBlockWeek(workout.block)}</span>
           {workout.block.adjusted && (
-            <span className="block text-slate-500 dark:text-slate-400">
+            <span className="block text-muted">
               Sätze angepasst: {formatAdjustment(workout.block)}
             </span>
           )}
@@ -122,7 +120,7 @@ function FinishCard({ detail, onCancel }: { detail: WorkoutDetail; onCancel: () 
   return (
     <Card title="Workout beenden">
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-muted">
           {done === 1 ? '1 Satz' : `${done} Sätze`} abgehakt.
           {open > 0 &&
             ` ${open === 1 ? '1 offener Satz wird' : `${open} offene Sätze werden`} verworfen.`}
@@ -160,7 +158,7 @@ function FinishCard({ detail, onCancel }: { detail: WorkoutDetail; onCancel: () 
             {!confirmDiscard ? (
               <button
                 type="button"
-                className="min-h-11 text-sm font-medium text-red-700 dark:text-red-400"
+                className="min-h-11 text-sm font-medium text-danger"
                 onClick={() => setConfirmDiscard(true)}
               >
                 Workout verwerfen

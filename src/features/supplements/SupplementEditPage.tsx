@@ -34,9 +34,7 @@ export function SupplementEditPage() {
     return (
       <Page title="Supplement bearbeiten" backTo={SUPPLEMENTS_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Dieses Supplement existiert nicht mehr.
-          </p>
+          <p className="text-muted">Dieses Supplement existiert nicht mehr.</p>
         </Card>
       </Page>
     );

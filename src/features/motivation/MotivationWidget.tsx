@@ -33,14 +33,11 @@ export function MotivationWidget({ settings, today }: { settings: Settings; toda
   return (
     <Card title={DASHBOARD_WIDGET_LABELS.motivation.name}>
       {running.length === 0 ? (
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-muted">
           Gerade keine laufende Serie – heute ist ein guter Tag, eine zu starten.
         </p>
       ) : (
-        <ul
-          aria-label="Laufende Serien"
-          className="divide-y divide-slate-100 dark:divide-slate-700"
-        >
+        <ul aria-label="Laufende Serien" className="divide-y divide-line">
           {running.map((item) => (
             <StreakRow
               key={item.key}
@@ -58,13 +55,13 @@ export function MotivationWidget({ settings, today }: { settings: Settings; toda
             {badge.badge.name} – {formatBadgeTier(badge.badge.id, next.threshold, settings)}
           </p>
           <div className="mt-1 flex items-center gap-2">
-            <div className="h-2 flex-1 rounded-full bg-slate-100 dark:bg-slate-700">
+            <div className="h-2 flex-1 rounded-full bg-subtle">
               <div
-                className="h-2 rounded-full bg-emerald-500"
+                className="h-2 rounded-full bg-primary"
                 style={{ width: `${tierShare(badge) * 100}%` }}
               />
             </div>
-            <span className="shrink-0 text-xs text-slate-500 tabular-nums dark:text-slate-400">
+            <span className="shrink-0 text-xs text-muted tabular-nums">
               {formatBadgeValue(badge.badge.id, badge.value, settings)} /{' '}
               {formatBadgeValue(badge.badge.id, next.threshold, settings)}
             </span>
@@ -74,7 +71,7 @@ export function MotivationWidget({ settings, today }: { settings: Settings; toda
       <Link
         to={ACHIEVEMENTS_PATH}
         state={FROM_DASHBOARD}
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
       >
         Alle Erfolge ›
       </Link>

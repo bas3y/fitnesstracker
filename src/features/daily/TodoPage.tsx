@@ -9,7 +9,7 @@ import { TodoAddForm, TodoRow } from './TodoParts';
 import { useDayBackTo, useDayParam } from './useDaily';
 import { useTodos } from './useTodos';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 const DONE_SHOWN = 50;
 
 export function TodoPage() {

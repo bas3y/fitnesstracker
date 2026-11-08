@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 
 const CHART_HEIGHT = 220;
-const LINE_COLOR = '#10b981';
+const LINE_COLOR = 'var(--primary)';
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Darüber verschwimmen die Punkte zu einer Fläche */
 const MAX_DOTS = 60;
@@ -24,7 +24,7 @@ const shortDate = (time: number) =>
 
 function ChartTooltip({ title, value }: { title: string; value: string }) {
   return (
-    <div className="rounded-lg bg-slate-900 px-2 py-1 text-sm text-white shadow">
+    <div className="rounded-lg bg-fg px-2 py-1 text-sm text-surface shadow">
       <div className="opacity-80">{title}</div>
       <div className="font-semibold">{value}</div>
     </div>
@@ -33,7 +33,7 @@ function ChartTooltip({ title, value }: { title: string; value: string }) {
 
 function ChartFrame({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div role="img" aria-label={label} className="text-slate-500 dark:text-slate-400">
+    <div role="img" aria-label={label} className="text-muted">
       <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
         {children}
       </ResponsiveContainer>
@@ -48,7 +48,7 @@ export interface ChartPoint {
   marker?: string;
 }
 
-const MARKER_COLOR = '#f59e0b';
+const MARKER_COLOR = 'var(--mark)';
 
 /** Linie über eine echte Zeitachse, Trainingspausen bleiben also sichtbar */
 export function ProgressChart({

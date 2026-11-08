@@ -8,7 +8,7 @@ import { gratitudeSlots, promptsForEntry, WEEKLY_QUESTIONS } from '../../domain/
 import { RatingPicker } from '../daily/RatingPicker';
 
 const SAVE_DELAY_MS = 600;
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 function toValues(entry: JournalEntry | null): JournalValues {
   if (!entry) return { ...EMPTY_JOURNAL_VALUES, gratitude: gratitudeSlots([]) };

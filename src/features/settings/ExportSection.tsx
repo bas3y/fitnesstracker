@@ -30,7 +30,7 @@ export function ExportSection({ unit }: { unit: WeightUnit }) {
 
   return (
     <Card title="Export">
-      <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">
+      <p className="mb-3 text-sm text-muted">
         Alle Sätze als Tabelle, z. B. für Excel. Ersetzt kein Backup: CSV-Dateien lassen sich nicht
         wieder importieren.
       </p>
@@ -41,9 +41,7 @@ export function ExportSection({ unit }: { unit: WeightUnit }) {
         <p
           role={status.kind === 'error' ? 'alert' : 'status'}
           className={`mt-3 text-sm ${
-            status.kind === 'error'
-              ? 'text-red-600 dark:text-red-400'
-              : 'text-emerald-700 dark:text-emerald-400'
+            status.kind === 'error' ? 'text-danger' : 'text-primary-text'
           }`}
         >
           {status.text}

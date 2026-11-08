@@ -84,7 +84,7 @@ export function FoodPicker({
     <li key={food.id} className="flex items-center">
       <button
         type="button"
-        className="flex min-h-14 min-w-0 flex-1 items-center py-2 pl-4 text-left active:bg-slate-50 dark:active:bg-slate-700"
+        className="flex min-h-14 min-w-0 flex-1 items-center py-2 pl-4 text-left active:bg-page"
         onClick={() => select(food)}
       >
         <FoodSummary food={food} />
@@ -136,16 +136,16 @@ export function FoodPicker({
       onKeyDown={(event) => {
         if (event.key === 'Escape') onClose();
       }}
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-50 outline-none dark:bg-slate-900"
+      className="fixed inset-0 z-50 overflow-y-auto bg-page outline-none"
     >
-      <div className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/95 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+      <div className="sticky top-0 z-10 border-b border-line bg-page/95 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between gap-2 px-4 py-2">
           <h2 id={titleId} className="min-w-0 truncate text-lg font-semibold">
             {heading}
           </h2>
           <button
             type="button"
-            className="min-h-11 shrink-0 px-2 font-medium text-emerald-700 dark:text-emerald-400"
+            className="min-h-11 shrink-0 px-2 font-medium text-primary-text"
             onClick={back ?? onClose}
           >
             {back ? 'Zurück' : added.length > 0 ? 'Fertig' : 'Schließen'}
@@ -157,7 +157,7 @@ export function FoodPicker({
         {added.length > 0 && !selected && !creating && !scanning && (
           <p
             role="status"
-            className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+            className="mb-4 rounded-xl bg-primary-soft px-4 py-3 text-sm font-medium text-primary-text"
           >
             Hinzugefügt: {added.join(', ')}
           </p>

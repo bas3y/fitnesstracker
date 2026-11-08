@@ -78,7 +78,7 @@ export function BackupSection({ settings }: { settings: Settings }) {
 
   return (
     <Card title="Datensicherung">
-      <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">
+      <p className="mb-3 text-sm text-muted">
         Alle Daten liegen nur auf diesem Gerät. Sichere sie regelmäßig, z. B. in deiner Cloud.
       </p>
       <p className="mb-3 text-sm font-medium">
@@ -94,13 +94,13 @@ export function BackupSection({ settings }: { settings: Settings }) {
             <label className="flex min-h-11 items-center gap-3">
               <input
                 type="checkbox"
-                className="h-5 w-5 accent-emerald-600"
+                className="h-5 w-5 accent-primary"
                 checked={includePhotos}
                 onChange={(event) => setIncludePhotos(event.target.checked)}
               />
               Fortschrittsfotos einschließen
             </label>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-muted">
               {photos.count === 1 ? '1 Foto' : `${photos.count} Fotos`}, die Datei wird etwa{' '}
               {formatBytes(Math.round(photos.bytes * 1.37))} größer. Ohne Haken bleiben beim Import
               einer Sicherung die Fotos auf dem Gerät erhalten.
@@ -125,7 +125,7 @@ export function BackupSection({ settings }: { settings: Settings }) {
       <DataLocationInfo />
 
       {pending && (
-        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/40">
+        <div className="mt-4 rounded-xl border border-warn/50 bg-warn-soft p-3">
           <p className="font-semibold">
             Sicherung vom {new Date(pending.exportedAt).toLocaleString('de-DE')}
           </p>
@@ -136,7 +136,7 @@ export function BackupSection({ settings }: { settings: Settings }) {
               </li>
             ))}
           </ul>
-          <p className="mb-3 text-sm font-medium text-amber-800 dark:text-amber-300">
+          <p className="mb-3 text-sm font-medium text-on-warn-soft">
             {backupHasPhotos(pending)
               ? 'Ersetzt alle Daten auf diesem Gerät, auch die Fotos.'
               : 'Ersetzt alle Daten auf diesem Gerät. Ohne Fotos: Die Fotos auf dem Gerät bleiben erhalten.'}
@@ -161,9 +161,7 @@ export function BackupSection({ settings }: { settings: Settings }) {
         <p
           role={status.kind === 'error' ? 'alert' : 'status'}
           className={`mt-3 text-sm ${
-            status.kind === 'error'
-              ? 'text-red-600 dark:text-red-400'
-              : 'text-emerald-700 dark:text-emerald-400'
+            status.kind === 'error' ? 'text-danger' : 'text-primary-text'
           }`}
         >
           {status.text}
@@ -183,10 +181,10 @@ function DataLocationInfo() {
         : 'Der Speicher ist nicht als dauerhaft markiert: Der Browser darf die Daten bei Platzmangel löschen.';
   return (
     <details className="mt-3 text-sm">
-      <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-emerald-700 dark:text-emerald-400">
+      <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-primary-text">
         Wo liegen meine Daten?
       </summary>
-      <ul className="flex list-disc flex-col gap-2 pl-5 text-slate-700 dark:text-slate-300">
+      <ul className="flex list-disc flex-col gap-2 pl-5 text-fg">
         <li>
           Nur im Browser-Speicher dieses Geräts. Es gibt kein automatisches Backup und keine
           Synchronisierung mit anderen Geräten.

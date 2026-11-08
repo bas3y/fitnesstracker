@@ -49,7 +49,7 @@ export function PlanDetailPage() {
     return (
       <Page title="Plan" backTo={PLANS_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">Dieser Plan existiert nicht mehr.</p>
+          <p className="text-muted">Dieser Plan existiert nicht mehr.</p>
         </Card>
       </Page>
     );
@@ -102,14 +102,14 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
               value={plan.schedule}
               onChange={(schedule) => void updatePlan(plan.id, { schedule })}
             />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-xs text-muted">
               {plan.schedule === 'rotation'
                 ? 'Die Trainings kommen der Reihe nach dran, egal an welchem Tag.'
                 : 'Jedes Training gehört zu festen Wochentagen.'}
             </p>
           </div>
           {isActive ? (
-            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            <p className="text-sm font-medium text-primary-text">
               Aktiver Plan – wird auf der Trainingsseite vorgeschlagen.
             </p>
           ) : (
@@ -181,7 +181,7 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
           Plan duplizieren
         </button>
         {confirmDelete ? (
-          <div className="rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/40">
+          <div className="rounded-xl border border-danger/40 bg-danger-soft p-3">
             <p className="mb-3 text-sm font-medium">
               „{plan.name}“ löschen? Bisherige Workouts bleiben erhalten.
             </p>

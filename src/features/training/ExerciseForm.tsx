@@ -110,7 +110,7 @@ export function ExerciseForm({ initial, submitLabel, onSubmit, onCancel }: Exerc
           <label className="flex min-h-11 items-center gap-3">
             <input
               type="checkbox"
-              className="h-5 w-5 accent-emerald-600"
+              className="h-5 w-5 accent-primary"
               checked={input.isUnilateral}
               onChange={(event) => set({ isUnilateral: event.target.checked })}
             />
@@ -163,7 +163,7 @@ export function ExerciseForm({ initial, submitLabel, onSubmit, onCancel }: Exerc
       </Card>
 
       {formError && (
-        <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mb-3 text-sm text-danger">
           {formError}
         </p>
       )}
@@ -209,7 +209,7 @@ function MuscleChips({
 function FieldError({ id, message }: { id?: string; message: string | undefined }) {
   if (!message) return null;
   return (
-    <p id={id} className="mt-1 text-sm text-red-600 dark:text-red-400">
+    <p id={id} className="mt-1 text-sm text-danger">
       {message}
     </p>
   );

@@ -27,7 +27,7 @@ import {
   useTimerSessions,
 } from './useSelf';
 
-const MUTED = 'block text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'block text-sm text-muted';
 
 /** Große Kachel unter den Alltag-Kacheln: Journal, Wochenreflexion, Lesen für den gewählten Tag */
 export function SelfSection({ date, today }: { date: DayKey; today: DayKey }) {
@@ -38,7 +38,7 @@ export function SelfSection({ date, today }: { date: DayKey; today: DayKey }) {
       </h2>
       <ul
         aria-label="Persönliche Entwicklung"
-        className="divide-y divide-slate-100 rounded-2xl bg-white shadow-sm dark:divide-slate-700 dark:bg-slate-800"
+        className="divide-y divide-line rounded-2xl bg-surface"
       >
         <JournalRow date={date} today={today} />
         <ReflectionRow date={date} today={today} />
@@ -65,7 +65,7 @@ function Row({
     <li>
       <Link
         to={to}
-        className="flex min-h-16 items-center gap-3 px-4 py-3 first:rounded-t-2xl last:rounded-b-2xl active:bg-slate-50 dark:active:bg-slate-700"
+        className="flex min-h-16 items-center gap-3 px-4 py-3 first:rounded-t-2xl last:rounded-b-2xl active:bg-page"
       >
         <span aria-hidden="true" className="text-2xl">
           {icon}
@@ -74,7 +74,7 @@ function Row({
           <span className="block font-semibold">{name}</span>
           {children}
         </span>
-        <span aria-hidden="true" className="text-xl text-slate-400">
+        <span aria-hidden="true" className="text-xl text-faint">
           ›
         </span>
       </Link>

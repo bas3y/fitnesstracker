@@ -71,7 +71,7 @@ const RECENT_RECORD_ROWS = 3;
 const TODO_LIMIT = 5;
 const RECORDS_PER_ROW = 2;
 const FROM_DASHBOARD: BackState = { from: '/' };
-const MUTED = 'text-slate-600 dark:text-slate-400';
+const MUTED = 'text-muted';
 
 interface WidgetData {
   settings: Settings;
@@ -183,7 +183,7 @@ export function HomePage() {
         </div>
         <button
           type="button"
-          className="min-h-11 shrink-0 rounded-xl border border-slate-300 px-3 text-sm font-semibold dark:border-slate-600"
+          className="min-h-11 shrink-0 rounded-xl border border-line-strong px-3 text-sm font-semibold"
           onClick={() => setEditing(!editing)}
         >
           {editing ? 'Fertig' : 'Anpassen'}
@@ -200,7 +200,7 @@ function WelcomeCard() {
   return (
     <section
       aria-labelledby="welcome-heading"
-      className="mb-4 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/40"
+      className="mb-4 rounded-2xl border border-primary bg-primary-soft p-4"
     >
       <h2 id="welcome-heading" className="mb-2 text-lg font-semibold">
         👋 Willkommen!
@@ -214,13 +214,13 @@ function WelcomeCard() {
         <Link
           to={SHARE_APP_PATH}
           state={FROM_DASHBOARD}
-          className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-emerald-700 px-3 text-sm font-semibold text-emerald-800 dark:border-emerald-500 dark:text-emerald-300"
+          className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-primary px-3 text-sm font-semibold text-primary-text"
         >
           Installieren
         </Link>
         <button
           type="button"
-          className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-emerald-700 px-3 text-sm font-semibold text-white active:bg-emerald-800"
+          className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-primary px-3 text-sm font-semibold text-on-primary active:bg-primary-press"
           onClick={() => void updateSettings({ welcomeDismissed: true })}
         >
           Los geht’s
@@ -265,7 +265,7 @@ function WidgetEditor({ data }: { data: WidgetData }) {
         items={dashboardWidgets.map((id) => ({ id, name: DASHBOARD_WIDGET_LABELS[id].name }))}
         onReorder={(ids) => save(ids as DashboardWidget[])}
         renderItem={({ id, name }, { handle }) => (
-          <div className="mb-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-900">
+          <div className="mb-3 rounded-2xl border-2 border-dashed border-line-strong bg-page">
             <div className="flex min-h-14 items-center">
               {handle ?? <span className="w-3 shrink-0" />}
               <span className="min-w-0 flex-1 font-semibold">{name}</span>
@@ -295,20 +295,17 @@ function WidgetEditor({ data }: { data: WidgetData }) {
                 <button
                   type="button"
                   aria-label={`${DASHBOARD_WIDGET_LABELS[id].name} hinzufügen`}
-                  className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700"
+                  className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-left active:bg-page"
                   onClick={() =>
                     void change((current) => (current.includes(id) ? current : [...current, id]))
                   }
                 >
-                  <span
-                    aria-hidden="true"
-                    className="text-xl text-emerald-700 dark:text-emerald-400"
-                  >
+                  <span aria-hidden="true" className="text-xl text-primary-text">
                     +
                   </span>
                   <span className="min-w-0">
                     <span className="block font-medium">{DASHBOARD_WIDGET_LABELS[id].name}</span>
-                    <span className="block text-sm text-slate-500 dark:text-slate-400">
+                    <span className="block text-sm text-muted">
                       {DASHBOARD_WIDGET_LABELS[id].hint}
                     </span>
                   </span>
@@ -378,12 +375,12 @@ function ProgressCard({
       <dl data-testid="training-progress" className="grid grid-cols-3 gap-2 text-center">
         {tiles.map(({ label, value }) => (
           <div key={label} className="flex flex-col-reverse">
-            <dt className="text-sm text-slate-500 dark:text-slate-400">{label}</dt>
+            <dt className="text-sm text-muted">{label}</dt>
             <dd className="text-xl font-bold tabular-nums">{value}</dd>
           </div>
         ))}
       </dl>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-2 text-sm text-muted">
         {strengthPercent === null
           ? 'Kraft: ab 4 Einheiten einer Übung in 3 Monaten. '
           : `Median über ${progress.exerciseCount} ${progress.exerciseCount === 1 ? 'Übung' : 'Übungen'}. `}
@@ -392,7 +389,7 @@ function ProgressCard({
       </p>
       <Link
         to="/stats"
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
       >
         Zur Statistik ›
       </Link>
@@ -426,7 +423,7 @@ function WeekCard({
       <dl className="grid grid-cols-3 gap-2 text-center">
         {tiles.map(({ label, value }) => (
           <div key={label} className="flex flex-col-reverse">
-            <dt className="text-sm text-slate-500 dark:text-slate-400">{label}</dt>
+            <dt className="text-sm text-muted">{label}</dt>
             <dd className="text-xl font-bold tabular-nums">{value}</dd>
           </div>
         ))}
@@ -442,7 +439,7 @@ function WeekCard({
             .join(' · ')}
         </p>
       )}
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-2 text-sm text-muted">
         Ohne Aufwärmsätze; Stufen und Halteübungen zählen nicht zum Volumen.
       </p>
     </Card>

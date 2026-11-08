@@ -49,7 +49,7 @@ export function TodayCard({ settings, now }: { settings: Settings; now: Date }) 
       <dl className="mb-3 grid grid-cols-2 gap-3">
         {tiles.map(({ label, value, bar }) => (
           <div key={label}>
-            <dt className="text-sm text-slate-500 dark:text-slate-400">{label}</dt>
+            <dt className="text-sm text-muted">{label}</dt>
             <dd>
               <span className="block text-xl font-bold tabular-nums">{value}</span>
               {bar && <GoalBar label={`Ziel ${label}`} value={bar.value} goal={bar.goal} />}

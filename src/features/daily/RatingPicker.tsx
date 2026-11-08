@@ -20,7 +20,7 @@ export function RatingPicker({
     <div>
       <div className="mb-1 flex items-baseline justify-between gap-2">
         <span className="text-sm font-medium">{label}</span>
-        <span className="text-sm text-slate-500 dark:text-slate-400">
+        <span className="text-sm text-muted">
           1 = {low}, 5 = {high}
         </span>
       </div>

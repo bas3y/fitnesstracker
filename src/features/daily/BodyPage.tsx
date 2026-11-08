@@ -27,7 +27,7 @@ import { useBodyMeasurement, useDailyLog, useDayBackTo, useDayParam } from './us
 
 const WATER_STEP_ML = 250;
 const WATER_BOTTLE_ML = 500;
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 /** Körper & Befinden: Tageswerte und Verweis auf die Körpermaße */
 export function BodyPage() {

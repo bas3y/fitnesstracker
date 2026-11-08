@@ -5,7 +5,7 @@ import type { HeartRateSeconds, Settings } from '../../db/types';
 import { HEART_RATE_ZONE_LABELS, heartRateZoneBounds, zoneSecondsOf } from '../../domain/track';
 import { formatClock } from '../../domain/workout';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 /** Zeit in den 5 Pulszonen; ohne max. Puls ein Hinweis auf die Einstellungen */
 export function HeartRateZonesCard({
@@ -24,11 +24,7 @@ export function HeartRateZonesCard({
       <Card title="Pulszonen">
         <p className={MUTED}>
           Trage deinen max. Puls in den{' '}
-          <Link
-            to="/settings"
-            state={from}
-            className="font-semibold text-emerald-700 dark:text-emerald-400"
-          >
+          <Link to="/settings" state={from} className="font-semibold text-primary-text">
             Einstellungen
           </Link>{' '}
           ein, um die Zeit in den Pulszonen zu sehen.
@@ -59,11 +55,8 @@ export function HeartRateZonesCard({
                   {formatClock(seconds[index]!)} · {Math.round(share * 100)} %
                 </span>
               </div>
-              <div className="mt-1 h-2 rounded-full bg-slate-200 dark:bg-slate-700">
-                <div
-                  className="h-2 rounded-full bg-rose-500"
-                  style={{ width: `${share * 100}%` }}
-                />
+              <div className="mt-1 h-2 rounded-full bg-subtle-strong">
+                <div className="h-2 rounded-full bg-danger" style={{ width: `${share * 100}%` }} />
               </div>
             </li>
           );

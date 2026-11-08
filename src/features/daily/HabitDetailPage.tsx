@@ -44,9 +44,7 @@ export function HabitDetailPage() {
     return (
       <Page title="Gewohnheit" backTo={backTo}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Diese Gewohnheit existiert nicht mehr.
-          </p>
+          <p className="text-muted">Diese Gewohnheit existiert nicht mehr.</p>
         </Card>
       </Page>
     );
@@ -93,7 +91,7 @@ function HabitDetail({ item, backTo }: { item: HabitWithChecks; backTo: string }
       {(paused || archived) && (
         <p
           role="status"
-          className="mb-4 rounded-xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          className="mb-4 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-on-warn-soft"
         >
           {archived
             ? 'Archiviert: erscheint nicht mehr in Liste und Checkliste.'
@@ -101,7 +99,7 @@ function HabitDetail({ item, backTo }: { item: HabitWithChecks; backTo: string }
         </p>
       )}
       <Card>
-        <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">{info.join(' · ')}</p>
+        <p className="mb-3 text-sm text-muted">{info.join(' · ')}</p>
         {habit.kind === 'items' && (
           <ul className="mb-3 text-sm">
             {habit.items.map((sub) => (
@@ -114,7 +112,7 @@ function HabitDetail({ item, backTo }: { item: HabitWithChecks; backTo: string }
         <dl data-testid="habit-stats" className="grid grid-cols-3 gap-2 text-center">
           {statTiles(item, today).map(({ label, value }) => (
             <div key={label} className="flex flex-col-reverse">
-              <dt className="text-sm text-slate-500 dark:text-slate-400">{label}</dt>
+              <dt className="text-sm text-muted">{label}</dt>
               <dd className="text-xl font-bold tabular-nums">{value}</dd>
             </div>
           ))}

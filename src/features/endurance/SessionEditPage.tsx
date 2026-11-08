@@ -94,7 +94,7 @@ export function SessionEditPage() {
     return (
       <Page title="Einheit bearbeiten" backTo={TRAINING_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">Diese Einheit existiert nicht mehr.</p>
+          <p className="text-muted">Diese Einheit existiert nicht mehr.</p>
         </Card>
       </Page>
     );

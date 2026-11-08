@@ -42,7 +42,7 @@ export function WorkoutNotFound() {
   return (
     <Page title="Workout nicht gefunden" backTo={backTo}>
       <Card>
-        <p className="text-slate-600 dark:text-slate-400">Dieses Workout gibt es nicht (mehr).</p>
+        <p className="text-muted">Dieses Workout gibt es nicht (mehr).</p>
       </Card>
     </Page>
   );
@@ -73,12 +73,12 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
 
   return (
     <Page title={formatWorkoutDate(workout.startedAt)} backTo={backTo}>
-      <p className="-mt-3 mb-4 text-sm text-slate-500 dark:text-slate-400">
+      <p className="-mt-3 mb-4 text-sm text-muted">
         {planDayName && `${planDayName} · `}
         {formatTime(workout.startedAt)} Uhr · Dauer{' '}
         {formatWorkoutDuration(workoutDurationSeconds(workout, new Date()))}
         {workout.block && (
-          <span className="block font-medium text-emerald-800 dark:text-emerald-300">
+          <span className="block font-medium text-primary-text">
             {formatBlockWeek(workout.block)}
             {workout.block.adjusted && ` · ${formatAdjustment(workout.block)}`}
           </span>
@@ -102,16 +102,14 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
             <ol className="flex flex-col gap-1">
               {sets.map((set) => (
                 <li key={set.id} className="flex items-center gap-3 tabular-nums">
-                  <span className="w-6 shrink-0 text-slate-500 dark:text-slate-400">
-                    {set.isWarmup ? 'A' : ++working}
-                  </span>
+                  <span className="w-6 shrink-0 text-muted">{set.isWarmup ? 'A' : ++working}</span>
                   <span>{formatSetSummary(set, format)}</span>
                   {records?.has(set.id) && (
                     <TrophyIcon
                       role="img"
                       aria-hidden={false}
                       aria-label="Rekord"
-                      className="h-5 w-5 text-amber-500"
+                      className="h-5 w-5 text-star"
                     />
                   )}
                 </li>
@@ -120,13 +118,13 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
             {exerciseRecords.length > 0 && (
               <ul
                 aria-label={`Rekorde ${exercise?.name ?? ''}`.trim()}
-                className="mt-3 flex flex-col gap-1 rounded-xl bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/40 dark:text-amber-100"
+                className="mt-3 flex flex-col gap-1 rounded-xl bg-warn-soft p-3 text-sm text-on-warn-soft"
               >
                 {exerciseRecords.map((record) => {
                   const { label, value } = formatRecord(record, format);
                   return (
                     <li key={`${record.type}-${record.load}`} className="flex gap-2">
-                      <TrophyIcon className="h-4 w-4 shrink-0 translate-y-0.5 text-amber-500" />
+                      <TrophyIcon className="h-4 w-4 shrink-0 translate-y-0.5 text-star" />
                       <span>
                         {label}: <span className="font-semibold">{value}</span>
                       </span>
@@ -181,7 +179,7 @@ function DeleteWorkoutButton({ id }: { id: string }) {
     );
   }
   return (
-    <div className="rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/40">
+    <div className="rounded-xl border border-danger/40 bg-danger-soft p-3">
       <p className="mb-3 text-sm font-medium">Workout mit allen Sätzen wirklich löschen?</p>
       <div className="flex gap-2">
         <button type="button" className={secondaryButton} onClick={() => setConfirming(false)}>

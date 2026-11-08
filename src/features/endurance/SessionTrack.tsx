@@ -18,7 +18,7 @@ const SessionCharts = lazy(() =>
   import('./SessionCharts').then((module) => ({ default: module.SessionCharts })),
 );
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 const ROUTE_WIDTH = 320;
 const ROUTE_HEIGHT = 200;
 /** Längere Listen erst auf Wunsch ganz zeigen */
@@ -64,15 +64,21 @@ function RouteCard({ route }: { route: EnduranceTrack['route'] }) {
         <path
           d={svgPath(points)}
           fill="none"
-          stroke="#10b981"
+          className="stroke-primary"
           strokeWidth={3}
           strokeLinejoin="round"
           strokeLinecap="round"
         />
-        <circle cx={endX} cy={endY} r={5} className="fill-slate-700 dark:fill-slate-200" />
-        <circle cx={startX} cy={startY} r={5} fill="#10b981" stroke="white" strokeWidth={2} />
+        <circle cx={endX} cy={endY} r={5} className="fill-fg" />
+        <circle
+          cx={startX}
+          cy={startY}
+          r={5}
+          className="fill-primary stroke-surface"
+          strokeWidth={2}
+        />
       </svg>
-      <p className={`mt-1 ${MUTED}`}>Strecke ohne Karte · grün = Start</p>
+      <p className={`mt-1 ${MUTED}`}>Strecke ohne Karte · farbiger Punkt = Start</p>
     </Card>
   );
 }
@@ -124,7 +130,7 @@ function SectionsCard({
           {visible.map((row) => {
             const rest = row.distanceMeters === 0;
             return (
-              <tr key={row.label} className="border-t border-slate-200 dark:border-slate-700">
+              <tr key={row.label} className="border-t border-line">
                 <td className={cell}>{row.label}</td>
                 <td className={cell}>
                   {rest
@@ -147,7 +153,7 @@ function SectionsCard({
       {rows.length > VISIBLE_ROWS && (
         <button
           type="button"
-          className="mt-2 min-h-11 font-semibold text-emerald-700 dark:text-emerald-400"
+          className="mt-2 min-h-11 font-semibold text-primary-text"
           onClick={() => setShowAll(!showAll)}
         >
           {showAll ? 'Weniger anzeigen' : `Alle ${rows.length} anzeigen`}

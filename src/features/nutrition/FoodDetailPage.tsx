@@ -48,9 +48,7 @@ export function FoodDetailPage() {
     return (
       <Page title="Lebensmittel" backTo={FOODS_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Dieses Lebensmittel gibt es nicht mehr.
-          </p>
+          <p className="text-muted">Dieses Lebensmittel gibt es nicht mehr.</p>
         </Card>
       </Page>
     );
@@ -71,7 +69,7 @@ function FoodDetail({ food }: { food: Food }) {
       {food.hiddenAt !== null && (
         <p
           role="status"
-          className="mb-4 rounded-xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          className="mb-4 rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-on-warn-soft"
         >
           Ausgeblendet: erscheint nicht in der Auswahl.
         </p>
@@ -98,7 +96,7 @@ function FoodDetail({ food }: { food: Food }) {
           <tbody>
             {ROWS.filter(({ key }) => key !== 'alcohol' || food.alcohol > 0).map(
               ({ key, label, sub }) => (
-                <tr key={key} className="border-t border-slate-200 dark:border-slate-700">
+                <tr key={key} className="border-t border-line">
                   <th scope="row" className={`py-1.5 font-normal ${sub ? 'pl-3 text-sm' : ''}`}>
                     {label}
                   </th>

@@ -9,7 +9,7 @@ import { GoalCard } from './GoalCard';
 import { NEW_GOAL_PATH } from './paths';
 import { useGoalData, useGoalExercises, useGoals } from './useGoals';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 export function GoalsPage() {
   const backTo = useBackTo('/stats');
@@ -30,7 +30,7 @@ export function GoalsPage() {
   const action = (
     <Link
       to={NEW_GOAL_PATH}
-      className="flex min-h-11 shrink-0 items-center rounded-xl bg-emerald-700 px-3 text-sm font-semibold text-white active:bg-emerald-800"
+      className="flex min-h-11 shrink-0 items-center rounded-xl bg-primary px-3 text-sm font-semibold text-on-primary active:bg-primary-press"
     >
       + Neues Ziel
     </Link>
@@ -67,9 +67,7 @@ export function GoalsPage() {
     <Page title="Ziele" backTo={backTo} action={action}>
       {items.length === 0 && (
         <Card>
-          <p className="mb-2 text-slate-600 dark:text-slate-400">
-            Noch keine Ziele. Setze dir zum Beispiel:
-          </p>
+          <p className="mb-2 text-muted">Noch keine Ziele. Setze dir zum Beispiel:</p>
           <ul className="flex list-disc flex-col gap-1 pl-5 text-sm">
             <li>Bankdrücken 100 kg bis Dezember</li>
             <li>10 km unter 50 Minuten laufen</li>

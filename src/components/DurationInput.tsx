@@ -36,7 +36,7 @@ export function DurationInput({
                 onChange(joinDuration({ ...parts, [key]: next }));
               }}
             />
-            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-600 dark:text-slate-400">
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted">
               {unit}
             </span>
           </div>

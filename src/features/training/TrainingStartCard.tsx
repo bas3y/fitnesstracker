@@ -23,8 +23,8 @@ export function TrainingStartCard({ compact = false }: { compact?: boolean }) {
 
   if (active) {
     return (
-      <Card>
-        <p className="mb-3 text-slate-600 dark:text-slate-400">
+      <Card tone="hero">
+        <p className="mb-3 text-muted">
           Workout läuft seit {formatTime(active.startedAt)} (
           {formatClock(workoutDurationSeconds(active, now))}).
         </p>
@@ -37,7 +37,7 @@ export function TrainingStartCard({ compact = false }: { compact?: boolean }) {
   if (activePlan) return <PlanSuggestionCard active={activePlan} compact={compact} />;
 
   return (
-    <Card>
+    <Card tone="hero">
       <button
         type="button"
         className={primaryButton}

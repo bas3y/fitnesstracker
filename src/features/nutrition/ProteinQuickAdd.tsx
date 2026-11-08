@@ -45,7 +45,7 @@ export function ProteinQuickAdd({
       {last !== null && (
         <button
           type="button"
-          className="min-h-11 self-start text-sm font-medium text-emerald-700 dark:text-emerald-400"
+          className="min-h-11 self-start text-sm font-medium text-primary-text"
           onClick={() => {
             setLast(null);
             void addProtein(date, -last);

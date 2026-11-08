@@ -47,7 +47,7 @@ export function WorkoutLogPage() {
 
   return (
     <Page title="Training nachtragen" backTo={backTo}>
-      <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+      <p className="mb-4 text-sm text-muted">
         Für Trainings, die du z. B. auf Papier notiert hast. Alle Sätze zählen direkt als erledigt –
         für Statistik, Rekorde und Trainingstage. Ein laufendes Workout bleibt davon unberührt.
       </p>
@@ -109,7 +109,7 @@ export function WorkoutLogPage() {
             }}
           />
           {error && (
-            <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
+            <p role="alert" className="text-sm font-medium text-danger">
               {error}
             </p>
           )}

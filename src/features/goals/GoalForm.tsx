@@ -63,7 +63,7 @@ import { HABITS_PATH } from '../daily/useHabits';
 import { ExercisePicker } from '../training/ExercisePicker';
 
 const LABEL = 'mb-1 block text-sm font-medium';
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 const PERIOD_OPTIONS: { value: GoalPeriod; label: string }[] = GOAL_PERIODS.map((period) => ({
   value: period,
@@ -215,8 +215,8 @@ export function GoalForm({
                 aria-pressed={input.kind === kind}
                 className={`flex min-h-14 flex-col items-center justify-center rounded-xl border-2 px-1 py-1 text-sm font-semibold ${
                   input.kind === kind
-                    ? 'border-emerald-700 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
-                    : 'border-slate-200 dark:border-slate-700'
+                    ? 'border-primary bg-primary-soft text-primary-text'
+                    : 'border-line'
                 }`}
                 onClick={() => changeKind(kind)}
               >
@@ -236,7 +236,7 @@ export function GoalForm({
           <div className="flex flex-col gap-4">
             <button
               type="button"
-              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-slate-300 px-4 text-left font-semibold dark:border-slate-600"
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-line-strong px-4 text-left font-semibold"
               onClick={() => setPicking(true)}
             >
               <span className="truncate">{exercise?.name ?? 'Übung wählen'}</span>
@@ -405,10 +405,7 @@ export function GoalForm({
           {selectableHabits.length === 0 ? (
             <p className={HINT}>
               Noch keine Gewohnheiten.{' '}
-              <Link
-                to={HABITS_PATH}
-                className="font-semibold text-emerald-700 underline dark:text-emerald-400"
-              >
+              <Link to={HABITS_PATH} className="font-semibold text-primary-text underline">
                 Gewohnheit anlegen
               </Link>
             </p>
@@ -576,7 +573,7 @@ export function GoalForm({
       </Card>
 
       {error && (
-        <p role="alert" className="mb-3 text-sm font-medium text-red-700 dark:text-red-400">
+        <p role="alert" className="mb-3 text-sm font-medium text-danger">
           {error}
         </p>
       )}

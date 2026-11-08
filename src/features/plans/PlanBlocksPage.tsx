@@ -34,7 +34,7 @@ import { useNow } from '../training/useWorkouts';
 import { BlockStatusPanel } from './BlockStatus';
 import { usePlanDetail } from './usePlans';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 export function PlanBlocksPage() {
   const { id } = useParams();
@@ -52,7 +52,7 @@ export function PlanBlocksPage() {
     return (
       <Page title="Trainingsblöcke" backTo={backTo}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">Dieser Plan existiert nicht mehr.</p>
+          <p className="text-muted">Dieser Plan existiert nicht mehr.</p>
         </Card>
       </Page>
     );
@@ -85,7 +85,7 @@ function BlockTemplates({ plan, today }: { plan: Plan; today: DayKey }) {
   return (
     <>
       <Card>
-        <p className="text-slate-600 dark:text-slate-400">
+        <p className="text-muted">
           Teile „{plan.name}“ in Blöcke: z. B. ein paar Wochen Aufbau, dann eine leichte
           Deload-Woche. Beim Start eines Trainings werden die Sätze passend zum Block vorbefüllt.
         </p>
@@ -129,7 +129,7 @@ function CurrentBlockCard({ plan, today }: { plan: Plan; today: DayKey }) {
   if (!progress) {
     return (
       <Card title="Aktueller Block">
-        <p className="mb-3 text-slate-600 dark:text-slate-400">
+        <p className="mb-3 text-muted">
           Die Blöcke laufen gerade nicht – Trainings werden wie gewohnt vorbefüllt.
         </p>
         <button
@@ -190,7 +190,7 @@ function AdjustCard({ plan }: { plan: Plan }) {
       <label className="flex min-h-11 items-center gap-3">
         <input
           type="checkbox"
-          className="h-5 w-5 shrink-0 accent-emerald-600"
+          className="h-5 w-5 shrink-0 accent-primary"
           checked={plan.blockAdjust}
           onChange={(event) => void updatePlan(plan.id, { blockAdjust: event.target.checked })}
         />
@@ -228,11 +228,11 @@ function BlockSequence({ plan }: { plan: Plan }) {
           save(ids.map((id) => blocks.find((block) => block.id === id)!).filter(Boolean))
         }
         renderItem={(item, { handle }) => (
-          <div className="mb-2 flex min-h-14 items-center rounded-2xl bg-white shadow-sm dark:bg-slate-800">
+          <div className="mb-2 flex min-h-14 items-center rounded-2xl bg-surface">
             {handle}
             <button
               type="button"
-              className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-2xl px-4 py-3 text-left active:bg-slate-50 dark:active:bg-slate-700"
+              className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-2xl px-4 py-3 text-left active:bg-page"
               onClick={() => setEditingId(item.id)}
             >
               <span className="block font-medium">
@@ -379,7 +379,7 @@ function BlockDialog({
       <label className="flex min-h-11 items-center gap-3">
         <input
           type="checkbox"
-          className="h-5 w-5 shrink-0 accent-emerald-600"
+          className="h-5 w-5 shrink-0 accent-primary"
           checked={block.progression}
           onChange={(event) => set({ progression: event.target.checked })}
         />

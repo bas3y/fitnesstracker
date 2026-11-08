@@ -8,10 +8,10 @@ export function StatusCircle({ done, warn = false }: { done: boolean; warn?: boo
       aria-hidden="true"
       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${
         warn
-          ? 'border-orange-600 bg-orange-600 text-white'
+          ? 'border-mark bg-mark text-surface'
           : done
-            ? 'border-emerald-700 bg-emerald-700 text-white'
-            : 'border-slate-300 dark:border-slate-600'
+            ? 'border-primary bg-primary text-on-primary'
+            : 'border-line-strong'
       }`}
     >
       {warn ? '!' : done && <CheckIcon className="h-5 w-5" />}

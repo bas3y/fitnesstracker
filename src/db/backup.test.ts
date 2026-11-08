@@ -862,6 +862,23 @@ describe('Timer und Fortschrittsfotos', () => {
       celebrations: null,
     });
   });
+
+  it('behält die Farbpalette und ergänzt sie in Sicherungen aus DB-Version 28', async () => {
+    await updateSettings({ palette: 'violet' });
+    const current = parseBackup(await validBackup());
+    if (!current.ok) throw new Error(current.error);
+    expect(current.backup.tables.settings[0]).toMatchObject({ palette: 'violet' });
+
+    const data = await validBackup();
+    data.dbVersion = 28;
+    delete data.tables.settings[0].palette;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.settings[0]).toMatchObject({ palette: 'green' });
+
+    data.tables.settings[0].palette = 'pink';
+    expect(parseBackup(data).ok).toBe(false);
+  });
 });
 
 describe('Sicherungen aus DB-Version 10', () => {

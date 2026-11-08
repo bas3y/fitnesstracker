@@ -65,7 +65,7 @@ export function ReadingLogDialog({
       onCancel={onClose}
       onConfirm={submit}
     >
-      <div className="flex flex-col gap-3 text-base text-slate-900 dark:text-slate-100">
+      <div className="flex flex-col gap-3 text-base text-fg">
         <SegmentedControl
           label="Eingabe"
           options={MODES}
@@ -109,7 +109,7 @@ export function ReadingLogDialog({
             }}
           />
         )}
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-muted">
           Bisher bis Seite {progress.currentPage}
           {book.totalPages !== null && ` von ${book.totalPages}`}
           {pages !== null && mode === 'untilPage' && ` · +${formatPages(pages)}`}
@@ -127,7 +127,7 @@ export function ReadingLogDialog({
           />
         </label>
         {error && (
-          <p role="alert" className="text-sm text-red-700 dark:text-red-400">
+          <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         )}

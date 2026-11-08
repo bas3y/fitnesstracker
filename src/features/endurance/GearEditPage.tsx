@@ -56,9 +56,7 @@ export function GearEditPage() {
     return (
       <Page title="Ausrüstung bearbeiten" backTo={GEAR_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Diese Ausrüstung existiert nicht mehr.
-          </p>
+          <p className="text-muted">Diese Ausrüstung existiert nicht mehr.</p>
         </Card>
       </Page>
     );

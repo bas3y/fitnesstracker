@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronLeftIcon, ChevronRightIcon } from './icons';
 
 export function Page({
   title,
@@ -17,34 +18,47 @@ export function Page({
   action?: ReactNode;
   children: ReactNode;
 }) {
+  const heading = (
+    <h1 className="min-w-0 flex-1 text-[1.75rem] leading-tight font-bold tracking-tight text-balance">
+      {title}
+    </h1>
+  );
   return (
-    <div className="mx-auto max-w-md px-4 pt-[calc(1.5rem+env(safe-area-inset-top))]">
+    <div className="mx-auto max-w-md px-4 pt-[calc(1.25rem+env(safe-area-inset-top))]">
       {backTo && (
         <Link
           to={backTo}
           state={backState}
-          className="-ml-2 mb-1 inline-flex min-h-11 items-center px-2 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+          className="-ml-3 inline-flex min-h-11 items-center gap-0.5 px-2 text-[0.9375rem] font-medium text-primary-text"
         >
-          ‹ Zurück
+          <ChevronLeftIcon className="h-5 w-5" />
+          Zurück
         </Link>
       )}
-      {action ? (
-        <div className="mb-4 flex items-center gap-3">
-          <h1 className="min-w-0 flex-1 text-2xl font-bold">{title}</h1>
-          {action}
-        </div>
-      ) : (
-        <h1 className="mb-4 text-2xl font-bold">{title}</h1>
-      )}
+      <div className="mb-4 flex items-center gap-3">
+        {heading}
+        {action}
+      </div>
       {children}
     </div>
   );
 }
 
-export function Card({ title, children }: { title?: string; children: ReactNode }) {
+/** Farbblock aus der Palette (Variante C), siehe `.tone-*` in `src/index.css` */
+export type CardTone = 'hero' | 'accent' | 'soft';
+
+export function Card({
+  title,
+  tone,
+  children,
+}: {
+  title?: string;
+  tone?: CardTone;
+  children: ReactNode;
+}) {
   return (
-    <section className="mb-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800">
-      {title && <h2 className="mb-3 text-lg font-semibold">{title}</h2>}
+    <section className={`mb-4 rounded-2xl bg-surface ${tone ? `tone-${tone} p-5` : 'p-4'}`}>
+      {title && <h2 className="mb-3 text-[1.0625rem] font-semibold">{title}</h2>}
       {children}
     </section>
   );
@@ -62,7 +76,7 @@ export function PlaceholderPage({
   return (
     <Page title={title}>
       <Card>
-        <p className="text-slate-600 dark:text-slate-400">{text}</p>
+        <p className="text-muted">{text}</p>
       </Card>
       {children}
     </Page>
@@ -89,20 +103,18 @@ export function LinkRow({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-2 flex min-h-14 items-center rounded-2xl bg-white shadow-sm dark:bg-slate-800">
+    <div className="mb-2 flex min-h-14 items-center rounded-2xl bg-surface">
       {handle}
       <Link
         to={to}
         state={state}
-        className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 active:bg-slate-50 dark:active:bg-slate-700"
+        className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 active:bg-pressed"
       >
         <span className="min-w-0">
           <span className="block font-medium">{label}</span>
-          {hint && <span className="block text-sm text-slate-500 dark:text-slate-400">{hint}</span>}
+          {hint && <span className="block text-sm text-muted">{hint}</span>}
         </span>
-        <span aria-hidden="true" className="text-xl text-slate-400">
-          ›
-        </span>
+        <ChevronRightIcon className="h-5 w-5 shrink-0 text-faint" />
       </Link>
       {action}
     </div>

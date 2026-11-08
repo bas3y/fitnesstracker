@@ -133,7 +133,7 @@ export function RecipeForm({
             <label className="flex min-h-11 items-center gap-3">
               <input
                 type="checkbox"
-                className="h-5 w-5 accent-emerald-600"
+                className="h-5 w-5 accent-primary"
                 checked={input.cookedWeightGrams !== null}
                 onChange={(event) =>
                   change({
@@ -195,7 +195,7 @@ export function RecipeForm({
         )}
 
         {error && (
-          <p role="alert" className="mb-3 text-sm font-medium text-red-700 dark:text-red-400">
+          <p role="alert" className="mb-3 text-sm font-medium text-danger">
             {error}
           </p>
         )}

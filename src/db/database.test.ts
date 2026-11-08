@@ -1033,7 +1033,22 @@ describe('AppDatabase-Migration', () => {
       blockAdjust: true,
     });
     expect(await v28.workouts.get('w1')).toMatchObject({ planId: 'p1', block: null });
-    expect(v28.verno).toBe(28);
+    expect(v28.verno).toBeGreaterThanOrEqual(28);
     await v28.delete();
+  });
+
+  it('upgrades v28 settings with the default palette', async () => {
+    const name = 'migration-v28-v29';
+    const v28 = new Dexie(name);
+    v28.version(28).stores({ settings: 'id, updatedAt' });
+    await v28.table('settings').add({ id: 'app-settings', theme: 'dark' });
+    v28.close();
+
+    const current = new AppDatabase(name);
+    expect(await current.settings.get('app-settings')).toMatchObject({
+      theme: 'dark',
+      palette: 'green',
+    });
+    await current.delete();
   });
 });

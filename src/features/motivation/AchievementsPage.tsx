@@ -10,7 +10,7 @@ import { useSettings } from '../settings/useSettings';
 import { BadgeDialog, BadgeTile, StreakRow } from './MotivationParts';
 import { useMotivation } from './useMotivation';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 export function AchievementsPage() {
   const backTo = useBackTo('/stats');
@@ -41,7 +41,7 @@ export function AchievementsPage() {
             Gewohnheiten ab – dann siehst du hier, wie viele Tage am Stück du dranbleibst.
           </p>
         ) : (
-          <ul aria-label="Serien" className="divide-y divide-slate-100 dark:divide-slate-700">
+          <ul aria-label="Serien" className="divide-y divide-line">
             {streaks.map((item) => (
               <StreakRow key={item.key} item={item} trainingWeekTarget={trainingWeekTarget} />
             ))}

@@ -15,7 +15,7 @@ import { PHOTOS_PATH } from './paths';
 import { PhotoImage } from './PhotoParts';
 import { useProgressPhotos } from './useSelf';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 /** Zwei Fotos nebeneinander (Vorher/Nachher) mit Abstand und Gewicht */
 export function PhotoComparePage() {
@@ -76,7 +76,7 @@ export function PhotoComparePage() {
               <PhotoImage
                 photo={photo}
                 variant="full"
-                className="mb-2 aspect-[3/4] w-full rounded-xl bg-slate-200 object-contain dark:bg-slate-700"
+                className="mb-2 aspect-[3/4] w-full rounded-xl bg-subtle-strong object-contain"
               />
               {weight && <p className="mb-1 text-sm font-semibold tabular-nums">{weight}</p>}
               <Select

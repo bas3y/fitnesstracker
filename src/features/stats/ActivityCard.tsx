@@ -19,7 +19,7 @@ import { sessionPath } from '../endurance/paths';
 import { HISTORY_PATH } from '../training/paths';
 
 const countSets = (sets: number) => (sets === 1 ? '1 Satz' : `${sets} Sätze`);
-const LINK = 'inline-flex min-h-11 items-center font-medium text-emerald-700 dark:text-emerald-400';
+const LINK = 'inline-flex min-h-11 items-center font-medium text-primary-text';
 
 const SPANS = {
   '3m': { weekCount: 14, label: '3 Monaten' },
@@ -98,7 +98,7 @@ export function ActivityCard({
           </div>
         </div>
       ) : (
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-sm text-muted">
           {activeDays === 1 ? '1 Trainingstag' : `${activeDays} Trainingstage`} in den letzten{' '}
           {label}
         </p>

@@ -26,7 +26,7 @@ import { HISTORY_PATH, LOG_WORKOUT_PATH, PLANS_PATH } from './paths';
 import { TrainingStartCard } from './TrainingStartCard';
 import { useNow, useWorkoutHistory } from './useWorkouts';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 /** Trainings-Übersicht: Krafttraining oben, darunter je Aktivität eine Kachel mit Wochenstand */
 export function TrainingPage() {
@@ -41,7 +41,7 @@ export function TrainingPage() {
       action={
         <button
           type="button"
-          className="min-h-11 shrink-0 rounded-xl border border-slate-300 px-3 text-sm font-semibold dark:border-slate-600"
+          className="min-h-11 shrink-0 rounded-xl border border-line-strong px-3 text-sm font-semibold"
           onClick={() => setEditing(!editing)}
         >
           {editing ? 'Fertig' : 'Anpassen'}
@@ -161,7 +161,7 @@ function TileEditor({ tiles }: { tiles: EnduranceSport[] }) {
         items={tiles.map((sport) => ({ id: sport, name: ENDURANCE_SPORT_LABELS[sport].name }))}
         onReorder={(ids) => updateSettings({ trainingTiles: ids as EnduranceSport[] })}
         renderItem={({ id }, { handle }) => (
-          <div className="mb-2 flex min-h-14 items-center rounded-2xl bg-white shadow-sm dark:bg-slate-800">
+          <div className="mb-2 flex min-h-14 items-center rounded-2xl bg-surface">
             {handle ?? <span className="w-3 shrink-0" />}
             <span className="min-w-0 flex-1 px-1 font-medium">{label(id as EnduranceSport)}</span>
             <DeleteRowButton
@@ -181,17 +181,14 @@ function TileEditor({ tiles }: { tiles: EnduranceSport[] }) {
                 <button
                   type="button"
                   aria-label={`${ENDURANCE_SPORT_LABELS[sport].name} hinzufügen`}
-                  className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700"
+                  className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-left active:bg-page"
                   onClick={() =>
                     void change((current) =>
                       current.includes(sport) ? current : [...current, sport],
                     )
                   }
                 >
-                  <span
-                    aria-hidden="true"
-                    className="text-xl text-emerald-700 dark:text-emerald-400"
-                  >
+                  <span aria-hidden="true" className="text-xl text-primary-text">
                     +
                   </span>
                   <span className="font-medium">{label(sport)}</span>

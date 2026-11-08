@@ -8,7 +8,7 @@ import { ENDURANCE_SPORT_LABELS } from '../../domain/labels';
 import { formatClock, formatWorkoutDate } from '../../domain/workout';
 import { sessionPath } from './paths';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 /** Schnellste Zeit je Strecke über alle Einheiten der Sportart; `null`, solange es keine gibt */
 export function BestEffortsCard({

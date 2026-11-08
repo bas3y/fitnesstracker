@@ -19,7 +19,7 @@ import { DAILY_IMPORT_FIELD_LABELS } from '../../domain/labels';
 import { formatDayKey } from '../../domain/stats';
 import { BODY_PATH, DAILY_HISTORY_PATH } from './paths';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 const SOURCE_LABELS: Record<HealthSource, string> = { apple: 'Apple Health', garmin: 'Garmin' };
 
@@ -125,7 +125,7 @@ export function HealthImportPage() {
       {state.step === 'done' && (
         <>
           <Card>
-            <p role="status" className="font-semibold text-emerald-700 dark:text-emerald-400">
+            <p role="status" className="font-semibold text-primary-text">
               ✓ Import abgeschlossen: {plural(state.dayCount, 'Tag', 'Tage')} aktualisiert
             </p>
           </Card>
@@ -206,12 +206,12 @@ function Preview({
             const count = plan.counts[field];
             const label = DAILY_IMPORT_FIELD_LABELS[field];
             return (
-              <li key={field} className="rounded-xl bg-white p-3 shadow-sm dark:bg-slate-800">
+              <li key={field} className="rounded-xl bg-surface p-3">
                 <label className="flex min-h-11 items-start gap-3">
                   <input
                     type="checkbox"
                     aria-label={label}
-                    className="mt-1 h-5 w-5 shrink-0 accent-emerald-600"
+                    className="mt-1 h-5 w-5 shrink-0 accent-primary"
                     checked={fields.includes(field)}
                     onChange={(event) => toggle(field, event.target.checked)}
                   />

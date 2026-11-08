@@ -42,9 +42,7 @@ export function PlanDayPage() {
     return (
       <Page title="Training" backTo={backTo}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Dieses Training existiert nicht mehr.
-          </p>
+          <p className="text-muted">Dieses Training existiert nicht mehr.</p>
         </Card>
       </Page>
     );
@@ -104,9 +102,7 @@ function DayEditor({
       </Card>
 
       {items.length === 0 && (
-        <p className="mb-4 text-slate-600 dark:text-slate-400">
-          Noch keine Übungen. Füge die erste Übung hinzu.
-        </p>
+        <p className="mb-4 text-muted">Noch keine Übungen. Füge die erste Übung hinzu.</p>
       )}
       <SortableList
         label="Übungen im Training"
@@ -134,7 +130,7 @@ function DayEditor({
       </button>
 
       {confirmDelete ? (
-        <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/40">
+        <div className="mb-4 rounded-xl border border-danger/40 bg-danger-soft p-3">
           <p className="mb-3 text-sm font-medium">„{day.name}“ aus dem Plan löschen?</p>
           <div className="flex gap-2">
             <button
@@ -212,7 +208,7 @@ function PlanExerciseRow({
   const defaultRest = settings?.restTimerSeconds ?? REST_TIMER_DEFAULTS.restTimerSeconds;
 
   return (
-    <div className="mb-2 rounded-2xl bg-white shadow-sm dark:bg-slate-800">
+    <div className="mb-2 rounded-2xl bg-surface">
       <div className="flex items-center">
         {handle}
         <button
@@ -222,13 +218,11 @@ function PlanExerciseRow({
           onClick={onToggle}
         >
           <span className="block font-medium">{name}</span>
-          <span className="block text-sm text-slate-500 tabular-nums dark:text-slate-400">
-            {summary}
-          </span>
+          <span className="block text-sm text-muted tabular-nums">{summary}</span>
         </button>
       </div>
       {expanded && (
-        <div className="flex flex-col gap-3 border-t border-slate-200 p-4 dark:border-slate-700">
+        <div className="flex flex-col gap-3 border-t border-line p-4">
           <Stepper
             label="Sätze"
             value={targetSets}
@@ -297,13 +291,11 @@ function PlanExerciseRow({
               allowEmpty
               onChange={(value) => save({ restSeconds: value })}
             />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Leer = Standard ({formatClock(defaultRest)})
-            </p>
+            <p className="mt-1 text-xs text-muted">Leer = Standard ({formatClock(defaultRest)})</p>
           </div>
           <button
             type="button"
-            className="min-h-11 self-end px-2 text-sm font-medium text-red-700 dark:text-red-400"
+            className="min-h-11 self-end px-2 text-sm font-medium text-danger"
             onClick={() => void removePlanExercise(id)}
           >
             Aus Training entfernen

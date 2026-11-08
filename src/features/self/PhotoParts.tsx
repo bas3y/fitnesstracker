@@ -23,7 +23,7 @@ export function PhotoImage({
       <div
         role="img"
         aria-label={url === null ? `${photoLabel(photo)} (Bild fehlt)` : photoLabel(photo)}
-        className={`flex items-center justify-center bg-slate-200 text-sm text-slate-500 dark:bg-slate-700 dark:text-slate-400 ${className}`}
+        className={`flex items-center justify-center bg-subtle-strong text-sm text-muted ${className}`}
         style={{ aspectRatio: `${photo.width} / ${photo.height}` }}
       >
         {url === null ? 'Bild fehlt' : ''}

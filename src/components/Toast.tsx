@@ -25,9 +25,7 @@ export function ToastHost() {
           type="button"
           aria-label={`${toast.title}: ${toast.lines.join(', ')} – schließen`}
           className={`pointer-events-auto mx-auto flex w-full max-w-md items-start gap-3 rounded-2xl px-4 py-3 text-left shadow-lg ${
-            toast.variant === 'info'
-              ? 'bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900'
-              : 'bg-amber-500 text-amber-950'
+            toast.variant === 'info' ? 'bg-fg text-surface' : 'bg-hero text-on-hero'
           }`}
           onClick={() => hideToast()}
         >

@@ -27,7 +27,7 @@ export function TodoCard({ today, limit }: { today: DayKey; limit?: number }) {
     <Card title="To-dos">
       <TodoAddForm today={today} />
       {open.length === 0 && (
-        <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mb-2 text-sm text-muted">
           {done.length > 0 ? 'Alles erledigt für heute.' : 'Keine offenen Aufgaben.'}
         </p>
       )}
@@ -41,7 +41,7 @@ export function TodoCard({ today, limit }: { today: DayKey; limit?: number }) {
           <button
             type="button"
             aria-expanded={showDone}
-            className="flex min-h-11 w-full items-center gap-2 text-left text-sm font-semibold text-slate-600 dark:text-slate-300"
+            className="flex min-h-11 w-full items-center gap-2 text-left text-sm font-semibold text-muted"
             onClick={() => setShowDone(!showDone)}
           >
             <span aria-hidden="true">{showDone ? '▾' : '▸'}</span>
@@ -59,7 +59,7 @@ export function TodoCard({ today, limit }: { today: DayKey; limit?: number }) {
       <Link
         to={TODOS_PATH}
         state={from}
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
       >
         Alle Aufgaben{more.length > 0 ? ` (${more.join(', ')})` : ''} ›
       </Link>

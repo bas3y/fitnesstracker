@@ -45,9 +45,9 @@ import { EnduranceStats } from './EnduranceStats';
 import { ReviewStats } from './ReviewStats';
 import { exerciseStatsPath, useStatsFilter, type StatsView } from './statsFilter';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 const HEADER_LINK =
-  'flex min-h-11 shrink-0 items-center rounded-xl border border-slate-300 px-3 text-sm font-semibold dark:border-slate-600';
+  'flex min-h-11 shrink-0 items-center rounded-xl border border-line-strong px-3 text-sm font-semibold';
 
 const SORT_OPTIONS: Array<{ value: ExerciseSort; label: string }> = [
   { value: 'recent', label: 'Zuletzt' },
@@ -97,7 +97,7 @@ function StrengthStats() {
     <>
       {sessions?.length === 0 && (
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-muted">
             Noch keine beendeten Trainings. Nach dem ersten Workout siehst du hier deinen
             Fortschritt.
           </p>
@@ -214,14 +214,14 @@ function Bar({
   share: number;
   tone?: 'good' | 'warn' | 'bad';
 }) {
-  const color = { good: 'bg-emerald-500', warn: 'bg-amber-500', bad: 'bg-red-500' }[tone];
+  const color = { good: 'bg-primary', warn: 'bg-warn', bad: 'bg-danger' }[tone];
   return (
     <li>
       <div className="flex justify-between gap-3 text-sm">
         <span>{label}</span>
         <span className="shrink-0 font-medium tabular-nums">{value}</span>
       </div>
-      <div className="mt-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700">
+      <div className="mt-1 h-2 rounded-full bg-subtle">
         <div className={`h-2 rounded-full ${color}`} style={{ width: `${share * 100}%` }} />
       </div>
     </li>

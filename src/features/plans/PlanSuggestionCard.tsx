@@ -81,10 +81,8 @@ export function PlanSuggestionCard({
 
   if (!suggestion) {
     return (
-      <Card title={plan.name}>
-        <p className="mb-3 text-slate-600 dark:text-slate-400">
-          Dieser Plan hat noch keine Übungen.
-        </p>
+      <Card title={plan.name} tone="hero">
+        <p className="mb-3 text-muted">Dieser Plan hat noch keine Übungen.</p>
         <div className="flex flex-col gap-2">
           <Link to={planPath} className={primaryButton}>
             Plan bearbeiten
@@ -101,11 +99,11 @@ export function PlanSuggestionCard({
   const suggested = suggestion.day;
 
   return (
-    <Card title={plan.name}>
+    <Card title={plan.name} tone="hero">
       <BlockStatusPanel plan={plan} today={today} />
-      <p className="text-sm text-slate-500 dark:text-slate-400">{reasonText(suggestion)}</p>
+      <p className="text-sm text-muted">{reasonText(suggestion)}</p>
       <p className="text-xl font-bold">{suggested.day.name}</p>
-      <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">{exerciseNames(suggested)}</p>
+      <p className="mb-3 text-sm text-muted">{exerciseNames(suggested)}</p>
       <div className="flex flex-col gap-2">
         <button type="button" className={primaryButton} onClick={() => setPending(suggested)}>
           {suggested.day.name} starten

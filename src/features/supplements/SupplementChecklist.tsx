@@ -20,8 +20,8 @@ import { useNow } from '../training/useWorkouts';
 import { SUPPLEMENTS_PATH } from './paths';
 import { useSupplementOverview } from './useSupplements';
 
-const MUTED = 'text-sm text-slate-600 dark:text-slate-400';
-const LINK = 'font-semibold text-emerald-700 dark:text-emerald-400';
+const MUTED = 'text-sm text-muted';
+const LINK = 'font-semibold text-primary-text';
 
 /** Einnahmen eines Tages auf der Startseite (`widget`) oder der Supplements-Seite (`page`) */
 export function SupplementChecklist({
@@ -79,7 +79,7 @@ export function SupplementChecklist({
     <Card title={title}>
       {due.length > 0 ? (
         <>
-          <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mb-2 text-sm text-muted">
             {taken} von {due.length} genommen
           </p>
           <GoalBar label={`${title}: genommen`} value={taken} goal={due.length} />
@@ -133,9 +133,7 @@ function DoseRow({ entry, date, overdue }: { entry: DoseEntry; date: DayKey; ove
             {intake && dayKey(new Date(intake.takenAt)) === date
               ? ` · genommen ${toTimeInput(intake.takenAt)}`
               : intake && ' · genommen'}
-            {overdue && (
-              <span className="font-semibold text-orange-700 dark:text-orange-400"> · fällig</span>
-            )}
+            {overdue && <span className="font-semibold text-mark"> · fällig</span>}
           </>
         }
         onChange={(checked) => void setSupplementTaken(supplement.id, dose.id, date, checked)}
@@ -150,7 +148,7 @@ export function StockWarning({ id, name, days }: { id: string; name: string; day
     <Link
       to={`${SUPPLEMENTS_PATH}/${id}`}
       state={from}
-      className="flex min-h-11 items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-sm font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+      className="flex min-h-11 items-center gap-2 rounded-xl bg-warn-soft px-3 py-2 text-sm font-medium text-on-warn-soft"
     >
       <span aria-hidden="true">⚠️</span>
       <span className="min-w-0 flex-1">

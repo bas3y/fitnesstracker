@@ -13,7 +13,7 @@ import { NUTRITION_PATH } from './paths';
 import { ProteinQuickAdd } from './ProteinQuickAdd';
 import { useNutritionDay } from './useNutrition';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 function remainingText(kcal: number, goal: number): string {
   const diff = Math.round(goal - kcal);
@@ -123,7 +123,7 @@ export function NutritionDayCard({
       <Link
         to={to}
         state={from}
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
       >
         {settings.proteinOnly
           ? 'Protein korrigieren ›'

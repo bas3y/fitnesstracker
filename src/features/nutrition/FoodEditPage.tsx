@@ -51,9 +51,7 @@ export function FoodEditPage() {
     return (
       <Page title="Bearbeiten" backTo={FOODS_PATH}>
         <Card>
-          <p className="text-slate-600 dark:text-slate-400">
-            Dieses Lebensmittel lässt sich nicht bearbeiten.
-          </p>
+          <p className="text-muted">Dieses Lebensmittel lässt sich nicht bearbeiten.</p>
         </Card>
       </Page>
     );

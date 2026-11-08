@@ -26,7 +26,7 @@ import {
 import { WEEKDAYS } from '../../domain/plans';
 
 const LABEL = 'mb-1 block text-sm font-medium';
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 export function HabitForm({
   initial,
@@ -97,16 +97,12 @@ export function HabitForm({
                   type="button"
                   aria-pressed={input.kind === kind}
                   className={`min-h-11 rounded-xl border-2 px-3 py-2 text-left ${
-                    input.kind === kind
-                      ? 'border-emerald-700 bg-emerald-50 dark:bg-emerald-950'
-                      : 'border-slate-200 dark:border-slate-700'
+                    input.kind === kind ? 'border-primary bg-primary-soft' : 'border-line'
                   }`}
                   onClick={() => changeKind(kind)}
                 >
                   <span className="block font-semibold">{HABIT_KIND_LABELS[kind]}</span>
-                  <span className="block text-xs text-slate-600 dark:text-slate-400">
-                    {HABIT_KIND_HINTS[kind]}
-                  </span>
+                  <span className="block text-xs text-muted">{HABIT_KIND_HINTS[kind]}</span>
                 </button>
               ))}
             </div>
@@ -197,7 +193,7 @@ export function HabitForm({
       )}
 
       {error && (
-        <p role="alert" className="mb-3 text-sm font-medium text-red-700 dark:text-red-400">
+        <p role="alert" className="mb-3 text-sm font-medium text-danger">
           {error}
         </p>
       )}
@@ -423,7 +419,7 @@ function ItemRow({
   const nameId = useId();
   const label = item.name.trim() || `Unterpunkt ${index + 1}`;
   return (
-    <li className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+    <li className="rounded-xl border border-line p-3">
       <div className="mb-3 flex items-end gap-1">
         <div className="min-w-0 flex-1">
           <label htmlFor={nameId} className={LABEL}>

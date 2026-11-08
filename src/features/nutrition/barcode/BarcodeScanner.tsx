@@ -5,7 +5,7 @@ import { parseBarcode } from '../../../domain/barcode';
 import { createFrameDecoder } from './detector';
 
 const SCAN_INTERVAL_MS = 200;
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 type CameraState = 'starting' | 'running' | { error: string };
 
@@ -101,7 +101,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (code: string) => v
       {typeof camera === 'object' ? (
         <p
           role="alert"
-          className="rounded-xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          className="rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-on-warn-soft"
         >
           {camera.error}
         </p>
@@ -120,7 +120,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (code: string) => v
           />
           <p
             role="status"
-            className="absolute inset-x-0 bottom-0 bg-black/50 px-3 py-2 text-center text-sm text-white"
+            className="absolute inset-x-0 bottom-0 bg-scrim px-3 py-2 text-center text-sm text-white"
           >
             {camera === 'starting' ? 'Kamera startet …' : 'Strichcode in den Rahmen halten'}
           </p>
@@ -146,7 +146,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (code: string) => v
             }}
           />
           {manualError && (
-            <p role="alert" className="text-sm font-medium text-red-700 dark:text-red-400">
+            <p role="alert" className="text-sm font-medium text-danger">
               {manualError}
             </p>
           )}

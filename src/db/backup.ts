@@ -49,6 +49,7 @@ import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
 import {
   BODY_MEASURES,
+  COLOR_PALETTES,
   DAILY_IMPORT_FIELDS,
   DASHBOARD_WIDGETS,
   DEFAULT_DASHBOARD_WIDGETS,
@@ -136,6 +137,8 @@ const settingsSchema = baseEntitySchema.extend({
   // Seit DB-Version 27; ältere Sicherungen gleichen die Erfolge beim nächsten Start still ab
   trainingWeekTarget: trainingWeekTargetSchema.default(TRAINING_WEEK_TARGET_DEFAULT),
   celebrations: celebrationsSchema.nullable().default(null),
+  // Seit DB-Version 29
+  palette: z.enum(COLOR_PALETTES).default('green'),
 });
 
 const catalogEntryFields = {

@@ -37,9 +37,9 @@ import { useGoalData, useGoalExercises, useGoals } from '../goals/useGoals';
 import { useSettings } from '../settings/useSettings';
 import { useStatsFilter } from './statsFilter';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 const NAV_BUTTON =
-  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl font-semibold active:bg-slate-200 disabled:opacity-40 dark:bg-slate-700 dark:active:bg-slate-600';
+  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-subtle text-xl font-semibold active:bg-subtle-strong disabled:opacity-40';
 
 const PERIOD_OPTIONS = CALENDAR_PERIODS.map((value) => ({
   value,
@@ -156,7 +156,7 @@ function ReviewContent({
   if (!hasReviewData(current) && !hasReviewData(previous)) {
     return (
       <Card>
-        <p className="text-slate-600 dark:text-slate-400">Keine Einträge in diesem Zeitraum.</p>
+        <p className="text-muted">Keine Einträge in diesem Zeitraum.</p>
       </Card>
     );
   }
@@ -177,15 +177,10 @@ function formatDelta(row: Row): { text: string; tone: string } | null {
   if (delta === null) return null;
   const text = row.format(Math.abs(delta));
   if (Math.abs(delta) < 1e-9 || text === row.format(0)) {
-    return { text: '±0', tone: 'text-slate-500 dark:text-slate-400' };
+    return { text: '±0', tone: 'text-muted' };
   }
   const better = row.better === null ? null : delta > 0 === (row.better === 'higher');
-  const tone =
-    better === null
-      ? 'text-slate-600 dark:text-slate-300'
-      : better
-        ? 'text-emerald-700 dark:text-emerald-400'
-        : 'text-red-700 dark:text-red-400';
+  const tone = better === null ? 'text-muted' : better ? 'text-primary-text' : 'text-danger';
   return { text: `${delta > 0 ? '+' : '−'}${text}`, tone };
 }
 
@@ -193,10 +188,7 @@ function ReviewRows({ rows, label }: { rows: Row[]; label: string }) {
   const shown = rows.filter((row) => row.current || row.previous);
   if (shown.length === 0) return null;
   return (
-    <dl
-      aria-label={label}
-      className="flex flex-col divide-y divide-slate-100 dark:divide-slate-700"
-    >
+    <dl aria-label={label} className="flex flex-col divide-y divide-line">
       {shown.map((row) => {
         const delta = formatDelta(row);
         return (
@@ -533,7 +525,7 @@ function GoalsCard({
       <Link
         to={GOALS_PATH}
         state={from}
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
       >
         Alle Ziele ›
       </Link>

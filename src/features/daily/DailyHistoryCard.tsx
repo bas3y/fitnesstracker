@@ -37,7 +37,7 @@ import { SleepPhasesBar } from './SleepPhasesBar';
 import { useHabits } from './useHabits';
 import { useDailyLogs } from './useDaily';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 /** Tageswerte, Gewohnheiten (`habits`) oder eine Aufhören-Gewohnheit (`quit:<id>`) */
 type HistoryMetric = DailyMetric | 'habits' | `quit:${string}`;

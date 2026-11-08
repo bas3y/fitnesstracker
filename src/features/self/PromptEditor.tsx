@@ -13,7 +13,7 @@ import { journalPromptTextSchema, MAX_JOURNAL_PROMPTS } from '../../db/schemas';
 import type { JournalKind, JournalPrompt } from '../../db/types';
 import { activePrompts } from '../../domain/journal';
 
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 const SUGGESTIONS: Record<JournalKind, string[]> = {
   day: [
@@ -74,7 +74,7 @@ export function PromptEditor({
           renderItem={({ id }, { handle }) => {
             const prompt = active.find((item) => item.id === id)!;
             return (
-              <div className="mb-2 flex min-h-14 items-center gap-1 rounded-2xl bg-white shadow-sm dark:bg-slate-800">
+              <div className="mb-2 flex min-h-14 items-center gap-1 rounded-2xl bg-surface">
                 {handle ?? <span className="w-3 shrink-0" />}
                 <PromptName prompt={prompt} />
                 <DeleteRowButton
@@ -103,7 +103,7 @@ export function PromptEditor({
             disabled={full}
             onChange={(event) => setDraft(event.target.value)}
           />
-          {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <button type="submit" className={primaryButton} disabled={full}>
             Frage hinzufügen
           </button>
@@ -117,7 +117,7 @@ export function PromptEditor({
                 <button
                   key={text}
                   type="button"
-                  className="inline-flex min-h-11 items-center rounded-full border border-slate-300 bg-white px-4 text-left text-sm font-medium text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+                  className="inline-flex min-h-11 items-center rounded-full border border-line-strong bg-surface px-4 text-left text-sm font-medium text-fg"
                   onClick={() => void add(text)}
                 >
                   + {text}
@@ -137,7 +137,7 @@ function PromptName({ prompt }: { prompt: JournalPrompt }) {
   return (
     <input
       aria-label={`Frage: ${prompt.text}`}
-      className="h-11 min-w-0 flex-1 rounded-xl bg-transparent px-2 text-base font-medium focus:bg-slate-50 dark:focus:bg-slate-900"
+      className="h-11 min-w-0 flex-1 rounded-xl bg-transparent px-2 text-base font-medium focus:bg-page"
       value={draft ?? prompt.text}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={() => {
@@ -156,7 +156,7 @@ export function CustomizeButton({ editing, onToggle }: { editing: boolean; onTog
   return (
     <button
       type="button"
-      className="min-h-11 shrink-0 rounded-xl border border-slate-300 px-3 text-sm font-semibold dark:border-slate-600"
+      className="min-h-11 shrink-0 rounded-xl border border-line-strong px-3 text-sm font-semibold"
       onClick={onToggle}
     >
       {editing ? 'Fertig' : 'Anpassen'}

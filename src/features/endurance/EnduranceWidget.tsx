@@ -14,7 +14,7 @@ import { formatWorkoutDate } from '../../domain/workout';
 import { ENDURANCE_STATS_PATH } from '../stats/statsFilter';
 import { activityPath, sessionPath } from './paths';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 /** Startseiten-Widget: diese Woche je Sportart und letzte Einheit; `sessions` neueste zuerst */
 export function EnduranceWidget({
@@ -58,7 +58,7 @@ export function EnduranceWidget({
         <Link
           to={sessionPath(last.id)}
           state={from}
-          className="mt-2 flex min-h-11 items-center justify-between gap-3 border-t border-slate-200 pt-2 dark:border-slate-700"
+          className="mt-2 flex min-h-11 items-center justify-between gap-3 border-t border-line pt-2"
         >
           <span className="min-w-0">
             <span className={`block ${MUTED}`}>Letzte Einheit</span>
@@ -69,14 +69,14 @@ export function EnduranceWidget({
               {formatWorkoutDate(last.startedAt)} · {formatSessionSummary(last, unit)}
             </span>
           </span>
-          <span aria-hidden="true" className="text-xl text-slate-400">
+          <span aria-hidden="true" className="text-xl text-faint">
             ›
           </span>
         </Link>
       )}
       <Link
         to={ENDURANCE_STATS_PATH}
-        className="flex min-h-11 items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+        className="flex min-h-11 items-center text-sm font-semibold text-primary-text"
       >
         Zur Statistik ›
       </Link>

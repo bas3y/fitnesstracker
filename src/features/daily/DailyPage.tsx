@@ -20,7 +20,7 @@ import { useDailyLog, useDayParam } from './useDaily';
 import { HABITS_PATH, useHabits } from './useHabits';
 import { TODOS_PATH, useTodos } from './useTodos';
 
-const MUTED = 'text-sm text-slate-500 dark:text-slate-400';
+const MUTED = 'text-sm text-muted';
 
 interface TileProps {
   date: DayKey;
@@ -144,9 +144,7 @@ function SupplementsTile({ date, today, settings }: TileProps & { settings: Sett
           <Progress label="Supplements genommen" done={taken} total={due.length} />
         )}
         {lowStock > 0 && (
-          <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
-            ⚠️ Bestand niedrig
-          </span>
+          <span className="text-sm font-medium text-on-warn-soft">⚠️ Bestand niedrig</span>
         )}
       </>
     );

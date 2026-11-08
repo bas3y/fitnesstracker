@@ -17,7 +17,7 @@ import { FOOD_CATEGORY_LABELS } from '../../domain/labels';
 import { estimateKcal } from '../../domain/nutrientCheck';
 
 const LABEL = 'mb-1 block text-sm font-medium';
-const HINT = 'text-sm text-slate-500 dark:text-slate-400';
+const HINT = 'text-sm text-muted';
 
 type NutrientField = 'protein' | 'carbs' | 'sugar' | 'fat' | 'fiber' | 'alcohol';
 
@@ -144,7 +144,7 @@ export function FoodForm({
               </p>
               <button
                 type="button"
-                className="min-h-11 shrink-0 px-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+                className="min-h-11 shrink-0 px-2 text-sm font-semibold text-primary-text"
                 onClick={() => change({ kcal: estimated })}
               >
                 Übernehmen
@@ -183,7 +183,7 @@ export function FoodForm({
       </Card>
 
       {error && (
-        <p role="alert" className="mb-3 text-sm font-medium text-red-700 dark:text-red-400">
+        <p role="alert" className="mb-3 text-sm font-medium text-danger">
           {error}
         </p>
       )}
@@ -215,7 +215,7 @@ function PortionFields({
   const id = useId();
   const suffix = ` (${index + 1})`;
   return (
-    <li className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+    <li className="rounded-xl border border-line p-3">
       <div className="flex items-end gap-1">
         <div className="min-w-0 flex-1">
           <label htmlFor={id} className={LABEL}>

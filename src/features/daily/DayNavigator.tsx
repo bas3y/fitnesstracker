@@ -3,7 +3,7 @@ import type { DayKey } from '../../db/types';
 import { formatDayLabel, shiftDay } from '../../domain/daily';
 
 const dayButton =
-  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-xl font-semibold shadow-sm active:bg-slate-50 disabled:opacity-40 dark:bg-slate-800 dark:active:bg-slate-700';
+  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface text-xl font-semibold active:bg-page disabled:opacity-40';
 
 /** Tag wählen: Pfeile für die Tage daneben, Datumsfeld für weiter zurück; nie in die Zukunft */
 export function DayNavigator({
