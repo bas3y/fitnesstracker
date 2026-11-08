@@ -36,7 +36,8 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 18b – Trainingsblöcke (Aufbau/Deload/Peak) in Plänen
 - [ ] Schritt 18c – Push & Handytest 16–18b
 - [x] Schritt 18d – Design-Grundlage & Farbpaletten
-- [ ] Schritt 18e – Seiten aufräumen & übersichtlicher machen
+- [x] Schritt 18e – Seiten aufräumen & übersichtlicher machen
+- [ ] Schritt 18f – Neues Logo, Animationen & Ladebildschirm
 - [ ] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
 
@@ -1060,7 +1061,7 @@ Ablauf:
 - Korrekturen (08.11.2026):
   - Erfolge: Lange Abzeichen-Namen („Gewohnheitsserie“, „Fortschrittsfotos“, „Trainingsserie“ …) haben ihre Rasterspalte verbreitert und stießen an den Nachbarn. Jetzt gleich breite Spalten (`min-w-0`) und feste Trennstellen per weichem Trennzeichen (`NAME_BREAKS` in `MotivationParts.tsx`, z. B. „Fortschritts-fotos“, Nutzerwunsch; `hyphens-manual`, Notfall `overflow-wrap:anywhere`), unter 360 px kleinere Schrift ohne Innenabstand. E2E prüft die Kacheln bei 320 px Breite.
   - Workout-Übersicht (nach „Speichern“ und im Verlauf): unten primärer „Fertig“-Link zur Herkunft (wie „Zurück“), „Teilen-Bild“ ist jetzt ein normaler Button.
-  - Noch nicht gepusht: Nutzerwunsch, erst nach 18d/18e (wenn das Design stimmt) zusammen pushen und auf dem Handy testen. 18c wird dann mit diesem Push abgeschlossen.
+  - Noch nicht gepusht: Nutzerwunsch, erst nach 18d/18e (wenn das Design stimmt) zusammen pushen und auf dem Handy testen. 18c wird dann mit diesem Push abgeschlossen. Nach 18e kam noch 18f (Logo) dazu: Push erst danach.
 
 ### Schritt 18d – Design-Grundlage & Farbpaletten
 **Ziel:** Neues, einheitliches Design als Grundlage (Nutzerwunsch nach 18c). Vor Schritt 19, damit die Berichte gleich im neuen Look entstehen.
@@ -1110,9 +1111,21 @@ Mit dem Nutzer beim Start abgestimmt (Entwürfe als Artifact „Fitnesstracker 1
   - Nicht jedes Widget hat alle drei Größen (Listen und Heatmap nur mittel/groß, Kennzahlen alle drei).
   - Die Farbblöcke der kleinen Widgets richten sich nach der Reihenfolge der kleinen Widgets in der Auswahl.
 - Offene Punkte:
-  - **Logo:** Entscheidung des Nutzers (Vorschläge 1–6), dann `public/favicon.svg` + `npm run icons`, ggf. Logo im Willkommen/Über.
+  - **Logo** → eigener Schritt 18f (Nutzerwunsch: mit Animationen und Ladebildschirm).
   - **Handytest** (mit dem 18c-Push): Lesbarkeit der kleinen Widgets, Schalter, Einstellungs-Unterseiten.
   - Vor dem nächsten Push an ein Backup erinnern (DB-Version 28 → 31).
+
+### Schritt 18f – Neues Logo, Animationen & Ladebildschirm
+**Ziel:** Abschluss der Design-Überarbeitung (Nutzerwunsch nach 18e), danach Push + Handytest (18c).
+- **Logo:** Der Nutzer wählt aus den sechs Vorschlägen im Artifact „Fitnesstracker 18e Entwürfe“ (1 Tagesring, 2 Stufen, 3 Puls, 4 Aufgang, 5 Vier Bereiche, 6 Schleife) oder wünscht Änderungen. Neutral zu allen Paletten, nicht nur Training (keine Hantel). App-Icon (Startbildschirm, Manifest) fest in neutraler Fassung, in der App ggf. in Palettenfarbe. `public/favicon.svg` ersetzen, `npm run icons`, Manifest-Farben prüfen.
+- **Ladebildschirm:** beim Start (bis Einstellungen/DB geladen sind) Logo statt leerer Seite, passend zu Palette und Hell/Dunkel (schon in `index.html`, damit nichts aufblitzt); iOS-Startbild (`apple-touch-startup-image`) prüfen.
+- **Animationen:** dezent und kurz (z. B. Logo beim Start, Seitenwechsel, Abhaken, Fortschrittsbalken, Erfolgs-Hinweis), offline und ohne Paket wenn möglich; `prefers-reduced-motion` beachten.
+- Beim Start mit dem Nutzer klären: welches Logo, welche Stellen animiert werden, wie lange der Ladebildschirm steht.
+
+**Notizen:**
+- Gebaut:
+- Abweichungen:
+- Offene Punkte:
 
 ### Schritt 19 – PDF-Export/Berichte
 Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.
