@@ -1,6 +1,145 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeftIcon, ChevronRightIcon } from './icons';
+import { ChevronLeftIcon, ChevronRightIcon, Icon, IconBadge, type IconName } from './icons';
+
+/** Klassen des runden Kopf-Buttons, auch für Links (`aria-label` setzen) */
+export const HEADER_ICON_BUTTON =
+  'flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-primary-text active:bg-pressed';
+
+/** Runder Symbol-Button für die Kopfzeile (`Page`-Prop `action`) */
+export function HeaderButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: IconName;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className={HEADER_ICON_BUTTON}
+    >
+      <Icon name={icon} />
+    </button>
+  );
+}
+
+/** „Anpassen“ / „Fertig“ im Kopf (Startseite, Training) */
+export function CustomizeToggle({
+  editing,
+  onChange,
+}: {
+  editing: boolean;
+  onChange: (editing: boolean) => void;
+}) {
+  return (
+    <HeaderButton
+      icon={editing ? 'check' : 'pen'}
+      label={editing ? 'Fertig' : 'Anpassen'}
+      onClick={() => onChange(!editing)}
+    />
+  );
+}
+
+/** Gruppierte Liste (iOS-Stil): eine Karte mit Trennlinien, Zeilen über `GroupRow` */
+export function LinkGroup({
+  title,
+  label,
+  children,
+}: {
+  title?: string;
+  /** Name der Liste für Screenreader (Standard: `title`) */
+  label?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="mb-5">
+      {title && (
+        <h2 className="mb-1.5 px-1 text-[0.8125rem] font-semibold tracking-wide text-muted uppercase">
+          {title}
+        </h2>
+      )}
+      <ul
+        aria-label={label ?? title}
+        className="divide-y divide-line overflow-hidden rounded-2xl bg-surface"
+      >
+        {children}
+      </ul>
+    </section>
+  );
+}
+
+/** Zeile in einer `LinkGroup`: Symbol, Name, Hinweis darunter oder Wert rechts, Pfeil */
+export function GroupRow({
+  to,
+  state,
+  icon,
+  solid = false,
+  label,
+  hint,
+  value,
+  children,
+}: {
+  to: string;
+  state?: unknown;
+  icon?: IconName;
+  /** Symbol auf voller Akzentfarbe (Einstellungen) */
+  solid?: boolean;
+  label: string;
+  hint?: ReactNode;
+  value?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <li>
+      <Link
+        to={to}
+        state={state}
+        className="flex min-h-14 items-center gap-3 px-4 py-2.5 active:bg-pressed"
+      >
+        {icon && <IconBadge name={icon} solid={solid} />}
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium">{label}</span>
+          {hint && <span className="block text-sm text-muted">{hint}</span>}
+          {children}
+        </span>
+        {value && (
+          <span className="max-w-[45%] shrink-0 truncate text-right text-sm text-muted">
+            {value}
+          </span>
+        )}
+        <ChevronRightIcon className="h-4 w-4 shrink-0 text-faint" />
+      </Link>
+    </li>
+  );
+}
+
+/** Kleiner Textlink mit Pfeil-Symbol (z. B. „Zur Statistik“) */
+export function MoreLink({
+  to,
+  state,
+  children,
+}: {
+  to: string;
+  state?: unknown;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      to={to}
+      state={state}
+      className="mt-1 inline-flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
+    >
+      {children}
+      <ChevronRightIcon className="h-4 w-4" />
+    </Link>
+  );
+}
 
 export function Page({
   title,

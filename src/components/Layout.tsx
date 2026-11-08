@@ -32,7 +32,7 @@ export function Layout() {
     <div className="min-h-dvh pb-[calc(5rem+env(safe-area-inset-bottom))]">
       {reminder && (
         <Link
-          to="/settings"
+          to="/settings/backup"
           role="status"
           className="block bg-warn-soft px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 text-center text-sm font-medium text-on-warn-soft"
         >

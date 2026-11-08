@@ -4,6 +4,7 @@ import { Card } from '../../components/Page';
 import type { HeartRateSeconds, Settings } from '../../db/types';
 import { HEART_RATE_ZONE_LABELS, heartRateZoneBounds, zoneSecondsOf } from '../../domain/track';
 import { formatClock } from '../../domain/workout';
+import { settingsPath } from '../settings/paths';
 
 const MUTED = 'text-sm text-muted';
 
@@ -24,7 +25,11 @@ export function HeartRateZonesCard({
       <Card title="Pulszonen">
         <p className={MUTED}>
           Trage deinen max. Puls in den{' '}
-          <Link to="/settings" state={from} className="font-semibold text-primary-text">
+          <Link
+            to={settingsPath('training')}
+            state={from}
+            className="font-semibold text-primary-text"
+          >
             Einstellungen
           </Link>{' '}
           ein, um die Zeit in den Pulszonen zu sehen.

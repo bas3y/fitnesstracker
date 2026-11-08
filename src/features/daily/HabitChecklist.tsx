@@ -26,7 +26,7 @@ import {
 } from '../../domain/habits';
 import { GoalBar } from './GoalBar';
 import { HABITS_PATH, useHabits } from './useHabits';
-import { IconBadge, type IconName } from '../../components/icons';
+import { ChevronRightIcon, Icon, IconBadge, type IconName } from '../../components/icons';
 
 const ROUND_BUTTON =
   'flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-subtle px-2 text-sm font-semibold tabular-nums active:bg-subtle-strong';
@@ -39,10 +39,13 @@ export function HabitChecklist({
   date,
   today,
   variant = 'groups',
+  limit,
 }: {
   date: DayKey;
   today: DayKey;
   variant?: 'groups' | 'widget';
+  /** Nur so viele offene zeigen, erledigte ausblenden (mittleres Widget) */
+  limit?: number;
 }) {
   const habits = useHabits();
   if (!habits) return null;
@@ -62,7 +65,13 @@ export function HabitChecklist({
             </Link>
           </p>
         ) : (
-          <ChecklistBody title="Gewohnheiten heute" items={sorted} date={date} today={today} />
+          <ChecklistBody
+            title="Gewohnheiten heute"
+            items={sorted}
+            date={date}
+            today={today}
+            limit={limit}
+          />
         )}
       </Card>
     );
@@ -86,13 +95,16 @@ function ChecklistBody({
   items,
   date,
   today,
+  limit,
 }: {
   title: string;
   items: HabitWithChecks[];
   date: DayKey;
   today: DayKey;
+  limit?: number;
 }) {
   const [showDone, setShowDone] = useState(false);
+  const from = useFromHere();
   const tasks = items.filter(({ habit }) => habit.kind !== 'quit');
   const quits = items.filter(({ habit }) => habit.kind === 'quit');
   const isDone = ({ habit, entries }: HabitWithChecks) => isHabitDoneOn(habit, entries, date);
@@ -101,6 +113,30 @@ function ChecklistBody({
   const row = (item: HabitWithChecks) => (
     <HabitRow key={item.habit.id} item={item} date={date} today={today} />
   );
+
+  if (limit !== undefined) {
+    const shown = [...open, ...quits].slice(0, limit);
+    const more = open.length + quits.length - shown.length;
+    return (
+      <>
+        {tasks.length > 0 && (
+          <p className="mb-1 text-sm text-muted">
+            {done.length} von {tasks.length} erledigt
+          </p>
+        )}
+        {shown.length === 0 && <p className="text-sm text-muted">Alles erledigt für heute.</p>}
+        <ul aria-label={title}>{shown.map(row)}</ul>
+        <Link
+          to={HABITS_PATH}
+          state={from}
+          className="mt-1 flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
+        >
+          {more > 0 ? `${more} weitere offen` : 'Alle Gewohnheiten'}
+          <ChevronRightIcon className="h-4 w-4" />
+        </Link>
+      </>
+    );
+  }
 
   return (
     <>
@@ -124,7 +160,7 @@ function ChecklistBody({
             className="flex min-h-11 w-full items-center gap-2 text-left text-sm font-semibold text-muted"
             onClick={() => setShowDone(!showDone)}
           >
-            <span aria-hidden="true">{showDone ? '▾' : '▸'}</span>
+            <Icon name={showDone ? 'chevronDown' : 'chevronRight'} className="h-4 w-4" />
             {done.length} erledigt
           </button>
           {showDone && <ul aria-label={`${title}: erledigt`}>{done.map(row)}</ul>}
@@ -255,12 +291,14 @@ function ItemsRow({
         >
           <StatusCircle done={done} />
           <IconBadge name={habit.icon} className="h-8 w-8" iconClassName="h-4.5 w-4.5" />
-          <span className="min-w-0">
+          <span className="min-w-0 flex-1">
             <span className={nameClass(done)}>{habit.name}</span>
-            <span className={HINT}>
-              {join(`${doneCount} von ${habit.items.length} ${open ? '▾' : '▸'}`, streak)}
-            </span>
+            <span className={HINT}>{join(`${doneCount} von ${habit.items.length}`, streak)}</span>
           </span>
+          <Icon
+            name={open ? 'chevronUp' : 'chevronDown'}
+            className="mr-1 h-4 w-4 shrink-0 text-faint"
+          />
         </button>
         {details}
       </div>
@@ -390,9 +428,9 @@ function DetailsLink({ id, name }: { id: string; name: string }) {
       to={`${HABITS_PATH}/${id}`}
       state={from}
       aria-label={`Details: ${name}`}
-      className="flex h-11 w-9 shrink-0 items-center justify-center text-xl text-faint"
+      className="flex h-11 w-9 shrink-0 items-center justify-center text-faint"
     >
-      ›
+      <ChevronRightIcon className="h-4 w-4" />
     </Link>
   );
 }

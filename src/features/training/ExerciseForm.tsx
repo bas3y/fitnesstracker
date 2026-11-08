@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { inputField, primaryButton, secondaryButton } from '../../components/buttons';
+import { Switch } from '../../components/Switch';
 import { Chip } from '../../components/Chip';
 import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
@@ -107,15 +108,11 @@ export function ExerciseForm({ initial, submitLabel, onSubmit, onCancel }: Exerc
             labels={EQUIPMENT_LABELS}
             onChange={(equipment) => equipment && set({ equipment })}
           />
-          <label className="flex min-h-11 items-center gap-3">
-            <input
-              type="checkbox"
-              className="h-5 w-5 accent-primary"
-              checked={input.isUnilateral}
-              onChange={(event) => set({ isUnilateral: event.target.checked })}
-            />
-            Einseitig (pro Arm/Bein)
-          </label>
+          <Switch
+            label="Einseitig (pro Arm/Bein)"
+            checked={input.isUnilateral}
+            onChange={(isUnilateral) => set({ isUnilateral })}
+          />
           <div>
             <p className="mb-1 text-sm font-medium">Erfassung</p>
             <SegmentedControl

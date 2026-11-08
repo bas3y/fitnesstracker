@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
-import { TrophyIcon } from '../../components/icons';
-import { Card, Page } from '../../components/Page';
+import { Icon, TrophyIcon } from '../../components/icons';
+import { Card, HEADER_ICON_BUTTON, Page } from '../../components/Page';
 import type { Workout } from '../../db/types';
 import { deleteWorkout } from '../../db/workouts';
 import { formatBlockWeek } from '../../domain/blocks';
@@ -29,9 +29,11 @@ export function WorkoutHistoryPage() {
         <Link
           to={LOG_WORKOUT_PATH}
           state={{ from: HISTORY_PATH }}
-          className="flex min-h-11 shrink-0 items-center rounded-xl border border-line-strong px-3 text-sm font-semibold"
+          aria-label="Nachtragen"
+          title="Nachtragen"
+          className={HEADER_ICON_BUTTON}
         >
-          Nachtragen
+          <Icon name="calendarPlus" />
         </Link>
       }
     >

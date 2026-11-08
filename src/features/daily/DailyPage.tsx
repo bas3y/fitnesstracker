@@ -52,12 +52,20 @@ export function DailyPage() {
   );
 }
 
+/** Große Zahl mit kleinem Rest dahinter, z. B. „3 von 5“ */
+function BigStat({ value, rest }: { value: string; rest: string }) {
+  return (
+    <span className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+      <span className="text-2xl leading-tight font-bold tracking-tight tabular-nums">{value}</span>
+      <span className={`tabular-nums ${MUTED}`}> {rest}</span>
+    </span>
+  );
+}
+
 function Progress({ label, done, total }: { label: string; done: number; total: number }) {
   return (
     <>
-      <span className={`tabular-nums ${MUTED}`}>
-        {done} von {total}
-      </span>
+      <BigStat value={String(done)} rest={`von ${total}`} />
       <GoalBar label={label} value={done} goal={total} />
     </>
   );
@@ -83,19 +91,23 @@ function HabitsTile({ date, today }: TileProps) {
 
 function TodosTile({ date, today }: TileProps) {
   const todos = useTodos();
-  const status = (() => {
+  const status = ((): { value: string; rest: string } | string | null => {
     if (!todos) return null;
     if (date !== today) {
       const done = doneOn(todos, date).length;
-      return done === 0 ? 'Nichts erledigt' : `${done} erledigt`;
+      return done === 0 ? 'Nichts erledigt' : { value: String(done), rest: 'erledigt' };
     }
     const open = todayTodos(todos, today).length;
-    if (open > 0) return `${open} offen`;
+    if (open > 0) return { value: String(open), rest: 'offen' };
     return doneOn(todos, today).length > 0 ? 'Alles erledigt' : 'Keine offen';
   })();
   return (
     <Tile to={withDate(TODOS_PATH, date, today)} icon="todo" name="To-dos" tone="soft">
-      {status && <span className={MUTED}>{status}</span>}
+      {typeof status === 'string' ? (
+        <span className={MUTED}>{status}</span>
+      ) : (
+        status && <BigStat {...status} />
+      )}
     </Tile>
   );
 }
@@ -111,9 +123,10 @@ function NutritionTile({ date, today, settings }: TileProps & { settings: Settin
     <Tile to={withDate(NUTRITION_PATH, date, today)} icon="utensils" name="Ernährung">
       {value != null && target != null && (
         <>
-          <span className={`tabular-nums ${MUTED}`}>
-            {formatDecimal(Math.round(value), 0)} von {formatDecimal(target, 0)} {unit}
-          </span>
+          <BigStat
+            value={formatDecimal(Math.round(value), 0)}
+            rest={`von ${formatDecimal(target, 0)} ${unit}`}
+          />
           <GoalBar label={label} value={value} goal={target} />
         </>
       )}

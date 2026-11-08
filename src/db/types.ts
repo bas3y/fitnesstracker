@@ -41,6 +41,8 @@ export interface Settings extends BaseEntity {
   activePlanId: string | null;
   /** Sichtbare Widgets auf dem Dashboard, in Anzeigereihenfolge */
   dashboardWidgets: DashboardWidget[];
+  /** Gewählte Größe je Widget (seit DB-Version 31); fehlt = Standardgröße */
+  widgetSizes: Partial<Record<DashboardWidget, WidgetSize>>;
   /** Buttons im Widget „Schnellzugriff“, in Anzeigereihenfolge */
   quickActions: QuickAction[];
   // Tagesziele
@@ -109,8 +111,14 @@ export const DASHBOARD_WIDGETS = [
   'endurance',
   'goals',
   'motivation',
+  'steps',
+  'water',
+  'sleep',
 ] as const;
 export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
+/** Klein = halbe Breite, nur der Wert; Mittel = kurz; Groß = mit Details (seit DB-Version 31) */
+export const WIDGET_SIZES = ['small', 'medium', 'large'] as const;
+export type WidgetSize = (typeof WIDGET_SIZES)[number];
 /** Standardaufbau seit DB-Version 14 (bestehende Startseiten wurden einmalig umgestellt) */
 export const DEFAULT_DASHBOARD_WIDGETS: readonly DashboardWidget[] = [
   'quickActions',

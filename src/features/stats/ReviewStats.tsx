@@ -36,7 +36,7 @@ import { GOALS_PATH } from '../goals/paths';
 import { useGoalData, useGoalExercises, useGoals } from '../goals/useGoals';
 import { useSettings } from '../settings/useSettings';
 import { useStatsFilter } from './statsFilter';
-import { Icon } from '../../components/icons';
+import { ChevronLeftIcon, ChevronRightIcon, Icon } from '../../components/icons';
 
 const HINT = 'text-sm text-muted';
 const NAV_BUTTON =
@@ -98,7 +98,7 @@ export function ReviewStats() {
               className={NAV_BUTTON}
               onClick={() => move(-1)}
             >
-              ‹
+              <ChevronLeftIcon className="h-5 w-5" />
             </button>
             <h2
               data-testid="review-period"
@@ -113,7 +113,7 @@ export function ReviewStats() {
               disabled={running}
               onClick={() => move(1)}
             >
-              ›
+              <ChevronRightIcon className="h-5 w-5" />
             </button>
           </div>
           <p data-testid="review-compare" className={`${HINT} text-center`}>
@@ -529,9 +529,10 @@ function GoalsCard({
       <Link
         to={GOALS_PATH}
         state={from}
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
+        className="mt-1 flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
       >
-        Alle Ziele ›
+        Alle Ziele
+        <ChevronRightIcon className="h-4 w-4" />
       </Link>
     </Card>
   );

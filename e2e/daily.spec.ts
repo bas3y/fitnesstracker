@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { dailyTile, fillStepper, goOffline } from './helpers';
+import { dailyTile, fillStepper, goOffline, openSettings } from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -62,8 +62,9 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   );
 
   // Neuestes Gewicht steht in den Einstellungen, Tagesziel lässt sich ändern
-  await openNav(page, 'Einstellungen');
+  await openSettings(page, 'Profil & Einheiten');
   await expect(page.getByLabel('Körpergewicht', { exact: true })).toHaveValue('79,5');
+  await openSettings(page, 'Tagesziele');
   await fillStepper(page.locator('body'), 'Wasser pro Tag', '2000');
 
   await openNav(page, 'Alltag');
@@ -117,7 +118,7 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await expect(page.getByRole('heading', { name: 'Körper & Befinden', level: 1 })).toBeVisible();
   // Von der Startseite aus führt „Zurück“ dorthin
   await page.getByRole('link', { name: 'Zurück', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Fitnesstracker', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Heute', level: 1 })).toBeVisible();
 });
 
 test('Übersicht → Unterseite → zurück mit gewähltem Tag (offline)', async ({ page, context }) => {

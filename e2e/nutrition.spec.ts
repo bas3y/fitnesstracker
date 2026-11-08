@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { confirmStart, dailyTile, fillStepper, goOffline } from './helpers';
+import { confirmStart, dailyTile, fillStepper, goOffline, openSettings } from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -134,8 +134,8 @@ test('Ernährung: Tag mit 3 Mahlzeiten offline erfassen, Summen, Wiederholen und
   await expect(dinner.getByText('Noch nichts eingetragen.')).toBeVisible();
 
   // Ziel für Ruhetage ändern
-  await openNav(page, 'Einstellungen');
-  const goals = card(page, 'Ernährung');
+  await openSettings(page, 'Ernährung');
+  const goals = page.getByRole('main');
   await fillStepper(goals, 'Kalorien (Ruhetag)', '2000');
   await expect(goals.getByLabel('Kalorien (Ruhetag)', { exact: true })).toHaveValue('2000');
 

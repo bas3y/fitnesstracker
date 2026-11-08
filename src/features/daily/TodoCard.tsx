@@ -1,14 +1,26 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
+import { ChevronRightIcon, Icon } from '../../components/icons';
 import { Card } from '../../components/Page';
 import type { DayKey } from '../../db/types';
 import { doneOn, todayTodos, upcomingTodos } from '../../domain/todos';
 import { TodoAddForm, TodoRow } from './TodoParts';
 import { TODOS_PATH, useTodos } from './useTodos';
 
-/** Heutige Aufgaben mit Schnelleingabe (Widget der Startseite); `limit` kürzt die Liste */
-export function TodoCard({ today, limit }: { today: DayKey; limit?: number }) {
+/**
+ * Heutige Aufgaben mit Schnelleingabe (Widget der Startseite); `limit` kürzt die Liste,
+ * `withDone = false` blendet die erledigten aus (mittleres Widget)
+ */
+export function TodoCard({
+  today,
+  limit,
+  withDone = true,
+}: {
+  today: DayKey;
+  limit?: number;
+  withDone?: boolean;
+}) {
   const todos = useTodos();
   const from = useFromHere();
   const [showDone, setShowDone] = useState(false);
@@ -36,7 +48,7 @@ export function TodoCard({ today, limit }: { today: DayKey; limit?: number }) {
           <TodoRow key={todo.id} todo={todo} today={today} />
         ))}
       </ul>
-      {done.length > 0 && (
+      {withDone && done.length > 0 && (
         <>
           <button
             type="button"
@@ -44,7 +56,7 @@ export function TodoCard({ today, limit }: { today: DayKey; limit?: number }) {
             className="flex min-h-11 w-full items-center gap-2 text-left text-sm font-semibold text-muted"
             onClick={() => setShowDone(!showDone)}
           >
-            <span aria-hidden="true">{showDone ? '▾' : '▸'}</span>
+            <Icon name={showDone ? 'chevronDown' : 'chevronRight'} className="h-4 w-4" />
             {done.length} heute erledigt
           </button>
           {showDone && (
@@ -59,9 +71,10 @@ export function TodoCard({ today, limit }: { today: DayKey; limit?: number }) {
       <Link
         to={TODOS_PATH}
         state={from}
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
+        className="mt-1 flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
       >
-        Alle Aufgaben{more.length > 0 ? ` (${more.join(', ')})` : ''} ›
+        Alle Aufgaben{more.length > 0 ? ` (${more.join(', ')})` : ''}
+        <ChevronRightIcon className="h-4 w-4" />
       </Link>
     </Card>
   );

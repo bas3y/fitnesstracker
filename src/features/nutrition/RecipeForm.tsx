@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from 'react';
 import { inputField, primaryButton, secondaryButton } from '../../components/buttons';
+import { Switch } from '../../components/Switch';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Card } from '../../components/Page';
 import { Stepper } from '../../components/Stepper';
@@ -130,21 +131,15 @@ export function RecipeForm({
 
         <Card title="Gewicht & Portionen">
           <div className="flex flex-col gap-3">
-            <label className="flex min-h-11 items-center gap-3">
-              <input
-                type="checkbox"
-                className="h-5 w-5 accent-primary"
-                checked={input.cookedWeightGrams !== null}
-                onChange={(event) =>
-                  change({
-                    cookedWeightGrams: event.target.checked
-                      ? Math.round(nutrition?.rawGrams || 500)
-                      : null,
-                  })
-                }
-              />
-              Gewicht nach dem Kochen angeben
-            </label>
+            <Switch
+              label="Gewicht nach dem Kochen angeben"
+              checked={input.cookedWeightGrams !== null}
+              onChange={(checked) =>
+                change({
+                  cookedWeightGrams: checked ? Math.round(nutrition?.rawGrams || 500) : null,
+                })
+              }
+            />
             {input.cookedWeightGrams !== null && (
               <Stepper
                 label="Gewicht nach dem Kochen"

@@ -6,6 +6,7 @@ import type {
   ColorPalette,
   DailyImportField,
   DashboardWidget,
+  WidgetSize,
   EnduranceSport,
   Equipment,
   ExerciseCategory,
@@ -67,7 +68,7 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   habits: { name: 'Gewohnheiten', hint: 'Heute abhaken und zählen' },
   todos: { name: 'To-dos', hint: 'Offene Aufgaben für heute' },
   progress: { name: 'Trainingsfortschritt', hint: 'Kraftsteigerung, Workouts und Rekorde' },
-  week: { name: 'Diese Woche', hint: 'Workouts, Sätze und Volumen' },
+  week: { name: 'Diese Woche', hint: 'Trainingstage und Wochenziel, Sätze und Volumen' },
   lastWorkout: { name: 'Letztes Workout', hint: 'Dein letztes Training auf einen Blick' },
   records: { name: 'Neue Rekorde', hint: 'Deine neuesten Kraft-Rekorde' },
   activity: { name: 'Trainingstage', hint: 'Heatmap der letzten 3 Monate' },
@@ -78,6 +79,15 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   endurance: { name: 'Ausdauer', hint: 'Strecke dieser Woche, letzte Einheit, Bestzeiten' },
   goals: { name: 'Ziele', hint: 'Fortschritt deiner Ziele' },
   motivation: { name: 'Serien & Abzeichen', hint: 'Laufende Serien und nächstes Abzeichen' },
+  steps: { name: 'Schritte', hint: 'Schritte heute und Tagesziel' },
+  water: { name: 'Wasser', hint: 'Getrunken heute, schnell nachtragen' },
+  sleep: { name: 'Schlaf', hint: 'Schlaf der letzten Nacht und Tagesziel' },
+};
+
+export const WIDGET_SIZE_LABELS: Record<WidgetSize, { short: string; name: string }> = {
+  small: { short: 'S', name: 'Klein' },
+  medium: { short: 'M', name: 'Mittel' },
+  large: { short: 'L', name: 'Groß' },
 };
 
 export const GOAL_KIND_LABELS: Record<GoalKind, { name: string; icon: IconName; hint: string }> = {

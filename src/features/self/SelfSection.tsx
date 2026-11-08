@@ -26,7 +26,7 @@ import {
   useReadingLogs,
   useTimerSessions,
 } from './useSelf';
-import { IconBadge, type IconName } from '../../components/icons';
+import { ChevronRightIcon, IconBadge, type IconName } from '../../components/icons';
 
 const MUTED = 'block text-sm text-muted';
 
@@ -73,9 +73,7 @@ function Row({
           <span className="block font-semibold">{name}</span>
           {children}
         </span>
-        <span aria-hidden="true" className="text-xl text-faint">
-          ›
-        </span>
+        <ChevronRightIcon className="h-4 w-4 text-faint" />
       </Link>
     </li>
   );

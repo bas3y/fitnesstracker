@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addExercise, confirmStart, fillStepper, goOffline, skipRest } from './helpers';
+import {
+  addExercise,
+  confirmStart,
+  fillStepper,
+  goOffline,
+  openSettings,
+  skipRest,
+} from './helpers';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const REST_MS = 120_000;
@@ -129,7 +136,7 @@ async function importStatsData(page: Page) {
 
 /** Der Haken folgt erst der gespeicherten Einstellung, check() prüft zu früh */
 async function toggle(page: Page, name: string, checked: boolean) {
-  const box = page.getByRole('checkbox', { name });
+  const box = page.getByRole('switch', { name });
   await box.click();
   await expect(box).toBeChecked({ checked });
 }
@@ -141,7 +148,7 @@ test('Statistik: Filter, Fortschritt, Verlauf und Pausen-Auswertung (offline)', 
   page,
   context,
 }) => {
-  await page.goto('./#/settings');
+  await page.goto('./#/settings/backup');
   await goOffline(page, context);
   await importStatsData(page);
 
@@ -213,7 +220,7 @@ test('Statistik: Filter, Fortschritt, Verlauf und Pausen-Auswertung (offline)', 
 
   // Pausen-Auswertung ist ein erweiterter Modus und standardmäßig aus
   await expect(page.getByRole('heading', { name: 'Satzpausen' })).toHaveCount(0);
-  await openNav(page, 'Einstellungen');
+  await openSettings(page, 'Training');
   await toggle(page, 'Pausen-Auswertung', true);
   await openNav(page, 'Statistik');
   await page.getByRole('button', { name: 'Alles' }).click();
@@ -246,7 +253,7 @@ test('Pausen-Timer lässt sich ausschalten, auch während einer Pause (offline)'
   const timer = page.getByRole('timer', { name: 'Pause' });
   await expect(timer).toBeVisible();
 
-  await openNav(page, 'Einstellungen');
+  await openSettings(page, 'Training');
   await toggle(page, 'Pausen-Timer', false);
   await expect(page.getByLabel('Pausenzeit nach einem Satz')).toHaveCount(0);
 
@@ -262,7 +269,7 @@ test('Pausen-Timer lässt sich ausschalten, auch während einer Pause (offline)'
   );
   await expect(timer).toHaveCount(0);
 
-  await openNav(page, 'Einstellungen');
+  await openSettings(page, 'Training');
   await toggle(page, 'Pausen-Timer', true);
   await banner.click();
   await bench.getByRole('button', { name: '+ Satz' }).click();

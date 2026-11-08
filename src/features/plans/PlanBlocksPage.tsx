@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { dangerButton, inputField, primaryButton, secondaryButton } from '../../components/buttons';
+import { Switch } from '../../components/Switch';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Dialog } from '../../components/Dialog';
@@ -187,15 +188,11 @@ function CurrentBlockCard({ plan, today }: { plan: Plan; today: DayKey }) {
 function AdjustCard({ plan }: { plan: Plan }) {
   return (
     <Card title="Sätze anpassen">
-      <label className="flex min-h-11 items-center gap-3">
-        <input
-          type="checkbox"
-          className="h-5 w-5 shrink-0 accent-primary"
-          checked={plan.blockAdjust}
-          onChange={(event) => void updatePlan(plan.id, { blockAdjust: event.target.checked })}
-        />
-        Sätze automatisch an den Block anpassen
-      </label>
+      <Switch
+        label="Sätze automatisch an den Block anpassen"
+        checked={plan.blockAdjust}
+        onChange={(blockAdjust) => void updatePlan(plan.id, { blockAdjust })}
+      />
       <p className={HINT}>
         {plan.blockAdjust
           ? 'Beim Start werden Sätze, Gewicht und Wdh. nach dem Block vorbefüllt. Im Training kannst du alles ändern.'
@@ -376,15 +373,11 @@ function BlockDialog({
         max={MAX_BLOCK_REP_SHIFT}
         decimals={0}
       />
-      <label className="flex min-h-11 items-center gap-3">
-        <input
-          type="checkbox"
-          className="h-5 w-5 shrink-0 accent-primary"
-          checked={block.progression}
-          onChange={(event) => set({ progression: event.target.checked })}
-        />
-        Overload-Vorschlag (mehr Gewicht/Wdh.)
-      </label>
+      <Switch
+        label="Overload-Vorschlag (mehr Gewicht/Wdh.)"
+        checked={block.progression}
+        onChange={(progression) => set({ progression })}
+      />
       <p className={HINT}>
         Prozente beziehen sich auf das letzte normale Training; Deload-, Peak- und Test-Wochen
         zählen dafür nicht.

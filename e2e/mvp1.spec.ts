@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { confirmStart, fillStepper, goOffline, skipRest } from './helpers';
+import { confirmStart, fillStepper, goOffline, openSettings, skipRest } from './helpers';
 
 const BENCH = 'Bankdrücken (Langhantel)';
 
@@ -13,8 +13,7 @@ const weekTiles = (page: Page) =>
     .filter({ has: page.getByRole('heading', { name: 'Diese Woche' }) })
     .locator('dd');
 
-const dashboardHeading = (page: Page) =>
-  page.getByRole('heading', { level: 1, name: 'Fitnesstracker' });
+const dashboardHeading = (page: Page) => page.getByRole('heading', { level: 1, name: 'Heute' });
 
 /** Widgets, die nicht zum Standardaufbau gehören, über „Anpassen“ hinzufügen */
 async function addWidgets(page: Page, names: string[]) {
@@ -73,9 +72,16 @@ test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offl
   await expect(page.getByRole('heading', { name: 'Diese Woche' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Trainingsfortschritt' })).toHaveCount(0);
   await addWidgets(page, ['Letztes Workout', 'Neue Rekorde', 'Trainingstage']);
+  // „Diese Woche“ groß: mit Workouts, Sätzen und Volumen
+  await page.getByRole('button', { name: 'Anpassen' }).click();
+  await page
+    .getByRole('group', { name: 'Größe: Diese Woche' })
+    .getByRole('button', { name: 'Groß' })
+    .click();
+  await page.getByRole('button', { name: 'Fertig' }).click();
 
   // CSV gibt es erst nach dem ersten Workout
-  await openNav(page, 'Einstellungen');
+  await openSettings(page, 'Export & Speicher');
   await page.getByRole('button', { name: 'Workouts als CSV exportieren' }).click();
   await expect(page.getByRole('alert')).toContainText('Noch keine beendeten Workouts');
 
@@ -155,7 +161,7 @@ test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offl
   await expect(page.getByTestId('history-summary')).toHaveText('60 kg → 62,5 kg (+4,2 %)');
 
   // CSV-Export: eine Zeile je Satz
-  await openNav(page, 'Einstellungen');
+  await openSettings(page, 'Export & Speicher');
   const csvPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Workouts als CSV exportieren' }).click();
   const csv = await csvPromise;
@@ -169,6 +175,7 @@ test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offl
   expect(lines[1]).toContain(`;${BENCH};1;nein;60;;10;`);
   expect(lines[2]).toContain(`;${BENCH};1;nein;62,5;;10;`);
   await expect(page.getByText('CSV-Datei wurde erstellt')).toBeVisible();
+  await openSettings(page, 'Datensicherung');
   await expect(page.getByText('Letztes Backup: noch nie')).toBeVisible();
 
   // Backup → Datenverlust → Import: Dashboard ist wieder vollständig
@@ -318,13 +325,22 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
   await page.getByRole('button', { name: 'Nächstes Training hinzufügen' }).click();
   await expect(widgets).toHaveCount(5);
   await expect(page.getByRole('list', { name: 'Weitere Widgets' }).getByRole('button')).toHaveCount(
-    10,
+    13,
   );
+  // Größe wählen: To-dos klein (nur der Wert), Schnellzugriff hat nur eine Größe
+  const todoSize = page.getByRole('group', { name: 'Größe: To-dos' });
+  await todoSize.getByRole('button', { name: 'Klein' }).click();
+  await expect(todoSize.getByRole('button', { name: 'Klein' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.getByRole('group', { name: 'Größe: Schnellzugriff' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Fertig' }).click();
 
   // Bleibt nach dem Neuladen erhalten
   await page.reload();
   await expect(headings.first()).toHaveText('Trainingsfortschritt');
+  await expect(page.getByRole('link', { name: 'To-dos: 0, Nichts offen' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Gewohnheiten' })).toHaveCount(0);
   const quick = page.getByRole('list', { name: 'Schnellzugriff' });
   await expect(quick.getByRole('listitem')).toHaveText([

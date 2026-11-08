@@ -27,7 +27,7 @@ async function logWorkout(page: Page) {
 
 async function openAchievements(page: Page) {
   await nav(page, 'Statistik');
-  await page.getByRole('link', { name: 'Erfolge', exact: true }).click();
+  await page.getByRole('link', { name: /^Erfolge/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Erfolge' })).toBeVisible();
 }
 
@@ -140,10 +140,10 @@ test('Serien, Abzeichen und Erfolgs-Hinweise (offline)', async ({ page, context 
   await page.waitForTimeout(2500);
   await slow(toast(page)).toHaveCount(0);
 
-  await widget.getByRole('link', { name: 'Alle Erfolge ›' }).click();
+  await widget.getByRole('link', { name: 'Alle Erfolge' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Erfolge' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ziele: Stufe 1 von 4' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Journal: Stufe 1 von 5' })).toBeVisible();
   await page.getByRole('link', { name: 'Zurück' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Fitnesstracker' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Heute' })).toBeVisible();
 });

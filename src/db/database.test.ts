@@ -1070,7 +1070,23 @@ describe('AppDatabase-Migration', () => {
     const current = new AppDatabase(name);
     expect((await current.habits.toArray()).map((habit) => habit.icon)).toEqual(['book', 'star']);
     expect((await current.goals.toArray()).map((goal) => goal.icon)).toEqual(['music', '', '']);
-    expect(current.verno).toBe(30);
+    expect(current.verno).toBeGreaterThanOrEqual(30);
+    await current.delete();
+  });
+
+  it('adds empty widget sizes in v31 and keeps the widgets', async () => {
+    const name = 'migration-v30-v31';
+    const v30 = new Dexie(name);
+    v30.version(30).stores({ settings: 'id, updatedAt' });
+    await v30.table('settings').add({ id: 'app-settings', dashboardWidgets: ['habits', 'week'] });
+    v30.close();
+
+    const current = new AppDatabase(name);
+    expect(await current.settings.get('app-settings')).toMatchObject({
+      dashboardWidgets: ['habits', 'week'],
+      widgetSizes: {},
+    });
+    expect(current.verno).toBe(31);
     await current.delete();
   });
 });

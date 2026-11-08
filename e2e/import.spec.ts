@@ -48,7 +48,7 @@ test('Import: FIT, GPX und ZIP mit Vorschau, Ergänzen und Duplikaten (offline)'
   const fit = sampleFitRun(runOf(morning.time));
   const gpx = sampleGpx(runOf(evening.time), { name: 'Abendrunde' });
 
-  await page.goto('./#/settings');
+  await page.goto('./#/settings/training');
   await goOffline(page, context);
   await page.reload();
   await fillStepper(body, 'Max. Puls', '190');
@@ -163,7 +163,7 @@ test('Import: per Teilen übergebene Datei (Teilen-Ziel)', async ({ page, contex
 });
 
 test('Einstellungen: Info „Wo liegen meine Daten?“', async ({ page }) => {
-  await page.goto('./#/settings');
+  await page.goto('./#/settings/backup');
   await page.getByText('Wo liegen meine Daten?').click();
   await expect(page.getByText(/Privatmodus\/Inkognito/)).toBeVisible();
   await expect(page.getByText(/„Cookies und Websitedaten“/)).toBeVisible();

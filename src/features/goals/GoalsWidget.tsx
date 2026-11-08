@@ -2,7 +2,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { BackState } from '../../components/backNavigation';
-import { Card } from '../../components/Page';
+import { ChevronRightIcon } from '../../components/icons';
+import { Card, type CardTone } from '../../components/Page';
+import { SmallWidget } from '../dashboard/WidgetParts';
 import { loadGoalExtras } from '../../db/goals';
 import type { DayKey, Goal, Settings } from '../../db/types';
 import {
@@ -27,12 +29,17 @@ export function GoalsWidget({
   endurance,
   settings,
   today,
+  small = false,
+  tone,
 }: {
   goals: Goal[];
   strength: StatsSession[];
   endurance: GoalEnduranceSession[];
   settings: Settings;
   today: DayKey;
+  /** Kleines Widget: nur „erreicht von gesamt“ */
+  small?: boolean;
+  tone?: CardTone;
 }) {
   const extras = useLiveQuery(loadGoalExtras, []);
   const exercises = useGoalExercises(goals);
@@ -40,12 +47,31 @@ export function GoalsWidget({
     () => (extras ? { strength, endurance, ...extras } : null),
     [strength, endurance, extras],
   );
-  const active = useMemo(() => {
-    if (!data) return null;
-    const items = goals.map((goal) => ({ goal, progress: goalProgress(goal, data, today) }));
-    return sortGoalsByDeadline(items.filter(({ progress }) => progress.status === 'active'));
-  }, [goals, data, today]);
-  if (!active || !data || !exercises) return null;
+  const items = useMemo(
+    () => data && goals.map((goal) => ({ goal, progress: goalProgress(goal, data, today) })),
+    [goals, data, today],
+  );
+  const active = useMemo(
+    () =>
+      items && sortGoalsByDeadline(items.filter(({ progress }) => progress.status === 'active')),
+    [items],
+  );
+  if (!items || !active || !data || !exercises) return null;
+
+  if (small) {
+    const achieved = items.filter(({ progress }) => progress.status === 'achieved').length;
+    return (
+      <SmallWidget
+        to={GOALS_PATH}
+        state={FROM_DASHBOARD}
+        icon="target"
+        label={DASHBOARD_WIDGET_LABELS.goals.name}
+        value={`${achieved}/${goals.length}`}
+        sub={active.length === 0 ? 'erreicht' : `erreicht, ${active.length} offen`}
+        tone={tone}
+      />
+    );
+  }
 
   return (
     <Card title={DASHBOARD_WIDGET_LABELS.goals.name}>
@@ -69,9 +95,10 @@ export function GoalsWidget({
       <Link
         to={GOALS_PATH}
         state={FROM_DASHBOARD}
-        className="flex min-h-11 items-center text-sm font-semibold text-primary-text"
+        className="flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
       >
-        {active.length > SHOWN_GOALS ? `Alle ${active.length} Ziele ›` : 'Alle Ziele ›'}
+        {active.length > SHOWN_GOALS ? `Alle ${active.length} Ziele` : 'Alle Ziele'}
+        <ChevronRightIcon className="h-4 w-4" />
       </Link>
     </Card>
   );

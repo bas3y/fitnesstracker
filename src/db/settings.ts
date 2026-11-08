@@ -39,6 +39,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   activePlanId: null,
   restAnalysisEnabled: false,
   dashboardWidgets: [...DEFAULT_DASHBOARD_WIDGETS],
+  widgetSizes: {},
   quickActions: [...DEFAULT_QUICK_ACTIONS],
   ...REST_TIMER_DEFAULTS,
   ...DAILY_GOAL_DEFAULTS,

@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { secondaryButton } from '../../components/buttons';
+import { Switch } from '../../components/Switch';
 import { Chip } from '../../components/Chip';
 import { StarIcon } from '../../components/icons';
 import { Card } from '../../components/Page';
@@ -109,15 +110,11 @@ export function ExerciseBrowser({
               onChange={(category) => setFilter({ category })}
             />
             {allowHidden && (
-              <label className="flex min-h-11 items-center gap-3">
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 accent-primary"
-                  checked={filter.includeHidden}
-                  onChange={(event) => setFilter({ includeHidden: event.target.checked })}
-                />
-                Ausgeblendete anzeigen
-              </label>
+              <Switch
+                label="Ausgeblendete anzeigen"
+                checked={filter.includeHidden}
+                onChange={(includeHidden) => setFilter({ includeHidden })}
+              />
             )}
           </div>
         </Card>

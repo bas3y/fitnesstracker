@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon } from '../../components/icons';
 import { Page } from '../../components/Page';
 import { shiftDay } from '../../domain/daily';
 import { weekRange } from '../../domain/endurance';
@@ -39,7 +40,7 @@ export function ReflectionPage() {
               className={weekButton}
               onClick={() => setDate(shiftDay(range.from, -7))}
             >
-              ‹
+              <ChevronLeftIcon className="h-5 w-5" />
             </button>
             <h2 className="min-w-0 flex-1 text-center text-lg font-semibold">
               {current ? 'Diese Woche' : formatPeriod('week', range)}
@@ -56,7 +57,7 @@ export function ReflectionPage() {
               disabled={current}
               onClick={() => setDate(nextWeek > today ? today : nextWeek)}
             >
-              ›
+              <ChevronRightIcon className="h-5 w-5" />
             </button>
           </div>
           {entry !== undefined && prompts && (

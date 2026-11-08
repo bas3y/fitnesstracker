@@ -19,7 +19,7 @@ import { GoalBar } from '../daily/GoalBar';
 import { useNow } from '../training/useWorkouts';
 import { SUPPLEMENTS_PATH } from './paths';
 import { useSupplementOverview } from './useSupplements';
-import { Icon } from '../../components/icons';
+import { ChevronRightIcon, Icon } from '../../components/icons';
 
 const MUTED = 'text-sm text-muted';
 const LINK = 'font-semibold text-primary-text';
@@ -110,8 +110,12 @@ export function SupplementChecklist({
         </ul>
       )}
       {variant === 'widget' && (
-        <Link to={SUPPLEMENTS_PATH} className={`mt-1 flex min-h-11 items-center text-sm ${LINK}`}>
-          Alle Supplements ›
+        <Link
+          to={SUPPLEMENTS_PATH}
+          className={`mt-1 flex min-h-11 items-center gap-0.5 text-sm ${LINK}`}
+        >
+          Alle Supplements
+          <ChevronRightIcon className="h-4 w-4" />
         </Link>
       )}
     </Card>
@@ -155,7 +159,7 @@ export function StockWarning({ id, name, days }: { id: string; name: string; day
       <span className="min-w-0 flex-1">
         {name}: {formatDaysLeft(days)}
       </span>
-      <span aria-hidden="true">›</span>
+      <ChevronRightIcon className="h-4 w-4" />
     </Link>
   );
 }

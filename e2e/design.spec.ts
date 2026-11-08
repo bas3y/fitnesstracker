@@ -5,7 +5,7 @@ test('Farbpalette und Dunkelmodus wählen, bleiben nach dem Neuladen (offline)',
   page,
   context,
 }) => {
-  await page.goto('./#/settings');
+  await page.goto('./#/settings/appearance');
   await goOffline(page, context);
   const root = page.locator('html');
   await expect(root).toHaveAttribute('data-palette', 'green');
@@ -56,4 +56,13 @@ test('Farbpalette und Dunkelmodus wählen, bleiben nach dem Neuladen (offline)',
   expect(heroColor).not.toBe(
     await page.evaluate(() => getComputedStyle(document.body).backgroundColor),
   );
+
+  // Einstellungen: Übersicht mit Gruppen und Schalter auf den Unterseiten
+  await page.getByRole('navigation').getByRole('link', { name: 'Einstellungen' }).click();
+  await expect(page.getByRole('list', { name: 'App & Daten' })).toContainText('Violett · Dunkel');
+  await page.getByRole('main').getByRole('link', { name: 'Training' }).click();
+  const timer = page.getByRole('switch', { name: 'Pausen-Timer' });
+  await expect(timer).toBeChecked();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Einstellungen' })).toBeVisible();
 });

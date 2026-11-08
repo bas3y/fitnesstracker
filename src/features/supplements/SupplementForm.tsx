@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from 'react';
 import { inputField, primaryButton, secondaryButton } from '../../components/buttons';
+import { Switch } from '../../components/Switch';
 import { Chip } from '../../components/Chip';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Card } from '../../components/Page';
@@ -186,19 +187,11 @@ export function SupplementForm({
 
       <Card title="Bestand">
         <div className="flex flex-col gap-3">
-          <label className="flex min-h-11 items-center gap-3">
-            <input
-              type="checkbox"
-              className="h-5 w-5 accent-primary"
-              checked={tracksStock}
-              onChange={(event) =>
-                change({
-                  stock: event.target.checked ? (input.packageSize ?? 0) : null,
-                })
-              }
-            />
-            Bestand erfassen
-          </label>
+          <Switch
+            label="Bestand erfassen"
+            checked={tracksStock}
+            onChange={(checked) => change({ stock: checked ? (input.packageSize ?? 0) : null })}
+          />
           {tracksStock && (
             <>
               <Stepper

@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useMemo, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { WeeklyBarChart } from '../../components/charts';
 import { Card, LinkRow, Page } from '../../components/Page';
@@ -37,18 +37,17 @@ import {
   type MuscleVolume,
   type StatsSession,
 } from '../../domain/stats';
+import { Tile } from '../../components/Tile';
 import { GOALS_PATH } from '../goals/paths';
+import { useGoals } from '../goals/useGoals';
 import { ACHIEVEMENTS_PATH } from '../motivation/paths';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from './ActivityCard';
 import { EnduranceStats } from './EnduranceStats';
 import { ReviewStats } from './ReviewStats';
 import { exerciseStatsPath, useStatsFilter, type StatsView } from './statsFilter';
-import { Icon } from '../../components/icons';
 
 const HINT = 'text-sm text-muted';
-const HEADER_LINK =
-  'flex min-h-11 shrink-0 items-center rounded-xl border border-line-strong px-3 text-sm font-semibold';
 
 const SORT_OPTIONS: Array<{ value: ExerciseSort; label: string }> = [
   { value: 'recent', label: 'Zuletzt' },
@@ -65,22 +64,25 @@ const VIEW_OPTIONS: Array<{ value: StatsView; label: string }> = [
 export function StatsPage() {
   const { view, setView } = useStatsFilter();
   const from = useFromHere();
+  const goals = useGoals();
   return (
-    <Page
-      title="Statistik"
-      action={
-        <div className="flex shrink-0 gap-2">
-          <Link to={ACHIEVEMENTS_PATH} state={from} className={HEADER_LINK}>
-            <Icon name="trophy" className="h-4 w-4" />
-            Erfolge
-          </Link>
-          <Link to={GOALS_PATH} state={from} className={HEADER_LINK}>
-            <Icon name="target" className="h-4 w-4" />
-            Ziele
-          </Link>
-        </div>
-      }
-    >
+    <Page title="Statistik">
+      <ul aria-label="Erfolge und Ziele" className="mb-4 grid grid-cols-2 gap-3">
+        <Tile to={ACHIEVEMENTS_PATH} state={from} icon="trophy" name="Erfolge" tone="accent">
+          <span className={HINT}>Serien und Abzeichen</span>
+        </Tile>
+        <Tile to={GOALS_PATH} state={from} icon="target" name="Ziele" tone="soft">
+          {goals && (
+            <span className={HINT}>
+              {goals.length === 0
+                ? 'Eigene Ziele setzen'
+                : goals.length === 1
+                  ? '1 Ziel'
+                  : `${goals.length} Ziele`}
+            </span>
+          )}
+        </Tile>
+      </ul>
       <div className="mb-4">
         <SegmentedControl label="Bereich" options={VIEW_OPTIONS} value={view} onChange={setView} />
       </div>
@@ -107,9 +109,14 @@ function StrengthStats() {
         </Card>
       )}
       {sessions && sessions.length > 0 && (
-        <>
-          <Card>
-            <div className="flex flex-col gap-3">
+        <StatsContent
+          sessions={sessions}
+          bodyWeightKg={settings?.bodyWeightKg ?? null}
+          restAnalysis={settings?.restAnalysisEnabled ?? false}
+          muscle={muscle}
+          range={range}
+          filter={
+            <>
               <SegmentedControl
                 label="Zeitraum"
                 options={STATS_RANGES.map((value) => ({
@@ -127,16 +134,9 @@ function StrengthStats() {
                 emptyLabel="Alle Muskelgruppen"
                 onChange={setMuscle}
               />
-            </div>
-          </Card>
-          <StatsContent
-            sessions={sessions}
-            bodyWeightKg={settings?.bodyWeightKg ?? null}
-            restAnalysis={settings?.restAnalysisEnabled ?? false}
-            muscle={muscle}
-            range={range}
-          />
-        </>
+            </>
+          }
+        />
       )}
     </>
   );
@@ -148,12 +148,14 @@ function StatsContent({
   restAnalysis,
   muscle,
   range,
+  filter,
 }: {
   sessions: StatsSession[];
   bodyWeightKg: number | null;
   restAnalysis: boolean;
   muscle: MuscleGroup | null;
   range: (typeof STATS_RANGES)[number];
+  filter: ReactNode;
 }) {
   const now = useMemo(() => new Date(), []);
   const firstAt = sessions[0]?.startedAt;
@@ -172,6 +174,7 @@ function StatsContent({
 
   return (
     <>
+      <ActivityCard sessions={ofMuscle(sessions)} now={now} filter={filter} />
       {hints.length > 0 && (
         <Card title="Fokus">
           <ul className="flex list-disc flex-col gap-1 pl-5">
@@ -184,7 +187,6 @@ function StatsContent({
           </p>
         </Card>
       )}
-      <ActivityCard sessions={ofMuscle(sessions)} now={now} />
       {muscle ? (
         <MuscleWeeksCard sessions={ranged} muscle={muscle} now={now} />
       ) : (

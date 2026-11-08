@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
+import { ChevronRightIcon } from '../../components/icons';
 import { Card } from '../../components/Page';
 import type { DayKey, DistanceUnit, EnduranceSession } from '../../db/types';
 import {
@@ -65,16 +66,15 @@ export function EnduranceWidget({
               {formatWorkoutDate(last.startedAt)} · {formatSessionSummary(last, unit)}
             </span>
           </span>
-          <span aria-hidden="true" className="text-xl text-faint">
-            ›
-          </span>
+          <ChevronRightIcon className="h-4 w-4 text-faint" />
         </Link>
       )}
       <Link
         to={ENDURANCE_STATS_PATH}
-        className="flex min-h-11 items-center text-sm font-semibold text-primary-text"
+        className="flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
       >
-        Zur Statistik ›
+        Zur Statistik
+        <ChevronRightIcon className="h-4 w-4" />
       </Link>
     </Card>
   );

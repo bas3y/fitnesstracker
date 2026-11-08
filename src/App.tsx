@@ -123,6 +123,10 @@ const SupplementsPage = lazyPage(
 );
 const AboutPage = lazyPage(() => import('./features/settings/AboutPage'), 'AboutPage');
 const SettingsPage = lazyPage(() => import('./features/settings/SettingsPage'), 'SettingsPage');
+const SettingsSectionPage = lazyPage(
+  () => import('./features/settings/SettingsPage'),
+  'SettingsSectionPage',
+);
 const ShareAppPage = lazyPage(() => import('./features/settings/ShareAppPage'), 'ShareAppPage');
 const StatsPage = lazyPage(() => import('./features/stats/StatsPage'), 'StatsPage');
 const ExerciseDetailPage = lazyPage(
@@ -230,6 +234,7 @@ export function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/about" element={<AboutPage />} />
           <Route path="settings/app" element={<ShareAppPage />} />
+          <Route path="settings/:section" element={<SettingsSectionPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

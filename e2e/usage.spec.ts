@@ -1,5 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addExercise, confirmStart, dailyTile, dragTo, fillStepper, goOffline } from './helpers';
+import {
+  addExercise,
+  confirmStart,
+  dailyTile,
+  dragTo,
+  fillStepper,
+  goOffline,
+  openSettings,
+} from './helpers';
 
 const nav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -21,7 +29,7 @@ test('Krafttraining nachtragen, Karten samt Inhalt ziehen, laufendes Workout ble
   await expect(page.getByRole('heading', { level: 1, name: 'Workout' })).toBeVisible();
   await nav(page, 'Training');
 
-  await page.getByRole('link', { name: /^Training nachtragen/ }).click();
+  await page.getByRole('link', { name: /^Nachtragen/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Training nachtragen' })).toBeVisible();
   const yesterday = new Date(Date.now() - 24 * 3600 * 1000);
   // Zukunft wird abgelehnt
@@ -104,7 +112,7 @@ test('nur Protein erfassen: Ernährung, Kachel, Startseite und normaler Modus (o
   page,
   context,
 }) => {
-  await page.goto('./#/settings');
+  await page.goto('./#/settings/nutrition');
   await goOffline(page, context);
 
   await page.getByLabel('Nur Protein erfassen').click();
@@ -140,7 +148,7 @@ test('nur Protein erfassen: Ernährung, Kachel, Startseite und normaler Modus (o
   await expect(widget).toContainText('55 von 120 g');
 
   // Normaler Modus: Protein ohne Lebensmittel zählt weiter mit
-  await nav(page, 'Einstellungen');
+  await openSettings(page, 'Ernährung');
   await page.getByLabel('Nur Protein erfassen').click();
   await expect(page.getByLabel('Nur Protein erfassen')).not.toBeChecked();
   await nav(page, 'Alltag');
@@ -189,7 +197,7 @@ test('Willkommen beim ersten Öffnen, App weitergeben und Anleitung (offline)', 
   await welcome.getByRole('button', { name: 'Los geht’s' }).click();
   await expect(welcome).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole('heading', { level: 1, name: 'Fitnesstracker' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Heute' })).toBeVisible();
   await expect(welcome).toHaveCount(0);
 
   // Einstieg auch in den Einstellungen

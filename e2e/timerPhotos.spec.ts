@@ -238,7 +238,7 @@ test.describe('Fortschrittsfotos', () => {
     await expect(page.getByTestId('photo-storage')).toContainText('2 Fotos belegen');
 
     // Backup mit Fotos, Datenbank löschen, wiederherstellen
-    await page.goto('./#/settings');
+    await page.goto('./#/settings/backup');
     await page.getByLabel('Fortschrittsfotos einschließen').check();
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Backup exportieren' }).click();

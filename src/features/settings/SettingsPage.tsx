@@ -1,7 +1,11 @@
 import { useState } from 'react';
-import { Card, LinkRow, Page } from '../../components/Page';
+import { Link, Navigate, useParams } from 'react-router-dom';
+import { ChevronRightIcon, Icon } from '../../components/icons';
+import { Card, GroupRow, LinkGroup, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Stepper } from '../../components/Stepper';
+import { Switch } from '../../components/Switch';
+import { useBackTo } from '../../components/backNavigation';
 import { setCurrentBodyWeight } from '../../db/daily';
 import {
   MAX_HEART_RATE,
@@ -13,191 +17,361 @@ import {
   MIN_HEART_RATE,
 } from '../../db/schemas';
 import { getSettings, updateSettings } from '../../db/settings';
-import type { NutritionGoal, NutritionGoals, Settings } from '../../db/types';
+import type {
+  NutritionGoal,
+  NutritionGoals,
+  Settings,
+  ThemePreference as Theme,
+} from '../../db/types';
 import { setRestTimerEnabled } from '../../db/workouts';
+import { daysSince } from '../../domain/backupReminder';
 import { hoursToSeconds, secondsToHours } from '../../domain/daily';
-import { formatDecimal } from '../../domain/format';
+import { formatDaysAgo, formatDecimal } from '../../domain/format';
+import { PALETTE_LABELS } from '../../domain/labels';
 import { proteinPerKg } from '../../domain/nutrition';
 import { displayToKg, kgToDisplay, roundTo } from '../../domain/units';
 import { notificationState, requestNotifications } from '../supplements/notifications';
 import { BackupSection } from './BackupSection';
 import { ExportSection } from './ExportSection';
 import { PalettePicker } from './PalettePicker';
-import { SHARE_APP_PATH } from './paths';
+import {
+  ABOUT_PATH,
+  isSettingsSection,
+  SETTINGS_PATH,
+  settingsPath,
+  SHARE_APP_PATH,
+  type SettingsSection,
+} from './paths';
 import { StorageSection } from './StorageSection';
 import { useSettings } from './useSettings';
 
+const HINT = 'text-sm text-muted';
+
+const THEME_LABELS: Record<Theme, string> = {
+  system: 'System',
+  light: 'Hell',
+  dark: 'Dunkel',
+};
+
+const SECTION_TITLES: Record<SettingsSection, string> = {
+  profile: 'Profil & Einheiten',
+  training: 'Training',
+  goals: 'Tagesziele',
+  nutrition: 'Ernährung',
+  supplements: 'Supplements',
+  appearance: 'Darstellung',
+  backup: 'Datensicherung',
+  data: 'Export & Speicher',
+};
+
+/** Übersicht: Profil oben, darunter Bereiche als gruppierte Listen mit Unterseiten */
 export function SettingsPage() {
   const settings = useSettings();
+  if (!settings) return <Page title="Einstellungen">{null}</Page>;
+  const { nutritionGoals: goals } = settings;
+  const bodyWeight =
+    settings.bodyWeightKg === null
+      ? null
+      : `${formatDecimal(roundTo(kgToDisplay(settings.bodyWeightKg, settings.weightUnit), 1), 1)} ${settings.weightUnit}`;
 
   return (
     <Page title="Einstellungen">
-      {settings && (
-        <>
-          <ProfileCard settings={settings} />
-          <Card title="Einheiten">
-            <div className="flex flex-col gap-3">
-              <SegmentedControl
-                label="Gewicht"
-                options={[
-                  { value: 'kg', label: 'kg' },
-                  { value: 'lb', label: 'lb' },
-                ]}
-                value={settings.weightUnit}
-                onChange={(weightUnit) => void updateSettings({ weightUnit })}
-              />
-              <SegmentedControl
-                label="Distanz"
-                options={[
-                  { value: 'km', label: 'km' },
-                  { value: 'mi', label: 'mi' },
-                ]}
-                value={settings.distanceUnit}
-                onChange={(distanceUnit) => void updateSettings({ distanceUnit })}
-              />
-            </div>
-          </Card>
-          <TrainingCard settings={settings} />
-          <DailyGoalsCard settings={settings} />
-          <NutritionGoalsCard settings={settings} />
-          <SupplementSettingsCard settings={settings} />
-          <Card title="Darstellung">
-            <div className="flex flex-col gap-4">
-              <SegmentedControl
-                label="Theme"
-                options={[
-                  { value: 'system', label: 'System' },
-                  { value: 'light', label: 'Hell' },
-                  { value: 'dark', label: 'Dunkel' },
-                ]}
-                value={settings.theme}
-                onChange={(theme) => void updateSettings({ theme })}
-              />
-              <PalettePicker
-                value={settings.palette}
-                onChange={(palette) => void updateSettings({ palette })}
-              />
-            </div>
-          </Card>
-          <BackupSection settings={settings} />
-          <ExportSection unit={settings.weightUnit} />
-          <StorageSection />
-        </>
-      )}
-      <LinkRow
-        to={SHARE_APP_PATH}
-        label="App weitergeben & installieren"
-        hint="Link teilen, Anleitung für Android und iPhone"
-      />
-      <LinkRow to="/settings/about" label="Über & Lizenzen" hint="Datenquellen und Software" />
+      <Link
+        to={settingsPath('profile')}
+        className="tone-accent mb-5 flex min-h-20 items-center gap-4 rounded-2xl p-4 active:opacity-90"
+      >
+        <span className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-primary-soft">
+          <Icon name="user" className="h-7 w-7" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[1.0625rem] font-semibold">
+            {settings.name || SECTION_TITLES.profile}
+          </span>
+          <span className={`block ${HINT}`}>
+            {[
+              settings.name ? SECTION_TITLES.profile : null,
+              bodyWeight,
+              `${settings.weightUnit} und ${settings.distanceUnit}`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
+        </span>
+        <ChevronRightIcon className="h-5 w-5 shrink-0" />
+      </Link>
+
+      <LinkGroup title="Bereiche">
+        <GroupRow
+          to={settingsPath('training')}
+          icon="dumbbell"
+          solid
+          label={SECTION_TITLES.training}
+          hint={
+            settings.restTimerEnabled
+              ? `Pause ${settings.restTimerSeconds} s · Puls`
+              : 'Pausen-Timer aus · Puls'
+          }
+        />
+        <GroupRow
+          to={settingsPath('goals')}
+          icon="target"
+          solid
+          label={SECTION_TITLES.goals}
+          hint={`${settings.stepsGoal.toLocaleString('de-DE')} Schritte · ${formatDecimal(
+            settings.waterGoalMl / 1000,
+            2,
+          )} l · ${formatDecimal(secondsToHours(settings.sleepGoalSeconds), 1)} h Schlaf`}
+        />
+        <GroupRow
+          to={settingsPath('nutrition')}
+          icon="utensils"
+          solid
+          label={SECTION_TITLES.nutrition}
+          hint={
+            settings.proteinOnly
+              ? `Nur Protein · ${goals.training.protein} g`
+              : `${goals.training.kcal.toLocaleString('de-DE')} kcal · ${goals.training.protein} g Protein`
+          }
+        />
+        <GroupRow
+          to={settingsPath('supplements')}
+          icon="pill"
+          solid
+          label={SECTION_TITLES.supplements}
+          hint={`Erinnerungen ${settings.supplementRemindersEnabled ? 'an' : 'aus'}`}
+        />
+      </LinkGroup>
+
+      <LinkGroup title="App & Daten">
+        <GroupRow
+          to={settingsPath('appearance')}
+          icon="palette"
+          solid
+          label={SECTION_TITLES.appearance}
+          hint={`${PALETTE_LABELS[settings.palette]} · ${THEME_LABELS[settings.theme]}`}
+        />
+        <GroupRow
+          to={settingsPath('backup')}
+          icon="shield"
+          solid
+          label={SECTION_TITLES.backup}
+          hint={`Letztes Backup: ${
+            settings.lastBackupAt
+              ? formatDaysAgo(daysSince(settings.lastBackupAt, new Date()))
+              : 'noch nie'
+          }`}
+        />
+        <GroupRow
+          to={settingsPath('data')}
+          icon="download"
+          solid
+          label={SECTION_TITLES.data}
+          hint="CSV-Export, Speicherplatz"
+        />
+      </LinkGroup>
+
+      <LinkGroup title="Mehr">
+        <GroupRow
+          to={SHARE_APP_PATH}
+          icon="share"
+          solid
+          label="App weitergeben & installieren"
+          hint="Link teilen, Anleitung für Android und iPhone"
+        />
+        <GroupRow
+          to={ABOUT_PATH}
+          icon="info"
+          solid
+          label="Über & Lizenzen"
+          hint="Datenquellen und Software"
+        />
+      </LinkGroup>
     </Page>
   );
 }
 
-function TrainingCard({ settings }: { settings: Settings }) {
-  const checkbox = 'h-5 w-5 accent-primary';
+/** Unterseite `/settings/:section` */
+export function SettingsSectionPage() {
+  const { section } = useParams();
+  const settings = useSettings();
+  const backTo = useBackTo(SETTINGS_PATH);
+  if (!isSettingsSection(section)) return <Navigate to={SETTINGS_PATH} replace />;
   return (
-    <Card title="Training">
-      <div className="flex flex-col gap-2">
-        <label className="flex min-h-11 items-center gap-3">
-          <input
-            type="checkbox"
-            className={checkbox}
-            checked={settings.restTimerEnabled}
-            onChange={(event) => void setRestTimerEnabled(event.target.checked)}
-          />
-          Pausen-Timer
-        </label>
-        {settings.restTimerEnabled && (
-          <>
-            <Stepper
-              label="Pausenzeit nach einem Satz"
-              value={settings.restTimerSeconds}
-              unit="s"
-              step={15}
-              max={900}
-              decimals={0}
-              onChange={(value) =>
-                value !== null && void updateSettings({ restTimerSeconds: value })
-              }
-            />
-            <p className="text-sm text-muted">
-              Pläne können je Übung eine eigene Pausenzeit festlegen.
-            </p>
-            <label className="flex min-h-11 items-center gap-3">
-              <input
-                type="checkbox"
-                className={checkbox}
-                checked={settings.restTimerSound}
-                onChange={(event) => void updateSettings({ restTimerSound: event.target.checked })}
-              />
-              Ton am Ende der Pause
-            </label>
-            <label className="flex min-h-11 items-center gap-3">
-              <input
-                type="checkbox"
-                className={checkbox}
-                checked={settings.restTimerVibrate}
-                onChange={(event) =>
-                  void updateSettings({ restTimerVibrate: event.target.checked })
-                }
-              />
-              Vibration (nicht auf dem iPhone)
-            </label>
-            <p className="text-sm text-muted">Signale kommen nur, solange die App geöffnet ist.</p>
-          </>
-        )}
-        <h3 className="mt-2 font-semibold">Puls</h3>
-        <Stepper
-          label="Max. Puls"
-          value={settings.maxHeartRate}
-          unit="bpm"
-          step={1}
-          min={MIN_HEART_RATE}
-          max={MAX_HEART_RATE}
-          decimals={0}
-          startValue={190}
-          allowEmpty
-          onChange={(maxHeartRate) => void updateSettings({ maxHeartRate })}
+    <Page title={SECTION_TITLES[section]} backTo={backTo}>
+      {settings && <SectionContent section={section} settings={settings} />}
+    </Page>
+  );
+}
+
+function SectionContent({ section, settings }: { section: SettingsSection; settings: Settings }) {
+  switch (section) {
+    case 'profile':
+      return (
+        <>
+          <ProfileCard settings={settings} />
+          <UnitsCard settings={settings} />
+        </>
+      );
+    case 'training':
+      return <TrainingSettings settings={settings} />;
+    case 'goals':
+      return <DailyGoalsCard settings={settings} />;
+    case 'nutrition':
+      return <NutritionGoalsCard settings={settings} />;
+    case 'supplements':
+      return <SupplementSettingsCard settings={settings} />;
+    case 'appearance':
+      return <AppearanceCard settings={settings} />;
+    case 'backup':
+      return <BackupSection settings={settings} />;
+    case 'data':
+      return (
+        <>
+          <ExportSection unit={settings.weightUnit} />
+          <StorageSection />
+        </>
+      );
+  }
+}
+
+function UnitsCard({ settings }: { settings: Settings }) {
+  return (
+    <Card title="Einheiten">
+      <div className="flex flex-col gap-3">
+        <SegmentedControl
+          label="Gewicht"
+          options={[
+            { value: 'kg', label: 'kg' },
+            { value: 'lb', label: 'lb' },
+          ]}
+          value={settings.weightUnit}
+          onChange={(weightUnit) => void updateSettings({ weightUnit })}
         />
-        <Stepper
-          label="Ruhepuls"
-          value={settings.restingHeartRate}
-          unit="bpm"
-          step={1}
-          min={MIN_HEART_RATE}
-          max={MAX_HEART_RATE}
-          decimals={0}
-          startValue={60}
-          allowEmpty
-          onChange={(restingHeartRate) => void updateSettings({ restingHeartRate })}
+        <SegmentedControl
+          label="Distanz"
+          options={[
+            { value: 'km', label: 'km' },
+            { value: 'mi', label: 'mi' },
+          ]}
+          value={settings.distanceUnit}
+          onChange={(distanceUnit) => void updateSettings({ distanceUnit })}
         />
-        <p className="text-sm text-muted">
-          Für die Pulszonen importierter Einheiten. Mit Ruhepuls rechnet die App nach
-          Herzfrequenzreserve (Karvonen), sonst in % des max. Pulses.
-        </p>
-        <h3 className="mt-2 font-semibold">Erweitert</h3>
-        <label className="flex min-h-11 items-center gap-3">
-          <input
-            type="checkbox"
-            className={checkbox}
-            checked={settings.restAnalysisEnabled}
-            onChange={(event) => void updateSettings({ restAnalysisEnabled: event.target.checked })}
-          />
-          Pausen-Auswertung
-        </label>
-        <p className="text-sm text-muted">
-          Zeigt in der Statistik, wie sich die Pausenlänge auf den nächsten Satz auswirkt. Rechnet
-          auch mit bisherigen Trainings und funktioniert ohne Pausen-Timer.
-        </p>
       </div>
     </Card>
   );
 }
 
+function AppearanceCard({ settings }: { settings: Settings }) {
+  return (
+    <Card>
+      <div className="flex flex-col gap-4">
+        <SegmentedControl
+          label="Theme"
+          options={(['system', 'light', 'dark'] as const).map((value) => ({
+            value,
+            label: THEME_LABELS[value],
+          }))}
+          value={settings.theme}
+          onChange={(theme) => void updateSettings({ theme })}
+        />
+        <PalettePicker
+          value={settings.palette}
+          onChange={(palette) => void updateSettings({ palette })}
+        />
+      </div>
+    </Card>
+  );
+}
+
+function TrainingSettings({ settings }: { settings: Settings }) {
+  return (
+    <>
+      <Card title="Pausen">
+        <div className="flex flex-col gap-2">
+          <Switch
+            label="Pausen-Timer"
+            checked={settings.restTimerEnabled}
+            onChange={(enabled) => void setRestTimerEnabled(enabled)}
+          />
+          {settings.restTimerEnabled && (
+            <>
+              <Stepper
+                label="Pausenzeit nach einem Satz"
+                value={settings.restTimerSeconds}
+                unit="s"
+                step={15}
+                max={900}
+                decimals={0}
+                onChange={(value) =>
+                  value !== null && void updateSettings({ restTimerSeconds: value })
+                }
+              />
+              <p className={HINT}>Pläne können je Übung eine eigene Pausenzeit festlegen.</p>
+              <Switch
+                label="Ton am Ende der Pause"
+                checked={settings.restTimerSound}
+                onChange={(restTimerSound) => void updateSettings({ restTimerSound })}
+              />
+              <Switch
+                label="Vibration (nicht auf dem iPhone)"
+                checked={settings.restTimerVibrate}
+                onChange={(restTimerVibrate) => void updateSettings({ restTimerVibrate })}
+              />
+              <p className={HINT}>Signale kommen nur, solange die App geöffnet ist.</p>
+            </>
+          )}
+        </div>
+      </Card>
+      <Card title="Puls">
+        <div className="flex flex-col gap-2">
+          <Stepper
+            label="Max. Puls"
+            value={settings.maxHeartRate}
+            unit="bpm"
+            step={1}
+            min={MIN_HEART_RATE}
+            max={MAX_HEART_RATE}
+            decimals={0}
+            startValue={190}
+            allowEmpty
+            onChange={(maxHeartRate) => void updateSettings({ maxHeartRate })}
+          />
+          <Stepper
+            label="Ruhepuls"
+            value={settings.restingHeartRate}
+            unit="bpm"
+            step={1}
+            min={MIN_HEART_RATE}
+            max={MAX_HEART_RATE}
+            decimals={0}
+            startValue={60}
+            allowEmpty
+            onChange={(restingHeartRate) => void updateSettings({ restingHeartRate })}
+          />
+          <p className={HINT}>
+            Für die Pulszonen importierter Einheiten. Mit Ruhepuls rechnet die App nach
+            Herzfrequenzreserve (Karvonen), sonst in % des max. Pulses.
+          </p>
+        </div>
+      </Card>
+      <Card title="Erweitert">
+        <Switch
+          label="Pausen-Auswertung"
+          checked={settings.restAnalysisEnabled}
+          onChange={(restAnalysisEnabled) => void updateSettings({ restAnalysisEnabled })}
+        />
+        <p className={HINT}>
+          Zeigt in der Statistik, wie sich die Pausenlänge auf den nächsten Satz auswirkt. Rechnet
+          auch mit bisherigen Trainings und funktioniert ohne Pausen-Timer.
+        </p>
+      </Card>
+    </>
+  );
+}
+
 function DailyGoalsCard({ settings }: { settings: Settings }) {
   return (
-    <Card title="Tagesziele">
+    <Card>
       <div className="flex flex-col gap-3">
         <Stepper
           label="Schritte pro Tag"
@@ -241,7 +415,6 @@ const DAY_TYPES = [
 ] as const;
 
 function NutritionGoalsCard({ settings }: { settings: Settings }) {
-  const hint = 'text-sm text-muted';
   // Aktuellen Stand lesen, damit schnelle Änderungen an zwei Feldern nichts verlieren
   const change = async (day: keyof NutritionGoals, changes: Partial<NutritionGoal>) => {
     const goals = (await getSettings())?.nutritionGoals ?? settings.nutritionGoals;
@@ -249,32 +422,25 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
   };
 
   return (
-    <Card title="Ernährung">
-      <div className="flex flex-col gap-3">
-        <label className="flex min-h-11 items-center gap-3">
-          <input
-            type="checkbox"
-            className="h-5 w-5 accent-primary"
-            checked={settings.proteinOnly}
-            onChange={(event) => void updateSettings({ proteinOnly: event.target.checked })}
-          />
-          Nur Protein erfassen
-        </label>
-        <p className={hint}>
+    <>
+      <Card>
+        <Switch
+          label="Nur Protein erfassen"
+          checked={settings.proteinOnly}
+          onChange={(proteinOnly) => void updateSettings({ proteinOnly })}
+        />
+        <p className={HINT}>
           {settings.proteinOnly
             ? 'Die Ernährung zeigt nur ein Protein-Feld mit Buttons wie beim Wasser, ohne Lebensmittel und Kalorien. Bisherige Mahlzeiten bleiben gespeichert.'
             : 'Statt Mahlzeiten nur die Protein-Menge des Tages eintragen (ohne Lebensmittel und Kalorien).'}
         </p>
-        <p className={hint}>
-          Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit.
-          {!settings.proteinOnly && ' Kohlenhydrate und Fett sind optional (leer = kein Ziel).'}
-        </p>
-        {DAY_TYPES.map(({ key, label }) => {
-          const goal = settings.nutritionGoals[key];
-          const perKg = proteinPerKg(goal.protein, settings.bodyWeightKg);
-          return (
-            <div key={key} className="flex flex-col gap-3">
-              <h3 className="mt-1 font-semibold">{label}</h3>
+      </Card>
+      {DAY_TYPES.map(({ key, label }) => {
+        const goal = settings.nutritionGoals[key];
+        const perKg = proteinPerKg(goal.protein, settings.bodyWeightKg);
+        return (
+          <Card key={key} title={label}>
+            <div className="flex flex-col gap-3">
               {!settings.proteinOnly && (
                 <Stepper
                   label={`Kalorien (${label})`}
@@ -297,7 +463,7 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
                 onChange={(protein) => protein !== null && void change(key, { protein })}
               />
               {perKg !== null && (
-                <p className={hint}>≈ {formatDecimal(perKg, 1)} g pro kg Körpergewicht</p>
+                <p className={HINT}>≈ {formatDecimal(perKg, 1)} g pro kg Körpergewicht</p>
               )}
               {!settings.proteinOnly && (
                 <>
@@ -326,35 +492,32 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
                 </>
               )}
             </div>
-          );
-        })}
-        {!settings.proteinOnly && (
-          <>
-            <label className="mt-1 flex min-h-11 items-center gap-3">
-              <input
-                type="checkbox"
-                className="h-5 w-5 accent-primary"
-                checked={settings.addBurnedCalories}
-                onChange={(event) =>
-                  void updateSettings({ addBurnedCalories: event.target.checked })
-                }
-              />
-              Verbrannte Kalorien zum Ziel addieren
-            </label>
-            <p className={hint}>
-              Kalorien aus Ausdauer-Einheiten (von der Uhr oder eingetragen) erhöhen das
-              Kalorienziel des Tages. Am besten dann für Trainings- und Ruhetag dasselbe Ziel
-              wählen, sonst zählt das Training doppelt.
-            </p>
-          </>
-        )}
-      </div>
-    </Card>
+          </Card>
+        );
+      })}
+      <p className={`mb-4 px-1 ${HINT}`}>
+        Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit.
+        {!settings.proteinOnly && ' Kohlenhydrate und Fett sind optional (leer = kein Ziel).'}
+      </p>
+      {!settings.proteinOnly && (
+        <Card>
+          <Switch
+            label="Verbrannte Kalorien zum Ziel addieren"
+            checked={settings.addBurnedCalories}
+            onChange={(addBurnedCalories) => void updateSettings({ addBurnedCalories })}
+          />
+          <p className={HINT}>
+            Kalorien aus Ausdauer-Einheiten (von der Uhr oder eingetragen) erhöhen das Kalorienziel
+            des Tages. Am besten dann für Trainings- und Ruhetag dasselbe Ziel wählen, sonst zählt
+            das Training doppelt.
+          </p>
+        </Card>
+      )}
+    </>
   );
 }
 
 function SupplementSettingsCard({ settings }: { settings: Settings }) {
-  const checkbox = 'h-5 w-5 accent-primary';
   const [permission, setPermission] = useState(notificationState);
   const toggleNotifications = async (enabled: boolean) => {
     if (enabled && permission !== 'granted') {
@@ -364,10 +527,9 @@ function SupplementSettingsCard({ settings }: { settings: Settings }) {
     }
     await updateSettings({ supplementNotificationsEnabled: enabled });
   };
-  const hint = 'text-sm text-muted';
 
   return (
-    <Card title="Supplements">
+    <Card>
       <div className="flex flex-col gap-2">
         <Stepper
           label="Warnung ab Restbestand für"
@@ -381,38 +543,30 @@ function SupplementSettingsCard({ settings }: { settings: Settings }) {
             days !== null && void updateSettings({ supplementLowStockDays: days })
           }
         />
-        <label className="flex min-h-11 items-center gap-3">
-          <input
-            type="checkbox"
-            className={checkbox}
-            checked={settings.supplementRemindersEnabled}
-            onChange={(event) =>
-              void updateSettings({ supplementRemindersEnabled: event.target.checked })
-            }
-          />
-          Erinnerungen
-        </label>
+        <Switch
+          label="Erinnerungen"
+          checked={settings.supplementRemindersEnabled}
+          onChange={(supplementRemindersEnabled) =>
+            void updateSettings({ supplementRemindersEnabled })
+          }
+        />
         {settings.supplementRemindersEnabled && (
           <>
-            <label className="flex min-h-11 items-center gap-3">
-              <input
-                type="checkbox"
-                className={checkbox}
-                disabled={permission === 'unsupported' || permission === 'denied'}
-                checked={settings.supplementNotificationsEnabled && permission === 'granted'}
-                onChange={(event) => void toggleNotifications(event.target.checked)}
-              />
-              Auch als Mitteilung, wenn die App im Hintergrund ist
-            </label>
+            <Switch
+              label="Auch als Mitteilung, wenn die App im Hintergrund ist"
+              disabled={permission === 'unsupported' || permission === 'denied'}
+              checked={settings.supplementNotificationsEnabled && permission === 'granted'}
+              onChange={(enabled) => void toggleNotifications(enabled)}
+            />
             {permission === 'denied' && (
-              <p className={hint}>Mitteilungen sind für diese App im Browser blockiert.</p>
+              <p className={HINT}>Mitteilungen sind für diese App im Browser blockiert.</p>
             )}
             {permission === 'unsupported' && (
-              <p className={hint}>Dieser Browser unterstützt keine Mitteilungen.</p>
+              <p className={HINT}>Dieser Browser unterstützt keine Mitteilungen.</p>
             )}
           </>
         )}
-        <p className={hint}>
+        <p className={HINT}>
           Ohne Server gibt es keine echten Push-Nachrichten: Erinnerungen kommen nur, solange die
           App geöffnet ist oder noch im Hintergrund läuft. Ist sie geschlossen, siehst du offene
           Einnahmen beim nächsten Öffnen. Auf dem iPhone kommen sie nur in der geöffneten App.
@@ -460,7 +614,7 @@ function ProfileCard({ settings }: { settings: Settings }) {
             void setCurrentBodyWeight(value === null ? null : displayToKg(value, unit))
           }
         />
-        <p className="text-sm text-muted">Wird auch als Gewicht von heute im Alltag eingetragen.</p>
+        <p className={HINT}>Wird auch als Gewicht von heute im Alltag eingetragen.</p>
       </div>
     </Card>
   );

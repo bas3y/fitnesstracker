@@ -63,6 +63,7 @@ import {
   PLAN_SCHEDULES,
   QUICK_ACTIONS,
   TIMER_KINDS,
+  WIDGET_SIZES,
   type PhotoFile,
 } from './types';
 
@@ -140,6 +141,8 @@ const settingsSchema = baseEntitySchema.extend({
   celebrations: celebrationsSchema.nullable().default(null),
   // Seit DB-Version 29
   palette: z.enum(COLOR_PALETTES).default('green'),
+  // Seit DB-Version 31
+  widgetSizes: z.partialRecord(z.enum(DASHBOARD_WIDGETS), z.enum(WIDGET_SIZES)).default({}),
 });
 
 const catalogEntryFields = {

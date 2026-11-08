@@ -96,7 +96,7 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
   // „Fertig“ unten führt wie „Zurück“ zur Herkunft
   await page.reload();
   await page.getByRole('link', { name: 'Fertig' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Fitnesstracker' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Heute' })).toBeVisible();
   await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Training').click();
   await page.getByRole('link', { name: /^Verlauf/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Verlauf' })).toBeVisible();

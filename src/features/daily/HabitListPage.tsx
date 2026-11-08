@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { primaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
+import { Icon } from '../../components/icons';
 import { LinkRow, Page } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
 import { deleteHabit, reorderHabits } from '../../db/habits';
@@ -79,7 +80,7 @@ export function HabitListPage() {
             className="flex min-h-11 w-full items-center gap-2 text-left font-semibold"
             onClick={() => setShowArchive(!showArchive)}
           >
-            <span aria-hidden="true">{showArchive ? '▾' : '▸'}</span>
+            <Icon name={showArchive ? 'chevronDown' : 'chevronRight'} className="h-4 w-4" />
             Archiv ({archived.length})
           </button>
           {showArchive && (

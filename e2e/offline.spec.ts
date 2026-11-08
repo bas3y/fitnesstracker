@@ -3,11 +3,11 @@ import { goOffline } from './helpers';
 
 test('Startseite lädt nach dem ersten Besuch auch offline', async ({ page, context }) => {
   await page.goto('./');
-  await expect(page.getByRole('heading', { name: 'Fitnesstracker' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Heute' })).toBeVisible();
 
   await goOffline(page, context);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Fitnesstracker' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Heute' })).toBeVisible();
 });
 
 test('Bottom-Navigation funktioniert offline', async ({ page, context }) => {
@@ -18,7 +18,7 @@ test('Bottom-Navigation funktioniert offline', async ({ page, context }) => {
   const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
   for (const label of ['Training', 'Alltag', 'Statistik', 'Einstellungen', 'Dashboard']) {
     await nav.getByRole('link', { name: label }).click();
-    const heading = label === 'Dashboard' ? 'Fitnesstracker' : label;
+    const heading = label === 'Dashboard' ? 'Heute' : label;
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
   }
 });

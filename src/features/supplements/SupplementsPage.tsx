@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { primaryButton, secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { Icon } from '../../components/icons';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Dialog } from '../../components/Dialog';
 import { LinkRow, Page } from '../../components/Page';
@@ -17,6 +18,8 @@ import { formatHabitTarget } from '../../domain/habits';
 import { formatDoseTime, formatSupplementSchedule } from '../../domain/supplements';
 import { DayNavigator } from '../daily/DayNavigator';
 import { useDayBackTo, useDayParam } from '../daily/useDaily';
+import { useFromHere } from '../../components/backNavigation';
+import { settingsPath } from '../settings/paths';
 import { useSettings } from '../settings/useSettings';
 import { SUPPLEMENTS_PATH } from './paths';
 import { SupplementChecklist } from './SupplementChecklist';
@@ -39,6 +42,7 @@ export function SupplementsPage() {
   const [deleting, setDeleting] = useState<Supplement | null>(null);
   const [importing, setImporting] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
+  const from = useFromHere();
   const all = (overview?.items ?? []).map(({ supplement }) => supplement);
   const active = all.filter((supplement) => supplement.archivedAt === null);
   const archived = all.filter((supplement) => supplement.archivedAt !== null);
@@ -94,7 +98,7 @@ export function SupplementsPage() {
             className="flex min-h-11 w-full items-center gap-2 text-left font-semibold"
             onClick={() => setShowArchive(!showArchive)}
           >
-            <span aria-hidden="true">{showArchive ? '▾' : '▸'}</span>
+            <Icon name={showArchive ? 'chevronDown' : 'chevronRight'} className="h-4 w-4" />
             Archiv ({archived.length})
           </button>
           {showArchive && (
@@ -115,7 +119,11 @@ export function SupplementsPage() {
 
       <p className={`mb-4 ${MUTED}`}>
         Erinnerungen und Warnschwelle für den Bestand stellst du in den{' '}
-        <Link to="/settings" className="font-semibold text-primary-text">
+        <Link
+          to={settingsPath('supplements')}
+          state={from}
+          className="font-semibold text-primary-text"
+        >
           Einstellungen
         </Link>{' '}
         ein.

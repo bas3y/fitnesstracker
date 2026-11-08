@@ -23,7 +23,7 @@ beforeEach(async () => {
 describe('App', () => {
   it('rendert das Dashboard und legt Einstellungen an', async () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Fitnesstracker' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Heute' })).toBeInTheDocument();
     await vi.waitFor(async () => expect(await getSettings()).toBeDefined());
   });
 
@@ -40,7 +40,7 @@ describe('App', () => {
 
   it('speichert Einstellungen und zeigt den Namen im Dashboard', async () => {
     const user = userEvent.setup();
-    window.location.hash = '#/settings';
+    window.location.hash = '#/settings/profile';
     render(<App />);
 
     const name = await screen.findByLabelText('Name');

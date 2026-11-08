@@ -1,4 +1,5 @@
 import { inputField } from '../../components/buttons';
+import { ChevronLeftIcon, ChevronRightIcon } from '../../components/icons';
 import type { DayKey } from '../../db/types';
 import { formatDayLabel, shiftDay } from '../../domain/daily';
 
@@ -25,7 +26,7 @@ export function DayNavigator({
           className={dayButton}
           onClick={() => onChange(shiftDay(date, -1))}
         >
-          ‹
+          <ChevronLeftIcon className="h-5 w-5" />
         </button>
         <input
           type="date"
@@ -44,7 +45,7 @@ export function DayNavigator({
           disabled={date >= today}
           onClick={() => onChange(shiftDay(date, 1))}
         >
-          ›
+          <ChevronRightIcon className="h-5 w-5" />
         </button>
       </div>
     </div>

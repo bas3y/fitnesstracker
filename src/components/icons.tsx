@@ -32,20 +32,24 @@ export function Icon({
   );
 }
 
-/** Symbol auf hellem Akzent-Quadrat (Listenzeilen, Kacheln) */
+/** Symbol auf hellem Akzent-Quadrat (Listenzeilen, Kacheln); `solid` = volle Akzentfarbe */
 export function IconBadge({
   name,
+  solid = false,
   className = 'h-9 w-9',
   iconClassName = 'h-5 w-5',
 }: {
   name: IconName;
+  solid?: boolean;
   className?: string;
   iconClassName?: string;
 }) {
   return (
     <span
       aria-hidden="true"
-      className={`flex shrink-0 items-center justify-center rounded-xl bg-primary-soft text-on-primary-soft ${className}`}
+      className={`flex shrink-0 items-center justify-center rounded-xl ${
+        solid ? 'bg-primary text-on-primary' : 'bg-primary-soft text-on-primary-soft'
+      } ${className}`}
     >
       <Icon name={name} className={iconClassName} />
     </span>

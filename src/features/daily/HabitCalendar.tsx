@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon } from '../../components/icons';
 import { setHabitDone, type HabitWithChecks } from '../../db/habits';
 import type { DayKey } from '../../db/types';
 import { formatDayKey } from '../../domain/stats';
@@ -68,7 +69,7 @@ export function HabitCalendar({ item, today }: { item: HabitWithChecks; today: D
           className={monthButton}
           onClick={() => setMonth(shiftMonth(month, -1))}
         >
-          ‹
+          <ChevronLeftIcon className="h-5 w-5" />
         </button>
         <h3 className="font-semibold">{formatMonth(month)}</h3>
         <button
@@ -78,7 +79,7 @@ export function HabitCalendar({ item, today }: { item: HabitWithChecks; today: D
           disabled={month >= currentMonth}
           onClick={() => setMonth(shiftMonth(month, 1))}
         >
-          ›
+          <ChevronRightIcon className="h-5 w-5" />
         </button>
       </div>
       <div aria-hidden="true" className="grid grid-cols-7 text-center text-xs text-muted">

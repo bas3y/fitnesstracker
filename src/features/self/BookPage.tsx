@@ -4,7 +4,8 @@ import { useBackTo } from '../../components/backNavigation';
 import { inputField, primaryButton, secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
-import { Card, Page } from '../../components/Page';
+import { Icon } from '../../components/icons';
+import { Card, HEADER_ICON_BUTTON, Page } from '../../components/Page';
 import {
   addBookNote,
   deleteBookNote,
@@ -65,9 +66,11 @@ function BookDetail({ book, logs, backTo }: { book: Book; logs: ReadingLog[]; ba
       action={
         <Link
           to={bookEditPath(book.id)}
-          className="flex min-h-11 shrink-0 items-center rounded-xl border border-line-strong px-3 text-sm font-semibold"
+          aria-label="Bearbeiten"
+          title="Bearbeiten"
+          className={HEADER_ICON_BUTTON}
         >
-          Bearbeiten
+          <Icon name="pen" />
         </Link>
       }
     >

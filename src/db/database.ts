@@ -556,6 +556,17 @@ export class AppDatabase extends Dexie {
             goal.icon = toIconName(goal.icon ?? '', '');
           });
       });
+    // Widget-Größen auf der Startseite
+    this.version(31)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.widgetSizes ??= {};
+          }),
+      );
   }
 }
 

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { goOffline } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -8,20 +8,39 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+/** Unterseite der Einstellungen über die Übersicht öffnen */
+async function openSection(page: Page, section: string) {
+  await page
+    .getByRole('navigation', { name: 'Hauptnavigation' })
+    .getByText('Einstellungen')
+    .click();
+  await page.getByRole('main').getByRole('link', { name: section }).click();
+  await expect(page.getByRole('heading', { level: 1, name: section })).toBeVisible();
+}
+
 test('Einstellungen überstehen Backup, Löschen der DB und Import (offline)', async ({
   page,
   context,
 }, testInfo) => {
-  await page.goto('./#/settings');
+  await page.goto('./#/settings/profile');
   await goOffline(page, context);
 
   const name = page.getByLabel('Name', { exact: true });
   await name.fill('Testperson');
   await name.blur();
   await page.getByRole('button', { name: 'lb', exact: true }).click();
+  await openSection(page, 'Darstellung');
   await page.getByRole('button', { name: 'Dunkel' }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);
 
+  // Übersicht zeigt Name und Einheiten
+  await page
+    .getByRole('navigation', { name: 'Hauptnavigation' })
+    .getByText('Einstellungen')
+    .click();
+  await expect(page.getByRole('link', { name: /^Testperson/ })).toContainText('lb und km');
+
+  await openSection(page, 'Datensicherung');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Backup exportieren' }).click();
   const download = await downloadPromise;
@@ -39,11 +58,7 @@ test('Einstellungen überstehen Backup, Löschen der DB und Import (offline)', a
       }),
   );
   await page.reload();
-  await expect(name).toHaveValue('');
-  await expect(page.getByRole('button', { name: 'kg', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(page.getByText('Letztes Backup: noch nie')).toBeVisible();
 
   await page.locator('input[type="file"]').setInputFiles(backupPath);
   await expect(page.getByText('Ersetzt alle Daten auf diesem Gerät.')).toBeVisible();
@@ -51,17 +66,18 @@ test('Einstellungen überstehen Backup, Löschen der DB und Import (offline)', a
   await page.getByRole('button', { name: 'Importieren', exact: true }).click();
 
   await expect(page.getByText('Sicherung wurde importiert')).toBeVisible();
+  await expect(page.getByText('Letztes Backup: heute')).toBeVisible();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await openSection(page, 'Profil & Einheiten');
   await expect(name).toHaveValue('Testperson');
   await expect(page.getByRole('button', { name: 'lb', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  await expect(page.locator('html')).toHaveClass(/dark/);
-  await expect(page.getByText('Letztes Backup: heute')).toBeVisible();
 });
 
 test('Ungültige Datei wird beim Import abgelehnt', async ({ page }) => {
-  await page.goto('./#/settings');
+  await page.goto('./#/settings/backup');
   await page.locator('input[type="file"]').setInputFiles({
     name: 'falsch.json',
     mimeType: 'application/json',

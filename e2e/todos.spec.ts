@@ -76,7 +76,7 @@ test('To-dos: Priorität, Übertrag, Bearbeiten und Liste (offline)', async ({ p
   await expect(page.getByRole('list', { name: 'Geplant' })).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Zurück', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Fitnesstracker', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Heute', level: 1 })).toBeVisible();
 
   // Kachel auf der Alltag-Übersicht
   await openNav(page, 'Alltag');

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { ChevronRightIcon } from '../../components/icons';
 import { Page } from '../../components/Page';
 import { PLAN_TEMPLATES } from '../../data/planTemplates';
 import { createPlan, createPlanFromTemplate } from '../../db/plans';
@@ -24,9 +25,7 @@ function ChoiceButton({
         <span className="block font-semibold">{label}</span>
         <span className="block text-sm text-muted">{hint}</span>
       </span>
-      <span aria-hidden="true" className="text-xl text-faint">
-        ›
-      </span>
+      <ChevronRightIcon className="h-4 w-4 text-faint" />
     </button>
   );
 }

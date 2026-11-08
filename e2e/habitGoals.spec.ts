@@ -25,7 +25,7 @@ async function newGoal(page: Page, kind: string) {
 
 async function openGoals(page: Page) {
   await nav(page, 'Statistik');
-  await page.getByRole('link', { name: 'Ziele', exact: true }).click();
+  await page.getByRole('link', { name: /^Ziele/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Ziele' })).toBeVisible();
 }
 

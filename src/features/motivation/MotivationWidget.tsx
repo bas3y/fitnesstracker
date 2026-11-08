@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
 import type { BackState } from '../../components/backNavigation';
-import { Card } from '../../components/Page';
+import { ChevronRightIcon } from '../../components/icons';
+import { Card, type CardTone } from '../../components/Page';
+import { formatStreak } from '../../domain/habits';
+import { SmallWidget } from '../dashboard/WidgetParts';
 import type { DayKey, Settings } from '../../db/types';
 import {
   formatBadgeTier,
@@ -23,10 +26,36 @@ function closestBadge(badges: readonly BadgeState[]): BadgeState | null {
   return candidates.sort((a, b) => tierShare(b) - tierShare(a))[0] ?? null;
 }
 
-export function MotivationWidget({ settings, today }: { settings: Settings; today: DayKey }) {
+export function MotivationWidget({
+  settings,
+  today,
+  small = false,
+  tone,
+}: {
+  settings: Settings;
+  today: DayKey;
+  /** Kleines Widget: längste laufende Serie */
+  small?: boolean;
+  tone?: CardTone;
+}) {
   const view = useMotivation(today);
   if (!view) return null;
   const running = view.streaks.filter((item) => item.current > 0).slice(0, SHOWN_STREAKS);
+
+  if (small) {
+    const top = running[0];
+    return (
+      <SmallWidget
+        to={ACHIEVEMENTS_PATH}
+        state={FROM_DASHBOARD}
+        icon={top?.icon ?? 'flame'}
+        label={top?.name ?? 'Serien'}
+        value={top ? formatStreak(top.current, top.unit) : '–'}
+        sub={top ? `Beste: ${formatStreak(top.best, top.unit)}` : 'Keine laufende Serie'}
+        tone={tone}
+      />
+    );
+  }
   const badge = closestBadge(view.badges);
   const next = badge && nextTier(badge);
 
@@ -71,9 +100,10 @@ export function MotivationWidget({ settings, today }: { settings: Settings; toda
       <Link
         to={ACHIEVEMENTS_PATH}
         state={FROM_DASHBOARD}
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
+        className="mt-1 flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
       >
-        Alle Erfolge ›
+        Alle Erfolge
+        <ChevronRightIcon className="h-4 w-4" />
       </Link>
     </Card>
   );

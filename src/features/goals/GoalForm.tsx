@@ -4,7 +4,7 @@ import { dangerButton, inputField, primaryButton, secondaryButton } from '../../
 import { Chip } from '../../components/Chip';
 import { DurationInput } from '../../components/DurationInput';
 import { IconPicker } from '../../components/IconPicker';
-import { Icon } from '../../components/icons';
+import { ChevronRightIcon, Icon } from '../../components/icons';
 import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Select } from '../../components/Select';
@@ -238,7 +238,7 @@ export function GoalForm({
               onClick={() => setPicking(true)}
             >
               <span className="truncate">{exercise?.name ?? 'Übung wählen'}</span>
-              <span aria-hidden="true">›</span>
+              <ChevronRightIcon className="h-4 w-4" />
             </button>
             {exercise && strengthMetricsFor(exercise).length > 1 && (
               <SegmentedControl

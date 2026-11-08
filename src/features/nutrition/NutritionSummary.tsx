@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
+import { ChevronRightIcon } from '../../components/icons';
 import { Card } from '../../components/Page';
 import type { NutritionDayData } from '../../db/nutrition';
 import type { DayKey, NutritionGoal, Settings } from '../../db/types';
@@ -123,13 +124,14 @@ export function NutritionDayCard({
       <Link
         to={to}
         state={from}
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
+        className="mt-1 flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
       >
         {settings.proteinOnly
-          ? 'Protein korrigieren ›'
+          ? 'Protein korrigieren'
           : data.entries.length === 0
-            ? 'Mahlzeit eintragen ›'
-            : 'Mahlzeiten ansehen ›'}
+            ? 'Mahlzeit eintragen'
+            : 'Mahlzeiten ansehen'}
+        <ChevronRightIcon className="h-4 w-4" />
       </Link>
     </NutritionSummary>
   );

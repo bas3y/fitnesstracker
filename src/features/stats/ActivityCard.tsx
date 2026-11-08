@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { Heatmap } from '../../components/Heatmap';
+import { ChevronRightIcon } from '../../components/icons';
 import { Card } from '../../components/Page';
 import type { EnduranceSession } from '../../db/types';
 import { enduranceDays, enduranceHeatLevel } from '../../domain/enduranceStats';
@@ -19,7 +20,7 @@ import { sessionPath } from '../endurance/paths';
 import { HISTORY_PATH } from '../training/paths';
 
 const countSets = (sets: number) => (sets === 1 ? '1 Satz' : `${sets} Sätze`);
-const LINK = 'inline-flex min-h-11 items-center font-medium text-primary-text';
+const LINK = 'inline-flex min-h-11 items-center gap-0.5 font-medium text-primary-text';
 
 const SPANS = {
   '3m': { weekCount: 14, label: '3 Monaten' },
@@ -35,11 +36,14 @@ export function ActivityCard({
   endurance = [],
   now,
   span = '1y',
+  filter,
 }: {
   sessions: StatsSession[];
   endurance?: readonly EnduranceSession[];
   now: Date;
   span?: keyof typeof SPANS;
+  /** Filter der Seite (Zeitraum, Muskelgruppe) über der Heatmap */
+  filter?: ReactNode;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const from = useFromHere();
@@ -70,6 +74,7 @@ export function ActivityCard({
 
   return (
     <Card title="Trainingstage">
+      {filter && <div className="mb-4 flex flex-col gap-3">{filter}</div>}
       <Heatmap
         values={values}
         now={now}
@@ -87,12 +92,14 @@ export function ActivityCard({
           <div className="flex flex-wrap gap-x-4">
             {strengthDay?.workoutIds.map((id) => (
               <Link key={id} to={`${HISTORY_PATH}/${id}`} state={from} className={LINK}>
-                Workout öffnen ›
+                Workout öffnen
+                <ChevronRightIcon className="h-4 w-4" />
               </Link>
             ))}
             {cardioDay?.sessions.map(({ id, sport }) => (
               <Link key={id} to={sessionPath(id)} state={from} className={LINK}>
-                {ENDURANCE_SPORT_LABELS[sport].name} öffnen ›
+                {ENDURANCE_SPORT_LABELS[sport].name} öffnen
+                <ChevronRightIcon className="h-4 w-4" />
               </Link>
             ))}
           </div>

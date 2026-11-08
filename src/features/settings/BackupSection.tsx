@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
 import { primaryButton, secondaryButton } from '../../components/buttons';
 import { Card } from '../../components/Page';
+import { Switch } from '../../components/Switch';
 import { listProgressPhotos } from '../../db/photos';
 import { formatBytes } from '../../domain/photos';
 import {
@@ -77,7 +78,7 @@ export function BackupSection({ settings }: { settings: Settings }) {
   };
 
   return (
-    <Card title="Datensicherung">
+    <Card>
       <p className="mb-3 text-sm text-muted">
         Alle Daten liegen nur auf diesem Gerät. Sichere sie regelmäßig, z. B. in deiner Cloud.
       </p>
@@ -91,15 +92,11 @@ export function BackupSection({ settings }: { settings: Settings }) {
       <div className="flex flex-col gap-2">
         {photos && photos.count > 0 && (
           <div className="mb-1">
-            <label className="flex min-h-11 items-center gap-3">
-              <input
-                type="checkbox"
-                className="h-5 w-5 accent-primary"
-                checked={includePhotos}
-                onChange={(event) => setIncludePhotos(event.target.checked)}
-              />
-              Fortschrittsfotos einschließen
-            </label>
+            <Switch
+              label="Fortschrittsfotos einschließen"
+              checked={includePhotos}
+              onChange={setIncludePhotos}
+            />
             <p className="text-sm text-muted">
               {photos.count === 1 ? '1 Foto' : `${photos.count} Fotos`}, die Datei wird etwa{' '}
               {formatBytes(Math.round(photos.bytes * 1.37))} größer. Ohne Haken bleiben beim Import

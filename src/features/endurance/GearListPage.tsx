@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useBackTo } from '../../components/backNavigation';
 import { primaryButton } from '../../components/buttons';
+import { Icon } from '../../components/icons';
 import { LinkRow, Page } from '../../components/Page';
 import type { DistanceUnit, EnduranceSession, Gear } from '../../db/types';
 import { formatDistance, gearUsage, isGearWorn } from '../../domain/endurance';
@@ -69,7 +70,7 @@ export function GearListPage() {
             className="flex min-h-11 w-full items-center gap-2 text-left font-semibold"
             onClick={() => setShowArchive(!showArchive)}
           >
-            <span aria-hidden="true">{showArchive ? '▾' : '▸'}</span>
+            <Icon name={showArchive ? 'chevronDown' : 'chevronRight'} className="h-4 w-4" />
             Ausgemustert ({archived.length})
           </button>
           {showArchive && (

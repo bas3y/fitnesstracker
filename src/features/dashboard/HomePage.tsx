@@ -4,7 +4,7 @@ import type { BackState } from '../../components/backNavigation';
 import { Link } from 'react-router-dom';
 import { Chip } from '../../components/Chip';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
-import { Card, LinkRow } from '../../components/Page';
+import { Card, CustomizeToggle, LinkRow, type CardTone } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
 import { updateSettings, updateSettingsFrom } from '../../db/settings';
 import { loadStatsSessions } from '../../db/stats';
@@ -17,6 +17,7 @@ import {
   type QuickAction,
   type Settings,
   type WeightUnit,
+  type WidgetSize,
 } from '../../db/types';
 import type { WorkoutSummary } from '../../db/workouts';
 import { formatDecimal } from '../../domain/format';
@@ -26,6 +27,7 @@ import {
   DASHBOARD_WIDGET_LABELS,
   ENDURANCE_SPORT_LABELS,
   QUICK_ACTION_LABELS,
+  WIDGET_SIZE_LABELS,
 } from '../../domain/labels';
 import { dayKey } from '../../domain/daily';
 import {
@@ -38,6 +40,8 @@ import {
 } from '../../domain/stats';
 import { formatRecord, type PersonalRecord } from '../../domain/strength';
 import { kgToDisplay } from '../../domain/units';
+import { weekTrainings } from '../../domain/week';
+import { sizeChoices, widgetSize } from '../../domain/widgets';
 import {
   formatWorkoutDate,
   formatWorkoutDuration,
@@ -58,8 +62,18 @@ import { SupplementChecklist } from '../supplements/SupplementChecklist';
 import { HISTORY_PATH } from '../training/paths';
 import { TrainingStartCard } from '../training/TrainingStartCard';
 import { useNow, useWorkoutHistory } from '../training/useWorkouts';
+import { DailyMetricWidget } from './DailyMetricWidget';
 import { QuickActions } from './QuickActions';
-import { Icon } from '../../components/icons';
+import {
+  EnduranceSmall,
+  HabitsSmall,
+  NutritionSmall,
+  ProgressSmall,
+  SupplementsSmall,
+  TodosSmall,
+} from './SmallWidgets';
+import { SmallWidget, WeekDots, WidgetHeader } from './WidgetParts';
+import { ChevronRightIcon, Icon } from '../../components/icons';
 
 // Serien und Abzeichen rechnen viel: eigener Chunk, nicht im Hauptbundle
 const MotivationWidget = lazy(() =>
@@ -70,9 +84,15 @@ const MotivationWidget = lazy(() =>
 
 const RECENT_RECORD_ROWS = 3;
 const TODO_LIMIT = 5;
+const MEDIUM_LIMIT = 3;
 const RECORDS_PER_ROW = 2;
 const FROM_DASHBOARD: BackState = { from: '/' };
 const MUTED = 'text-muted';
+const DATE_FORMAT = new Intl.DateTimeFormat('de-DE', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
 
 interface WidgetData {
   settings: Settings;
@@ -86,37 +106,68 @@ interface WidgetData {
 }
 
 /** `null` = das Widget hat noch nichts zu zeigen */
-function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
+function renderWidget(
+  id: DashboardWidget,
+  data: WidgetData,
+  size: WidgetSize,
+  tone?: CardTone,
+): ReactNode {
   const { settings, sessions, endurance, history, records, now } = data;
   const trained = sessions.length > 0 || endurance.length > 0;
   const last = history[0];
   const today = dayKey(now);
+  const small = size === 'small';
   switch (id) {
     case 'quickActions':
       return <QuickActions settings={settings} today={today} />;
     case 'habits':
-      return <HabitChecklist variant="widget" date={today} today={today} />;
+      if (small) return <HabitsSmall today={today} tone={tone} />;
+      return (
+        <HabitChecklist
+          variant="widget"
+          date={today}
+          today={today}
+          limit={size === 'medium' ? MEDIUM_LIMIT : undefined}
+        />
+      );
     case 'todos':
-      return <TodoCard today={today} limit={TODO_LIMIT} />;
+      if (small) return <TodosSmall today={today} tone={tone} />;
+      return size === 'medium' ? (
+        <TodoCard today={today} limit={MEDIUM_LIMIT} withDone={false} />
+      ) : (
+        <TodoCard today={today} limit={TODO_LIMIT} />
+      );
     case 'progress':
-      return sessions.length > 0 ? (
+      if (sessions.length === 0) return null;
+      return small ? (
+        <ProgressSmall
+          sessions={sessions}
+          bodyWeightKg={settings.bodyWeightKg}
+          now={now}
+          tone={tone}
+        />
+      ) : (
         <ProgressCard sessions={sessions} bodyWeightKg={settings.bodyWeightKg} now={now} />
-      ) : null;
+      );
     case 'week':
       return trained ? (
         <WeekCard
           sessions={sessions}
           endurance={endurance}
-          bodyWeightKg={settings.bodyWeightKg}
           settings={settings}
           now={now}
+          size={size}
+          tone={tone}
         />
       ) : null;
     case 'lastWorkout':
       return last ? <LastWorkout summary={last} now={now} /> : null;
     case 'records':
       return records.length > 0 ? (
-        <RecentRecordsSection rows={records} unit={settings.weightUnit} />
+        <RecentRecordsSection
+          rows={size === 'medium' ? records.slice(0, 1) : records}
+          unit={settings.weightUnit}
+        />
       ) : null;
     case 'activity':
       return trained ? (
@@ -127,19 +178,28 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
     case 'daily':
       return <TodayCard settings={settings} now={now} />;
     case 'supplements':
-      return (
+      return small ? (
+        <SupplementsSmall today={today} tone={tone} />
+      ) : (
         <SupplementChecklist variant="widget" date={today} today={today} settings={settings} />
       );
     case 'nutrition':
-      return <NutritionDayCard date={today} today={today} settings={settings} />;
+      return small ? (
+        <NutritionSmall today={today} tone={tone} settings={settings} />
+      ) : (
+        <NutritionDayCard date={today} today={today} settings={settings} />
+      );
     case 'endurance':
-      return endurance.length > 0 ? (
+      if (endurance.length === 0) return null;
+      return small ? (
+        <EnduranceSmall today={today} tone={tone} sessions={endurance} settings={settings} />
+      ) : (
         <EnduranceWidget sessions={endurance} today={today} unit={settings.distanceUnit} />
-      ) : null;
+      );
     case 'motivation':
       return (
         <Suspense fallback={null}>
-          <MotivationWidget settings={settings} today={today} />
+          <MotivationWidget settings={settings} today={today} small={small} tone={tone} />
         </Suspense>
       );
     case 'goals':
@@ -150,8 +210,16 @@ function renderWidget(id: DashboardWidget, data: WidgetData): ReactNode {
           endurance={endurance}
           settings={settings}
           today={today}
+          small={small}
+          tone={tone}
         />
       ) : null;
+    case 'steps':
+    case 'water':
+    case 'sleep':
+      return (
+        <DailyMetricWidget metric={id} size={size} settings={settings} today={today} tone={tone} />
+      );
   }
 }
 
@@ -176,19 +244,16 @@ export function HomePage() {
 
   return (
     <div className="mx-auto max-w-md px-4 pt-[calc(1.5rem+env(safe-area-inset-top))]">
-      <div className="mb-4 flex items-center gap-3">
-        <img src="./favicon.svg" alt="" className="h-12 w-12" />
+      <div className="mb-4 flex items-end gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold">Fitnesstracker</h1>
-          <p className={MUTED}>{settings?.name ? `Hallo, ${settings.name}!` : 'Hallo!'}</p>
+          <p className="text-[0.8125rem] font-semibold tracking-wide text-muted uppercase">
+            {DATE_FORMAT.format(now)}
+          </p>
+          <h1 className="text-[2rem] leading-tight font-bold tracking-tight">
+            {settings?.name ? `Hallo, ${settings.name}!` : 'Heute'}
+          </h1>
         </div>
-        <button
-          type="button"
-          className="min-h-11 shrink-0 rounded-xl border border-line-strong px-3 text-sm font-semibold"
-          onClick={() => setEditing(!editing)}
-        >
-          {editing ? 'Fertig' : 'Anpassen'}
-        </button>
+        <CustomizeToggle editing={editing} onChange={setEditing} />
       </div>
       {settings && !settings.welcomeDismissed && !editing && <WelcomeCard />}
       {data && (editing ? <WidgetEditor data={data} /> : <WidgetList data={data} />)}
@@ -231,11 +296,19 @@ function WelcomeCard() {
   );
 }
 
+/** Kleine Widgets als Farbblöcke: das erste in Akzentfarbe, das zweite im Hellton */
+const SMALL_TONES: readonly CardTone[] = ['accent', 'soft'];
+
+/** Raster: kleine Widgets nehmen eine halbe Zeile, alle anderen die ganze */
 function WidgetList({ data }: { data: WidgetData }) {
-  const { dashboardWidgets } = data.settings;
-  const visible = dashboardWidgets.flatMap((id) => {
-    const content = renderWidget(id, data);
-    return content ? [{ id, content }] : [];
+  const { dashboardWidgets, widgetSizes } = data.settings;
+  const sizes = dashboardWidgets.map((id) => widgetSize(id, widgetSizes));
+  const visible = dashboardWidgets.flatMap((id, index) => {
+    const size = sizes[index]!;
+    const smallBefore = sizes.slice(0, index).filter((item) => item === 'small').length;
+    const tone = size === 'small' ? SMALL_TONES[smallBefore] : undefined;
+    const content = renderWidget(id, data, size, tone);
+    return content ? [{ id, size, content }] : [];
   });
   if (visible.length === 0) {
     return (
@@ -248,15 +321,29 @@ function WidgetList({ data }: { data: WidgetData }) {
       </Card>
     );
   }
-  return visible.map(({ id, content }) => <div key={id}>{content}</div>);
+  return (
+    <div className="mb-4 grid grid-cols-2 gap-3">
+      {visible.map(({ id, size, content }) => (
+        <div
+          key={id}
+          data-widget={id}
+          className={`grid min-w-0 *:mb-0 ${size === 'small' ? '' : 'col-span-2'}`}
+        >
+          {content}
+        </div>
+      ))}
+    </div>
+  );
 }
 
-/** Widgets als Vorschau: am Griff ziehen, entfernen, aus „Weitere Widgets“ hinzufügen */
+/** Widgets als Vorschau: am Griff ziehen, Größe wählen, entfernen, aus „Weitere Widgets“ hinzufügen */
 function WidgetEditor({ data }: { data: WidgetData }) {
-  const { dashboardWidgets } = data.settings;
+  const { dashboardWidgets, widgetSizes } = data.settings;
   const save = (widgets: DashboardWidget[]) => updateSettings({ dashboardWidgets: widgets });
   const change = (next: (current: DashboardWidget[]) => DashboardWidget[]) =>
     updateSettingsFrom((current) => ({ dashboardWidgets: next(current.dashboardWidgets) }));
+  const setSize = (id: DashboardWidget, size: WidgetSize) =>
+    updateSettingsFrom((current) => ({ widgetSizes: { ...current.widgetSizes, [id]: size } }));
   const hidden = DASHBOARD_WIDGETS.filter((id) => !dashboardWidgets.includes(id));
 
   return (
@@ -265,27 +352,41 @@ function WidgetEditor({ data }: { data: WidgetData }) {
         label="Widgets"
         items={dashboardWidgets.map((id) => ({ id, name: DASHBOARD_WIDGET_LABELS[id].name }))}
         onReorder={(ids) => save(ids as DashboardWidget[])}
-        renderItem={({ id, name }, { handle }) => (
-          <div className="mb-3 rounded-2xl border-2 border-dashed border-line-strong bg-page">
-            <div className="flex min-h-14 items-center">
-              {handle ?? <span className="w-3 shrink-0" />}
-              <span className="min-w-0 flex-1 font-semibold">{name}</span>
-              <DeleteRowButton
-                name={name}
-                verb="entfernen"
-                onClick={() => void change((current) => current.filter((widget) => widget !== id))}
-              />
-            </div>
-            {id === 'quickActions' && <QuickActionPicker selected={data.settings.quickActions} />}
-            <div inert className="px-2">
-              {renderWidget(id as DashboardWidget, data) ?? (
-                <p className={`px-1 pb-3 text-sm ${MUTED}`}>
-                  Zeigt erst nach deinem ersten Workout etwas.
-                </p>
+        renderItem={({ id, name }, { handle }) => {
+          const widget = id as DashboardWidget;
+          const size = widgetSize(widget, widgetSizes);
+          return (
+            <div className="mb-3 rounded-2xl border-2 border-dashed border-line-strong bg-page">
+              <div className="flex min-h-14 items-center">
+                {handle ?? <span className="w-3 shrink-0" />}
+                <span className="min-w-0 flex-1 truncate font-semibold">{name}</span>
+                <SizePicker
+                  name={name}
+                  choices={sizeChoices(widget)}
+                  value={size}
+                  onChange={(next) => void setSize(widget, next)}
+                />
+                <DeleteRowButton
+                  name={name}
+                  verb="entfernen"
+                  onClick={() => void change((current) => current.filter((item) => item !== id))}
+                />
+              </div>
+              {widget === 'quickActions' && (
+                <QuickActionPicker selected={data.settings.quickActions} />
               )}
+              <div inert className="grid grid-cols-2 px-2 pb-2 *:mb-0">
+                <div className={`grid min-w-0 *:mb-0 ${size === 'small' ? '' : 'col-span-2'}`}>
+                  {renderWidget(widget, data, size, size === 'small' ? 'accent' : undefined) ?? (
+                    <p className={`px-1 pb-1 text-sm ${MUTED}`}>
+                      Zeigt erst nach deinem ersten Workout etwas.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        }}
       />
       {hidden.length > 0 && (
         <section className="mb-4">
@@ -296,14 +397,12 @@ function WidgetEditor({ data }: { data: WidgetData }) {
                 <button
                   type="button"
                   aria-label={`${DASHBOARD_WIDGET_LABELS[id].name} hinzufügen`}
-                  className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-left active:bg-page"
+                  className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-left active:bg-pressed"
                   onClick={() =>
                     void change((current) => (current.includes(id) ? current : [...current, id]))
                   }
                 >
-                  <span aria-hidden="true" className="text-xl text-primary-text">
-                    +
-                  </span>
+                  <Icon name="plus" className="h-5 w-5 text-primary-text" />
                   <span className="min-w-0">
                     <span className="block font-medium">{DASHBOARD_WIDGET_LABELS[id].name}</span>
                     <span className="block text-sm text-muted">
@@ -317,6 +416,44 @@ function WidgetEditor({ data }: { data: WidgetData }) {
         </section>
       )}
     </>
+  );
+}
+
+/** S / M / L; bei nur einer Größe nichts */
+function SizePicker({
+  name,
+  choices,
+  value,
+  onChange,
+}: {
+  name: string;
+  choices: WidgetSize[];
+  value: WidgetSize;
+  onChange: (size: WidgetSize) => void;
+}) {
+  if (choices.length < 2) return null;
+  return (
+    <div
+      role="group"
+      aria-label={`Größe: ${name}`}
+      className="flex shrink-0 gap-0.5 rounded-xl bg-subtle p-0.5"
+    >
+      {choices.map((size) => (
+        <button
+          key={size}
+          type="button"
+          aria-pressed={size === value}
+          aria-label={WIDGET_SIZE_LABELS[size].name}
+          title={WIDGET_SIZE_LABELS[size].name}
+          className={`h-10 min-w-10 rounded-[0.625rem] text-sm font-semibold ${
+            size === value ? 'bg-surface text-primary-text shadow-sm' : 'text-muted'
+          }`}
+          onClick={() => onChange(size)}
+        >
+          {WIDGET_SIZE_LABELS[size].short}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -391,38 +528,110 @@ function ProgressCard({
       </p>
       <Link
         to="/stats"
-        className="mt-1 flex min-h-11 items-center text-sm font-semibold text-primary-text"
+        className="mt-1 flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
       >
-        Zur Statistik ›
+        Zur Statistik
+        <ChevronRightIcon className="h-4 w-4" />
       </Link>
     </Card>
   );
 }
 
+/** Klein: Trainings / Wochenziel; mittel: Tage Mo–So; groß: dazu Sätze, Volumen, Ausdauer */
 function WeekCard({
   sessions,
   endurance,
-  bodyWeightKg,
   settings,
   now,
+  size,
+  tone,
 }: {
   sessions: StatsSession[];
   endurance: EnduranceSession[];
-  bodyWeightKg: number | null;
   settings: Settings;
   now: Date;
+  size: WidgetSize;
+  tone?: CardTone;
+}) {
+  const today = dayKey(now);
+  const target = settings.trainingWeekTarget;
+  const week = weekTrainings(sessions, endurance, today);
+  const label = DASHBOARD_WIDGET_LABELS.week.name;
+  const count = `${week.count} von ${target} ${target === 1 ? 'Training' : 'Trainings'}`;
+
+  if (size === 'small') {
+    return (
+      <SmallWidget
+        to="/stats"
+        state={FROM_DASHBOARD}
+        icon="calendar"
+        label={label}
+        value={`${week.count}/${target}`}
+        bar={{ value: week.count, goal: target }}
+        tone={tone}
+      />
+    );
+  }
+  return (
+    <Card>
+      <WidgetHeader title={label} aside={count} />
+      <div className="mb-4">
+        <WeekBar value={week.count} goal={target} />
+      </div>
+      <WeekDots days={week.days} today={today} />
+      {size === 'large' && (
+        <WeekDetails
+          sessions={sessions}
+          endurance={endurance}
+          settings={settings}
+          now={now}
+          today={today}
+        />
+      )}
+    </Card>
+  );
+}
+
+function WeekBar({ value, goal }: { value: number; goal: number }) {
+  const percent = Math.min(100, Math.round((value / Math.max(goal, 1)) * 100));
+  return (
+    <div
+      role="progressbar"
+      aria-label="Wochenziel Trainings"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={percent}
+      className="h-2 overflow-hidden rounded-full bg-subtle-strong"
+    >
+      <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+    </div>
+  );
+}
+
+function WeekDetails({
+  sessions,
+  endurance,
+  settings,
+  now,
+  today,
+}: {
+  sessions: StatsSession[];
+  endurance: EnduranceSession[];
+  settings: Settings;
+  now: Date;
+  today: string;
 }) {
   const unit = settings.weightUnit;
-  const { workouts, sets, volumeKg } = weekSummary(sessions, bodyWeightKg, now);
-  const cardio = weekBySport(endurance, dayKey(now));
+  const { workouts, sets, volumeKg } = weekSummary(sessions, settings.bodyWeightKg, now);
+  const cardio = weekBySport(endurance, today);
   const tiles = [
     { label: 'Workouts', value: String(workouts) },
     { label: 'Sätze', value: String(sets) },
     { label: `Volumen (${unit})`, value: formatDecimal(kgToDisplay(volumeKg, unit), 0) },
   ];
   return (
-    <Card title={DASHBOARD_WIDGET_LABELS.week.name}>
-      <dl className="grid grid-cols-3 gap-2 text-center">
+    <>
+      <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
         {tiles.map(({ label, value }) => (
           <div key={label} className="flex flex-col-reverse">
             <dt className="text-sm text-muted">{label}</dt>
@@ -444,7 +653,7 @@ function WeekCard({
       <p className="mt-2 text-sm text-muted">
         Ohne Aufwärmsätze; Stufen und Halteübungen zählen nicht zum Volumen.
       </p>
-    </Card>
+    </>
   );
 }
 

@@ -904,6 +904,25 @@ describe('Timer und Fortschrittsfotos', () => {
     expect(other.backup.tables.habits[0]).toMatchObject({ icon: 'star' });
     expect(other.backup.tables.goals[0]).toMatchObject({ icon: 'music' });
   });
+
+  it('behält Widget-Größen und ergänzt sie in Sicherungen aus DB-Version 30', async () => {
+    await updateSettings({ widgetSizes: { habits: 'small', steps: 'large' } });
+    const current = parseBackup(await validBackup());
+    if (!current.ok) throw new Error(current.error);
+    expect(current.backup.tables.settings[0]).toMatchObject({
+      widgetSizes: { habits: 'small', steps: 'large' },
+    });
+
+    const data = await validBackup();
+    data.dbVersion = 30;
+    delete data.tables.settings[0].widgetSizes;
+    const result = parseBackup(data);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.backup.tables.settings[0]).toMatchObject({ widgetSizes: {} });
+
+    data.tables.settings[0].widgetSizes = { habits: 'riesig' };
+    expect(parseBackup(data).ok).toBe(false);
+  });
 });
 
 describe('Sicherungen aus DB-Version 10', () => {

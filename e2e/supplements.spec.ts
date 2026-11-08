@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { confirmStart, dailyTile, fillStepper, goOffline } from './helpers';
+import { confirmStart, dailyTile, fillStepper, goOffline, openSettings } from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -129,8 +129,8 @@ test('Supplements: anlegen, abhaken, Bestand, Trainingstage, Erinnerung und Widg
   await expect(page.getByRole('heading', { name: 'Supplements', level: 1 })).toBeVisible();
 
   // Warnschwelle in den Einstellungen
-  await openNav(page, 'Einstellungen');
-  const settings = card(page, 'Supplements');
+  await openSettings(page, 'Supplements');
+  const settings = page.getByRole('main');
   await fillStepper(settings, 'Warnung ab Restbestand für', '14');
   await expect(settings.getByLabel('Warnung ab Restbestand für', { exact: true })).toHaveValue(
     '14',

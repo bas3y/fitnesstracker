@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Download, type Page } from '@playwright/test';
 import { sampleFitRun } from '../src/test/importFiles';
-import { confirmStart, fillStepper, goOffline, skipRest } from './helpers';
+import { confirmStart, fillStepper, goOffline, openSettings, skipRest } from './helpers';
 
 function localStart(daysAgo: number, hour: number) {
   const date = new Date();
@@ -61,11 +61,12 @@ test('Ausdauer: Bestzeiten, Teilen-Bild, Statistik, Widget und Kalorien (offline
   context,
 }) => {
   const body = page.locator('body');
-  await page.goto('./#/settings');
+  await page.goto('./#/settings/training');
   await goOffline(page, context);
   await page.reload();
   await fillStepper(body, 'Max. Puls', '190');
-  const addBurned = page.getByRole('checkbox', { name: 'Verbrannte Kalorien zum Ziel addieren' });
+  await openSettings(page, 'Ernährung');
+  const addBurned = page.getByRole('switch', { name: 'Verbrannte Kalorien zum Ziel addieren' });
   await addBurned.click();
   await expect(addBurned).toBeChecked();
 
@@ -136,7 +137,16 @@ test('Ausdauer: Bestzeiten, Teilen-Bild, Statistik, Widget und Kalorien (offline
   await page.getByRole('button', { name: 'Anpassen' }).click();
   await page.getByRole('button', { name: 'Ausdauer hinzufügen' }).click();
   await page.getByRole('button', { name: 'Trainingstage hinzufügen' }).click();
+  await page
+    .getByRole('group', { name: 'Größe: Diese Woche' })
+    .getByRole('button', { name: 'Groß' })
+    .click();
   await page.getByRole('button', { name: 'Fertig' }).click();
+  await expect(
+    page.getByRole('list', { name: 'Trainingstage dieser Woche' }).getByRole('listitem', {
+      name: /trainiert$/,
+    }),
+  ).not.toHaveCount(0);
   const week = page.getByRole('list', { name: 'Ausdauer diese Woche' });
   await expect(week).toContainText('Laufen');
   await expect(page.getByTestId('week-endurance')).toContainText('Laufen');

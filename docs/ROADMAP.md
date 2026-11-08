@@ -1094,10 +1094,25 @@ Mit dem Nutzer beim Start abgestimmt (Entwürfe A/B/C als Artifact): **Variante 
 ### Schritt 18e – Seiten aufräumen & übersichtlicher machen
 **Ziel:** Bereich für Bereich (Startseite, Training, Alltag, Statistik, Einstellungen) neu sortieren und übersichtlicher machen, auf Basis von 18d. Vorher mit dem Nutzer durchgehen, was ihn je Seite stört.
 
+Mit dem Nutzer beim Start abgestimmt (Entwürfe als Artifact „Fitnesstracker 18e Entwürfe“): **Startseite wie im Entwurf** (Datum + „Heute“, Farbblöcke, kleine Kacheln) und **Widget-Größen klein/mittel/groß** (kurze/mittlere/lange Infos); **überall** runde Symbol-Buttons im Kopf, Pfeile als Symbole, Schalter statt Häkchen, gruppierte Listen; **Training** in Blöcke mit Kacheln wie im Alltag; **Alltag** große Zahlen in den Kacheln; **Statistik** Erfolge/Ziele als Kacheln, Filter in der Karte „Trainingstage“; **Einstellungen** mit Überkapiteln und Symbolen (Unterseiten). **Neues Logo** (neutral zu allen Paletten, nicht nur Training) – sechs Vorschläge gezeigt, Entscheidung des Nutzers steht aus.
+
 **Notizen:**
 - Gebaut:
+  - **Gemeinsame Bausteine** (`src/components/Page.tsx`): `HeaderButton`/`HEADER_ICON_BUTTON` (runder Kopf-Button), `CustomizeToggle` („Anpassen“/„Fertig“ als Stift/Haken, Name bleibt für Screenreader und E2E), `LinkGroup` + `GroupRow` (gruppierte Liste mit Symbol, Hinweis oder Wert, Pfeil), `MoreLink`. `Switch` (`src/components/Switch.tsx`, `input` mit Rolle `switch`) ersetzt Einstellungs-Häkchen (Einstellungen, Backup-Fotos, Block-Anpassen/Overload, Bestand, Kochgewicht, Einseitig, Ausgeblendete); Auswahllisten beim Import bleiben Checkboxen. `IconBadge` mit `solid`. `Tile` mit `state`/`value`. Neue Symbole `grip`, `filter`, `history`, `user`, `shield`, `clipboard`, `calendarPlus`. Alle `›`/`‹`/`▾`/`▸` durch Pfeil-Symbole ersetzt.
+  - **Einstellungen:** Übersicht (`SettingsPage`) mit Profil-Farbblock und Gruppen „Bereiche“ (Training, Tagesziele, Ernährung, Supplements), „App & Daten“ (Darstellung, Datensicherung, Export & Speicher), „Mehr“ (Weitergeben, Über), je Zeile Kurzstand. Unterseiten `/settings/:section` (`SettingsSectionPage`, `settingsPath()`, `SETTINGS_SECTIONS` in `paths.ts`). Backup-Hinweis oben führt zu `/settings/backup`, Pulszonen-Hinweis zu Training, Supplements zu Supplements.
+  - **Training:** Startkarte, Block „Krafttraining“ (Kacheln Trainingspläne mit aktivem Plan, Verlauf mit Workouts im Monat, Übungen mit Favoriten, Nachtragen) und „Ausdauer“ (Sportarten wie bisher + Ausrüstung, Importieren). „Anpassen“ sortiert weiter die Sportarten.
+  - **Alltag:** Kacheln mit großer Zahl („3 von 5“, „1366 von 2000 kcal“, „2 offen“).
+  - **Statistik:** Kacheln „Erfolge“/„Ziele“ statt Kopf-Buttons; Zeitraum + Muskelgruppe in der Karte „Trainingstage“ (`ActivityCard`-Prop `filter`), die jetzt zuerst kommt.
+  - **Startseite:** Kopf mit Datum + „Heute“ (mit Namen „Hallo, …!“), Logo entfällt. Widgets im 2er-Raster, **Größen** `Settings.widgetSizes` (Dexie v31, Backup-Default `{}`), mögliche Größen je Widget in `src/domain/widgets.ts` (`WIDGET_SIZE_OPTIONS`, erste = Standard, `widgetSize`, `sizeChoices`), Auswahl S/M/L im Anpassen-Modus (`SizePicker`, Vorschau in der gewählten Größe). Kleine Widgets (`SmallWidget`, `SmallWidgets.tsx`): erste zwei als Farbblock (Akzent, Hellton). Neue Widgets **Schritte, Wasser, Schlaf** (`DailyMetricWidget`: klein Wert + Balken, mittel mit Rest/Buttons, groß mit 7-Tage-Balken). „Diese Woche“: klein Trainings/Wochenziel, mittel Tagespunkte Mo–So (`WeekDots`, `weekTrainings` in `src/domain/week.ts`), groß zusätzlich Sätze/Volumen/Ausdauer. Gewohnheiten/To-dos mittel = 3 offene; Fortschritt, Supplements, Ernährung, Ausdauer, Ziele, Serien auch klein.
+  - Tests: `widgets.test.ts`, `week.test.ts`, Migration v30→v31, Backup (Größen, Sicherung aus v30). E2E: Helfer `openSettings(page, Bereich)`, Einstellungen-Tests auf Unterseiten, Schalter (`getByRole('switch')`), Dashboard-Überschrift „Heute“, Größe wählen in `mvp1`, Einstellungs-Übersicht in `design`. 855 Unit-Tests, 114/114 E2E grün. Hauptbundle ~341 KB (vorher ~332, Widget-Varianten und Bausteine).
 - Abweichungen:
+  - Bestehende Startseiten behalten ihre Widgets; Schritte/Wasser/Schlaf fügt man über „Anpassen“ hinzu (Standardaufbau neuer Installationen unverändert).
+  - Nicht jedes Widget hat alle drei Größen (Listen und Heatmap nur mittel/groß, Kennzahlen alle drei).
+  - Die Farbblöcke der kleinen Widgets richten sich nach der Reihenfolge der kleinen Widgets in der Auswahl.
 - Offene Punkte:
+  - **Logo:** Entscheidung des Nutzers (Vorschläge 1–6), dann `public/favicon.svg` + `npm run icons`, ggf. Logo im Willkommen/Über.
+  - **Handytest** (mit dem 18c-Push): Lesbarkeit der kleinen Widgets, Schalter, Einstellungs-Unterseiten.
+  - Vor dem nächsten Push an ein Backup erinnern (DB-Version 28 → 31).
 
 ### Schritt 19 – PDF-Export/Berichte
 Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.

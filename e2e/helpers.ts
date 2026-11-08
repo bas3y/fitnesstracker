@@ -68,6 +68,16 @@ export async function skipRest(page: Page) {
   await expect(timer).toHaveCount(0);
 }
 
+/** Einstellungen über die Navigation öffnen und dort einen Bereich (Unterseite) wählen */
+export async function openSettings(page: Page, section: string) {
+  await page
+    .getByRole('navigation', { name: 'Hauptnavigation' })
+    .getByText('Einstellungen')
+    .click();
+  await page.getByRole('main').getByRole('link', { name: section }).click();
+  await expect(page.getByRole('heading', { level: 1, name: section })).toBeVisible();
+}
+
 /** Symbol im Formular wählen (Fenster „Symbol wählen“) */
 export async function chooseIcon(page: Page, label: string) {
   await page.getByRole('button', { name: /Symbol ändern/ }).click();

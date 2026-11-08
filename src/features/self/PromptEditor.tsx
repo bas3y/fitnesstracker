@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { inputField, primaryButton } from '../../components/buttons';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
-import { Card } from '../../components/Page';
+import { Card, CustomizeToggle } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
 import {
   addJournalPrompt,
@@ -153,13 +153,5 @@ function PromptName({ prompt }: { prompt: JournalPrompt }) {
 
 /** Schaltet zwischen Inhalt und „Anpassen“ um (Kopfzeile der Seite) */
 export function CustomizeButton({ editing, onToggle }: { editing: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      className="min-h-11 shrink-0 rounded-xl border border-line-strong px-3 text-sm font-semibold"
-      onClick={onToggle}
-    >
-      {editing ? 'Fertig' : 'Anpassen'}
-    </button>
-  );
+  return <CustomizeToggle editing={editing} onChange={onToggle} />;
 }
