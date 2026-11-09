@@ -140,9 +140,9 @@ function HistoryCard({
               <p className={HINT} data-testid="block-legend">
                 <span
                   aria-hidden="true"
-                  className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-warn"
+                  className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-mark"
                 />
-                Orange: Trainingsblock mit angepassten Sätzen (z. B. Deload)
+                Farbiger Punkt: Trainingsblock mit angepassten Sätzen (z. B. Deload)
               </p>
             )}
             {first !== undefined && last !== undefined && chartPoints.length > 1 ? (

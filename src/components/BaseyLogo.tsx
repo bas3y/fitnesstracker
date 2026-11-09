@@ -6,7 +6,7 @@ import {
   type LogoVariant,
 } from '../brand/logo';
 
-/** Basey-Logo (SVG aus `src/brand/logo.ts`); Größe über `className`. Schriftzug: `BaseyWordmark` */
+/** Basey-Logo (Schriftzug auf Artwork, SVG aus `src/brand/logo.ts`); Größe über `className` */
 export function BaseyLogo({
   variant = DEFAULT_LOGO_VARIANT,
   shape,

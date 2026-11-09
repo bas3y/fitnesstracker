@@ -44,7 +44,8 @@ test('Import: FIT, GPX und ZIP mit Vorschau, Ergänzen und Duplikaten (offline)'
 }) => {
   const body = page.locator('body');
   const morning = localStart(2, 6);
-  const evening = localStart(1, 18);
+  // Heute (nicht gestern): Die Kachel zeigt die laufende Woche, montags wäre gestern Vorwoche
+  const evening = localStart(0, 0);
   const fit = sampleFitRun(runOf(morning.time));
   const gpx = sampleGpx(runOf(evening.time), { name: 'Abendrunde' });
 

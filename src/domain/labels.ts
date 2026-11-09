@@ -31,7 +31,7 @@ export const BLOCK_KIND_LABELS: Record<BlockKind, string> = {
 };
 
 export const PALETTE_LABELS: Record<ColorPalette, string> = {
-  basey: 'Basey',
+  basey: 'Standard',
   green: 'Grün',
   red: 'Rot',
   blue: 'Blau',

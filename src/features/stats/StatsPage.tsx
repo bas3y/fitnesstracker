@@ -217,9 +217,9 @@ function Bar({
   value: string;
   /** Balkenlänge 0–1 */
   share: number;
-  tone?: 'good' | 'warn' | 'bad';
+  tone?: 'good' | 'low' | 'bad';
 }) {
-  const color = { good: 'bg-primary', warn: 'bg-warn', bad: 'bg-danger' }[tone];
+  const color = { good: 'bg-primary', low: 'bg-mark', bad: 'bg-danger' }[tone];
   return (
     <li>
       <div className="flex justify-between gap-3 text-sm">
@@ -253,15 +253,19 @@ function VolumeCard({ volumes }: { volumes: MuscleVolume[] }) {
                 share={setsPerWeek / top}
                 tone={
                   MAJOR_MUSCLES.includes(muscle) && setsPerWeek < NEGLECTED_SETS_PER_WEEK
-                    ? 'warn'
+                    ? 'low'
                     : 'good'
                 }
               />
             ))}
           </ul>
           <p className={`${HINT} mt-2`}>
-            Durchschnitt im Zeitraum, Hilfsmuskeln zählen halb. Orange = unter{' '}
-            {NEGLECTED_SETS_PER_WEEK} Sätzen.
+            Durchschnitt im Zeitraum, Hilfsmuskeln zählen halb.{' '}
+            <span
+              aria-hidden="true"
+              className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-mark"
+            />
+            Große Muskelgruppen unter {NEGLECTED_SETS_PER_WEEK} Sätzen.
           </p>
         </>
       )}

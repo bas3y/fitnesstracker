@@ -4,17 +4,17 @@ import { goOffline, openSettings } from './helpers';
 test.describe('mit Animationen', () => {
   test.use({ reducedMotion: 'no-preference' });
 
-  test('Ladebildschirm mit Basey-Logo dreht ein und verschwindet', async ({ page }) => {
+  test('Ladebildschirm: Artwork der Palette, Schriftzug blendet ein', async ({ page }) => {
     await page.goto('./');
     const splash = page.locator('#splash');
-    await expect(splash.locator('.splash-logo .logo-ring')).toHaveCount(1);
+    await expect(splash.locator('.splash-art svg')).toHaveCount(1);
     // Die App darunter scheint nicht durch (unten auf dem Handy war die Startseite zu sehen)
     await expect(page.locator('#root')).toBeHidden();
-    // Ring und Kugel sind eigene Ebenen (flüssige Animation auf der Grafikkarte)
-    await expect(splash.locator('.splash-ring .logo-ball')).toHaveCount(0);
-    await expect(splash.locator('.splash-logo .logo-ball')).toHaveCount(1);
-    // Für Screenreader verborgen (`aria-hidden`), deshalb per Selektor
+    // Kein Ring mehr, nur der Name (für Screenreader verborgen, deshalb per Selektor)
+    await expect(splash.locator('.logo-ring')).toHaveCount(0);
     await expect(splash.locator('.splash-word svg[aria-label="Basey"]')).toBeAttached();
+    // Standardpalette: dunkles Taupe
+    await expect(splash).toHaveCSS('background-color', 'rgb(20, 17, 14)');
     const animations = await splash.evaluate((element) =>
       element.getAnimations({ subtree: true }).map((animation) => animation.constructor.name),
     );
@@ -22,6 +22,19 @@ test.describe('mit Animationen', () => {
 
     await expect(splash).toHaveCount(0, { timeout: 5000 });
     await expect(page.getByRole('heading', { level: 1, name: 'Heute' })).toBeVisible();
+
+    // Andere Palette: Ladebildschirm in ihren Farben
+    await openSettings(page, 'Darstellung');
+    await page
+      .getByRole('radiogroup', { name: 'Farbpalette' })
+      .getByRole('radio', { name: 'Grün' })
+      .click();
+    await expect(page.locator('html')).toHaveAttribute('data-palette', 'green');
+    await page.reload();
+    await expect(page.locator('#splash')).toHaveCSS('background-color', 'rgb(1, 36, 24)');
+    await expect(
+      page.locator('#splash .splash-art pattern, #splash .splash-art filter[id$="-sp0"]'),
+    ).toHaveCount(1);
   });
 });
 
@@ -34,7 +47,7 @@ test('Name, Logo-Auswahl und iPhone-Icon (offline)', async ({ page, context }) =
   await openSettings(page, 'Darstellung');
   const logos = page.getByRole('radiogroup', { name: 'App-Logo' });
   await expect(logos.getByRole('radio')).toHaveCount(4);
-  await expect(logos.getByRole('radio', { name: 'Charcoal Satin' })).toHaveAttribute(
+  await expect(logos.getByRole('radio', { name: 'Graphite Mesh' })).toHaveAttribute(
     'aria-checked',
     'true',
   );

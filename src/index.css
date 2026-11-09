@@ -19,6 +19,9 @@
   --p-accent-text: var(--p-strong);
   --p-danger: #c62828;
   --p-danger-dark: #f87171;
+  /* Hervorhebung (auffällig, passend zur Palette): Markierungen, Fälliges, zu wenig */
+  --p-pop: #d6336c;
+  --p-pop-dark: #f783ac;
 
   --page: color-mix(in oklab, var(--p-light) 22%, #f5f5f7);
   --surface: #ffffff;
@@ -52,15 +55,15 @@
   --info: #0369a1;
   --info-soft: #e0f2fe;
   --on-info-soft: #0c4a6e;
-  /* Markierung von Trainingsblöcken */
-  --mark: #c2410c;
+  /* Hervorhebung: Trainingsblöcke, zu wenige Sätze, Fälliges, Serien */
+  --mark: var(--p-pop);
   --star: #f59e0b;
   --scrim: rgb(0 0 0 / 0.55);
   --soft-bg: var(--primary-soft);
   --soft-fg: var(--on-primary-soft);
 }
 
-/* Basey: Taupe und Anthrazit wie das Logo (Standard für neue Installationen) */
+/* Standard (intern "basey"): Taupe und Anthrazit, Hervorhebung Zinnober */
 :root[data-palette='basey'] {
   --p-light: #e8d9c2;
   --p-mid: #bea98e;
@@ -69,6 +72,8 @@
   --p-accent-dark: #bea98e;
   --p-on-accent-dark: #0c0c0c;
   --p-accent-text: var(--p-strong);
+  --p-pop: #d9480f;
+  --p-pop-dark: #ff8a4c;
 }
 
 :root[data-palette='red'] {
@@ -82,6 +87,8 @@
   /* Rot ist hier die Akzentfarbe: Gefahr wird Orange-Rot */
   --p-danger: #c2410c;
   --p-danger-dark: #fb923c;
+  --p-pop: #b26b00;
+  --p-pop-dark: #fcc419;
 }
 
 :root[data-palette='blue'] {
@@ -92,6 +99,8 @@
   --p-accent-dark: #a6c5d7;
   --p-on-accent-dark: #000926;
   --p-accent-text: var(--p-strong);
+  --p-pop: #e8590c;
+  --p-pop-dark: #ff922b;
 }
 
 :root[data-palette='violet'] {
@@ -102,6 +111,8 @@
   --p-accent-dark: #c9a3d6;
   --p-on-accent-dark: #2e1a47;
   --p-accent-text: var(--p-strong);
+  --p-pop: #0c8599;
+  --p-pop-dark: #3bc9db;
 }
 
 :root.dark {
@@ -140,7 +151,7 @@
   --info: #7dd3fc;
   --info-soft: color-mix(in oklab, #0ea5e9 18%, #1c1c20);
   --on-info-soft: #bae6fd;
-  --mark: #fb923c;
+  --mark: var(--p-pop-dark);
 }
 
 /*

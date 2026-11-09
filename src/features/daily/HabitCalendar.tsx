@@ -20,7 +20,7 @@ const monthButton =
 
 /**
  * Monatsansicht; Antippen trägt einen Tag nach oder nimmt ihn zurück. Bei „Aufhören“ nur Anzeige
- * (grün = im Limit, orange = darüber), Mengen werden auf der Alltag-Seite eingetragen.
+ * (Akzent = im Limit, Hervorhebung = darüber), Mengen werden auf der Alltag-Seite eingetragen.
  */
 export function HabitCalendar({ item, today }: { item: HabitWithChecks; today: DayKey }) {
   const { habit, dates, entries } = item;

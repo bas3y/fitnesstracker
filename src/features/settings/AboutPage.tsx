@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Card, Page } from '../../components/Page';
 import { BaseyLogo } from '../../components/BaseyLogo';
-import { BaseyWordmark } from '../../components/BaseyWordmark';
 import { SEED_VERSION } from '../../db/seed';
 import { useSettings } from './useSettings';
 
@@ -11,8 +10,11 @@ export function AboutPage() {
     <Page title="Über & Lizenzen" backTo="/settings">
       <Card>
         <div className="mb-3 flex items-center gap-4">
-          <BaseyLogo variant={settings?.logoVariant} className="h-16 w-16" />
-          <BaseyWordmark tagline className="w-32" />
+          <BaseyLogo variant={settings?.logoVariant} label="Basey" className="h-16 w-16" />
+          <div>
+            <p className="text-lg font-bold">Basey</p>
+            <p className="text-sm text-muted">Fitness & Lifestyle</p>
+          </div>
         </div>
         <p className="text-sm text-muted">
           Offline-App für Training und Alltag. Alle Daten bleiben auf diesem Gerät – es gibt keinen

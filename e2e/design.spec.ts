@@ -8,12 +8,12 @@ test('Farbpalette und Dunkelmodus wählen, bleiben nach dem Neuladen (offline)',
   await page.goto('./#/settings/appearance');
   await goOffline(page, context);
   const root = page.locator('html');
-  // Neue Installation: Palette „Basey“
+  // Neue Installation: Palette „Standard“ (intern basey)
   await expect(root).toHaveAttribute('data-palette', 'basey');
 
   const palettes = page.getByRole('radiogroup', { name: 'Farbpalette' });
   await expect(palettes.getByRole('radio')).toHaveCount(5);
-  await expect(palettes.getByRole('radio', { name: 'Basey' })).toHaveAttribute(
+  await expect(palettes.getByRole('radio', { name: 'Standard' })).toHaveAttribute(
     'aria-checked',
     'true',
   );

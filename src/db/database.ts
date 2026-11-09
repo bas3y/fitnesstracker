@@ -590,6 +590,17 @@ export class AppDatabase extends Dexie {
             settings.palette = 'basey';
           }),
       );
+    // Logo = Schriftzug auf Artwork, neuer Standard Graphite Mesh (alter Standard Charcoal wechselt)
+    this.version(34)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            if (settings.logoVariant === 'charcoal') settings.logoVariant = DEFAULT_LOGO_VARIANT;
+          }),
+      );
   }
 }
 

@@ -11,6 +11,15 @@ const SWATCHES: Record<ColorPalette, readonly string[]> = {
   violet: ['#e6c7e6', '#a3779d', '#663399', '#2e1a47'],
 };
 
+/** Hervorhebung je Palette (`--p-pop`) */
+const POP: Record<ColorPalette, string> = {
+  basey: '#d9480f',
+  green: '#d6336c',
+  red: '#b26b00',
+  blue: '#e8590c',
+  violet: '#0c8599',
+};
+
 export function PalettePicker({
   value,
   onChange,
@@ -41,6 +50,12 @@ export function PalettePicker({
               {SWATCHES[palette].map((color) => (
                 <span key={color} style={{ backgroundColor: color }} />
               ))}
+              {!checked && (
+                <span
+                  className="absolute top-1/2 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
+                  style={{ backgroundColor: POP[palette] }}
+                />
+              )}
               {checked && (
                 <span className="absolute inset-0 flex items-center justify-center">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-fg shadow">

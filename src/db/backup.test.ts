@@ -896,7 +896,7 @@ describe('Timer und Fortschrittsfotos', () => {
     delete data.tables.settings[0].logoVariant;
     const result = parseBackup(data);
     if (!result.ok) throw new Error(result.error);
-    expect(result.backup.tables.settings[0]).toMatchObject({ logoVariant: 'charcoal' });
+    expect(result.backup.tables.settings[0]).toMatchObject({ logoVariant: 'graphite' });
 
     data.tables.settings[0].logoVariant = 'gold';
     expect(parseBackup(data).ok).toBe(false);

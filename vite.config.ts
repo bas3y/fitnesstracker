@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { SPLASH_BACKGROUND, SPLASH_CSS, splashHtml } from './src/brand/splashHtml.ts';
 
-// Android zeigt beim Start Icon + Hintergrundfarbe, danach übernimmt der Ladebildschirm
+// Android zeigt beim Start Icon + Hintergrundfarbe (Standardpalette), danach übernimmt der Ladebildschirm
 const THEME_COLOR = SPLASH_BACKGROUND;
 const BACKGROUND_COLOR = SPLASH_BACKGROUND;
 

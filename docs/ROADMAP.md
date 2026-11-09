@@ -1160,6 +1160,14 @@ Mit dem Nutzer beim Start abgestimmt (Entwürfe als Artifact „Fitnesstracker 1
   - **Basey für alle:** Dexie v33 stellt jedes Gerät einmalig auf die Palette „Basey“ (danach frei wählbar). Palette **Graphit entfernt** (zu ähnlich zu Basey); Backups mit `graphite` werden beim Import zu `basey`.
   - **Ladebildschirm länger:** Animation langsamer (Ring 1,05 s, Kugel ab 0,75 s, Schriftzug ab 0,95 s), steht mindestens 2,2 s ab Seitenstart, auch wenn die App früher bereit ist (`SPLASH_ANIMATION_MS`), dann 0,4 s Ausblenden.
   - Ideen für später: Schriftzug auch im Seitenkopf der Startseite; Logo im Sticker-Format des Teilen-Bilds; eigene iOS-Startbilder.
+- Nachtrag 2 (09.11.2026, Nutzerwunsch nach dem Handytest):
+  - **Logo ohne Ring:** Das App-Logo ist jetzt der Schriftzug „Basey“ (wie bei Uber) auf einem Artwork aus dem Poster-Raster des Artifacts „Basey Logo“ (breites Band mit Lichtern, Rauschen und Struktur). `src/brand/artwork.ts` (`artworkSvg`, Charakter `silk`/`mesh`/`speckle`/`satin`, 420er-Raster), `logo.ts` nutzt es (`LOGO_ARTWORKS`). Ring, Kugel und `parts`/`scale` entfallen. **Standard Graphite Mesh** (Dexie v34: wer noch den alten Standard Charcoal hatte, wechselt; andere Wahl bleibt; Backup-Default `graphite`). Icons neu erzeugt (Maskable ohne Verkleinern, Schriftzug 60 % Breite liegt in der sicheren Zone).
+  - **Ladebildschirm farbig je Palette:** Kein Logo/Ring mehr, nur der Name blendet über dem Artwork ein (Artwork 0,7 s weich ein, Name ab 0,45 s, Mindestdauer 1,9 s). Je Palette ein Artwork mit ihrem Charakter (`PALETTE_ARTWORKS`): Standard = Taupe-Seide, Grün = gesprenkelter Stein, Rot = glänzender Satin, Blau = Mesh, Violett = Seide; Hintergrund in der dunklen Palettenfarbe. Das Artwork steht wie ein Poster über die ganze Breite (`min(140vw, 100vh)`). Android-Startbild/`theme_color` = Hintergrund der Standardpalette `#14110e`.
+  - **Palette „Basey“ heißt „Standard“** (intern weiter `basey`).
+  - **Hervorhebungsfarbe je Palette** (`--p-pop`/`--p-pop-dark` → Token `mark`): Standard Zinnober, Grün Pink, Rot Gold, Blau Orange, Violett Petrol. Vorher war `mark` fest Orange und „zu wenige Sätze“ nutzte `warn` (Braun-Orange), das in der Standardpalette im Akzent-Braun unterging. Vorschau als Punkt im `PalettePicker`.
+  - **„Sätze pro Woche“:** Balken unter 4 Sätzen (große Muskelgruppen) jetzt in `mark`, Legende mit Farbpunkt statt „Orange = …“ (der Text passte nicht zur Farbe). Ebenso die Block-Legende in der Übungsstatistik (Punkt war `warn`, Diagramm-Markierung `mark`).
+  - **Teilen-Bild:** Logo entfernt, nur der Schriftzug „Basey“ unten links. Über-Seite: Logo + Name/Untertitel als Text (`BaseyWordmark` entfernt).
+  - Offene Punkte: Handytest (Ladebildschirm je Palette, Icon auf dem Home-Bildschirm, Lesbarkeit von `mark`). Vor dem nächsten Push an ein Backup erinnern (DB-Version 33 → 34).
 
 ### Schritt 19 – PDF-Export/Berichte
 Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.

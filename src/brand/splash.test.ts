@@ -7,9 +7,9 @@ describe('logo variant storage', () => {
   });
 
   it('falls back to the default variant', () => {
-    expect(storedLogoVariant()).toBe('charcoal');
+    expect(storedLogoVariant()).toBe('graphite');
     localStorage.setItem(LOGO_STORAGE_KEY, 'unknown');
-    expect(storedLogoVariant()).toBe('charcoal');
+    expect(storedLogoVariant()).toBe('graphite');
   });
 
   it('remembers the variant and switches the iPhone icon', () => {
@@ -17,7 +17,7 @@ describe('logo variant storage', () => {
     expect(storedLogoVariant()).toBe('stone');
     const link = document.querySelector('link[rel="apple-touch-icon"]')!;
     expect(link.getAttribute('href')).toBe('/apple-touch-icon-stone.png');
-    applyLogoVariant('charcoal');
+    applyLogoVariant('graphite');
     expect(link.getAttribute('href')).toBe('/apple-touch-icon.png');
   });
 });
