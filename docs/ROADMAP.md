@@ -39,7 +39,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 18e – Seiten aufräumen & übersichtlicher machen
 - [x] Schritt 18f – Neues Logo, Animationen & Ladebildschirm
 - [x] Schritt 19 – PDF-Export/Berichte
-- [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
+- [x] Schritt 20 – Veröffentlichung auf GitHub Pages
 
 > Gearbeitet wird bis Schritt 20 nur lokal (lokale Commits, kein Push). Schritt 20 kann auch früher gestartet werden, z. B. direkt nach Schritt 12, wenn die App vorher aufs Handy soll.
 
@@ -1230,9 +1230,10 @@ Mit dem Nutzer beim Start abgestimmt (10.11.2026): 18c als erledigt abhaken; **e
   - Tests: `dbStatus.test.ts`, `dataSummary.test.ts`, `ErrorBoundary.test.tsx`, Seed (Sperre, doppelter Lauf), `splash.test.ts`/`logo.test.ts`; E2E `e2e/safety.spec.ts` (Overscroll, Willkommen → Backup, Speicher-Info, Weitergeben offline; zweites Fenster hebt die DB-Version an → Hinweis „Neue Version geöffnet“), `branding.spec.ts` (Bild statt SVG, nur Deckkraft animiert).
 - **Push 5 (10.11.2026):** Nutzer hat den Push freigegeben (keine DB-Änderung, Version bleibt 35). Gepusht `4db6412..4e75fec` (enthält auch Schritt 19), Run 42899517460 grün, live (`splash-basey.webp` im `sw.js`). Handytest steht aus.
 - URL: https://bas3y.github.io/fitnesstracker/ (seit 18c/Push 4; Repo, Action und Pages bestehen seit 2b)
-- Ergebnis Android:
-- Ergebnis iPhone:
+- Ergebnis Handytest (10.11.2026): Nutzer meldet „hat gepasst“ (Ladebildschirm, erster Start, Leiste, Speicher-Info, Flugmodus, Backup, PDF laut Liste). Geräte nicht einzeln genannt.
 - Offene Punkte:
+  - Ideen: Ausdauer aller Sportarten in einer CSV; einzelnes Workout als Datei exportieren.
+  - Ladebildschirm-Bilder zeigen das feine Rauschen (10 % Deckkraft) kaum noch – auf dem Gerät unauffällig.
 
 ---
 
