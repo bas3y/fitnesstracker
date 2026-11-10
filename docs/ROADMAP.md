@@ -40,6 +40,19 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 18f – Neues Logo, Animationen & Ladebildschirm
 - [x] Schritt 19 – PDF-Export/Berichte
 - [x] Schritt 20 – Veröffentlichung auf GitHub Pages
+- [ ] Schritt 21 – Standards übernehmen (Regeln, Skills, SECURITY.md)
+- [ ] Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
+- [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
+- [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
+- [ ] Schritt 25 – Körpermodell im Training
+- [ ] Schritt 26 – Kalorienziel über Gewichtsverlauf (adaptiv)
+- [ ] Schritt 27 – Belastung & Regeneration (Laufcoach)
+- [ ] Schritt 28 – Körperanalyse (BIA: InBody, seca)
+- [ ] Schritt 29 – Diagnostik-Berichte (Ovida u. a.) → Training & Ernährung
+- [ ] Schritt 30 – Geräte-Codes an Maschinen (QR + NFC)
+- [ ] Schritt 31 – KI-Grundlage: Fragen beantworten
+- [ ] Schritt 32 – KI: Eintragen, Foto-Kalorien, Anpassungsvorschläge
+- [ ] Schritt 33 – Sync & Trainer-Freigabe (+ Push & Handytest 21–33)
 
 > Gearbeitet wird bis Schritt 20 nur lokal (lokale Commits, kein Push). Schritt 20 kann auch früher gestartet werden, z. B. direkt nach Schritt 12, wenn die App vorher aufs Handy soll.
 
@@ -1237,14 +1250,132 @@ Mit dem Nutzer beim Start abgestimmt (10.11.2026): 18c als erledigt abhaken; **e
 
 ---
 
+## Phase 7 – Basey Pro: Standards, Zugang, Coach & KI
+
+Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
+- **Standards:** Ein Freund hat ein privates GitHub-Repo „standards“ (allgemeine Regeln, Skills, Vorlagen, `SECURITY.md` für Software mit Claude). Wird als erster Schritt übernommen, vor allem vor dem Server. Ab Schritt 21 gelten diese Standards zusätzlich zu den Projektregeln.
+- **Zugang & Bezahlung:** Der Nutzer will bestimmen, wer die App nutzt, und Geld dafür verlangen – nicht einfach per Link teilbar. Entscheidung: **echter Schutz mit Server** (Anmeldung + serverseitige Lizenz), **Bezahlung manuell** (Admin legt Kunden an/verlängert), **Admin-Bereich** und **Trainer sieht Kundendaten** (braucht Sync). Die App bleibt offline voll nutzbar und prüft die Lizenz gelegentlich online (Kulanzzeit, z. B. 14 Tage), danach Sperrbildschirm – Daten bleiben, Backup-Export geht weiter.
+- **Server:** Vorschlag Supabase EU (Frankfurt: Auth, Postgres mit Row Level Security, Edge Functions), Alternative Cloudflare (Workers + D1); final in Schritt 23 nach den Security-Standards. **Repo wird privat**, Hosting zieht von GitHub Pages weg (z. B. Cloudflare Pages/Netlify), eigene Domain empfohlen. Neue Adresse = neuer, leerer Speicher → Umzug per Backup mit Hinweis in der alten App.
+- **KI:** Anbindung an ein LLM eines Anbieters, Daten sind **vertraulich** → Aufruf nur über den eigenen Server (Schlüssel nie im Client), Anbieter mit EU-Verarbeitung/AVV, kein Training mit den Daten, möglichst Zero Data Retention. Freigabe je Datenbereich, Vorschau der gesendeten Daten.
+- **Rechtliches** (Nutzer klärt selbst, keine Rechtsberatung): Gewerbe, Impressum, Datenschutzerklärung, AVV mit Anbietern, Gesundheitsdaten = besondere Kategorie (Art. 9 DSGVO) → ausdrückliche Einwilligung.
+- **Grundsätze:** Lokale Daten bleiben der Hauptspeicher. Vorschläge (Kalorienziel, HF-Zonen, Plan, KI-Einträge) werden **nie automatisch übernommen**, immer mit Bestätigung. Neue Tabellen nur per Dexie-Version + Backup. Online-Funktionen offline ausgegraut („Nur mit Internet“).
+- Recherche Analysen: InBody (LookinBody 120/LB-Web) exportiert CSV/Excel; seca (mBCA/seca analytics) ohne öffentliche Formatangabe; „Ovida Diagnostics“ online nicht auffindbar → Beispieldateien vom Nutzer.
+
+### Schritt 21 – Standards übernehmen (Regeln, Skills, SECURITY.md)
+**Ziel:** Die Standards des Freundes gelten im Projekt, der bestehende Code ist dagegen geprüft.
+- **Voraussetzung:** Nutzer stellt das Repo bereit (Einladung bzw. geklont/heruntergeladen, Pfad nennen). Inhalt komplett lesen; Erlaubnis des Freundes zur Übernahme/Lizenz beachten.
+- Übernehmen: `SECURITY.md` ins Repo, allgemeine Regeln in `CLAUDE.md` (bei Widerspruch zu bestehenden Projektregeln mit dem Nutzer entscheiden), Skills nach `.claude/skills/`, Vorlagen (Issue/PR/Commit o. ä.) wo sie passen.
+- **Bestandsprüfung** gegen die Security-Regeln, z. B.: Content-Security-Policy, Abhängigkeiten (`npm audit`), Import-Parser gegen große/bösartige Dateien (FIT/ZIP/Apple Health), Backup-Import-Validierung, Open-Food-Facts-Abfrage, keine Geheimnisse im Repo/Verlauf. Funde beheben oder als offene Punkte notieren.
+- Security-Anforderungen für Server, Admin, KI und Sync (Schritte 23–33) als Checkliste hier in die ROADMAP übernehmen.
+
+**Notizen:**
+
+### Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
+**Ziel:** Fotos werden beim Hochladen nie verwechselt oder ersetzt; der Alltag-Verlauf ist Teil der Statistik.
+- **Fotos:** Fehler beim Hochladen nachstellen (Mehrfachauswahl, iPhone liefert oft `image.jpg`, mehrere Fotos am gleichen Tag/gleiche Ansicht). Metadaten und Bilddaten haben schon UUIDs (`addProgressPhoto`, `src/db/photos.ts`) – Ursache finden (Objekt-URLs, Reihenfolge, gleichzeitiges Speichern) und sicherstellen, dass jedes Foto eindeutig bleibt; Test für Mehrfach-Upload.
+- **Alltag in der Statistik:** eigene Ansicht `view=daily` in `useStatsFilter` (Gewicht, Schritte, Schlaf, Wasser, Ruhepuls/HRV) mit Zeitraum, nutzt `DailyHistoryCard`; Recharts nur lazy.
+
+**Notizen:**
+
+### Schritt 23 – Server-Grundlage, Anmeldung & Umzug
+**Ziel:** Nur angemeldete Personen mit gültiger Lizenz nutzen die App; sie läuft auf neuer, geschützter Adresse.
+- Mit dem Nutzer festlegen: Server-Anbieter (Region EU), Hosting, Domain. Repo privat schalten, neues Deploy (Secrets nur in CI/Server).
+- **Anmeldung:** Konten werden nur vom Admin angelegt bzw. per Einladung (keine freie Registrierung). Tabelle `licenses` (gültig bis, Rolle `user`/`trainer`/`admin`, gesperrt), abgesichert per Row Level Security.
+- **App:** Anmeldebildschirm, Lizenzprüfung beim Start mit Kulanzzeit offline, Sperrbildschirm (Backup-Export möglich); Abmelden löscht lokale Daten nur nach Rückfrage. Lizenzlogik in `src/domain/license.ts` + Tests.
+- **Umzug:** letzte Version auf GitHub Pages zeigt „Backup exportieren → neue Adresse öffnen → importieren“, danach nur noch Weiterleitung. README anpassen.
+- E2E mit gemocktem Server (`page.route`), offline mit gültiger und abgelaufener Kulanzzeit.
+
+**Notizen:**
+
+### Schritt 24 – Admin-Bereich & Nutzerverwaltung
+**Ziel:** Der Nutzer verwaltet Kunden selbst (manuelle Bezahlung).
+- Nur Rolle `admin`: Nutzer anlegen/einladen, Laufzeit verlängern, sperren, Rolle setzen (`user`/`trainer`), Notiz (z. B. „bezahlt bis …“), letzte Anmeldung.
+- Serverseitig abgesichert (RLS/Edge Function), nicht nur in der Oberfläche. Im Admin keine Gesundheitsdaten sichtbar.
+
+**Notizen:**
+
+### Schritt 25 – Körpermodell im Training
+**Ziel:** Unten auf der Trainingsseite sieht man an einer Figur (vorne/hinten), welche Muskeln wie viel trainiert wurden.
+- Eigene SVG-Figur (kein Paket), Muskelbereiche aus den Muskelgruppen der Übungen (primär/sekundär gewichtet).
+- Arbeitssätze je Muskel (Standard 7 Tage, Zeitraum wählbar), Farbintensität über Tokens (`--primary`/`mark`), Antippen → Muskel-Statistik.
+- Logik in `src/domain/` (Sätze je Muskel) + Tests; nicht ins Hauptbundle.
+
+**Notizen:**
+
+### Schritt 26 – Kalorienziel über Gewichtsverlauf (adaptiv)
+**Ziel:** Das Kalorienziel passt sich dem tatsächlichen Verbrauch an.
+- Verbrauch aus geglättetem Gewichtstrend + gegessenen Kalorien schätzen (rollierend 2–4 Wochen, nur Tage mit Einträgen, Wassergewicht-Schwankungen glätten).
+- Ziel abnehmen/halten/zunehmen mit Tempo; wöchentlicher Vorschlag für `Settings.nutritionGoals` mit Bestätigung, Verlauf der Schätzung.
+- Logik in `src/domain/energy.ts` + Tests (Lücken, wenige Daten, Ausreißer).
+
+**Notizen:**
+
+### Schritt 27 – Belastung & Regeneration (Laufcoach)
+**Ziel:** Sehen, wie belastet man ist und wann man wieder erholt ist.
+- Belastung je Einheit: TRIMP aus Puls (`trackSummary`), sonst Dauer × Bewertung; Kraft über Volumen je Muskel.
+- Akute/chronische Belastung, Erholungszeit je Einheit („erholt in ca. x h“), Hinweise bei Spitzen; Ruhepuls/HRV-Trend (14b) als Zusatzsignal.
+- Muskel-Erholung im Körpermodell (Schritt 25). Widget + Karte auf der Trainingsseite.
+
+**Notizen:**
+
+### Schritt 28 – Körperanalyse (BIA: InBody, seca)
+**Ziel:** Messungen von InBody/seca übernehmen und auswerten.
+- Neue Tabelle `bodyCompositions` (Fettanteil, Muskelmasse, Körperwasser, viszerales Fett, Grundumsatz, Segmente optional, Gerät, `source`).
+- Import: InBody-CSV/Excel (LookinBody-Export), seca nach Beispieldatei des Nutzers; sonst Formular. Parser lazy in `src/domain/import/`.
+- Anzeige im Körper-Bereich, in der Statistik und als Ziel (Fettanteil, Muskelmasse); Grundumsatz als Vorschlag für Schritt 26.
+
+**Notizen:**
+
+### Schritt 29 – Diagnostik-Berichte (Ovida u. a.) → Training & Ernährung
+**Ziel:** Ergebnisse aus Leistungs-/Stoffwechseldiagnostik wirken sich auf Training und Ernährung aus.
+- Beim Start Beispiel-PDF vom Nutzer, Inhalt klären (Grundumsatz/Stoffwechsel, Laktat-/HF-Schwellen, Zonen, Empfehlungen).
+- PDF-Text lokal auslesen (Bibliothek gebündelt + lazy oder eigener Leser), erkannte Werte zur Prüfung anzeigen, sonst Formular; PDF optional als Anhang speichern.
+- Auswirkungen mit Bestätigung: Schwellen/HF-Zonen → Einstellungen, Grundumsatz/Verbrauch → Kalorienziel (Schritt 26), Laufbereiche → Pace-Zonen.
+
+**Notizen:**
+
+### Schritt 30 – Geräte-Codes an Maschinen (QR + NFC)
+**Ziel:** Code an der Maschine scannen → Übung ist im Training.
+- Je Übung einen Code erzeugen: QR als PDF zum Drucken (PDF-Baustein), NFC-Tag beschreiben auf Android (Web NFC). Der Code enthält nur eine App-interne Übungskennung (kein Link – sonst öffnet das iPhone Safari statt der installierten App).
+- Scannen in der App: QR über `detector.ts` (iPhone + Android), NFC nur Android → Übung ins laufende Workout bzw. Start mit Bestätigung, letzte Last vorbelegt.
+
+**Notizen:**
+
+### Schritt 31 – KI-Grundlage: Fragen beantworten
+**Ziel:** „Frag Basey“ beantwortet Fragen zu den eigenen Daten, vertraulich.
+- KI-Proxy auf dem Server (Edge Function): Anbieter-Schlüssel nur dort, keine Speicherung von Inhalten, Kontingent je Nutzer (Kosten). Anbieter nach AVV/EU/Zero Data Retention wählen (Kandidaten: Anthropic Claude API, Mistral EU, Azure OpenAI EU).
+- Einwilligung + Freigabe je Datenbereich (Training, Ernährung, Alltag, Gesundheit; Journal standardmäßig aus), Vorschau „Das wird gesendet“, keine Namen.
+- Chat mit lesenden Werkzeugen auf die lokalen Daten, nur nötige Ausschnitte senden. Offline ausgegraut.
+
+**Notizen:**
+
+### Schritt 32 – KI: Eintragen, Foto-Kalorien, Anpassungsvorschläge
+**Ziel:** Die KI trägt auf Wunsch ein, schätzt Mahlzeiten aus Fotos und schlägt Anpassungen vor.
+- Schreibende Werkzeuge über die bestehenden `src/db/*`-Funktionen (Mahlzeit, Wasser, Gewicht, Satz, Gewohnheit …), jede Änderung als Vorschau mit „Übernehmen“.
+- Mahlzeitenfoto → Lebensmittel/Mengen schätzen → Abgleich mit der lokalen Lebensmittel-DB → bearbeitbar in der Mahlzeit; Bild verkleinert gesendet, nicht gespeichert.
+- Anpassungsvorschläge für Plan/Ernährung aus den Schritten 26–29 als erklärte Empfehlung, Übernahme nur mit Bestätigung.
+
+**Notizen:**
+
+### Schritt 33 – Sync & Trainer-Freigabe
+**Ziel:** Ein Trainer sieht freigegebene Daten seiner Kunden.
+- Sync der freigegebenen Bereiche zum Server (nutzt UUID/`updatedAt`/`deletedAt`, letzter Stand gewinnt je Datensatz).
+- Kunde wählt Trainer + Bereiche, jederzeit widerrufbar; Trainer-Ansicht (Kundenliste, Training/Ernährung/Körper lesen, ggf. Plan zuweisen).
+- Prüfen: Ende-zu-Ende-Verschlüsselung vs. serverseitige Auswertung; Fotos/Journal nie ohne ausdrückliche Freigabe.
+- Danach **Push & Handytest 21–33** (wie 18c), nur nach Freigabe.
+
+**Notizen:**
+
+---
+
 ## Phase 6 – Später mit Internet/Server (nur Ausblick, keine Schritte)
-- Server + Sync (nutzt vorbereitete UUIDs/Timestamps/Soft-Delete), Mehrbenutzer mit Admin-Rolle, Privatsphäre
+- ~~Server + Sync (nutzt vorbereitete UUIDs/Timestamps/Soft-Delete), Mehrbenutzer mit Admin-Rolle, Privatsphäre~~ → vorgezogen in Phase 7 (Schritte 23, 24, 33)
 - **„Multiplayer“-Modus** (Nutzerwunsch nach Schritt 15): Bis dahin nutzt jede Person die App über denselben Link mit eigenen Daten auf ihrem Gerät (Schritt 15b). Später überlegen, wie Geräte verbunden werden (Konto, Freunde, gemeinsame Pläne/Challenges) und ob dafür eine eigene, gehostete Version mit Server nötig ist.
 - Freunde, Pläne teilen, Ranglisten, Challenges
 - Garmin-Connect-/Strava-API, Schlaf/Ruhepuls/HRV-Übernahme, Online-Karten
 - ~~Barcode-Scanner mit Open Food Facts online~~ → vorgezogen als Schritt 15c
 - Push-Benachrichtigungen
-- KI-Funktionen (Trainingsanalyse, Planvorschläge über Claude API)
+- ~~KI-Funktionen (Trainingsanalyse, Planvorschläge über Claude API)~~ → vorgezogen in Phase 7 (Schritte 31, 32)
 
 ## Ideen-Parkplatz
 Ideen, die während der Umsetzung entstehen und keinem Schritt zugeordnet sind:
