@@ -37,6 +37,8 @@ import { BestEffortsCard } from '../endurance/BestEfforts';
 import { HeartRateZonesCard } from '../endurance/HeartRateZones';
 import { TRAINING_PATH } from '../training/paths';
 import { useEnduranceSessions } from '../endurance/useEndurance';
+import { createEnduranceCsvFile } from '../../db/workoutExport';
+import { StatsExportCard } from '../reports/StatsExportCard';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from './ActivityCard';
 import { useStatsFilter } from './statsFilter';
@@ -146,6 +148,14 @@ function EnduranceContent({
           showSport={!sport}
         />
       ))}
+      <StatsExportCard
+        hint="Gewählte Sportart und gewählter Zeitraum: als PDF mit Diagrammen, Bestzeiten und Einheiten oder als Tabelle (CSV), z. B. für Excel."
+        pdf={async () => {
+          const { createEnduranceReportFile } = await import('../reports/reportFiles');
+          return createEnduranceReportFile(sport, range);
+        }}
+        csv={() => createEnduranceCsvFile(unit, { sport, from: start ? dayKey(start) : null })}
+      />
     </>
   );
 }

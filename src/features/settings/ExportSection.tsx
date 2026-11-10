@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useFromHere } from '../../components/backNavigation';
 import { secondaryButton } from '../../components/buttons';
 import { Card } from '../../components/Page';
 import type { WeightUnit } from '../../db/types';
 import { createWorkoutsCsvFile } from '../../db/workoutExport';
+import { REVIEW_STATS_PATH } from '../stats/statsFilter';
 import { shareOrDownload } from './shareOrDownload';
 
 type Status = { kind: 'success' | 'error'; text: string } | null;
@@ -10,6 +13,7 @@ type Status = { kind: 'success' | 'error'; text: string } | null;
 export function ExportSection({ unit }: { unit: WeightUnit }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
+  const from = useFromHere();
 
   const handleExport = async () => {
     setBusy(true);
@@ -47,6 +51,14 @@ export function ExportSection({ unit }: { unit: WeightUnit }) {
           {status.text}
         </p>
       )}
+      <p className="mt-4 text-sm text-muted">
+        Wochen-, Monats- und Jahresberichte als PDF gibt es im{' '}
+        <Link to={REVIEW_STATS_PATH} state={from} className="font-semibold text-primary-text">
+          Rückblick der Statistik
+        </Link>
+        , einzelne Übungen und Ausdauer-Statistiken lassen sich dort ebenfalls als PDF oder CSV
+        exportieren.
+      </p>
     </Card>
   );
 }

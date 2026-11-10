@@ -1,6 +1,7 @@
-import type { WeightUnit, Workout, WorkoutSet } from '../db/types';
+import type { DistanceUnit, EnduranceSession, WeightUnit, Workout, WorkoutSet } from '../db/types';
 import { formatDecimal } from './format';
-import { kgToDisplay } from './units';
+import { ENDURANCE_SPORT_LABELS } from './labels';
+import { kgToDisplay, metersToDisplay } from './units';
 import { toDateInput, toTimeInput, workoutDurationSeconds } from './workout';
 
 // Semikolon, Dezimalkomma und BOM: So öffnet ein deutsches Excel die Datei direkt richtig
@@ -103,5 +104,61 @@ export function workoutsToCsv(
       );
   });
 
+  return toCsv(header, rows);
+}
+
+function toCsv(header: string[], rows: string[][]): string {
   return BOM + [header, ...rows].map((row) => row.join(SEPARATOR) + LINE_END).join('');
+}
+
+export type CsvEnduranceSession = Pick<
+  EnduranceSession,
+  | 'sport'
+  | 'title'
+  | 'startedAt'
+  | 'durationSeconds'
+  | 'distanceMeters'
+  | 'elevationGainMeters'
+  | 'avgHeartRate'
+  | 'maxHeartRate'
+  | 'calories'
+  | 'notes'
+>;
+
+/** Eine Zeile je Ausdauer-Einheit, älteste zuerst */
+export function enduranceSessionsToCsv(
+  sessions: readonly CsvEnduranceSession[],
+  unit: DistanceUnit,
+): string {
+  const header = [
+    'Datum',
+    'Uhrzeit',
+    'Sportart',
+    'Titel',
+    'Dauer (min)',
+    `Strecke (${unit})`,
+    'Höhenmeter (m)',
+    'Ø Puls',
+    'Max. Puls',
+    'Kalorien',
+    'Notiz',
+  ];
+  const rows = [...sessions]
+    .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
+    .map((session) => [
+      toDateInput(session.startedAt),
+      toTimeInput(session.startedAt),
+      textCell(ENDURANCE_SPORT_LABELS[session.sport].name),
+      textCell(session.title),
+      numberCell(session.durationSeconds / 60),
+      numberCell(
+        session.distanceMeters === null ? null : metersToDisplay(session.distanceMeters, unit),
+      ),
+      numberCell(session.elevationGainMeters),
+      numberCell(session.avgHeartRate),
+      numberCell(session.maxHeartRate),
+      numberCell(session.calories),
+      textCell(session.notes),
+    ]);
+  return toCsv(header, rows);
 }

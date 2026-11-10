@@ -5,12 +5,10 @@ import { useFromHere } from '../../components/backNavigation';
 import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { loadReviewInput } from '../../db/review';
-import type { DayKey, Goal, Settings } from '../../db/types';
+import type { DayKey, Settings } from '../../db/types';
 import { dayKey } from '../../domain/daily';
-import { formatDistance, formatTotals, type DayRange } from '../../domain/endurance';
-import { formatDecimal } from '../../domain/format';
-import { formatGoalDate, goalName, goalProgress, goalSubject } from '../../domain/goals';
-import { formatHabitAmount } from '../../domain/habits';
+import { formatTotals, type DayRange } from '../../domain/endurance';
+import { formatGoalDate, goalName, goalsAchievedIn, goalSubject } from '../../domain/goals';
 import { ENDURANCE_SPORT_LABELS } from '../../domain/labels';
 import {
   CALENDAR_PERIOD_LABELS,
@@ -25,15 +23,24 @@ import {
 } from '../../domain/periods';
 import {
   hasReviewData,
-  reviewDelta,
   reviewSummary,
   type ReviewInput,
   type ReviewSummary,
 } from '../../domain/review';
-import { kgToDisplay } from '../../domain/units';
-import { formatWorkoutDuration } from '../../domain/workout';
+import {
+  dailyRows,
+  formatReviewDelta,
+  growthRows,
+  habitRows,
+  nutritionRows,
+  shownRows,
+  trainingRows,
+  type ReviewRow,
+} from '../../domain/reviewRows';
 import { GOALS_PATH } from '../goals/paths';
 import { useGoalData, useGoalExercises, useGoals } from '../goals/useGoals';
+import { REPORT_KINDS } from '../../domain/report';
+import { ExportButton } from '../reports/ExportButton';
 import { useSettings } from '../settings/useSettings';
 import { useStatsFilter } from './statsFilter';
 import { ChevronLeftIcon, ChevronRightIcon, Icon } from '../../components/icons';
@@ -52,17 +59,6 @@ const PREVIOUS_LABELS: Record<CalendarPeriod, string> = {
   month: 'Vormonat',
   year: 'Vorjahr',
 };
-
-/** `higher` = mehr ist besser (grün), `lower` = weniger ist besser, `null` = neutral */
-type Better = 'higher' | 'lower' | null;
-
-interface Row {
-  label: string;
-  current: number | null;
-  previous: number | null;
-  format: (value: number) => string;
-  better: Better;
-}
 
 export function ReviewStats() {
   const settings = useSettings();
@@ -123,6 +119,14 @@ export function ReviewStats() {
               ? ` bis zum gleichen Tag (${formatDayRange(compare)})`
               : ` (${formatPeriod(period, compare)})`}
           </p>
+          <ExportButton
+            label={`${REPORT_KINDS[period]} als PDF`}
+            success="PDF wurde erstellt"
+            create={async () => {
+              const { createPeriodReportFile } = await import('../reports/reportFiles');
+              return createPeriodReportFile(period, range.from, today);
+            }}
+          />
         </div>
       </Card>
       {input && settings && (
@@ -164,34 +168,36 @@ function ReviewContent({
   return (
     <>
       <TrainingCard current={current} previous={previous} settings={settings} />
-      <DailyCard current={current} previous={previous} settings={settings} />
-      <NutritionCard current={current} previous={previous} settings={settings} />
-      <HabitsCard current={current} previous={previous} />
-      <GrowthCard current={current} previous={previous} />
+      <RowsCard
+        title="Alltag"
+        rows={dailyRows(current, previous, settings)}
+        hint="Ø über die Tage mit Eintrag."
+      />
+      <RowsCard
+        title="Ernährung"
+        rows={nutritionRows(current, previous, settings)}
+        hint="Ø über die Tage mit Einträgen."
+      />
+      <RowsCard title="Gewohnheiten" rows={habitRows(current, previous)} />
+      <RowsCard title="Persönliche Entwicklung" rows={growthRows(current, previous)} />
       <GoalsCard range={range} today={today} settings={settings} />
     </>
   );
 }
 
-function formatDelta(row: Row): { text: string; tone: string } | null {
-  const delta = reviewDelta(row.current, row.previous);
-  if (delta === null) return null;
-  const text = row.format(Math.abs(delta));
-  if (Math.abs(delta) < 1e-9 || text === row.format(0)) {
-    return { text: '±0', tone: 'text-muted' };
-  }
-  const better = row.better === null ? null : delta > 0 === (row.better === 'higher');
-  const tone = better === null ? 'text-muted' : better ? 'text-primary-text' : 'text-danger';
-  return { text: `${delta > 0 ? '+' : '−'}${text}`, tone };
-}
-
-function ReviewRows({ rows, label }: { rows: Row[]; label: string }) {
-  const shown = rows.filter((row) => row.current || row.previous);
+function ReviewRows({ rows, label }: { rows: ReviewRow[]; label: string }) {
+  const shown = shownRows(rows);
   if (shown.length === 0) return null;
   return (
     <dl aria-label={label} className="flex flex-col divide-y divide-line">
       {shown.map((row) => {
-        const delta = formatDelta(row);
+        const delta = formatReviewDelta(row);
+        const tone =
+          delta?.better === true
+            ? 'text-primary-text'
+            : delta?.better === false
+              ? 'text-danger'
+              : 'text-muted';
         return (
           <div key={row.label} className="flex items-baseline justify-between gap-3 py-2">
             <dt className="min-w-0">{row.label}</dt>
@@ -201,7 +207,7 @@ function ReviewRows({ rows, label }: { rows: Row[]; label: string }) {
               </span>
               {delta && (
                 <span
-                  className={`ml-2 inline-block min-w-14 text-sm ${delta.tone}`}
+                  className={`ml-2 inline-block min-w-14 text-sm ${tone}`}
                   aria-label={`Unterschied ${delta.text}`}
                 >
                   {delta.text}
@@ -215,7 +221,16 @@ function ReviewRows({ rows, label }: { rows: Row[]; label: string }) {
   );
 }
 
-const count = (value: number) => formatDecimal(value, 0);
+/** Karte mit Vergleichszeilen; ohne Werte unsichtbar */
+function RowsCard({ title, rows, hint }: { title: string; rows: ReviewRow[]; hint?: string }) {
+  if (shownRows(rows).length === 0) return null;
+  return (
+    <Card title={title}>
+      <ReviewRows rows={rows} label={`${title} im Vergleich`} />
+      {hint && <p className={`mt-2 ${HINT}`}>{hint}</p>}
+    </Card>
+  );
+}
 
 function TrainingCard({
   current,
@@ -226,87 +241,16 @@ function TrainingCard({
   previous: ReviewSummary;
   settings: Settings;
 }) {
-  const unit = settings.weightUnit;
-  const distance = (meters: number) => formatDistance(meters, 'run', settings.distanceUnit, 1);
-  const rows: Row[] = [
-    {
-      label: 'Trainingstage',
-      current: current.trainingDays,
-      previous: previous.trainingDays,
-      format: count,
-      better: 'higher',
-    },
-    {
-      label: 'Krafttrainings',
-      current: current.strength.workouts,
-      previous: previous.strength.workouts,
-      format: count,
-      better: 'higher',
-    },
-    {
-      label: 'Arbeitssätze',
-      current: current.strength.sets,
-      previous: previous.strength.sets,
-      format: count,
-      better: 'higher',
-    },
-    {
-      label: `Volumen`,
-      current: current.strength.volumeKg,
-      previous: previous.strength.volumeKg,
-      format: (kg) => `${formatDecimal(kgToDisplay(kg, unit), 0)} ${unit}`,
-      better: 'higher',
-    },
-    {
-      label: 'Kraft-Rekorde',
-      current: current.strength.records,
-      previous: previous.strength.records,
-      format: count,
-      better: 'higher',
-    },
-    {
-      label: 'Ausdauer-Einheiten',
-      current: current.endurance.count,
-      previous: previous.endurance.count,
-      format: count,
-      better: 'higher',
-    },
-    {
-      label: 'Ausdauer-Zeit',
-      current: current.endurance.durationSeconds,
-      previous: previous.endurance.durationSeconds,
-      format: formatWorkoutDuration,
-      better: 'higher',
-    },
-    {
-      label: 'Strecke',
-      current: current.endurance.distanceMeters,
-      previous: previous.endurance.distanceMeters,
-      format: distance,
-      better: 'higher',
-    },
-    {
-      label: 'Höhenmeter',
-      current: current.endurance.elevationGainMeters,
-      previous: previous.endurance.elevationGainMeters,
-      format: (meters) => `${formatDecimal(meters, 0)} m`,
-      better: 'higher',
-    },
-    {
-      label: 'Neue Bestzeiten',
-      current: current.endurance.records,
-      previous: previous.endurance.records,
-      format: count,
-      better: 'higher',
-    },
-  ];
   return (
     <Card title="Training">
       {current.trainingDays === 0 && previous.trainingDays === 0 ? (
         <p className={HINT}>Kein Training in diesem und im Vergleichszeitraum.</p>
       ) : (
         <>
-          <ReviewRows rows={rows} label="Training im Vergleich" />
+          <ReviewRows
+            rows={trainingRows(current, previous, settings)}
+            label="Training im Vergleich"
+          />
           {current.endurance.bySport.length > 0 && (
             <p data-testid="review-sports" className={`mt-2 ${HINT}`}>
               {current.endurance.bySport
@@ -319,167 +263,6 @@ function TrainingCard({
           )}
         </>
       )}
-    </Card>
-  );
-}
-
-function DailyCard({
-  current,
-  previous,
-  settings,
-}: {
-  current: ReviewSummary;
-  previous: ReviewSummary;
-  settings: Settings;
-}) {
-  const unit = settings.weightUnit;
-  const rating = (value: number) => `${formatDecimal(value, 1)} / 5`;
-  const pick = (key: keyof ReviewSummary['daily']) => ({
-    current: current.daily[key],
-    previous: previous.daily[key],
-  });
-  const rows: Row[] = [
-    { label: 'Ø Schritte', ...pick('steps'), format: count, better: 'higher' },
-    {
-      label: 'Ø Schlaf',
-      ...pick('sleepSeconds'),
-      format: (seconds) => `${formatDecimal(seconds / 3600, 1)} h`,
-      better: 'higher',
-    },
-    {
-      label: 'Ø Wasser',
-      ...pick('waterMl'),
-      format: (ml) => `${formatDecimal(ml / 1000, 1)} l`,
-      better: 'higher',
-    },
-    { label: 'Ø Stimmung', ...pick('mood'), format: rating, better: 'higher' },
-    { label: 'Ø Energie', ...pick('energy'), format: rating, better: 'higher' },
-    {
-      label: 'Ø Ruhepuls',
-      ...pick('restingHeartRate'),
-      format: (bpm) => `${formatDecimal(bpm, 0)} bpm`,
-      better: 'lower',
-    },
-    {
-      label: 'Gewicht (zuletzt)',
-      ...pick('weightKg'),
-      format: (kg) => `${formatDecimal(kgToDisplay(kg, unit), 1)} ${unit}`,
-      better: null,
-    },
-    {
-      label: 'Gewohnheiten erledigt',
-      current: current.habitCompletion,
-      previous: previous.habitCompletion,
-      format: (percent) => `${formatDecimal(percent, 0)} %`,
-      better: 'higher',
-    },
-  ];
-  if (rows.every((row) => !row.current && !row.previous)) return null;
-  return (
-    <Card title="Alltag">
-      <ReviewRows rows={rows} label="Alltag im Vergleich" />
-      <p className={`mt-2 ${HINT}`}>Ø über die Tage mit Eintrag.</p>
-    </Card>
-  );
-}
-
-function NutritionCard({
-  current,
-  previous,
-  settings,
-}: {
-  current: ReviewSummary;
-  previous: ReviewSummary;
-  settings: Settings;
-}) {
-  if (current.nutrition.days === 0 && previous.nutrition.days === 0) return null;
-  const rows: Row[] = [
-    {
-      label: 'Tage erfasst',
-      current: current.nutrition.days,
-      previous: previous.nutrition.days,
-      format: count,
-      better: 'higher',
-    },
-    ...(settings.proteinOnly
-      ? []
-      : [
-          {
-            label: 'Ø Kalorien',
-            current: current.nutrition.kcal,
-            previous: previous.nutrition.kcal,
-            format: (kcal: number) => `${formatDecimal(kcal, 0)} kcal`,
-            better: null,
-          },
-        ]),
-    {
-      label: 'Ø Protein',
-      current: current.nutrition.protein,
-      previous: previous.nutrition.protein,
-      format: (grams) => `${formatDecimal(grams, 0)} g`,
-      better: 'higher',
-    },
-  ];
-  return (
-    <Card title="Ernährung">
-      <ReviewRows rows={rows} label="Ernährung im Vergleich" />
-      <p className={`mt-2 ${HINT}`}>Ø über die Tage mit Einträgen.</p>
-    </Card>
-  );
-}
-
-/** Summen der Gewohnheiten mit Menge und Rückfälle beim Aufhören */
-function HabitsCard({ current, previous }: { current: ReviewSummary; previous: ReviewSummary }) {
-  const previousById = new Map(previous.habitTotals.map((habit) => [habit.habitId, habit]));
-  const rows: Row[] = current.habitTotals.map((habit) => ({
-    label: `${habit.name}${habit.kind === 'quit' ? ' (Rückfälle)' : ''}`,
-    current: habit.amount,
-    previous: previousById.get(habit.habitId)?.amount ?? 0,
-    format: (value) => formatHabitAmount(value, habit.unit),
-    better: habit.kind === 'quit' ? 'lower' : 'higher',
-  }));
-  if (rows.every((row) => !row.current && !row.previous)) return null;
-  return (
-    <Card title="Gewohnheiten">
-      <ReviewRows rows={rows} label="Gewohnheiten im Vergleich" />
-    </Card>
-  );
-}
-
-/** Journal, Wochenreflexion, Lesen, Timer */
-function GrowthCard({ current, previous }: { current: ReviewSummary; previous: ReviewSummary }) {
-  const pick = (key: keyof ReviewSummary['growth']) => ({
-    current: current.growth[key],
-    previous: previous.growth[key],
-  });
-  const rows: Row[] = [
-    { label: 'Tage mit Journal', ...pick('journalDays'), format: count, better: 'higher' },
-    { label: 'Wochenreflexionen', ...pick('reflections'), format: count, better: 'higher' },
-    {
-      label: 'Ø Bewertung der Woche',
-      ...pick('weekRating'),
-      format: (value) => `${formatDecimal(value, 1)} / 5`,
-      better: 'higher',
-    },
-    { label: 'Gelesene Seiten', ...pick('pages'), format: count, better: 'higher' },
-    { label: 'Gelesene Bücher', ...pick('books'), format: count, better: 'higher' },
-    {
-      label: 'Fokus-Zeit',
-      ...pick('focusSeconds'),
-      format: formatWorkoutDuration,
-      better: 'higher',
-    },
-    {
-      label: 'Meditation',
-      ...pick('meditationSeconds'),
-      format: formatWorkoutDuration,
-      better: 'higher',
-    },
-  ];
-  if (rows.every((row) => !row.current && !row.previous)) return null;
-  return (
-    <Card title="Persönliche Entwicklung">
-      <ReviewRows rows={rows} label="Persönliche Entwicklung im Vergleich" />
     </Card>
   );
 }
@@ -498,15 +281,10 @@ function GoalsCard({
   const data = useGoalData();
   const exercises = useGoalExercises(goals);
   const from = useFromHere();
-  const achieved = useMemo(() => {
-    if (!goals || !data) return [];
-    return goals.flatMap((goal): { goal: Goal; on: DayKey }[] => {
-      const progress = goalProgress(goal, data, today);
-      return !progress.recurring && progress.achievedOn && inRange(progress.achievedOn, range)
-        ? [{ goal, on: progress.achievedOn }]
-        : [];
-    });
-  }, [goals, data, range, today]);
+  const achieved = useMemo(
+    () => (goals && data ? goalsAchievedIn(goals, data, range, today) : []),
+    [goals, data, range, today],
+  );
   if (!goals || !data || !exercises || goals.length === 0) return null;
 
   return (

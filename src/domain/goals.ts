@@ -620,6 +620,21 @@ export function sortGoalsByDeadline<T extends { goal: Goal; progress: GoalProgre
   );
 }
 
+/** Im Zeitraum erreichte Ziele (wiederkehrende zählen nicht), in der Reihenfolge von `goals` */
+export function goalsAchievedIn(
+  goals: readonly Goal[],
+  data: GoalData,
+  range: DayRange,
+  today: DayKey,
+): { goal: Goal; on: DayKey }[] {
+  return goals.flatMap((goal) => {
+    const progress = goalProgress(goal, data, today);
+    return !progress.recurring && progress.achievedOn && inRange(progress.achievedOn, range)
+      ? [{ goal, on: progress.achievedOn }]
+      : [];
+  });
+}
+
 // ---------- Anzeige ----------
 
 export interface GoalUnits {

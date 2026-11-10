@@ -1,4 +1,11 @@
-import { workoutsToCsv, type CsvSession, type CsvSet, type CsvWorkout } from './csv';
+import {
+  enduranceSessionsToCsv,
+  workoutsToCsv,
+  type CsvEnduranceSession,
+  type CsvSession,
+  type CsvSet,
+  type CsvWorkout,
+} from './csv';
 
 const START = new Date(2026, 9, 30, 18, 5).toISOString();
 
@@ -169,5 +176,47 @@ describe('workoutsToCsv', () => {
 
     expect(csv).toContain(";'-Test;");
     expect(csv).toContain(`;"'=HYPERLINK(""x"")"\r\n`);
+  });
+});
+
+describe('enduranceSessionsToCsv', () => {
+  const session = (values: Partial<CsvEnduranceSession> = {}): CsvEnduranceSession => ({
+    sport: 'run',
+    title: '',
+    startedAt: START,
+    durationSeconds: 1530,
+    distanceMeters: 5000,
+    elevationGainMeters: 42,
+    avgHeartRate: 151,
+    maxHeartRate: 178,
+    calories: null,
+    notes: '',
+    ...values,
+  });
+
+  it('eine Zeile je Einheit, älteste zuerst, Strecke in der Anzeigeeinheit', () => {
+    const csv = enduranceSessionsToCsv(
+      [
+        session({
+          startedAt: new Date(2026, 10, 2, 7, 0).toISOString(),
+          sport: 'ride',
+          title: 'Pendeln; Arbeit',
+        }),
+        session(),
+      ],
+      'km',
+    );
+    const lines = csv.slice(1).trim().split('\r\n');
+    expect(lines[0]).toBe(
+      'Datum;Uhrzeit;Sportart;Titel;Dauer (min);Strecke (km);Höhenmeter (m);Ø Puls;Max. Puls;Kalorien;Notiz',
+    );
+    expect(lines[1]).toBe('2026-10-30;18:05;Laufen;;25,5;5;42;151;178;;');
+    expect(lines[2]).toBe('2026-11-02;07:00;Radfahren;"Pendeln; Arbeit";25,5;5;42;151;178;;');
+  });
+
+  it('rechnet in Meilen um', () => {
+    const csv = enduranceSessionsToCsv([session({ distanceMeters: 1609.344 })], 'mi');
+    expect(csv).toContain('Strecke (mi)');
+    expect(csv).toContain(';1;42;');
   });
 });

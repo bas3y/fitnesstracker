@@ -373,7 +373,10 @@ export interface ProgressResult {
 }
 
 /** Vergleichswerte je Einheit, beste Kennzahl zuerst: kg und Stufen werden nie vermischt */
-function progressCandidates(sets: StrengthSet[], kind: ExerciseKind): Array<number | undefined> {
+export function progressCandidates(
+  sets: StrengthSet[],
+  kind: ExerciseKind,
+): Array<number | undefined> {
   const working = sets.filter((set) => isWorkingSet(set) && isPerformed(set, kind));
   if (kind.isTimed) return [maxBy(working, (set) => set.durationSeconds)];
   return [
@@ -640,23 +643,39 @@ export function countRecordsBetween(
   from: number,
   to: number,
 ): number {
+  return recordsBetween(sessions, bodyWeightKg, from, to).reduce(
+    (sum, row) => sum + row.records.length,
+    0,
+  );
+}
+
+/** Einheiten mit Rekord ab `from` bis vor `to` (ms), je Übung und Workout eine Zeile, älteste zuerst */
+export function recordsBetween(
+  sessions: StatsSession[],
+  bodyWeightKg: number | null,
+  from: number,
+  to: number,
+): RecentRecords[] {
   const chronological = [...sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
   const groups = groupByExercise(chronological);
-  let count = 0;
+  const rows: RecentRecords[] = [];
   // Rückwärts, damit nur so viel Historie durchgerechnet wird wie nötig
-  for (const { startedAt, exercise, sets } of chronological.reverse()) {
+  for (const { workoutId, startedAt, exercise, sets } of chronological.reverse()) {
     const time = Date.parse(startedAt);
     if (time < from) break;
     const group = groups.get(exercise.id)!;
     group.pop();
     if (time >= to) continue;
-    count += sessionRecords(
+    const records = sessionRecords(
       sets,
       group.map((session) => session.sets),
       exerciseKind(exercise, bodyWeightKg),
-    ).flat().length;
+    )
+      .flat()
+      .sort(byRecordOrder);
+    if (records.length > 0) rows.push({ workoutId, startedAt, exercise, records });
   }
-  return count;
+  return rows.reverse();
 }
 
 /** Rekorde je Einheit mit Rekord als `{ startedAt, count }`, älteste zuerst (für Abzeichen) */

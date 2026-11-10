@@ -34,11 +34,11 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 17b – Fokus-/Meditations-Timer & Fortschrittsfotos
 - [x] Schritt 18 – Motivation (Serien, Abzeichen, Erfolgs-Hinweise)
 - [x] Schritt 18b – Trainingsblöcke (Aufbau/Deload/Peak) in Plänen
-- [ ] Schritt 18c – Push & Handytest 16–18b
+- [x] Schritt 18c – Push & Handytest 16–18b
 - [x] Schritt 18d – Design-Grundlage & Farbpaletten
 - [x] Schritt 18e – Seiten aufräumen & übersichtlicher machen
 - [x] Schritt 18f – Neues Logo, Animationen & Ladebildschirm
-- [ ] Schritt 19 – PDF-Export/Berichte
+- [x] Schritt 19 – PDF-Export/Berichte
 - [ ] Schritt 20 – Veröffentlichung auf GitHub Pages
 
 > Gearbeitet wird bis Schritt 20 nur lokal (lokale Commits, kein Push). Schritt 20 kann auch früher gestartet werden, z. B. direkt nach Schritt 12, wenn die App vorher aufs Handy soll.
@@ -1053,7 +1053,7 @@ Ablauf:
 **Notizen:**
 - Gebaut:
   - **Push (07.11.2026):** Nutzer hat das Backup auf dem Handy bestätigt. Vorher lint, typecheck, 841 Unit-Tests und Build grün. Schritte 16–18b gepusht (`527d828..2a0a16a`, DB-Version 22 → 28), Run 42401136943 grün (build + deploy), neuer `sw.js` live.
-- Ergebnis Handytest: steht aus
+- Ergebnis Handytest: Nutzer hat 18c beim Start von Schritt 19 (10.11.2026) als erledigt abgehakt; die gefundenen Punkte sind unten behoben.
 - Offene Punkte (Nutzer beim Handytest, 08.11.2026):
   - Erfolge-Seite: zwei Überschriften überlappen sich.
   - Alltag: Gewohnheitsserie überlappt mit „Schritte“.
@@ -1174,10 +1174,25 @@ Mit dem Nutzer beim Start abgestimmt (Entwürfe als Artifact „Fitnesstracker 1
 ### Schritt 19 – PDF-Export/Berichte
 Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.
 
+Mit dem Nutzer beim Start abgestimmt (10.11.2026): 18c als erledigt abhaken; **eigener PDF-Baustein** statt Paket oder Druckansicht; Bericht mit **Kennzahlen wie im Rückblick, Diagrammen, Kraft im Detail, Ausdauer im Detail**; Einzelexport = **Übung als PDF + CSV** (und Ausdauer je Sportart).
+
 **Notizen:**
 - Gebaut:
+  - **PDF-Baustein ohne Paket** (`src/domain/pdf/`): `pdfWriter.ts` (`PdfDocument`/`PdfPage`, PDF 1.4, A4, Ursprung oben links; Text, Rechtecke mit Rundung, Linien, Kreise; Standardschriften Helvetica/Helvetica-Bold mit WinAnsi, nichts eingebettet, nicht komprimiert), `fontMetrics.ts` (AFM-Breiten, `toWinAnsi`, `textWidth`), `layout.ts` (`ReportLayout`: Kopf in der Palette, Abschnitte, Absätze mit Umbruch, Kacheln, Tabellen mit wiederholter Kopfzeile, gestapelte Säulen, Linien, waagrechte Balken, Monatskalender, Legende, Fußzeile „Seite x von n“; automatische Seitenumbrüche). Farben aus der gewählten Palette (`--p-*` per `getComputedStyle`, `currentPdfTheme` in `reportFiles.ts`), Hintergrund immer weiß.
+  - **Berichte** (`periodReport.ts`): Woche/Monat/Jahr wie im Rückblick (Button „Monatsbericht als PDF“ usw. in der Zeitraum-Karte), Inhalt: Kacheln, Überblick-Tabellen (Zeitraum/Vorzeitraum/Änderung, gleiche Zeilen wie auf dem Bildschirm), erreichte Ziele, Verlauf (Trainings je Tag/Woche/Monat gestapelt Kraft/Ausdauer, Trainingskalender – Monat groß, Jahr 12 kleine –, Körpergewicht, Schritte, Schlaf), Kraft im Detail (Übungen mit Bestwert ggü. Vorzeitraum, neue Rekorde, Arbeitssätze je Muskelgruppe), Ausdauer im Detail (je Sportart, neue Bestzeiten, Einheiten bzw. im Jahr je Monat). Daten/Logik in `src/domain/report.ts` (Zeitachsen `trainingBuckets`/`dailyBuckets`/`monthBuckets`, `exerciseChanges`, `recordsIn`, `effortRecordsIn` …, Dateinamen `reportFileName`/`fileSlug`), Laden `loadPeriodReport` (`src/db/reports.ts`).
+  - **Rückblick-Zeilen ausgelagert** nach `src/domain/reviewRows.ts` (`trainingRows`, `dailyRows`, `nutritionRows`, `habitRows`, `growthRows`, `formatReviewDelta`), `ReviewStats` nutzt sie (Karten über `RowsCard`); erreichte Ziele `goalsAchievedIn` (`domain/goals.ts`). Rekorde als Liste `recordsBetween` (`domain/stats.ts`, `countRecordsBetween` zählt darüber).
+  - **Einzel-Exporte:** Karte „Exportieren“ (`StatsExportCard`, `ExportButton` in `src/features/reports/`) auf der Übungsseite (PDF: Kacheln, Verlauf der ersten zwei Kennzahlen, Bestwerte, Einheiten im gewählten Zeitraum; CSV: alle Sätze der Übung über `createWorkoutsCsvFile(unit, date, exercise)`) und in der Ausdauer-Statistik (Sportart + Zeitraum; PDF: Kacheln, Strecke/Dauer je Woche bzw. Monat ab 27 Wochen, Pace, Bestzeiten, Einheiten; CSV `enduranceSessionsToCsv`/`createEnduranceCsvFile`). Hinweis mit Link im Einstellungs-Export.
+  - Dateien teilen/speichern wie das Backup (`shareOrDownload`), Namen `basey-bericht-2026-11.pdf`, `basey-bericht-2026.pdf`, `basey-bericht-2026-kw45.pdf`, `basey-bankdruecken-langhantel-<Datum>.pdf/.csv`, `basey-ausdauer-laufen-<Datum>.pdf/.csv`.
+  - PDF-Code nur per `import()` (`reportFiles.ts`, eigener Chunk ~29 KB / 11 KB gzip), Hauptbundle unverändert ~344 KB.
+  - Tests: `pdf.test.ts` (Zeichensatz, Breiten, xref-Offsets, Längen, Seitenumbruch), `reports.test.ts` (Inhalte der PDFs), `report.test.ts`, `reviewRows.test.ts`, CSV, `db/reports.test.ts`, `workoutExport.test.ts`; Testdaten `src/test/reportInput.ts`, PDF-Text lesen `src/test/pdfText.ts`. E2E `e2e/reports.spec.ts` (offline: Monats-/Jahresbericht, Übung PDF+CSV, Laufen PDF+CSV). 921 Unit-Tests, 124 E2E grün.
 - Abweichungen:
+  - Auch ein **Wochenbericht** (fiel mit dem Rückblick ab, Tage statt Wochen auf der Achse, ohne Kalender).
+  - Zeichen außerhalb von WinAnsi (z. B. kyrillisch, Emojis in eigenen Namen) erscheinen im PDF als „?“; „−“, „→“, „≥“ werden ersetzt. Eine eingebettete Unicode-Schrift wäre deutlich größer.
+  - „Übungen mit dem größten Fortschritt“ vergleicht den Bestwert (1RM, sonst Stufe/Wdh./Dauer) im Zeitraum mit dem Vorzeitraum (der Fortschritt aus der Statistik braucht 4 Einheiten je Übung und ist im Monat selten vorhanden). Ohne Einheit im Vorzeitraum steht „–“.
+  - Übungs-CSV enthält alle Sätze (unabhängig vom Zeitraum), das PDF den gewählten Zeitraum.
 - Offene Punkte:
+  - **Handytest:** PDF teilen/speichern auf Android und iPhone (Teilen-Dialog, Dateien-App), Darstellung in den Standard-Viewern, Farben je Palette.
+  - Ideen für später: Diagramme der Statistik direkt als Bild teilen; Bericht mit eigener Auswahl der Abschnitte; Fortschrittsfotos im Bericht.
 
 ---
 

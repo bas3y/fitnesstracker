@@ -5,6 +5,7 @@ import { Chip } from '../../components/Chip';
 import { Card } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { loadFinishedExerciseSessions } from '../../db/records';
+import { createWorkoutsCsvFile } from '../../db/workoutExport';
 import type { Exercise, WeightUnit } from '../../db/types';
 import { formatBlockWeek } from '../../domain/blocks';
 import { formatDecimal } from '../../domain/format';
@@ -34,6 +35,7 @@ import {
   type StrengthSet,
 } from '../../domain/strength';
 import { formatWorkoutDate } from '../../domain/workout';
+import { StatsExportCard } from '../reports/StatsExportCard';
 import { useSettings } from '../settings/useSettings';
 import { useStatsFilter } from './statsFilter';
 
@@ -67,7 +69,22 @@ export function ExerciseStats({ exercise }: { exercise: Exercise }) {
       <HistoryCard groups={groups} kind={kind} unit={unit} name={exercise.name} blocks={blocks} />
       <BestsCard groups={groups} kind={kind} unit={unit} />
       {settings.restAnalysisEnabled && <RestCard groups={groups} isTimed={exercise.isTimed} />}
+      <ExportCard exercise={exercise} unit={unit} />
     </>
+  );
+}
+
+function ExportCard({ exercise, unit }: { exercise: Exercise; unit: WeightUnit }) {
+  const { range } = useStatsFilter();
+  return (
+    <StatsExportCard
+      hint="PDF mit Verlauf im gewählten Zeitraum, Bestwerten und Einheiten. CSV mit allen Sätzen, z. B. für Excel."
+      pdf={async () => {
+        const { createExerciseReportFile } = await import('../reports/reportFiles');
+        return createExerciseReportFile(exercise, range);
+      }}
+      csv={() => createWorkoutsCsvFile(unit, new Date(), exercise)}
+    />
   );
 }
 
