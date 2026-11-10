@@ -5,7 +5,7 @@ Nach dem ersten Laden läuft die App komplett ohne Internet, alle Daten bleiben 
 
 ## Installation aufs Handy
 
-Adresse: **https://niklasbesarab.github.io/fitnesstracker/**
+Adresse: **https://bas3y.github.io/fitnesstracker/**
 Einmal mit Internet öffnen und installieren, danach funktioniert sie im Flugmodus.
 
 - **Android (Chrome):** Adresse öffnen → Menü ⋮ → „App installieren“ (bzw. „Zum Startbildschirm hinzufügen“).
