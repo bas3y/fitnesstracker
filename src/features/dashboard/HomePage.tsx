@@ -57,7 +57,7 @@ import { useEnduranceSessions } from '../endurance/useEndurance';
 import { TodayCard } from '../daily/TodayCard';
 import { TodoCard } from '../daily/TodoCard';
 import { NutritionDayCard } from '../nutrition/NutritionSummary';
-import { SHARE_APP_PATH } from '../settings/paths';
+import { SHARE_APP_PATH, settingsPath } from '../settings/paths';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from '../stats/ActivityCard';
 import { SupplementChecklist } from '../supplements/SupplementChecklist';
@@ -283,6 +283,18 @@ function WelcomeCard({ logo }: { logo: LogoVariant }) {
         <li>Alles bleibt nur auf diesem Gerät – ohne Konto, ohne Server, auch ohne Internet.</li>
         <li>Tipp: Zum Startbildschirm hinzufügen und ab und zu ein Backup exportieren.</li>
       </ul>
+      <p className="mb-3 text-sm text-muted">
+        Schon benutzt und alles leer? Die App über ihr Icon auf dem Startbildschirm öffnen (der
+        Browser hat einen eigenen Speicher) oder{' '}
+        <Link
+          to={settingsPath('backup')}
+          state={FROM_DASHBOARD}
+          className="font-semibold text-primary-text underline"
+        >
+          Backup wiederherstellen
+        </Link>
+        .
+      </p>
       <div className="flex gap-2">
         <Link
           to={SHARE_APP_PATH}

@@ -1,3 +1,4 @@
+import Dexie from 'dexie';
 import { db } from './database';
 import { setExerciseFavorite, setExerciseHidden, setExerciseNotes } from './exercises';
 import { create } from './repository';
@@ -73,6 +74,34 @@ describe('applySeed', () => {
     });
     expect(entry).not.toHaveProperty('key');
     expect(entry?.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect((await getSettings())?.seedVersion).toBe(1);
+  });
+
+  it('sperrt die Einstellungen nicht, solange der Seed läuft (App bleibt nicht leer)', async () => {
+    const order: string[] = [];
+    let read: Promise<void> | undefined;
+    const onCreate = () => {
+      read ??= Dexie.ignoreTransaction(() =>
+        getSettings().then(() => {
+          order.push('settings');
+        }),
+      );
+    };
+    db.exercises.hook('creating', onCreate);
+    try {
+      const many = Array.from({ length: 300 }, (_, index) => ({ ...bench, key: `ex-${index}` }));
+      await applySeed(seed(many), 1).then(() => order.push('seed'));
+      await read;
+    } finally {
+      db.exercises.hook('creating').unsubscribe(onCreate);
+    }
+    expect(order).toEqual(['settings', 'seed']);
+  });
+
+  it('legt bei gleichzeitigem Start nichts doppelt an', async () => {
+    await Promise.all([applySeed(seed([bench, squat]), 1), applySeed(seed([bench, squat]), 1)]);
+    expect(await db.exercises.count()).toBe(2);
+    expect(await db.foods.count()).toBe(1);
     expect((await getSettings())?.seedVersion).toBe(1);
   });
 

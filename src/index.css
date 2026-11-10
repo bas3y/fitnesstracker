@@ -291,6 +291,15 @@
 }
 
 @layer base {
+  /*
+   * Kein Overscroll-Dehnen/-Federn am Seitenende: Android-Chrome dehnte in der installierten App
+   * die ganze Ansicht samt fester Navigation. Scrollen in Fenstern/Listen bleibt unverändert.
+   */
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+
   html {
     -webkit-tap-highlight-color: transparent;
   }

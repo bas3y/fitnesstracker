@@ -89,9 +89,10 @@ describe('splashHtml', () => {
   it('contains one artwork per palette and only the name', () => {
     const html = splashHtml();
     for (const palette of COLOR_PALETTES) {
-      expect(html).toContain(`data-palette="${palette}"`);
+      expect(html).toContain(`"${palette}"`);
       expect(SPLASH_CSS).toContain(`html[data-palette='${palette}'] #splash`);
     }
+    expect(html).toContain("'./splash-' + palette + '.webp'");
     expect(html).toContain('id="splash"');
     expect(html).toContain('aria-label="Basey"');
     expect(html).not.toContain('Fitness');

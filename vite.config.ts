@@ -1,9 +1,23 @@
 /// <reference types="vitest/config" />
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { SPLASH_BACKGROUND, SPLASH_CSS, splashHtml } from './src/brand/splashHtml.ts';
+
+// Versionskennung für Einstellungen → Speicher (CI: GITHUB_SHA, lokal git, sonst „dev“)
+function buildCommit(): string {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    return 'dev';
+  }
+}
+const APP_BUILD = { date: new Date().toISOString().slice(0, 10), commit: buildCommit() };
 
 // Android zeigt beim Start Icon + Hintergrundfarbe (Standardpalette), danach übernimmt der Ladebildschirm
 const THEME_COLOR = SPLASH_BACKGROUND;
@@ -11,6 +25,7 @@ const BACKGROUND_COLOR = SPLASH_BACKGROUND;
 
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
+  define: { __APP_BUILD__: JSON.stringify(APP_BUILD) },
   plugins: [
     react(),
     tailwindcss(),
@@ -75,7 +90,7 @@ export default defineConfig({
         },
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,json,webmanifest,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,ico,json,webmanifest,woff2}'],
         globIgnores: ['share-target.js'],
         importScripts: ['share-target.js'],
         navigateFallback: 'index.html',

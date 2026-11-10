@@ -26,6 +26,10 @@ export function ShareAppPage() {
           Wer den Link öffnet, bekommt eine eigene, leere App. Deine Daten bleiben auf deinem Gerät
           und werden nicht mitgeschickt.
         </p>
+        <p className={`mb-3 ${HINT}`}>
+          Jede Person hat ihre eigenen Daten nur auf ihrem eigenen Handy. Es gibt keine Verbindung
+          zwischen den Geräten: Was andere eintragen, siehst du nicht, und umgekehrt.
+        </p>
         <p
           data-testid="app-url"
           className="mb-3 rounded-xl bg-subtle px-3 py-2 font-mono text-sm break-all select-all"

@@ -24,6 +24,17 @@ Link oder kopiert ihn, dort steht auch diese Anleitung).
 
 Updates: Bei geöffneter App mit Internet erscheint „Neue Version verfügbar – Neu laden“.
 
+### Wenn etwas nicht stimmt
+
+- **App ist leer:** Über das Icon auf dem Startbildschirm öffnen, nicht im Browser (auf dem iPhone
+  haben Safari und die installierte App getrennte Speicher). Unter Einstellungen → Export & Speicher
+  steht, wie viele eigene Einträge in diesem Speicher liegen und ob die App über das Icon läuft.
+- **„Update wartet“ / „Neue Version geöffnet“:** Basey ist noch in einem anderen Fenster offen
+  (Browser-Tab und installierte App gleichzeitig). Andere Fenster schließen bzw. „Neu laden“
+  tippen – die Daten bleiben erhalten.
+- **„Hier ist etwas schiefgelaufen“:** „Neu laden“ tippen. Die Daten sind davon nicht betroffen.
+- Im Zweifel nie die App löschen, sondern zuerst ein Backup exportieren.
+
 ## Veröffentlichung
 
 Jeder Push auf `main` startet `.github/workflows/deploy.yml` (Lint, Typecheck, Unit-Tests, Build mit
@@ -48,7 +59,7 @@ Settings → Pages als Source „GitHub Actions“ gewählt sein.
 | `npm run lint`         | ESLint + Prettier-Prüfung                                          |
 | `npm run format`       | Code mit Prettier formatieren                                      |
 | `npm run typecheck`    | TypeScript-Prüfung                                                 |
-| `npm run icons`        | PWA-Icons aus `public/favicon.svg` neu erzeugen                    |
+| `npm run icons`        | Favicon, PWA-Icons und Ladebildschirm-Bilder aus `src/brand/` erzeugen |
 
 Unterpfad für das Hosting (z. B. GitHub Pages) über `BASE_PATH`, Standard ist `/`:
 

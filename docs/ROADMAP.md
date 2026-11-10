@@ -1219,8 +1219,16 @@ Mit dem Nutzer beim Start abgestimmt (10.11.2026): 18c als erledigt abhaken; **e
 **Fertig wenn:** App auf Android und iPhone installiert und im Flugmodus voll nutzbar (vom Nutzer bestätigt).
 
 **Notizen:**
-- Gebaut:
-- URL:
+- Gebaut (Teil 1, 10.11.2026, vor dem Push):
+  - **Ladebildschirm vorgerendert:** `npm run icons` rendert das Artwork je Palette per `sharp` nach `public/splash-<palette>.webp` (Ausschnitt `SPLASH_ART_AREA` = −180/−150, 780 × 720 im 420er-Raster, 2 px je Einheit = 1560 × 1440; 14–87 KB je Bild, im Precache über `webp` in `globPatterns`). `splashHtml()` setzt nur noch `<img src="./splash-<palette>.webp">` (statt `<template>` mit SVG-Filtern), `artworkSvg` hat dafür die Option `area`. Animation nur Deckkraft (`splash-fade`, kein `scale`/`translate`).
+  - **Seed sperrt die Einstellungen nicht mehr:** `applySeed` prüft die Version vorher, die Transaktion umfasst nur `exercises`/`foods`, `seedVersion` wird danach in eigener Transaktion gesetzt. Doppelter Lauf bleibt harmlos (Test: gleichzeitig zweimal, und Einstellungen sind während des Seeds lesbar).
+  - **Fehleranzeige:** `ErrorBoundary` (`src/components/`) um die ganze App (`main.tsx`) und um den Seiteninhalt im `Layout` (`variant="page"`, `resetKey` = Pfad, Navigation bleibt): „Hier ist etwas schiefgelaufen“, „Neu laden“, „Zur Startseite“, technische Details; erkennt fehlende Teile nach einem Update. `reloadApp()` aktiviert vorher einen wartenden Service Worker.
+  - **DB-Hinweis:** `watchDatabase(db)` (`src/db/dbStatus.ts`, in `main.tsx`) meldet `blocked` (Update wartet auf ein anderes Fenster; Hinweis erst nach 1,5 s, verschwindet von selbst), `outdated` (anderes Fenster hebt die Version an → Verbindung schließen statt automatisch neu öffnen, „Neu laden“) und `error` (Öffnen scheitert). Anzeige `DbStatusNotice` als Fenster über allem, blendet den Ladebildschirm aus. Dexie 4 öffnet eine neuere DB auch mit älterem Code (kein VersionError) – dafür kein eigener Fall.
+  - **Overscroll:** `overscroll-behavior-y: none` an `html`/`body` (`index.css`). Folge: Im Browser-Tab gibt es kein „Ziehen zum Aktualisieren“ mehr.
+  - **Speicher-Info** (Einstellungen → Export & Speicher): eigene Einträge (`loadDataSummary`, `src/db/dataSummary.ts`: aktive Einträge ohne mitgelieferte Übungen/Lebensmittel, dazu Workouts/Ausdauer/Alltagstage), „Geöffnet über das App-Icon/im Browser“ (`isInstalledApp`) mit Hinweis auf getrennte Speicher, dauerhaft, belegt, Version (`__APP_BUILD__` = Build-Datum + Commit aus `vite.config.ts`, CI `GITHUB_SHA`) und DB-Version.
+  - **Hinweise:** Willkommens-Karte „Schon benutzt und alles leer? … über ihr Icon öffnen … oder Backup wiederherstellen“ (Link `/settings/backup`); „Weitergeben“: „Jede Person hat ihre eigenen Daten nur auf ihrem eigenen Handy …“. README: Abschnitt „Wenn etwas nicht stimmt“. Backup-Erinnerung geprüft (7 Tage, auch ohne je ein Backup), unverändert.
+  - Tests: `dbStatus.test.ts`, `dataSummary.test.ts`, `ErrorBoundary.test.tsx`, Seed (Sperre, doppelter Lauf), `splash.test.ts`/`logo.test.ts`; E2E `e2e/safety.spec.ts` (Overscroll, Willkommen → Backup, Speicher-Info, Weitergeben offline; zweites Fenster hebt die DB-Version an → Hinweis „Neue Version geöffnet“), `branding.spec.ts` (Bild statt SVG, nur Deckkraft animiert).
+- URL: https://bas3y.github.io/fitnesstracker/ (seit 18c/Push 4; Repo, Action und Pages bestehen seit 2b)
 - Ergebnis Android:
 - Ergebnis iPhone:
 - Offene Punkte:

@@ -3,6 +3,13 @@ import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { DEFAULT_LOGO_VARIANT, LOGO_VARIANTS, logoSvg } from '../src/brand/logo.ts';
+import {
+  SPLASH_ART_AREA,
+  SPLASH_ART_SCALE,
+  SPLASH_PALETTES,
+  splashArtworkSvg,
+  splashImageFile,
+} from '../src/brand/splashHtml.ts';
 
 const out = (name) => fileURLToPath(new URL(`../public/${name}`, import.meta.url));
 
@@ -23,4 +30,14 @@ await png(logoSvg(variant, { shape: 'square' }), 180, 'apple-touch-icon.png');
 for (const other of LOGO_VARIANTS) {
   await png(logoSvg(other, { shape: 'square' }), 180, `apple-touch-icon-${other}.png`);
 }
-console.log('Icons erzeugt.');
+
+// Ladebildschirm: Artwork je Palette vorrendern (das SVG mit Filtern zu rastern kostet auf dem Handy > 1 s)
+for (const palette of SPLASH_PALETTES) {
+  const width = SPLASH_ART_AREA.width * SPLASH_ART_SCALE;
+  const height = SPLASH_ART_AREA.height * SPLASH_ART_SCALE;
+  await sharp(Buffer.from(splashArtworkSvg(palette)), { density: 72 * SPLASH_ART_SCALE })
+    .resize(width, height)
+    .webp({ quality: 78, effort: 6 })
+    .toFile(out(splashImageFile(palette)));
+}
+console.log('Icons und Ladebildschirme erzeugt.');

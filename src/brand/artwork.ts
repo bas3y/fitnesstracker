@@ -51,11 +51,27 @@ export interface ArtworkSvgOptions {
   size?: number;
   /** Text für Screenreader; ohne ist die Grafik nur Schmuck */
   label?: string;
+  /** Ausschnitt im 420er-Raster (Standard 0 0 420 420), z. B. größer fürs Vorrendern des Ladebildschirms */
+  area?: ArtArea;
+}
+
+export interface ArtArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 /** Artwork als SVG-Text (420 × 420) */
 export function artworkSvg(art: Artwork, options: ArtworkSvgOptions = {}): string {
-  const { id = 'art', shape = 'square', wordmark = false, size, label } = options;
+  const {
+    id = 'art',
+    shape = 'square',
+    wordmark = false,
+    size,
+    label,
+    area = { x: 0, y: 0, width: ART_SIZE, height: ART_SIZE },
+  } = options;
   const band = BANDS[art.style];
   const w = band.width;
   const space = `filterUnits="userSpaceOnUse" x="-400" y="-400" width="1220" height="1220"`;
@@ -115,7 +131,7 @@ export function artworkSvg(art: Artwork, options: ArtworkSvgOptions = {}): strin
   const aspect = shape === 'cover' ? ' preserveAspectRatio="xMidYMid slice"' : '';
   const a11y = label ? ` role="img" aria-label="${label}"` : ' aria-hidden="true"';
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420"${sizeAttrs}${aspect}${a11y}>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${area.x} ${area.y} ${area.width} ${area.height}"${sizeAttrs}${aspect}${a11y}>` +
     `<defs>` +
     `<mask id="${id}-m" maskUnits="userSpaceOnUse" x="-400" y="-400" width="1220" height="1220">${stroke(`stroke="#fff" stroke-width="${w}"`)}</mask>` +
     `<filter id="${id}-b1" ${space}><feGaussianBlur stdDeviation="${round(w * 0.08)}"/></filter>` +

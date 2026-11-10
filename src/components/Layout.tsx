@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { applyLogoVariant, hideSplash } from '../brand/splash';
 import { ensureSettings } from '../db/settings';
 import { getBackupReminder } from '../domain/backupReminder';
@@ -10,6 +10,7 @@ import { SupplementReminder } from '../features/supplements/SupplementReminder';
 import { ActiveWorkoutBanner } from '../features/training/ActiveWorkoutBanner';
 import { RestTimerAlarm } from '../features/training/RestTimer';
 import { BottomNav } from './BottomNav';
+import { ErrorBoundary } from './ErrorBoundary';
 import { usePageTransition } from './usePageTransition';
 import { useScrollMemory } from './useScrollMemory';
 import { ToastHost } from './Toast';
@@ -36,6 +37,7 @@ export function Layout() {
     hideSplash();
   }, [logoVariant]);
 
+  const { pathname } = useLocation();
   const main = usePageTransition();
   useScrollMemory();
   const reminder = settings ? getBackupReminder(settings, new Date()) : null;
@@ -63,9 +65,11 @@ export function Layout() {
         <CelebrationWatcher />
       </Suspense>
       <main ref={main}>
-        <Suspense fallback={null}>
-          <Outlet />
-        </Suspense>
+        <ErrorBoundary variant="page" resetKey={pathname}>
+          <Suspense fallback={null}>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
       </main>
       <BottomNav />
     </div>

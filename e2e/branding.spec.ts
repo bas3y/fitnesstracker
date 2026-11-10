@@ -7,7 +7,13 @@ test.describe('mit Animationen', () => {
   test('Ladebildschirm: Artwork der Palette, Schriftzug blendet ein', async ({ page }) => {
     await page.goto('./');
     const splash = page.locator('#splash');
-    await expect(splash.locator('.splash-art svg')).toHaveCount(1);
+    // Artwork ist vorgerendert (SVG-Filter zu rastern dauerte auf dem Handy über eine Sekunde)
+    const art = splash.locator('.splash-art img');
+    await expect(art).toHaveAttribute('src', './splash-basey.webp');
+    await expect
+      .poll(() => art.evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBeGreaterThan(1000);
+    await expect(splash.locator('.splash-art svg')).toHaveCount(0);
     // Die App darunter scheint nicht durch (unten auf dem Handy war die Startseite zu sehen)
     await expect(page.locator('#root')).toBeHidden();
     // Kein Ring mehr, nur der Name (für Screenreader verborgen, deshalb per Selektor)
@@ -15,10 +21,19 @@ test.describe('mit Animationen', () => {
     await expect(splash.locator('.splash-word svg[aria-label="Basey"]')).toBeAttached();
     // Standardpalette: dunkles Taupe
     await expect(splash).toHaveCSS('background-color', 'rgb(20, 17, 14)');
-    const animations = await splash.evaluate((element) =>
-      element.getAnimations({ subtree: true }).map((animation) => animation.constructor.name),
+    // Nur Deckkraft animieren (Skalieren würde das Bild neu rastern)
+    const animated = await splash.evaluate((element) =>
+      element
+        .getAnimations({ subtree: true })
+        .flatMap((animation) =>
+          (animation.effect as KeyframeEffect)
+            .getKeyframes()
+            .flatMap((frame) => Object.keys(frame)),
+        )
+        .filter((key) => !['offset', 'easing', 'composite', 'computedOffset'].includes(key)),
     );
-    expect(animations.length).toBeGreaterThan(0);
+    expect(animated.length).toBeGreaterThan(0);
+    expect(new Set(animated)).toEqual(new Set(['opacity']));
 
     await expect(splash).toHaveCount(0, { timeout: 5000 });
     await expect(page.getByRole('heading', { level: 1, name: 'Heute' })).toBeVisible();
@@ -32,9 +47,10 @@ test.describe('mit Animationen', () => {
     await expect(page.locator('html')).toHaveAttribute('data-palette', 'green');
     await page.reload();
     await expect(page.locator('#splash')).toHaveCSS('background-color', 'rgb(1, 36, 24)');
-    await expect(
-      page.locator('#splash .splash-art pattern, #splash .splash-art filter[id$="-sp0"]'),
-    ).toHaveCount(1);
+    await expect(page.locator('#splash .splash-art img')).toHaveAttribute(
+      'src',
+      './splash-green.webp',
+    );
   });
 });
 

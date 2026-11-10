@@ -43,16 +43,24 @@ export function ensureSeeded(load: () => Promise<SeedData> = loadSeedData): Prom
 /**
  * Gleicht `builtin`-Einträge mit den Seed-Daten ab: neue anlegen, geänderte aktualisieren,
  * entfernte ausblenden. Eigene Einträge (`source: 'user'`) werden nie angefasst.
+ *
+ * Die Transaktion sperrt nur Übungen und Lebensmittel, nicht die Einstellungen: Sonst wartet beim
+ * ersten Start (über 1000 Einträge) die ganze App auf den Seed und bleibt leer. Zweimal laufen ist
+ * harmlos (Abgleich über `builtinKey`), die Seed-Version wird danach getrennt gespeichert.
  */
 export async function applySeed(data: SeedData, version: number): Promise<void> {
-  await db.transaction('rw', [db.settings, db.exercises, db.foods], async () => {
-    const settings = await ensureSettings();
-    if (settings.seedVersion >= version) return;
-    const now = nowIso();
+  if ((await ensureSettings()).seedVersion >= version) return;
+  const now = nowIso();
+  await db.transaction('rw', [db.exercises, db.foods], async () => {
     await syncBuiltins(db.exercises, data.exercises, now, EXERCISE_USER_DEFAULTS);
     await syncBuiltins(db.foods, data.foods, now, FOOD_USER_DEFAULTS);
     await refreshRecipes();
-    await db.settings.update(SETTINGS_ID, { seedVersion: version, updatedAt: now });
+  });
+  await db.transaction('rw', db.settings, async () => {
+    const settings = await ensureSettings();
+    if (settings.seedVersion < version) {
+      await db.settings.update(SETTINGS_ID, { seedVersion: version, updatedAt: nowIso() });
+    }
   });
 }
 
