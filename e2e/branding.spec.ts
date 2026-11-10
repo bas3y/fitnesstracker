@@ -46,24 +46,24 @@ test('Name, Logo-Auswahl und iPhone-Icon (offline)', async ({ page, context }) =
 
   await openSettings(page, 'Darstellung');
   const logos = page.getByRole('radiogroup', { name: 'App-Logo' });
-  await expect(logos.getByRole('radio')).toHaveCount(4);
-  await expect(logos.getByRole('radio', { name: 'Graphite Mesh' })).toHaveAttribute(
+  await expect(logos.getByRole('radio')).toHaveCount(2);
+  await expect(logos.getByRole('radio', { name: 'Charcoal Satin' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  await logos.getByRole('radio', { name: 'Stone Grip' }).click();
-  await expect(logos.getByRole('radio', { name: 'Stone Grip' })).toHaveAttribute(
+  await logos.getByRole('radio', { name: 'Taupe Silk' }).click();
+  await expect(logos.getByRole('radio', { name: 'Taupe Silk' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
   const icon = page.locator('link[rel="apple-touch-icon"]');
-  await expect(icon).toHaveAttribute('href', /apple-touch-icon-stone\.png$/);
+  await expect(icon).toHaveAttribute('href', /apple-touch-icon-taupe\.png$/);
 
   // Nach dem Neuladen wählt schon index.html Logo und Icon (vor der App)
   await page.reload();
-  await expect(icon).toHaveAttribute('href', /apple-touch-icon-stone\.png$/);
+  await expect(icon).toHaveAttribute('href', /apple-touch-icon-taupe\.png$/);
   await expect(
-    page.getByRole('radiogroup', { name: 'App-Logo' }).getByRole('radio', { name: 'Stone Grip' }),
+    page.getByRole('radiogroup', { name: 'App-Logo' }).getByRole('radio', { name: 'Taupe Silk' }),
   ).toHaveAttribute('aria-checked', 'true');
   const iconFile = await page.evaluate(
     async (href) => (await fetch(href)).ok,

@@ -2,22 +2,13 @@ import { COLOR_PALETTES, type ColorPalette } from '../../db/types';
 import { PALETTE_LABELS } from '../../domain/labels';
 import { CheckIcon } from '../../components/icons';
 
-/** Vorschaufarben je Palette: hell, Akzent hell, Akzent, dunkel (wie in `src/index.css`) */
-const SWATCHES: Record<ColorPalette, readonly string[]> = {
-  basey: ['#e8d9c2', '#bea98e', '#6f5b43', '#1a1714'],
-  green: ['#d1f2eb', '#50c878', '#0b6e4f', '#013220'],
-  red: ['#fbe4e3', '#d72638', '#9b111e', '#3f0d12'],
-  blue: ['#d6e6f3', '#a6c5d7', '#0f52ba', '#000926'],
-  violet: ['#e6c7e6', '#a3779d', '#663399', '#2e1a47'],
-};
-
-/** Hervorhebung je Palette (`--p-pop`) */
-const POP: Record<ColorPalette, string> = {
-  basey: '#d9480f',
-  green: '#d6336c',
-  red: '#b26b00',
-  blue: '#e8590c',
-  violet: '#0c8599',
+/** Vorschau je Palette: eine Fläche in ihrer Hauptfarbe (wie in `src/index.css`) */
+const SWATCHES: Record<ColorPalette, string> = {
+  basey: '#bea98e',
+  green: '#50c878',
+  red: '#d72638',
+  blue: '#0f52ba',
+  violet: '#8a5cb8',
 };
 
 export function PalettePicker({
@@ -43,19 +34,11 @@ export function PalettePicker({
           >
             <span
               aria-hidden="true"
-              className={`relative grid h-12 w-12 grid-cols-2 overflow-hidden rounded-2xl ring-offset-2 ring-offset-surface ${
+              className={`relative block h-12 w-12 overflow-hidden rounded-2xl ring-offset-2 ring-offset-surface ${
                 checked ? 'ring-2 ring-primary' : 'ring-1 ring-line'
               }`}
+              style={{ backgroundColor: SWATCHES[palette] }}
             >
-              {SWATCHES[palette].map((color) => (
-                <span key={color} style={{ backgroundColor: color }} />
-              ))}
-              {!checked && (
-                <span
-                  className="absolute top-1/2 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
-                  style={{ backgroundColor: POP[palette] }}
-                />
-              )}
               {checked && (
                 <span className="absolute inset-0 flex items-center justify-center">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-fg shadow">

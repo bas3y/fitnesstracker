@@ -7,17 +7,17 @@ describe('logo variant storage', () => {
   });
 
   it('falls back to the default variant', () => {
-    expect(storedLogoVariant()).toBe('graphite');
+    expect(storedLogoVariant()).toBe('charcoal');
     localStorage.setItem(LOGO_STORAGE_KEY, 'unknown');
-    expect(storedLogoVariant()).toBe('graphite');
+    expect(storedLogoVariant()).toBe('charcoal');
   });
 
   it('remembers the variant and switches the iPhone icon', () => {
-    applyLogoVariant('stone');
-    expect(storedLogoVariant()).toBe('stone');
+    applyLogoVariant('taupe');
+    expect(storedLogoVariant()).toBe('taupe');
     const link = document.querySelector('link[rel="apple-touch-icon"]')!;
-    expect(link.getAttribute('href')).toBe('/apple-touch-icon-stone.png');
-    applyLogoVariant('graphite');
+    expect(link.getAttribute('href')).toBe('/apple-touch-icon-taupe.png');
+    applyLogoVariant('charcoal');
     expect(link.getAttribute('href')).toBe('/apple-touch-icon.png');
   });
 });

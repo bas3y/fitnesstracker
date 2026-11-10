@@ -886,17 +886,23 @@ describe('Timer und Fortschrittsfotos', () => {
   });
 
   it('behält die Logo-Variante und ergänzt sie in Sicherungen aus DB-Version 31', async () => {
-    await updateSettings({ logoVariant: 'stone' });
+    await updateSettings({ logoVariant: 'taupe' });
     const current = parseBackup(await validBackup());
     if (!current.ok) throw new Error(current.error);
-    expect(current.backup.tables.settings[0]).toMatchObject({ logoVariant: 'stone' });
+    expect(current.backup.tables.settings[0]).toMatchObject({ logoVariant: 'taupe' });
 
     const data = await validBackup();
     data.dbVersion = 31;
     delete data.tables.settings[0].logoVariant;
     const result = parseBackup(data);
     if (!result.ok) throw new Error(result.error);
-    expect(result.backup.tables.settings[0]).toMatchObject({ logoVariant: 'graphite' });
+    expect(result.backup.tables.settings[0]).toMatchObject({ logoVariant: 'charcoal' });
+
+    // Frühere Varianten werden zum Standard
+    data.tables.settings[0].logoVariant = 'stone';
+    const old = parseBackup(data);
+    if (!old.ok) throw new Error(old.error);
+    expect(old.backup.tables.settings[0]).toMatchObject({ logoVariant: 'charcoal' });
 
     data.tables.settings[0].logoVariant = 'gold';
     expect(parseBackup(data).ok).toBe(false);

@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { DEFAULT_LOGO_VARIANT } from '../brand/logo';
+import { DEFAULT_LOGO_VARIANT, toLogoVariant } from '../brand/logo';
 import { toIconName } from '../domain/iconChoice';
 import { trackSummary } from '../domain/track';
 import {
@@ -590,17 +590,20 @@ export class AppDatabase extends Dexie {
             settings.palette = 'basey';
           }),
       );
-    // Logo = Schriftzug auf Artwork, neuer Standard Graphite Mesh (alter Standard Charcoal wechselt)
-    this.version(34)
-      .stores({})
-      .upgrade((tx) =>
-        tx
-          .table<Settings, string>('settings')
-          .toCollection()
-          .modify((settings) => {
-            if (settings.logoVariant === 'charcoal') settings.logoVariant = DEFAULT_LOGO_VARIANT;
-          }),
-      );
+    // Logo = Schriftzug auf Artwork; nur noch Charcoal Satin und Taupe Silk (v35: auch für Geräte,
+    // die den Zwischenstand v34 mit Graphite Mesh als Standard hatten)
+    for (const version of [34, 35]) {
+      this.version(version)
+        .stores({})
+        .upgrade((tx) =>
+          tx
+            .table<Settings, string>('settings')
+            .toCollection()
+            .modify((settings) => {
+              settings.logoVariant = toLogoVariant(settings.logoVariant);
+            }),
+        );
+    }
   }
 }
 

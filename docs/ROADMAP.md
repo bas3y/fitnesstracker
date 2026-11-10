@@ -1167,7 +1167,8 @@ Mit dem Nutzer beim Start abgestimmt (Entwürfe als Artifact „Fitnesstracker 1
   - **Hervorhebungsfarbe je Palette** (`--p-pop`/`--p-pop-dark` → Token `mark`): Standard Zinnober, Grün Pink, Rot Gold, Blau Orange, Violett Petrol. Vorher war `mark` fest Orange und „zu wenige Sätze“ nutzte `warn` (Braun-Orange), das in der Standardpalette im Akzent-Braun unterging. Vorschau als Punkt im `PalettePicker`.
   - **„Sätze pro Woche“:** Balken unter 4 Sätzen (große Muskelgruppen) jetzt in `mark`, Legende mit Farbpunkt statt „Orange = …“ (der Text passte nicht zur Farbe). Ebenso die Block-Legende in der Übungsstatistik (Punkt war `warn`, Diagramm-Markierung `mark`).
   - **Teilen-Bild:** Logo entfernt, nur der Schriftzug „Basey“ unten links. Über-Seite: Logo + Name/Untertitel als Text (`BaseyWordmark` entfernt).
-  - Offene Punkte: Handytest (Ladebildschirm je Palette, Icon auf dem Home-Bildschirm, Lesbarkeit von `mark`). Vor dem nächsten Push an ein Backup erinnern (DB-Version 33 → 34).
+  - Offene Punkte: Handytest (Ladebildschirm je Palette, Icon auf dem Home-Bildschirm, Lesbarkeit von `mark`). Vor dem nächsten Push an ein Backup erinnern (DB-Version 33 → 35).
+- Nachtrag 3 (10.11.2026, Nutzerwunsch nach dem Ansehen): Ladebildschirme je Palette gefallen. **Paletten-Auswahl** zeigt je Palette eine einheitliche Fläche in ihrer Hauptfarbe (statt vier Feldern + Punkt). **App-Logo nur noch Charcoal Satin (Standard) und Taupe Silk**, beide mit dem Satin-Verlauf (Taupe in Taupe-Farben). Graphite Mesh und Stone Grip entfallen: Dexie v34/v35 setzen ungültige Varianten auf Charcoal (`toLogoVariant`, v35 für Geräte mit dem Zwischenstand v34), Backup-Import wandelt `graphite`/`stone` ebenso. Icons neu erzeugt, `apple-touch-icon-graphite/-stone.png` entfernt.
 
 ### Schritt 19 – PDF-Export/Berichte
 Monats-/Jahresbericht als PDF (lokal erzeugt), Export einzelner Statistiken.

@@ -1100,7 +1100,7 @@ describe('AppDatabase-Migration', () => {
 
     const current = new AppDatabase(name);
     expect(await current.settings.get('app-settings')).toMatchObject({
-      logoVariant: 'graphite',
+      logoVariant: 'charcoal',
     });
     expect(current.verno).toBeGreaterThanOrEqual(32);
     await current.delete();
@@ -1122,18 +1122,18 @@ describe('AppDatabase-Migration', () => {
     await current.delete();
   });
 
-  it('moves the old default logo to Graphite Mesh in v34', async () => {
+  it('keeps only Charcoal Satin and Taupe Silk from v34/v35', async () => {
     const name = 'migration-v33-v34';
     const v33 = new Dexie(name);
     v33.version(33).stores({ settings: 'id, updatedAt' });
-    await v33.table('settings').add({ id: 'app-settings', logoVariant: 'charcoal' });
-    await v33.table('settings').add({ id: 'other', logoVariant: 'stone' });
+    await v33.table('settings').add({ id: 'app-settings', logoVariant: 'graphite' });
+    await v33.table('settings').add({ id: 'other', logoVariant: 'taupe' });
     v33.close();
 
     const current = new AppDatabase(name);
-    expect(await current.settings.get('app-settings')).toMatchObject({ logoVariant: 'graphite' });
-    expect(await current.settings.get('other')).toMatchObject({ logoVariant: 'stone' });
-    expect(current.verno).toBe(34);
+    expect(await current.settings.get('app-settings')).toMatchObject({ logoVariant: 'charcoal' });
+    expect(await current.settings.get('other')).toMatchObject({ logoVariant: 'taupe' });
+    expect(current.verno).toBe(35);
     await current.delete();
   });
 });

@@ -4,27 +4,17 @@
 import { artworkSvg, type Artwork } from './artwork.ts';
 
 /** Varianten des App-Icons; die erste ist Standard (Manifest, Startbildschirm) */
-export const LOGO_VARIANTS = ['graphite', 'charcoal', 'taupe', 'stone'] as const;
+export const LOGO_VARIANTS = ['charcoal', 'taupe'] as const;
 export type LogoVariant = (typeof LOGO_VARIANTS)[number];
-export const DEFAULT_LOGO_VARIANT: LogoVariant = 'graphite';
+export const DEFAULT_LOGO_VARIANT: LogoVariant = 'charcoal';
 
 export const LOGO_VARIANT_LABELS: Record<LogoVariant, string> = {
-  graphite: 'Graphite Mesh',
   charcoal: 'Charcoal Satin',
   taupe: 'Taupe Silk',
-  stone: 'Stone Grip',
 };
 
+/** Beide mit dem glänzenden Satin-Verlauf, einmal dunkel, einmal Taupe */
 export const LOGO_ARTWORKS: Record<LogoVariant, Artwork> = {
-  graphite: {
-    background: '#0c0c0c',
-    base: '#1c1c1c',
-    mid: '#4a4a4a',
-    rim: '#bea98e',
-    shine: '#a3a3a3',
-    style: 'mesh',
-    text: '#ffffff',
-  },
   charcoal: {
     background: '#0c0c0c',
     base: '#050505',
@@ -40,22 +30,18 @@ export const LOGO_ARTWORKS: Record<LogoVariant, Artwork> = {
     mid: '#bea98e',
     rim: '#e8d9c2',
     shine: '#f4ebdd',
-    style: 'silk',
-    text: '#0c0c0c',
-  },
-  stone: {
-    background: '#0c0c0c',
-    base: '#9c9285',
-    mid: '#d9d2c7',
-    rim: '#bea98e',
-    shine: '#faf7f2',
-    style: 'speckle',
+    style: 'satin',
     text: '#0c0c0c',
   },
 };
 
 export function isLogoVariant(value: unknown): value is LogoVariant {
   return typeof value === 'string' && (LOGO_VARIANTS as readonly string[]).includes(value);
+}
+
+/** Frühere Varianten (Graphite Mesh, Stone Grip) werden zum Standard */
+export function toLogoVariant(value: unknown): LogoVariant {
+  return isLogoVariant(value) ? value : DEFAULT_LOGO_VARIANT;
 }
 
 export interface LogoSvgOptions {

@@ -148,8 +148,13 @@ const settingsSchema = baseEntitySchema.extend({
     .default('green'),
   // Seit DB-Version 31
   widgetSizes: z.partialRecord(z.enum(DASHBOARD_WIDGETS), z.enum(WIDGET_SIZES)).default({}),
-  // Seit DB-Version 32
-  logoVariant: z.enum(LOGO_VARIANTS).default(DEFAULT_LOGO_VARIANT),
+  // Seit DB-Version 32; Graphite Mesh und Stone Grip gibt es seit Version 35 nicht mehr → Standard
+  logoVariant: z
+    .preprocess(
+      (value) => (value === 'graphite' || value === 'stone' ? DEFAULT_LOGO_VARIANT : value),
+      z.enum(LOGO_VARIANTS),
+    )
+    .default(DEFAULT_LOGO_VARIANT),
 });
 
 const catalogEntryFields = {
