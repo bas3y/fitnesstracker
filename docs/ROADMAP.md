@@ -42,8 +42,10 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 20 – Veröffentlichung auf GitHub Pages
 - [ ] Schritt 21 – Standards übernehmen (Regeln, Skills, SECURITY.md)
 - [ ] Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
+- [ ] Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 - [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
+- [ ] Schritt 24b – Gym-Bereich (LocalGym): eigene Oberfläche & Verwaltung
 - [ ] Schritt 25 – Körpermodell im Training
 - [ ] Schritt 26 – Kalorienziel über Gewichtsverlauf (adaptiv)
 - [ ] Schritt 27 – Belastung & Regeneration (Laufcoach)
@@ -1262,6 +1264,7 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - **Repo wird privat**, Hosting zieht von GitHub Pages zu Vercel, eigene Domain empfohlen. Neue Adresse = neuer, leerer Speicher → Umzug per Backup mit Hinweis in der alten App. Geheimnisse (Supabase Service-Role-Key, Sentry-Auth-Token, KI-Schlüssel) nur in Vercel-/Supabase-Umgebungsvariablen, nie im Client; im Client nur Supabase-URL + Anon-Key und Sentry-DSN.
 - **KI:** Anbindung an ein LLM eines Anbieters, Daten sind **vertraulich** → Aufruf nur über den eigenen Server (Schlüssel nie im Client), Anbieter mit EU-Verarbeitung/AVV, kein Training mit den Daten, möglichst Zero Data Retention. Freigabe je Datenbereich, Vorschau der gesendeten Daten.
 - **Rechtliches** (Nutzer klärt selbst, keine Rechtsberatung): Gewerbe, Impressum, Datenschutzerklärung, AVV mit Anbietern, Gesundheitsdaten = besondere Kategorie (Art. 9 DSGVO) → ausdrückliche Einwilligung.
+- **Zwei Bereiche (11.11.2026):** Neben Basey gibt es **LocalGym** mit eigener Optik, eigenem Gym-Admin und Trainern; der Nutzer ist Super-Admin über beide. Umsetzung als Mandanten (Organisationen) mit einem gemeinsamen Code, Unterschiede nur per Konfiguration (Schritte 23, 24, 24b).
 - **Grundsätze:** Lokale Daten bleiben der Hauptspeicher. Vorschläge (Kalorienziel, HF-Zonen, Plan, KI-Einträge) werden **nie automatisch übernommen**, immer mit Bestätigung. Neue Tabellen nur per Dexie-Version + Backup. Online-Funktionen offline ausgegraut („Nur mit Internet“).
 - Recherche Analysen: InBody (LookinBody 120/LB-Web) exportiert CSV/Excel; seca (mBCA/seca analytics) ohne öffentliche Formatangabe; „Ovida Diagnostics“ online nicht auffindbar → Beispieldateien vom Nutzer.
 
@@ -1281,11 +1284,21 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 
 **Notizen:**
 
+### Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
+**Ziel:** Die App reagiert mehr auf Antippen und zeigt klarer, wo man ist (Nutzerwunsch 11.11.2026).
+- **Anpassen-Stift bleibt sichtbar:** Beim Herunterscrollen bleibt der Stift (`CustomizeToggle` bzw. Kopf-Aktion) erreichbar – z. B. schwebender Button unten rechts über der `BottomNav` oder mitlaufender Kopf. Gilt für alle Seiten mit „Anpassen“ (Startseite, Training, Alltag …).
+- **Interaktive Widgets und Diagramme:** Balken/Punkte antippbar mit kleiner Vorschau der Werte (Tag, Menge, Ziel). Beispiel großes Wasser-Widget: Balken antippen → Vorschau des Tages + direkt „+500 ml“ (bzw. Menge ändern) für diesen Tag. Gemeinsamer Baustein (Antipp-Vorschau für `MiniBars`/`WeekDots`/Heatmap/Recharts), mit Tastatur und Screenreader bedienbar.
+- **„Intelligenter“ statt statisch:** Widgets zeigen passende nächste Schritte statt nur Zahlen, z. B. „noch 750 ml bis zum Ziel“ + Knopf, „Letztes Beintraining vor 6 Tagen“, „Protein: 40 g fehlen – Favoriten vorschlagen“, überfällige Supplements/Gewohnheiten im passenden Widget. Regeln lokal in `src/domain/` (offline, testbar); später ergänzen die Vorschläge aus 26/27 und die KI (31/32) diese Stellen.
+- **Navigation zeigt, wo man ist:** aktiver Eintrag in der `BottomNav` deutlicher (Vorschlag: gefülltes Feld/Pille hinter Symbol + Text in Primärfarbe, auch auf Unterseiten des Bereichs aktiv). **Optik vorher mit dem Nutzer abstimmen** (2–3 Varianten als Vorschau zeigen).
+
+**Notizen:**
+
 ### Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 **Ziel:** Nur angemeldete Personen mit gültiger Lizenz nutzen die App; sie läuft auf neuer, geschützter Adresse.
 - **Einrichten (mit dem Nutzer, Konten legt er selbst an):** Supabase-Projekt (EU/Frankfurt), Vercel-Projekt aus dem privaten Repo (Tarif klären, `BASE_PATH=/`, SPA mit HashRouter, Service-Worker-Header `Cache-Control: no-cache` für `sw.js`/`index.html` per `vercel.json`), Sentry-Projekt (EU). Domain. Repo privat schalten, GitHub-Pages-Workflow ablösen (Lint/Tests weiter in CI vor dem Deploy). Supabase-Schema als Migrationen im Repo (`supabase/`), lokale Entwicklung mit Supabase CLI.
 - **Sentry:** `@sentry/react` gebündelt und lazy initialisiert (Hauptbundle beobachten), `ErrorBoundary` + `watchDatabase` melden an Sentry, Datenschutz-Filter wie oben, Schalter „Fehlerberichte senden“ in Einstellungen → Export & Speicher; Test, dass `beforeSend` keine Eingaben/Werte durchlässt.
 - **Anmeldung:** Konten werden nur vom Admin angelegt bzw. per Einladung (keine freie Registrierung). Tabelle `licenses` (gültig bis, Rolle `user`/`trainer`/`admin`, gesperrt), abgesichert per Row Level Security.
+- **Mandanten von Anfang an:** Tabelle `organizations` (zunächst `basey` und `localgym`) und Zugehörigkeit `memberships` (Nutzer × Organisation × Rolle `member`/`trainer`/`gym_admin`). Rolle `super_admin` (der Nutzer) steht über allen Organisationen. Jeder Nutzer gehört genau einer Organisation, die beim Einloggen bzw. über den Einladungslink feststeht („zwei Pfade“: Basey oder LocalGym). Alle RLS-Regeln prüfen die Organisation mit (siehe Schritt 24b).
 - **App:** Anmeldebildschirm, Lizenzprüfung beim Start mit Kulanzzeit offline, Sperrbildschirm (Backup-Export möglich); Abmelden löscht lokale Daten nur nach Rückfrage. Lizenzlogik in `src/domain/license.ts` + Tests.
 - **Umzug:** letzte Version auf GitHub Pages zeigt „Backup exportieren → neue Adresse öffnen → importieren“, danach nur noch Weiterleitung. README anpassen.
 - E2E mit gemocktem Server (`page.route`), offline mit gültiger und abgelaufener Kulanzzeit.
@@ -1296,6 +1309,18 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 **Ziel:** Der Nutzer verwaltet Kunden selbst (manuelle Bezahlung).
 - Nur Rolle `admin`: Nutzer anlegen/einladen, Laufzeit verlängern, sperren, Rolle setzen (`user`/`trainer`), Notiz (z. B. „bezahlt bis …“), letzte Anmeldung.
 - Serverseitig abgesichert (RLS/Edge Function), nicht nur in der Oberfläche. Im Admin keine Gesundheitsdaten sichtbar.
+- Super-Admin sieht und verwaltet **alle Organisationen** (Basey + LocalGym), Filter nach Organisation; Gym-Admins sehen nur ihre eigene (Schritt 24b).
+
+**Notizen:**
+
+### Schritt 24b – Gym-Bereich (LocalGym): eigene Oberfläche & Verwaltung
+**Ziel:** LocalGym hat einen eigenen Bereich mit eigener Optik, den Gym-Admin/Trainer selbst anpassen; der Nutzer verwaltet als Super-Admin beides (Nutzerwunsch 11.11.2026).
+- **Rollen:** `super_admin` (Nutzer, alles), `gym_admin` (LocalGym: eigene Mitglieder, Trainer, Inhalte, Optik), `trainer` (Mitglieder betreuen, Pläne zuweisen), `member`. Ein Trainer von LocalGym sieht nur LocalGym.
+- **Eine App, ein Code – Unterschiede nur als Konfiguration** (Vorschlag, im Schritt mit dem Nutzer festlegen): Je Organisation ein Datensatz `organizationConfig` (Name, Logo, Farbpalette als `--p-*`-Werte, Ladebildschirm, freigeschaltete Bereiche, Standard-Widgets/Schnellzugriff/Kacheln, eigene Pläne/Übungen/Maschinen-Codes aus Schritt 30, Texte wie Willkommen/Impressum). Die App lädt sie nach dem Login und speichert sie lokal (offline nutzbar).
+- **Änderungen gelten für beide:** Neue Funktionen/Fehlerbehebungen landen automatisch in beiden Oberflächen, weil es nur einen Code gibt. Was je Organisation abweicht, steht ausschließlich in der Konfiguration (keine `if (gym === 'localgym')` im Code). Inhalte, die für alle gelten sollen (z. B. neue Übungen, Planvorlagen), legt der Super-Admin global an; Organisationen können sie ergänzen/ausblenden, aber nicht überschreiben (wie `builtin`/`user` bei Übungen).
+- **Optik LocalGym:** baut auf dem Design-System auf (Tokens/Paletten seit 18d): eigene Palette + Logo + Name, ggf. eigener Ladebildschirm/App-Name; Gym-Admin passt im Gym-Bereich an (Vorschau vor dem Speichern). Logo/Marke nur mit Erlaubnis des Gyms verwenden. Ein eigenes Installations-Icon/Manifest je Gym bräuchte eine eigene Adresse (z. B. `localgym.<domain>`) – im Schritt klären.
+- **Gym-Bereich in der App** (nur `gym_admin`/`trainer`): Mitglieder, Trainer, Inhalte (Pläne, Übungen, Maschinen-Codes), Optik, Ankündigungen.
+- Tests: RLS-Tests je Rolle und Organisation (kein Zugriff über Organisationsgrenzen), Konfiguration offline aus dem lokalen Speicher, E2E Login als Basey- und als LocalGym-Mitglied.
 
 **Notizen:**
 
