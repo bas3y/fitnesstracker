@@ -54,7 +54,11 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [ ] Schritt 30 – Geräte-Codes an Maschinen (QR + NFC)
 - [ ] Schritt 31 – KI-Grundlage: Fragen beantworten
 - [ ] Schritt 32 – KI: Eintragen, Foto-Kalorien, Anpassungsvorschläge
-- [ ] Schritt 33 – Sync & Trainer-Freigabe (+ Push & Handytest 21–33)
+- [ ] Schritt 33 – Sync & Trainer-Freigabe
+- [ ] Schritt 34 – Gym: Rollen & Rechte fein einstellbar
+- [ ] Schritt 35 – Gym: Trainer kontaktieren (Nachrichten) & Mitteilungen
+- [ ] Schritt 36 – Gym: Termine & Kurse buchen
+- [ ] Schritt 37 – Gym: Wer ist gerade da? (+ Push & Handytest 21–37)
 
 > Gearbeitet wird bis Schritt 20 nur lokal (lokale Commits, kein Push). Schritt 20 kann auch früher gestartet werden, z. B. direkt nach Schritt 12, wenn die App vorher aufs Handy soll.
 
@@ -1264,7 +1268,8 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - **Repo wird privat**, Hosting zieht von GitHub Pages zu Vercel, eigene Domain empfohlen. Neue Adresse = neuer, leerer Speicher → Umzug per Backup mit Hinweis in der alten App. Geheimnisse (Supabase Service-Role-Key, Sentry-Auth-Token, KI-Schlüssel) nur in Vercel-/Supabase-Umgebungsvariablen, nie im Client; im Client nur Supabase-URL + Anon-Key und Sentry-DSN.
 - **KI:** Anbindung an ein LLM eines Anbieters, Daten sind **vertraulich** → Aufruf nur über den eigenen Server (Schlüssel nie im Client), Anbieter mit EU-Verarbeitung/AVV, kein Training mit den Daten, möglichst Zero Data Retention. Freigabe je Datenbereich, Vorschau der gesendeten Daten.
 - **Rechtliches** (Nutzer klärt selbst, keine Rechtsberatung): Gewerbe, Impressum, Datenschutzerklärung, AVV mit Anbietern, Gesundheitsdaten = besondere Kategorie (Art. 9 DSGVO) → ausdrückliche Einwilligung.
-- **Zwei Bereiche (11.11.2026):** Neben Basey gibt es **LocalGym** mit eigener Optik, eigenem Gym-Admin und Trainern; der Nutzer ist Super-Admin über beide. Umsetzung als Mandanten (Organisationen) mit einem gemeinsamen Code, Unterschiede nur per Konfiguration (Schritte 23, 24, 24b).
+- **Zwei Bereiche (11.11.2026):** Neben Basey gibt es **LocalGym** mit eigener Optik, eigenem Gym-Admin und Trainern; der Nutzer ist Super-Admin über beide. Umsetzung als Mandanten (Organisationen) mit einem gemeinsamen Code, Unterschiede nur per Konfiguration (Schritte 23, 24, 24b). Gym-Funktionen für Mitglieder (Trainer kontaktieren, Termine, Kurse, wer ist da) und fein abgestufte Rollen folgen nach dem Sync (Schritte 34–37).
+- **Fragen:** Fachliche Details werden jeweils beim Start des Schritts geklärt; bekannte offene Fragen stehen im Schritt unter „Offene Fragen“.
 - **Grundsätze:** Lokale Daten bleiben der Hauptspeicher. Vorschläge (Kalorienziel, HF-Zonen, Plan, KI-Einträge) werden **nie automatisch übernommen**, immer mit Bestätigung. Neue Tabellen nur per Dexie-Version + Backup. Online-Funktionen offline ausgegraut („Nur mit Internet“).
 - Recherche Analysen: InBody (LookinBody 120/LB-Web) exportiert CSV/Excel; seca (mBCA/seca analytics) ohne öffentliche Formatangabe; „Ovida Diagnostics“ online nicht auffindbar → Beispieldateien vom Nutzer.
 
@@ -1392,7 +1397,44 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - Sync der freigegebenen Bereiche zum Server (nutzt UUID/`updatedAt`/`deletedAt`, letzter Stand gewinnt je Datensatz).
 - Kunde wählt Trainer + Bereiche, jederzeit widerrufbar; Trainer-Ansicht (Kundenliste, Training/Ernährung/Körper lesen, ggf. Plan zuweisen).
 - Prüfen: Ende-zu-Ende-Verschlüsselung vs. serverseitige Auswertung; Fotos/Journal nie ohne ausdrückliche Freigabe.
-- Danach **Push & Handytest 21–33** (wie 18c), nur nach Freigabe.
+- **Trainer ändert beim Kunden** (Nutzerwunsch 11.11.2026): Sync in beide Richtungen für freigegebene Bereiche (z. B. Plan, Ziele, Notizen); Änderungen des Trainers sind beim Kunden markiert („von Trainer X geändert“) und nachvollziehbar (Änderungsverlauf). Was ein Trainer darf, regelt Schritt 34.
+
+**Notizen:**
+
+### Schritt 34 – Gym: Rollen & Rechte fein einstellbar
+**Ziel:** Der Gym-Admin (Gym-Chef) vergibt eigene, kleinere Rollen mit abgestuften Rechten.
+- Statt fester Rollen: **Rechte** (z. B. Mitglieder sehen, Pläne zuweisen, Kundendaten ändern, Termine verwalten, Kurse anlegen, Nachrichten an alle, Optik ändern, Mitarbeiter verwalten) und **Rollen als Bündel** davon je Organisation. Vorlagen: Gym-Chef (alles), Trainer, Kursleiter, Empfang/Mitarbeiter, Mitglied. Gym-Admin legt eigene Rollen an/ändert sie; kann nie mehr Rechte vergeben, als er selbst hat; Super-Admin kann alles.
+- Kundendaten: Trainer sehen/ändern nur Mitglieder, die ihnen zugeordnet sind **und** die freigegeben haben (Schritt 33).
+- Durchsetzung serverseitig (RLS prüft Rechte, nicht nur die Oberfläche), Änderungsprotokoll (wer hat was wann geändert), Tests je Recht.
+- **Offene Fragen (im Schritt klären):** Welche Rollen braucht LocalGym konkret? Darf ein Trainer Kundendaten ändern oder nur vorschlagen? Wer sieht Gesundheitsdaten (Gewicht, Fotos, Journal)? Gelten Rollen auch für Basey?
+
+**Notizen:**
+
+### Schritt 35 – Gym: Trainer kontaktieren (Nachrichten) & Mitteilungen
+**Ziel:** Mitglieder schreiben ihrem Trainer direkt aus der App; das Gym kann Ankündigungen senden.
+- Chat Mitglied ↔ Trainer (Text, ggf. Bild/Workout teilen), Gruppen-/Ankündigungen vom Gym (Recht aus 34). Supabase Realtime, nur online; offline geschriebene Nachrichten werden später gesendet.
+- **Push-Benachrichtigungen** (jetzt mit Server möglich: Web Push; iPhone nur bei installierter App ab iOS 16.4), abschaltbar je Art. Löst auch alte Wünsche (Pausenende, Erinnerungen, siehe Ideen-Parkplatz) teilweise.
+- Melden/Blockieren, Aufbewahrungsdauer, Löschen beim Austritt.
+- **Offene Fragen:** Nur 1:1 mit dem eigenen Trainer oder mit allen Mitarbeitern? Antwortzeiten/Erreichbarkeit anzeigen? Dateien/Bilder erlaubt? Verschlüsselt?
+
+**Notizen:**
+
+### Schritt 36 – Gym: Termine & Kurse buchen
+**Ziel:** Mitglieder buchen Termine bei Trainern und Kurse; Mitarbeiter verwalten Zeiten und Plätze.
+- **Termine:** Trainer hinterlegen freie Zeiten (Verfügbarkeit, Dauer, Art: Probetraining, Planbesprechung, Körperanalyse …), Mitglied wählt Slot, Bestätigung/Absage/Umbuchen, Erinnerung per Push, Termin im Kalender des Handys (`.ics`).
+- **Kurse:** Kursplan (wiederkehrend), Kursleiter, Plätze/Warteliste, Buchen/Stornieren mit Frist, Teilnehmerliste für Mitarbeiter, Anwesenheit abhaken.
+- Eigene Übersicht „Meine Termine & Kurse“ + Widget auf der Startseite; im Gym-Bereich Kalenderansicht für Mitarbeiter.
+- **Offene Fragen:** Kosten/Kontingente (z. B. 10er-Karte) – in der App oder außerhalb? Stornofristen? Gibt es schon ein Buchungssystem im Gym, das abgelöst oder angebunden werden soll? Termine nur bei Trainern oder auch Geräte/Räume?
+
+**Notizen:**
+
+### Schritt 37 – Gym: Wer ist gerade da?
+**Ziel:** Mitglieder sehen, welche Mitarbeiter/Trainer gerade im Gym sind.
+- Anzeige „Gerade da“ mit Foto/Name/Rolle, darunter „Heute noch da“ aus dem Dienstplan.
+- Quelle (im Schritt festlegen): Mitarbeiter stempeln sich in der App ein/aus (z. B. QR-Code am Empfang, Wiederverwendung aus Schritt 30), oder Dienstplan, oder beides; automatisches Ausstempeln nach Schichtende.
+- Datenschutz: Mitarbeiter müssen zustimmen, nur Anwesenheit (keine Standortdaten), Verlauf nur für den Gym-Admin.
+- Optional später: Auslastung des Gyms (Mitglieder-Check-ins) anzeigen.
+- Danach **Push & Handytest 21–37** (wie 18c), nur nach Freigabe.
 
 **Notizen:**
 
