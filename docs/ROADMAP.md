@@ -46,6 +46,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 - [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
 - [ ] Schritt 24b – Gym-Bereich (LocalGym): eigene Oberfläche & Verwaltung
+- [ ] Schritt 24c – Uhren & Smartgeräte live anbinden (Whoop, Garmin, Apple Health …)
 - [ ] Schritt 25 – Körpermodell im Training
 - [ ] Schritt 26 – Kalorienziel über Gewichtsverlauf (adaptiv)
 - [ ] Schritt 27 – Belastung & Regeneration (Laufcoach)
@@ -1329,6 +1330,22 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 
 **Notizen:**
 
+### Schritt 24c – Uhren & Smartgeräte live anbinden (Whoop, Garmin, Apple Health …)
+**Ziel:** Schritte, Schlaf, Puls/HRV, Erholung und Trainings kommen automatisch nach jedem Sync der Uhr in die App – ohne Datei-Import (Nutzerwunsch 11.11.2026).
+- **Grundlage:** Eine PWA kann Uhr/Schrittzähler nicht direkt lesen. Weg: Kunde verbindet einmal sein Anbieter-Konto (OAuth), der Anbieter schickt neue Daten per Webhook an den Server (Supabase Edge Function), die App holt sie beim Öffnen/online ab. „Live“ = einige Minuten nach dem Sync der Uhr mit der Hersteller-App.
+- **Anbindung – zuerst prüfen (mit dem Nutzer entscheiden):**
+  - **Sammeldienst** mit EU-Verarbeitung (z. B. Thryve; Alternativen Terra, Rook, Spike): eine Schnittstelle für Garmin, Whoop, Oura, Polar, Suunto, Fitbit, Withings …, Garmin-Freigabe läuft über den Dienst. Kosten je Nutzer/Monat, AVV nötig.
+  - **Oder direkt:** Whoop Developer API (einfach), Garmin Health/Activity API (Antrag + Freigabe durch Garmin, Vorlauf), später Oura, Polar, Withings (Waage → Gewicht/Körperfett) usw.
+- **Apple Health / Apple Watch und Android Health Connect** (keine Web-Schnittstelle):
+  - Start: **iPhone-Kurzbefehl** (Automation täglich bzw. mehrmals am Tag), liest Apple-Health-Werte und sendet sie an eine Edge Function mit persönlichem Token; Kurzbefehl als Link + Anleitung in der App.
+  - Später optional: **Basey als echte App** (Capacitor-Hülle um die PWA) mit HealthKit/Health Connect – bringt auch Hintergrund-GPS, Vibration, Mitteilungen (siehe Ideen-Parkplatz). Kosten: Apple 99 €/Jahr, Google 25 € einmalig, Store-Prüfung. Entscheidung beim Start des Schritts (relevant v. a., wenn LocalGym-Kunden die App aus dem Store installieren sollen).
+- **Daten in der App:** Schreiben wie der Gesundheits-Import (14b) über `writeImportedDailyLog` (Herkunft in `importedFields`, **eigene Werte werden nie überschrieben**), Trainings wie der Einheiten-Import (14) mit Duplikat-Erkennung (`planImport`, Startzeit + Dauer) gegen Datei-Importe. Neue Werte wie Whoop-Erholung/Belastung als Felder per Dexie-Version; sie speisen Regeneration (27) und Kalorienziel (26).
+- **Einstellungen:** „Verbundene Geräte“ mit Verbinden/Trennen je Quelle, letzter Sync, Schalter je Datenart; Trennen löscht die Server-Kopie.
+- **Datenschutz:** Gesundheitsdaten liegen damit auch auf dem Server → ausdrückliche Einwilligung je Quelle, Server-Kopie nur so lange wie nötig (nach Abholung löschen), Zugangstoken verschlüsselt nur auf dem Server, Security-Standards aus 21.
+- **Offene Fragen:** Sammeldienst oder direkt? Welche Geräte nutzen LocalGym-Kunden am häufigsten? Kurzbefehl reicht oder gleich echte App? Wer trägt die Kosten (je Nutzer) – im Preis enthalten?
+
+**Notizen:**
+
 ### Schritt 25 – Körpermodell im Training
 **Ziel:** Unten auf der Trainingsseite sieht man an einer Figur (vorne/hinten), welche Muskeln wie viel trainiert wurden.
 - Eigene SVG-Figur (kein Paket), Muskelbereiche aus den Muskelgruppen der Übungen (primär/sekundär gewichtet).
@@ -1444,7 +1461,7 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - ~~Server + Sync (nutzt vorbereitete UUIDs/Timestamps/Soft-Delete), Mehrbenutzer mit Admin-Rolle, Privatsphäre~~ → vorgezogen in Phase 7 (Schritte 23, 24, 33)
 - **„Multiplayer“-Modus** (Nutzerwunsch nach Schritt 15): Bis dahin nutzt jede Person die App über denselben Link mit eigenen Daten auf ihrem Gerät (Schritt 15b). Später überlegen, wie Geräte verbunden werden (Konto, Freunde, gemeinsame Pläne/Challenges) und ob dafür eine eigene, gehostete Version mit Server nötig ist.
 - Freunde, Pläne teilen, Ranglisten, Challenges
-- Garmin-Connect-/Strava-API, Schlaf/Ruhepuls/HRV-Übernahme, Online-Karten
+- ~~Garmin-Connect-/Strava-API, Schlaf/Ruhepuls/HRV-Übernahme~~ → vorgezogen als Schritt 24c; Online-Karten bleiben Ausblick
 - ~~Barcode-Scanner mit Open Food Facts online~~ → vorgezogen als Schritt 15c
 - Push-Benachrichtigungen
 - ~~KI-Funktionen (Trainingsanalyse, Planvorschläge über Claude API)~~ → vorgezogen in Phase 7 (Schritte 31, 32)
