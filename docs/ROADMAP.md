@@ -47,9 +47,11 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
 - [ ] Schritt 24b – Gym-Bereich (LocalGym): eigene Oberfläche & Verwaltung
 - [ ] Schritt 24c – Uhren & Smartgeräte live anbinden (Whoop, Garmin, Apple Health …)
+- [ ] Schritt 24d – Push-Benachrichtigungen
 - [ ] Schritt 25 – Körpermodell im Training
 - [ ] Schritt 26 – Kalorienziel über Gewichtsverlauf (adaptiv)
-- [ ] Schritt 27 – Belastung & Regeneration (Laufcoach)
+- [ ] Schritt 27 – Belastung, Form & Regeneration (Laufcoach)
+- [ ] Schritt 27b – Ausdauer-Analyse & Plan-Vorlagen (VO2max, Prognosen, Strecken)
 - [ ] Schritt 28 – Körperanalyse (BIA: InBody, seca)
 - [ ] Schritt 29 – Diagnostik-Berichte (Ovida u. a.) → Training & Ernährung
 - [ ] Schritt 30 – Geräte-Codes an Maschinen (QR + NFC)
@@ -59,7 +61,8 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [ ] Schritt 34 – Gym: Rollen & Rechte fein einstellbar
 - [ ] Schritt 35 – Gym: Trainer kontaktieren (Nachrichten) & Mitteilungen
 - [ ] Schritt 36 – Gym: Termine & Kurse buchen
-- [ ] Schritt 37 – Gym: Wer ist gerade da? (+ Push & Handytest 21–37)
+- [ ] Schritt 37 – Gym: Wer ist gerade da?
+- [ ] Schritt 38 – Freunde, Vergleiche & Challenges (+ Push & Handytest 21–38)
 
 > Gearbeitet wird bis Schritt 20 nur lokal (lokale Commits, kein Push). Schritt 20 kann auch früher gestartet werden, z. B. direkt nach Schritt 12, wenn die App vorher aufs Handy soll.
 
@@ -1295,6 +1298,7 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - **Anpassen-Stift bleibt sichtbar:** Beim Herunterscrollen bleibt der Stift (`CustomizeToggle` bzw. Kopf-Aktion) erreichbar – z. B. schwebender Button unten rechts über der `BottomNav` oder mitlaufender Kopf. Gilt für alle Seiten mit „Anpassen“ (Startseite, Training, Alltag …).
 - **Interaktive Widgets und Diagramme:** Balken/Punkte antippbar mit kleiner Vorschau der Werte (Tag, Menge, Ziel). Beispiel großes Wasser-Widget: Balken antippen → Vorschau des Tages + direkt „+500 ml“ (bzw. Menge ändern) für diesen Tag. Gemeinsamer Baustein (Antipp-Vorschau für `MiniBars`/`WeekDots`/Heatmap/Recharts), mit Tastatur und Screenreader bedienbar.
 - **„Intelligenter“ statt statisch:** Widgets zeigen passende nächste Schritte statt nur Zahlen, z. B. „noch 750 ml bis zum Ziel“ + Knopf, „Letztes Beintraining vor 6 Tagen“, „Protein: 40 g fehlen – Favoriten vorschlagen“, überfällige Supplements/Gewohnheiten im passenden Widget. Regeln lokal in `src/domain/` (offline, testbar); später ergänzen die Vorschläge aus 26/27 und die KI (31/32) diese Stellen.
+- **Tägliche Hinweise** morgens (Schlaf, heutiger Plan), nach dem Training (Kurzfazit, Rekorde) und abends (Tagesbilanz, **Ernährungsbericht**: Kalorien/Makros vs. Ziel, was fehlt) als Karte auf der Startseite – regelbasiert und offline; ab 24d auch als Push, ab 31 mit KI-Text.
 - **Navigation zeigt, wo man ist:** aktiver Eintrag in der `BottomNav` deutlicher (Vorschlag: gefülltes Feld/Pille hinter Symbol + Text in Primärfarbe, auch auf Unterseiten des Bereichs aktiv). **Optik vorher mit dem Nutzer abstimmen** (2–3 Varianten als Vorschau zeigen).
 
 **Notizen:**
@@ -1316,6 +1320,7 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - Nur Rolle `admin`: Nutzer anlegen/einladen, Laufzeit verlängern, sperren, Rolle setzen (`user`/`trainer`), Notiz (z. B. „bezahlt bis …“), letzte Anmeldung.
 - Serverseitig abgesichert (RLS/Edge Function), nicht nur in der Oberfläche. Im Admin keine Gesundheitsdaten sichtbar.
 - Super-Admin sieht und verwaltet **alle Organisationen** (Basey + LocalGym), Filter nach Organisation; Gym-Admins sehen nur ihre eigene (Schritt 24b).
+- **Tarife** als Lizenz-Typ (z. B. Einzel, Familie, Student, Gym-Mitglied) mit freigeschalteten Funktionen je Tarif (z. B. „KI enthalten“, siehe Schritt 31). Familie = ein Zahler, mehrere verknüpfte Konten.
 
 **Notizen:**
 
@@ -1342,7 +1347,18 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - **Daten in der App:** Schreiben wie der Gesundheits-Import (14b) über `writeImportedDailyLog` (Herkunft in `importedFields`, **eigene Werte werden nie überschrieben**), Trainings wie der Einheiten-Import (14) mit Duplikat-Erkennung (`planImport`, Startzeit + Dauer) gegen Datei-Importe. Neue Werte wie Whoop-Erholung/Belastung als Felder per Dexie-Version; sie speisen Regeneration (27) und Kalorienziel (26).
 - **Einstellungen:** „Verbundene Geräte“ mit Verbinden/Trennen je Quelle, letzter Sync, Schalter je Datenart; Trennen löscht die Server-Kopie.
 - **Datenschutz:** Gesundheitsdaten liegen damit auch auf dem Server → ausdrückliche Einwilligung je Quelle, Server-Kopie nur so lange wie nötig (nach Abholung löschen), Zugangstoken verschlüsselt nur auf dem Server, Security-Standards aus 21.
+- **Später (optional):** strukturierte Workouts/Pläne auf die Garmin-Uhr übertragen (Garmin Training API) – interessant für Trainer, die Pläne zuweisen (33/34).
 - **Offene Fragen:** Sammeldienst oder direkt? Welche Geräte nutzen LocalGym-Kunden am häufigsten? Kurzbefehl reicht oder gleich echte App? Wer trägt die Kosten (je Nutzer) – im Preis enthalten?
+
+**Notizen:**
+
+### Schritt 24d – Push-Benachrichtigungen
+**Ziel:** Die App erinnert und benachrichtigt auch, wenn sie geschlossen ist (Nutzerwunsch 12.11.2026).
+- **Technik:** Web Push (VAPID) über den Service Worker; Versand aus Supabase (Edge Function + geplante Jobs). Android: Chrome im Browser und installiert; **iPhone nur bei installierter App ab iOS 16.4** (Hinweis in der App, wenn im Safari-Tab geöffnet). Abo je Gerät in Tabelle `pushSubscriptions`, Erlaubnis erst nach Antippen fragen (nicht beim Start).
+- **Arten (je einzeln abschaltbar, Ruhezeiten):** Supplement-Erinnerungen (ersetzt/ergänzt `SupplementReminder` bei geschlossener App), Gewohnheiten, Wasser/Protein-Tagesrest, Pausenende im Training (vom Server zum Zeitpunkt `restEndsAt`), Fokus-/Meditations-Timer-Ende, Wochenrückblick, Backup-Erinnerung, erreichte Ziele/Abzeichen; später Nachrichten (35), Termine/Kurse (36), Freunde/Challenges (38), Trainer-Änderungen (33).
+- **Datenschutz:** Der Server kennt nur Zeitpunkte und kurze Texte, die das Gerät für die Erinnerung hinterlegt (z. B. „Kreatin nehmen“) – keine Gesundheitswerte im Push-Text; Sync der Erinnerungszeiten statt Daten. Abschalten löscht das Abo.
+- Einstellungen: neuer Abschnitt „Benachrichtigungen“ (`SETTINGS_SECTIONS`); Test „Testbenachrichtigung senden“.
+- **Offene Fragen:** Welche Arten standardmäßig an? Gym-Ankündigungen abschaltbar oder Pflicht?
 
 **Notizen:**
 
@@ -1362,11 +1378,26 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 
 **Notizen:**
 
-### Schritt 27 – Belastung & Regeneration (Laufcoach)
+### Schritt 27 – Belastung, Form & Regeneration (Laufcoach)
 **Ziel:** Sehen, wie belastet man ist und wann man wieder erholt ist.
 - Belastung je Einheit: TRIMP aus Puls (`trackSummary`), sonst Dauer × Bewertung; Kraft über Volumen je Muskel.
 - Akute/chronische Belastung, Erholungszeit je Einheit („erholt in ca. x h“), Hinweise bei Spitzen; Ruhepuls/HRV-Trend (14b) als Zusatzsignal.
-- Muskel-Erholung im Körpermodell (Schritt 25). Widget + Karte auf der Trainingsseite.
+- **Fitness, Ermüdung, Form** (CTL/ATL/TSB) als Verlauf, Zeitfenster anpassbar (Standard 42/7 Tage).
+- **Ruhetag-Vorschlag** bei hoher Ermüdung bzw. schlechter Erholung (HRV/Ruhepuls/Schlaf) – als Hinweis, nie automatisch im Plan.
+- **Schlafscore** (0–100) aus Dauer vs. Ziel, Phasen (falls vorhanden), Regelmäßigkeit; im Alltag und als Signal für die Erholung.
+- Muskel-Erholung im Körpermodell (Schritt 25). Widget + Karte auf der Trainingsseite. Werte von Uhren (24c, z. B. Whoop-Erholung) werden angezeigt und fließen ein.
+
+**Notizen:**
+
+### Schritt 27b – Ausdauer-Analyse & Plan-Vorlagen
+**Ziel:** Mehr aus vorhandenen Ausdauer-Daten herausholen und fertige Pläne für Laufen/Rad/Mobilität anbieten (offline).
+- **VO2max-Schätzung, VDOT und Wettkampfprognosen** (5 km bis Marathon) aus Bestzeiten (`bestEffortsOf`) und Puls; Verlauf über die Zeit.
+- **Steigungsbereinigtes Tempo (GAP)** aus dem Höhenverlauf importierter Einheiten (Anzeige in der Einheit, Splits, Pace-Statistik).
+- **Vergleich auf wiederkehrenden Strecken:** gleiche Runde automatisch erkennen (Start/Ziel + Form der Strecke aus `enduranceTracks`, Zusammenfassung beim Import speichern wie `trackSummary`), Zeiten der Runde im Verlauf vergleichen.
+- **Eigene Pace-Zonen** (aus VDOT bzw. Schwellen aus Schritt 29) neben den HF-Zonen.
+- **Plan-Vorlagen Ausdauer:** feste Pläne (z. B. 5 km, 10 km, Halbmarathon; Rad-Grundlage) mit Einheiten je Woche, Vorschlag „heute dran“ wie bei Kraftplänen; Fortschritt passt Pace-Vorgaben an VDOT an.
+- **Mobilität & Verletzungsprävention:** Routinen als Plan-Vorlagen aus vorhandenen Übungen (z. B. Läufer-Mobility, Schulter, Rücken), startbar wie ein Workout mit Zeit-Übungen.
+- Optional (nur bei Bedarf, z. B. Radfahrer mit Powermeter): Leistungszonen, Leistungskurve, FTP-Verlauf aus FIT-Leistungsdaten.
 
 **Notizen:**
 
@@ -1398,6 +1429,8 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - KI-Proxy auf dem Server (Edge Function): Anbieter-Schlüssel nur dort, keine Speicherung von Inhalten, Kontingent je Nutzer (Kosten). Anbieter nach AVV/EU/Zero Data Retention wählen (Kandidaten: Anthropic Claude API, Mistral EU, Azure OpenAI EU).
 - Einwilligung + Freigabe je Datenbereich (Training, Ernährung, Alltag, Gesundheit; Journal standardmäßig aus), Vorschau „Das wird gesendet“, keine Namen.
 - Chat mit lesenden Werkzeugen auf die lokalen Daten, nur nötige Ausschnitte senden. Offline ausgegraut.
+- KI-Zusammenfassungen einzelner Aktivitäten und tägliche Hinweise (morgens/nach dem Training/abends aus Schlaf, HRV, Belastung, Ernährung) ergänzen die regelbasierten Hinweise aus 22b.
+- **Version ohne KI (Nutzerwunsch 12.11.2026):** Die KI kostet laufend Geld (je Anfrage beim Anbieter) – es braucht jemanden, der die Kosten trägt. Deshalb muss die App **vollständig ohne KI** funktionieren (alle KI-Stellen ausblendbar, regelbasierte Vorschläge bleiben). Freischaltung je Tarif (Schritt 24, z. B. „mit KI“ als teurerer Tarif oder Zusatz), Kontingent je Nutzer/Monat, Kostenübersicht für den Admin. **Im Schritt weiterplanen:** Preis und Kontingent, wer zahlt bei LocalGym (Gym oder Mitglied), was passiert beim Erreichen des Limits.
 
 **Notizen:**
 
@@ -1430,7 +1463,7 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 ### Schritt 35 – Gym: Trainer kontaktieren (Nachrichten) & Mitteilungen
 **Ziel:** Mitglieder schreiben ihrem Trainer direkt aus der App; das Gym kann Ankündigungen senden.
 - Chat Mitglied ↔ Trainer (Text, ggf. Bild/Workout teilen), Gruppen-/Ankündigungen vom Gym (Recht aus 34). Supabase Realtime, nur online; offline geschriebene Nachrichten werden später gesendet.
-- **Push-Benachrichtigungen** (jetzt mit Server möglich: Web Push; iPhone nur bei installierter App ab iOS 16.4), abschaltbar je Art. Löst auch alte Wünsche (Pausenende, Erinnerungen, siehe Ideen-Parkplatz) teilweise.
+- Benachrichtigung bei neuer Nachricht/Ankündigung über die Push-Grundlage aus Schritt 24d.
 - Melden/Blockieren, Aufbewahrungsdauer, Löschen beim Austritt.
 - **Offene Fragen:** Nur 1:1 mit dem eigenen Trainer oder mit allen Mitarbeitern? Antwortzeiten/Erreichbarkeit anzeigen? Dateien/Bilder erlaubt? Verschlüsselt?
 
@@ -1451,7 +1484,17 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - Quelle (im Schritt festlegen): Mitarbeiter stempeln sich in der App ein/aus (z. B. QR-Code am Empfang, Wiederverwendung aus Schritt 30), oder Dienstplan, oder beides; automatisches Ausstempeln nach Schichtende.
 - Datenschutz: Mitarbeiter müssen zustimmen, nur Anwesenheit (keine Standortdaten), Verlauf nur für den Gym-Admin.
 - Optional später: Auslastung des Gyms (Mitglieder-Check-ins) anzeigen.
-- Danach **Push & Handytest 21–37** (wie 18c), nur nach Freigabe.
+
+**Notizen:**
+
+### Schritt 38 – Freunde, Vergleiche & Challenges
+**Ziel:** Andere Nutzer als Freunde hinzufügen – auch aus dem eigenen Gym – und sich vergleichen (Nutzerwunsch 12.11.2026).
+- **Freunde:** Anfrage per Name/Einladungslink/QR-Code, annehmen/ablehnen, entfernen, blockieren; im Gym zusätzlich Mitgliederliste (nur wer sichtbar sein will). Organisationsübergreifend (Basey ↔ LocalGym) nur, wenn beide zustimmen.
+- **Was geteilt wird, bestimmt jeder selbst** (Standard: wenig): z. B. Trainingstage/-anzahl, Serien, Abzeichen, ausgewählte Rekorde, Ausdauer-Wochensumme. Nie Gewicht, Fotos, Journal, Gesundheitswerte ohne ausdrückliche Freigabe. Geteilt werden nur Kennzahlen (serverseitig zusammengefasst), nicht die Rohdaten.
+- **Vergleichen:** Freund-Profil mit freigegebenen Kennzahlen, Vergleich nebeneinander (z. B. Wochenvolumen, Rekord Bankdrücken, km im Monat), kleine Rangliste unter Freunden bzw. im Gym (freiwillig).
+- **Challenges:** mit Freunden oder vom Gym (z. B. „100 km im März“, „12 Trainings im Monat“), Fortschritt aus den eigenen Daten berechnet (wie `goalProgress`), Abzeichen bei Abschluss; Gym-Challenges legt das Gym an (Recht aus 34).
+- Benachrichtigungen über Push (24d): Freundschaftsanfrage, Challenge-Stand. Optional später: Feed/Kudos.
+- Danach **Push & Handytest 21–38** (wie 18c), nur nach Freigabe.
 
 **Notizen:**
 
@@ -1460,10 +1503,10 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 ## Phase 6 – Später mit Internet/Server (nur Ausblick, keine Schritte)
 - ~~Server + Sync (nutzt vorbereitete UUIDs/Timestamps/Soft-Delete), Mehrbenutzer mit Admin-Rolle, Privatsphäre~~ → vorgezogen in Phase 7 (Schritte 23, 24, 33)
 - **„Multiplayer“-Modus** (Nutzerwunsch nach Schritt 15): Bis dahin nutzt jede Person die App über denselben Link mit eigenen Daten auf ihrem Gerät (Schritt 15b). Später überlegen, wie Geräte verbunden werden (Konto, Freunde, gemeinsame Pläne/Challenges) und ob dafür eine eigene, gehostete Version mit Server nötig ist.
-- Freunde, Pläne teilen, Ranglisten, Challenges
+- ~~Freunde, Pläne teilen, Ranglisten, Challenges~~ → vorgezogen als Schritt 38
 - ~~Garmin-Connect-/Strava-API, Schlaf/Ruhepuls/HRV-Übernahme~~ → vorgezogen als Schritt 24c; Online-Karten bleiben Ausblick
 - ~~Barcode-Scanner mit Open Food Facts online~~ → vorgezogen als Schritt 15c
-- Push-Benachrichtigungen
+- ~~Push-Benachrichtigungen~~ → vorgezogen als Schritt 24d
 - ~~KI-Funktionen (Trainingsanalyse, Planvorschläge über Claude API)~~ → vorgezogen in Phase 7 (Schritte 31, 32)
 
 ## Ideen-Parkplatz
