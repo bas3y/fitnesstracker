@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { goOffline } from './helpers';
 
 test('Übungen verwalten: eigene Übung, Favorit, Ausblenden, Löschen (offline)', async ({

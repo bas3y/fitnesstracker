@@ -5,6 +5,28 @@
 - Ideensammlung: [fitnesstracker.md](fitnesstracker.md)
 - Umsetzungsplan mit allen Schritten und Fortschritt: [docs/ROADMAP.md](docs/ROADMAP.md)
 
+## Sicherheit
+
+**Befolge immer die Regeln in [SECURITY.md](SECURITY.md).** (Standards seit Schritt 21; die Datei nicht inhaltlich ändern, projektspezifische Ergänzungen gehören hierher oder in die ROADMAP.)
+
+```
+APP-TYP: 3
+MODULE: Uploads, Schnittstellen
+DATEN: personenbezogen ja, besonders sensibel ja
+```
+
+- **Typ 3**, weil Basey und LocalGym ab Phase 7 als Mandanten (Organisationen) in derselben Supabase-Instanz laufen. Bis Schritt 23 gibt es keinen Server – die Regeln für Server, Login, RLS und Mandanten gelten ab dort (Checkliste je Schritt in der ROADMAP unter „Security-Checkliste Phase 7“).
+- **Uploads:** Fortschrittsfotos, Import-Dateien (FIT/GPX/TCX/ZIP, Apple Health, Garmin), später Befunde (28/29) und Sync (33). **Schnittstellen:** Open Food Facts, Uhren/Webhooks (24c), Push (24d), KI-Proxy (31/32).
+- **Zahlungen** ist kein Modul, solange die Bezahlung manuell läuft. Kommt ein Zahlungsanbieter dazu, Steckbrief ergänzen.
+- **Besonders sensibel:** Gesundheitsdaten (Art. 9 DSGVO) – nie in Logs, URLs, `localStorage`, Fehlerberichte oder an Dritte ohne Einwilligung.
+- **Freigabe (Nutzerentscheidung 12.11.2026):** Bei **jedem** Schritt erst den Plan zeigen (Umfang; bei Server-Themen mit Datenmodell, Rollen, Zugriffsregeln, Angriffsflächen) und **Code erst nach OK des Nutzers** schreiben. Reine Doku-/Roadmap-Änderungen, die der Schritt verlangt, dürfen vorher erfolgen.
+- Bei Widerspruch zwischen Projektregeln und `SECURITY.md` gilt Sicherheit zuerst; im Zweifel nachfragen.
+- **Content-Security-Policy:** `src/security/csp.ts` (Vite-Plugin `basey-csp`, nur im Build, Prüfsummen der Inline-Skripte automatisch). Neue Online-Adresse = Eintrag in `connect-src` (+ Rückfrage beim Nutzer). Kein `eval`/`new Function`, keine Inline-Event-Handler; Zod läuft `jitless` (gesetzt im Inline-Skript in `index.html`). E2E-Specs importieren `test`/`expect` aus `./fixtures` (nicht `@playwright/test`) – jeder Test schlägt bei einem CSP-Verstoß fehl.
+- **Dateien von außen** (Import, später Uploads): nie unbegrenzt in den Speicher – `MAX_FILE_BYTES`/`decompress`/`readZipEntry` aus `src/domain/import/zip.ts` (Grenze am tatsächlichen Strom), große Exporte stückweise (`openZipEntry`).
+- HTML-Strings (SVG für `dangerouslySetInnerHTML`/`innerHTML`): variable Werte mit `escapeAttr` (`src/brand/xml.ts`).
+- **Secret-Scan:** `node scripts/check-secrets.mjs --staged` läuft als Git-Hook vor jedem Commit (`.githooks/pre-commit`, eingeschaltet per `git config core.hooksPath .githooks` – nach neuem Klon erneut setzen), `--all` in der CI. Hook nie mit `--no-verify` umgehen; Fehlalarm mit Kommentar `secret-scan: ignore`.
+- CI: `deploy.yml` prüft `npm audit --omit=dev --audit-level=high` + Secret-Scan vor dem Build; `security.yml` (Semgrep, volles `npm audit`, Secret-Scan) blockiert nicht. Dependabot: `.github/dependabot.yml`.
+
 ## Ablauf, wenn der Nutzer „Schritt X starten“ schreibt
 
 Jeder Schritt wird in einem eigenen Chat umgesetzt. Der Projektstand steht im Repo, nicht im Chatverlauf.
@@ -12,7 +34,7 @@ Jeder Schritt wird in einem eigenen Chat umgesetzt. Der Projektstand steht im Re
 1. **Lesen:** `docs/ROADMAP.md` komplett lesen, besonders Schritt X und die **Notizen der vorherigen Schritte** (Abweichungen, offene Punkte).
 2. **Voraussetzungen prüfen:** Sind alle vorherigen Schritte abgehakt? Falls nicht, den Nutzer darauf hinweisen und fragen, ob trotzdem fortgefahren werden soll.
 3. **Bestehenden Code ansehen:** Vorhandene Komponenten, Hooks, DB-Hilfsfunktionen und Domain-Logik wiederverwenden statt neu zu bauen.
-4. **Kurz planen:** Dem Nutzer in wenigen Stichpunkten sagen, was gebaut wird. Bei echten Unklarheiten (fachliche Entscheidungen) nachfragen, sonst sinnvolle Annahmen treffen und nennen.
+4. **Planen und Freigabe abwarten:** Dem Nutzer in Stichpunkten sagen, was gebaut wird (Annahmen nennen, echte fachliche Unklarheiten fragen). **Erst nach seinem OK Code schreiben** (siehe „Sicherheit“).
 5. **Umsetzen:** Nur den Umfang von Schritt X. Ideen für später als Notiz in der ROADMAP festhalten statt sie einzubauen.
 6. **Prüfen:** Siehe „Definition of Done“ unten.
 7. **Abschließen:**
@@ -77,6 +99,7 @@ e2e/           Playwright-Tests
 - `npm test` – Vitest (`src/**/*.test.{ts,tsx}`, Setup in `src/test/setup.ts`)
 - `npm run test:e2e` – Playwright (`e2e/`, baut selbst und startet Preview; Projekte `android` und `iphone`)
 - `npm run lint` (ESLint + Prettier-Check) / `npm run format` / `npm run typecheck`
+- `node scripts/check-secrets.mjs --staged | --all` – Secret-Scan (Git-Hook bzw. ganzes Repo)
 - `npm run icons` – Favicon und PWA-Icons (inkl. `apple-touch-icon-<variante>.png`) aus `src/brand/logo.ts` sowie Ladebildschirm-Bilder `splash-<palette>.webp` neu erzeugen
 - `node scripts/generate-wordmark.mjs` – Schriftzug „Basey“ als SVG-Pfade nach `src/brand/wordmark.ts` (lädt Inter Tight + opentype.js nach `scripts/.cache/`)
 - `npm run data` – `src/data/exercises.json` + `foods.json` aus Quelldaten neu erzeugen (Download nach `scripts/.cache/`, Auswahl/Übersetzung in `scripts/data/*.mapping.mjs`). Danach **`SEED_VERSION` in `src/db/seed.ts` erhöhen**.
@@ -143,7 +166,7 @@ e2e/           Playwright-Tests
 - **Stabilität (seit 20):** Ladebildschirm-Artwork ist vorgerendert (`public/splash-<palette>.webp` aus `npm run icons`, Ausschnitt `SPLASH_ART_AREA`) – nach Änderungen an `PALETTE_ARTWORKS` oder einer neuen Palette `npm run icons` laufen lassen; Ladebildschirm nur per Deckkraft animieren. Renderfehler fängt `ErrorBoundary` (App + Seiteninhalt im `Layout`), DB-Probleme meldet `watchDatabase` → `DbStatusNotice` (`src/db/dbStatus.ts`). Neu laden mit wartender neuer Version: `reloadApp()`. Lange Schreibvorgänge (Seed, Import) **nie** zusammen mit `settings` in eine Transaktion legen, sonst wartet die ganze App. Build-Kennung `__APP_BUILD__` (`src/buildInfo.d.ts`).
 - Hinweise/Toasts: `showToast({ title, lines })` aus `src/components/toastStore.ts` (`ToastHost` hängt im Layout); Standard ist ein Rekord-Hinweis mit Pokal, `variant: 'info'` für schlichte Hinweise.
 - Gemeinsame UI: `Page` (optional `backTo` für Unterseiten)/`Card`/`LinkRow` (`src/components/Page.tsx`), `Stepper`, `SegmentedControl`, `SortableList` (Griff per `renderItem` in die Zeile einbauen; Zeilen werden samt Inhalt gezogen, getauscht wird, wenn die Kante der Zeile die Mitte des Nachbarn überquert; beim Ziehen bleibt die DOM-Reihenfolge fest und CSS `order` sortiert, deshalb in E2E erst nach dem Ablegen `first()`/`last()` prüfen; E2E-Helfer `dragTo` rechnet mit der Zeile, Zielzeile sollte auf den Bildschirm passen; feste Leisten unten brauchen `data-bottom-bar`, damit das automatische Scrollen darüber beginnt), `ConfirmDialog` (Rückfrage, vor jedem Trainingsstart), `FavoriteToggle` (Stern neben Listenzeilen, generisch), `DeleteRowButton` (✕ in Listenzeilen), `SearchInput`, `Chip`, `Select`, `FavoriteButton` (`src/features/training/`, Stern neben Listenzeilen, heißt „Favorit: <Name>“; Selektoren für die Zeile daher mit `^` verankern), Button-/Eingabe-Klassen in `src/components/buttons.ts`; neue Bereiche als Route unter `Layout` in `src/App.tsx`.
-- Tests mit DB: `beforeEach(resetDatabase)` aus `src/db/testUtils.ts`. E2E: `goOffline()`, `addExercise()`, `fillStepper()`, `skipRest()` aus `e2e/helpers.ts`.
+- Tests mit DB: `beforeEach(resetDatabase)` aus `src/db/testUtils.ts`. E2E: `test`/`expect` aus `e2e/fixtures.ts`, `goOffline()`, `addExercise()`, `fillStepper()`, `skipRest()` aus `e2e/helpers.ts`.
 - Vor `npm run test:e2e` und `npm run build` keinen alten `npm run preview` auf Port 4173 laufen lassen: Er wird sonst wiederverwendet (Tests laufen still gegen den alten Stand), und unter Windows sperrt er Dateien in `dist` (Build bricht mit EPERM ab und hinterlässt ein halbes `dist`). Läuft einer, zuerst den Port prüfen; einen Preview des Nutzers nicht beenden, sondern mit `npx vite build --outDir <Scratchpad> --emptyOutDir` und einer temporären Playwright-Konfig (eigener Port, `vite preview --outDir`) daneben testen. Die temporäre Konfig (z. B. `playwright.tmp.config.ts`, importiert `./playwright.config` und überschreibt `use.baseURL` und `webServer`) nicht committen.
 - Damit der Nutzer einen Zwischenstand ansehen kann: `npm run dev` im Hintergrund starten (Port 5173) und die Adresse nennen. Das Terminal des Nutzers kennt Node.js oft nicht (PATH, siehe oben).
 - E2E: Vor `page.reload()` auf den gespeicherten Stand warten (Text oder Feldwert), sonst bricht das Neuladen den IndexedDB-Schreibvorgang gelegentlich ab.

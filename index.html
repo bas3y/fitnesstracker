@@ -2,6 +2,7 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#14110e" />
     <meta
@@ -17,6 +18,9 @@
     <title>Basey</title>
     <!-- splash-css -->
     <script>
+      // Zod soll keinen Code per `new Function` erzeugen (verbietet die Content-Security-Policy);
+      // muss vor dem Laden von Zod gesetzt sein, `z.config()` käme zu spät
+      window.__zod_globalConfig = { jitless: true };
       // Dark Mode und Palette vor dem ersten Rendern setzen (vermeidet Aufblitzen); Werte spiegeln die Einstellungen
       var theme = null;
       var palette = null;

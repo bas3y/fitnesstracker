@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { SPLASH_BACKGROUND, SPLASH_CSS, splashHtml } from './src/brand/splashHtml.ts';
+import { withContentSecurityPolicy } from './src/security/csp.ts';
 
 // Versionskennung für Einstellungen → Speicher (CI: GITHUB_SHA, lokal git, sonst „dev“)
 function buildCommit(): string {
@@ -35,6 +36,11 @@ export default defineConfig({
         html
           .replace('<!-- splash-css -->', `<style>${SPLASH_CSS}</style>`)
           .replace('<!-- splash -->', splashHtml()),
+    },
+    {
+      name: 'basey-csp',
+      apply: 'build',
+      transformIndexHtml: { order: 'post', handler: withContentSecurityPolicy },
     },
     VitePWA({
       registerType: 'prompt',

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { goOffline } from './helpers';
 
 test('Farbpalette und Dunkelmodus wählen, bleiben nach dem Neuladen (offline)', async ({

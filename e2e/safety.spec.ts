@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { goOffline, openSettings } from './helpers';
 
 test('Speicher-Info, Hinweise auf Willkommen und Weitergeben (offline)', async ({

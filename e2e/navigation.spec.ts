@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('Zurück stellt die Scrollhöhe wieder her, neue Seiten beginnen oben', async ({ page }) => {
   await page.goto('./#/training/exercises');

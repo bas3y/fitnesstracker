@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { addExercise, confirmStart, fillStepper, goOffline, skipRest } from './helpers';
 
 test('Vorschlag, PR-Toast, Exzentrik und PR-Markierung in der Historie (offline)', async ({

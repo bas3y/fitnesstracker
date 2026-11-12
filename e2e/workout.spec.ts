@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { addExercise, confirmStart, dragTo, fillStepper, goOffline, skipRest } from './helpers';
 
 test('komplettes Workout offline loggen, neu laden, in der Historie finden', async ({

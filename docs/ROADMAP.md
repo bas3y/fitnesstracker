@@ -40,7 +40,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 18f – Neues Logo, Animationen & Ladebildschirm
 - [x] Schritt 19 – PDF-Export/Berichte
 - [x] Schritt 20 – Veröffentlichung auf GitHub Pages
-- [ ] Schritt 21 – Standards übernehmen (Regeln, Skills, SECURITY.md)
+- [x] Schritt 21 – Standards übernehmen (Regeln, Skills, SECURITY.md)
 - [ ] Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
 - [ ] Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
@@ -57,6 +57,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [ ] Schritt 30 – Geräte-Codes an Maschinen (QR + NFC)
 - [ ] Schritt 31 – KI-Grundlage: Fragen beantworten
 - [ ] Schritt 32 – KI: Eintragen, Foto-Kalorien, Anpassungsvorschläge
+- [ ] Schritt 32b – Kacheln öffnen als Fenster (Schnellansicht statt neuer Seite)
 - [ ] Schritt 33 – Sync & Trainer-Freigabe
 - [ ] Schritt 34 – Gym: Rollen & Rechte fein einstellbar
 - [ ] Schritt 35 – Gym: Trainer kontaktieren (Nachrichten) & Mitteilungen
@@ -1285,6 +1286,80 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - Security-Anforderungen für Server, Admin, KI und Sync (Schritte 23–33) als Checkliste hier in die ROADMAP übernehmen.
 
 **Notizen:**
+- Mit dem Nutzer abgestimmt (12.11.2026): Vom Freund kommt **nur `SECURITY.md`** (keine Skills, keine Vorlagen). Steckbrief **Typ 3** (Basey + LocalGym als Mandanten in einer Instanz), Module **Uploads** + **Schnittstellen**, Daten personenbezogen + besonders sensibel; Zahlungen erst mit einem Zahlungsanbieter. **Freigabe:** bei jedem Schritt erst der Plan, Code erst nach OK.
+- Gebaut:
+  - `SECURITY.md` unverändert im Repo, `CLAUDE.md` mit Abschnitt „Sicherheit“ (Verweis, Steckbrief, Freigabe-Regel), Ablauf Punkt 4 angepasst.
+  - **Bestandsprüfung** (Ergebnis):
+    - **ZIP-/GZ-Bombe (mittel, behoben):** `decompress`/`readZipEntry` lasen ohne Grenze in den Speicher, eine GZ-Datei, die sich selbst enthält, lief endlos (GZ zählte nicht zur Verschachtelung). Jetzt `MAX_FILE_BYTES` = 200 MB je Datei, gemessen am tatsächlichen entpackten Strom (`limitStream`, Größenangaben im ZIP sind nicht verlässlich), auch für ungepackte Dateien und Garmin-JSON; GZ zählt zur Tiefe (`MAX_NESTING` = 3). Der Apple-Health-Export bleibt gestreamt (mehrere GB möglich, ohne Speicherwachstum). Tests `zip.test.ts`, `readFiles.test.ts`.
+    - **Content-Security-Policy (mittel, umgesetzt):** `src/security/csp.ts` + Vite-Plugin `basey-csp` (nur Build) setzt ein `<meta http-equiv>` direkt hinter `<meta charset>`: Skripte nur `'self'` + SHA-256 der Inline-Skripte (automatisch berechnet), Stile inline erlaubt, `connect-src` nur `'self'` + Open Food Facts, `object-src`/`base-uri` `'none'`. Zod erzeugte per `new Function` Code (Verstoß) → `window.__zod_globalConfig = { jitless: true }` im Inline-Skript in `index.html` (`z.config()` kam zu spät, Schemas werden beim Laden des Chunks gebaut). `<meta name="referrer" content="no-referrer">`.
+    - **Escaping im Logo-SVG (niedrig, behoben):** `aria-label` wurde ungeprüft eingesetzt (nur mit festem Wert genutzt) → `escapeAttr` (`src/brand/xml.ts`).
+    - **npm audit:** ausgelieferte Pakete 0 Funde. 15 Funde (2 low, 13 moderate) nur in Entwicklungswerkzeugen (`eslint`/`typescript-eslint` über `minimatch`, `vite-plugin-pwa` → `workbox-build` über `glob`/`deepmerge`); `npm audit fix --force` würde auf ältere Hauptversionen zurückstufen → nicht übernommen, Dependabot meldet Updates.
+    - **In Ordnung:** keine Geheimnisse in Code und gesamter Git-History (Muster-Suche + neues Skript), keine Source Maps im Build, kein `eval`, `localStorage` nur Optik + Erinnerungs-IDs (keine Gesundheitsdaten), Backup-Import per Zod (unbekannte Felder fallen weg, neuere DB-Version abgelehnt), Open-Food-Facts-Abfrage nur mit der Nummer (`credentials: 'omit'`, `no-referrer`, Zeitlimit, Antwort geprüft), Fotos werden per Canvas neu kodiert (EXIF/Standort fällt weg).
+  - **Lieferkette/Secrets:** `.github/dependabot.yml` (npm + Actions, wöchentlich, kleine Updates gruppiert), Workflow `security.yml` (Semgrep `p/default`+`p/typescript`+`p/react` im offiziellen Docker-Image, `npm audit --audit-level=high`, Secret-Scan; bei Push, PR und montags; blockiert das Deployment nicht), `deploy.yml` prüft vorher `npm audit --omit=dev --audit-level=high` + Secret-Scan. Secret-Scan ohne Paket: `scripts/check-secrets.mjs` (`--staged` | `--all`, Muster für Schlüssel/Tokens/JWT/DB-URLs, verbietet `.env*`/`.pem`/`.key`; Ausnahme per `secret-scan: ignore`), Git-Hook `.githooks/pre-commit` (aktiv über `git config core.hooksPath .githooks`, findet das portable Node.js). `.env.example` mit leeren Platzhaltern.
+  - **E2E:** `e2e/fixtures.ts` – alle Specs importieren `test`/`expect` von dort, jeder Test schlägt bei einem CSP-Verstoß fehl (Ereignis `securitypolicyviolation` + Konsole). `e2e/csp.spec.ts` weist nach, dass eingeschleuste Skripte, `onerror`-Handler und fremde Adressen blockiert werden (`page.evaluate` ist von der CSP ausgenommen, `eval` lässt sich so nicht prüfen). 941 Unit-Tests, 130 E2E grün (ganze Suite ohne CSP-Verstoß; `goals.spec.ts` einmal fehlgeschlagen, in 4 Wiederholungen grün → gelegentlich instabil, nicht CSP).
+- Abweichungen:
+  - Keine Skills/Vorlagen übernommen (nicht geliefert).
+  - CSP als `<meta>`, weil GitHub Pages keine Header setzen kann → `frame-ancestors`, HSTS, `X-Content-Type-Options`, `Permissions-Policy` erst mit Vercel (Schritt 23).
+  - `style-src 'unsafe-inline'` bleibt (Ladebildschirm, `style`-Attribute in SVG und Recharts); Skripte sind streng.
+- Offene Punkte:
+  - **Nach dem nächsten Push prüfen:** Dependabot und `security.yml` laufen erst auf GitHub, Semgrep ist lokal ungetestet (Funde dann beheben oder begründet mit `nosemgrep` markieren; `BaseyLogo` ist schon markiert).
+  - **Repo-Einstellungen (Nutzer, GitHub):** Secret Scanning + Push Protection und Dependabot-Alerts einschalten, Branch-Schutz für `main`, 2FA am Konto. Bei privatem Repo (ab 23) ist Secret Scanning je nach Tarif kostenpflichtig → der eigene Secret-Scan bleibt die Grundlage.
+  - Audit-Funde der Entwicklungswerkzeuge verschwinden mit den nächsten Updates von ESLint/typescript-eslint/vite-plugin-pwa (Dependabot).
+  - `security.txt` braucht die eigene Domain (unter `github.io/fitnesstracker/` liegt `/.well-known/` nicht in unserer Hand) und eine Kontakt-Adresse → Schritt 23.
+
+### Security-Checkliste Phase 7 (aus `SECURITY.md`, Typ 3)
+Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abarbeiten und in dessen Notizen vermerken, was erfüllt ist.
+
+**Schritt 23 – Server, Anmeldung, Umzug**
+- [ ] Getrennte Supabase-Projekte **Test** und **Live** (eigene Keys); Claude/MCP nur gegen Test (SECURITY 1.3, 10)
+- [ ] Secrets nur in Vercel/Supabase/CI (Service-Role-Key, Sentry-Auth-Token); im Client nur URL + Anon/Publishable-Key und DSN; `.env.example` ergänzen; Secret-Scan erkennt neue Schlüsselarten
+- [ ] Schema nur als Migrationen in `supabase/`; **RLS auf jeder Tabelle**, Regeln getrennt für select/insert/update/delete, `USING` + `WITH CHECK`, nur `auth.uid()`
+- [ ] Mandanten: Tabellen `organizations` + Zuordnung Nutzer↔Organisation serverseitig; jede Datentabelle `organization_id` NOT NULL + FK + Index, Standardwert serverseitig, nie vom Client
+- [ ] Rollen in eigener Tabelle (nicht `user_metadata`), Rollenmatrix dokumentiert
+- [ ] Supabase Auth: Registrierung aus, nur Einladung (an Organisation + E-Mail gebunden, einmalig, befristet), E-Mail-Bestätigung, Passwort ≥ 10 + Leak-Prüfung, Captcha bei Login/Reset/Einladung, Rate-Limits, Redirect-URLs nur Live-Domain
+- [ ] Lizenzprüfung als Edge Function mit eigener Berechtigungsprüfung; gesperrte Nutzer verlieren sofort alle Sitzungen
+- [ ] GraphQL und unnötige Schemas aus, `anon` ohne Ausführungsrechte auf Funktionen, Views mit `security_invoker`, `SECURITY DEFINER` nur mit festem `search_path`
+- [ ] **Angreifer-Test mit Anon-Key:** automatischer Test fragt jede Tabelle/View/Funktion/Bucket (Liste aus der DB) ohne Login ab → leer/abgelehnt; zusätzlich als Nutzer von Organisation A gegen B
+- [ ] Vercel: `vercel.json` mit Headern (CSP als Header inkl. `frame-ancestors 'none'`, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` – Kamera nur `self`), Firewall/Bot-Schutz an, keine Source Maps ausgeliefert; CSP `connect-src` um Supabase/Sentry erweitern (`src/security/csp.ts`)
+- [ ] Sentry EU: `sendDefaultPii: false`, kein Replay, `beforeSend`/`beforeBreadcrumb` filtern Eingaben/URL-Parameter/Konsole, Test dafür; Schalter in den Einstellungen
+- [ ] `/.well-known/security.txt` mit Kontakt; Repo privat, Branch-Schutz, 2FA auf allen Konten (GitHub, Supabase, Vercel, Sentry, Domain), Domain mit Registrar-Lock
+- [ ] OWASP ZAP Baseline gegen die Vorschau-Umgebung in der CI (hohe Funde stoppen das Deployment)
+- [ ] Alarm bei vielen fehlgeschlagenen Logins / 401/403 / RLS-Ablehnungen; Logs ohne Passwörter, Tokens, Gesundheitsdaten
+- [ ] Backups (Supabase PITR o. ä.), Wiederherstellung einmal real geübt; Notfallplan schriftlich (Zugänge sperren, Schlüssel rotieren, 72-h-Meldepflicht)
+- [ ] Datenschutzerklärung, Impressum, Einwilligung Art. 9 DSGVO, AVVs (Supabase, Vercel, Sentry) – Nutzer klärt rechtlich
+
+**Schritt 24/24b – Admin, Gym-Bereich**
+- [ ] 2FA für Admin- und Gym-Admin-Rollen erzwungen
+- [ ] Admin-Aktionen nur serverseitig (Edge Function prüft Rolle), Rechteänderungen und Sperren im Audit-Log
+- [ ] Gym-Admin verwaltet nur Nutzer/Einstellungen **seiner** Organisation; Super-Admin-Zugriff auf Kundendaten getrennt und protokolliert
+- [ ] Tests je Rolle (erlaubt/verboten, direkt gegen die API) + Mandantentests A↔B (lesen, ändern, löschen, anlegen, `organization_id` fälschen)
+- [ ] Massenaktionen (Export, Löschen) auf die erlaubte Datenmenge begrenzt; Nutzer vollständig löschbar
+
+**Schritt 24c/24d – Uhren, Push**
+- [ ] Eingehende Webhooks (Whoop, Garmin, Kurzbefehl) mit Signaturprüfung bzw. persönlichem, rotierbarem Token; Daten wie Nutzereingaben validiert (Zod, Größen)
+- [ ] OAuth-Tokens der Anbieter nur serverseitig, verschlüsselt, minimale Scopes; ausgehende Aufrufe mit Zeitlimit und Wiederholungsgrenze
+- [ ] Push: Abos je Nutzer per RLS, Push-Inhalte ohne Gesundheitsdetails (Sperrbildschirm)
+
+**Schritt 28/29 – Uploads (Befunde)**
+- [ ] Dateityp am Inhalt + Größe prüfen (wie Import: Obergrenze, keine Bomben), Dateinamen neu vergeben, Metadaten entfernen
+- [ ] Wenn Dateien auf den Server gehen: privater Bucket, Pfad mit `organization_id`/Nutzer, Speicher-Regeln, nur signierte, kurz gültige Links
+
+**Schritt 31/32 – KI**
+- [ ] Nur über eigenen Proxy (Edge Function), Schlüssel nie im Client, Login + Lizenz geprüft, Rate-Limit/Kostenlimit je Nutzer
+- [ ] Anbieter mit EU-Verarbeitung/AVV, kein Training, möglichst Zero Data Retention; Freigabe je Datenbereich + Vorschau der gesendeten Daten
+- [ ] Prompt-Injection: Antworten der KI nie als HTML rendern oder ungeprüft ausführen; KI-Vorschläge nur mit Bestätigung (Grundsatz Phase 7)
+
+**Schritt 33 – Sync & Trainer-Freigabe**
+- [ ] Jede synchronisierte Tabelle mit RLS (Besitzer + ausdrückliche Freigabe an Trainer), keine Freigabe per bloßer ID (IDOR), Freigabe widerrufbar
+- [ ] Server validiert jeden Datensatz (Zod-Schemas wiederverwenden), nur erlaubte Felder (Mass Assignment), `updatedAt`/`deletedAt` serverseitig plausibel
+- [ ] Fotos nur in privatem Bucket mit Speicher-Regeln
+
+**Schritte 34–38 – Gym-Funktionen, Freunde**
+- [ ] Feine Rollen in Tabelle + Matrix + Tests je Rolle; Nachrichten nur zwischen berechtigten Personen, keine Gesundheitsdaten in Benachrichtigungen
+- [ ] Anwesenheit/Freunde: nur mit Einwilligung sichtbar, Datensparsamkeit, Löschfristen
+- [ ] Vor dem ersten echten Kunden: externer Penetrationstest; danach jährlich und nach großen Änderungen
+
+**Laufend (ab 23):** wöchentlich Dependabot/Alarme, monatlich Updates + Zugänge prüfen, vierteljährlich Security-Review in neuer Sitzung (Rolle Angreifer) + Black-Box-Test der Live-Adresse + Wiederherstellung testen + Schlüssel rotieren.
 
 ### Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
 **Ziel:** Fotos werden beim Hochladen nie verwechselt oder ersetzt; der Alltag-Verlauf ist Teil der Statistik.
@@ -1300,6 +1375,8 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - **„Intelligenter“ statt statisch:** Widgets zeigen passende nächste Schritte statt nur Zahlen, z. B. „noch 750 ml bis zum Ziel“ + Knopf, „Letztes Beintraining vor 6 Tagen“, „Protein: 40 g fehlen – Favoriten vorschlagen“, überfällige Supplements/Gewohnheiten im passenden Widget. Regeln lokal in `src/domain/` (offline, testbar); später ergänzen die Vorschläge aus 26/27 und die KI (31/32) diese Stellen.
 - **Tägliche Hinweise** morgens (Schlaf, heutiger Plan), nach dem Training (Kurzfazit, Rekorde) und abends (Tagesbilanz, **Ernährungsbericht**: Kalorien/Makros vs. Ziel, was fehlt) als Karte auf der Startseite – regelbasiert und offline; ab 24d auch als Push, ab 31 mit KI-Text.
 - **Navigation zeigt, wo man ist:** aktiver Eintrag in der `BottomNav` deutlicher (Vorschlag: gefülltes Feld/Pille hinter Symbol + Text in Primärfarbe, auch auf Unterseiten des Bereichs aktiv). **Optik vorher mit dem Nutzer abstimmen** (2–3 Varianten als Vorschau zeigen).
+- **Nur noch ein Logo (Nutzerwunsch 12.11.2026):** Logo fest **Charcoal Satin**, die Auswahl entfällt. Karte „App-Logo“ (`LogoPicker`) aus Einstellungen → Darstellung entfernen; `applyLogoVariant`/`localStorage.logo`/Tausch des `apple-touch-icon` entfernen bzw. fest auf `charcoal`; Variante `taupe` aus `LOGO_VARIANTS`/`LOGO_ARTWORKS` und die zugehörigen Icons (`apple-touch-icon-taupe.png`, `npm run icons`) streichen. Daten: `Settings.logoVariant` per neuer Dexie-Version auf `charcoal` setzen oder entfernen; Backup-Import alter Dateien mit `taupe` muss weiter klappen (Wert ignorieren). Tests (`logo.test.ts`, `branding.spec.ts`, Migration) und `CLAUDE.md` (Abschnitt „Logo & Ladebildschirm“) anpassen. Ladebildschirm-Artworks je Farbpalette bleiben.
+- **Vorbereitung für 32b:** Die Antipp-Vorschau und Schnell-Aktionen so bauen, dass sie später in einem Fenster (Schnellansicht einer Kachel) wiederverwendet werden können.
 
 **Notizen:**
 
@@ -1439,6 +1516,15 @@ Mit dem Nutzer abgestimmt (10.11.2026, nach Schritt 20):
 - Schreibende Werkzeuge über die bestehenden `src/db/*`-Funktionen (Mahlzeit, Wasser, Gewicht, Satz, Gewohnheit …), jede Änderung als Vorschau mit „Übernehmen“.
 - Mahlzeitenfoto → Lebensmittel/Mengen schätzen → Abgleich mit der lokalen Lebensmittel-DB → bearbeitbar in der Mahlzeit; Bild verkleinert gesendet, nicht gespeichert.
 - Anpassungsvorschläge für Plan/Ernährung aus den Schritten 26–29 als erklärte Empfehlung, Übernahme nur mit Bestätigung.
+
+**Notizen:**
+
+### Schritt 32b – Kacheln öffnen als Fenster (Schnellansicht statt neuer Seite)
+**Ziel:** Einzelne Kacheln öffnen keine neue Seite mehr, sondern ein Fenster im Vordergrund – man bleibt auf der Übersicht (Nutzerwunsch 12.11.2026). Bewusst spät eingeplant: Erst wenn die Kacheln durch 22b und 25–32 viele Funktionen haben, lohnt sich das und ist klar, was hineingehört.
+- **Beim Start mit dem Nutzer festlegen**, welche Kacheln ein Fenster bekommen (Kandidaten: Alltag-Kacheln Wasser/Körper & Befinden, Supplements, To-dos, Gewohnheiten, Ernährung-Tagesstand; Training-Aktivitäten; Startseiten-Widgets) und welche weiter eine Seite öffnen (große Bereiche wie Pläne, Verlauf, Statistik).
+- **Fenster:** Bottom-Sheet bzw. Popup über der aktuellen Seite (baut auf `Dialog` auf, Animation `anim-pop-in`), mit Tagesstand + den wichtigsten Aktionen (abhaken, +Menge, eintragen) und Link „Alles anzeigen“ zur bisherigen Unterseite. Gewählter Tag (`useDayParam`) gilt auch im Fenster. Optik vorher mit 2–3 Varianten abstimmen.
+- **Bedienung:** Zurück-Taste/Wischgeste schließt das Fenster statt die Seite zu verlassen (History-Eintrag), Scrollhöhe der Übersicht bleibt; Fokus im Fenster gefangen, Escape schließt, Screenreader-Rolle `dialog`; Touch-Ziele ≥ 44 px; offline voll nutzbar.
+- Baut auf der Antipp-Vorschau/den Schnell-Aktionen aus 22b auf; schwere Inhalte (Recharts) im Fenster nur lazy. E2E: Kachel → Fenster → Aktion → Wert auf der Kachel aktualisiert, Zurück schließt nur das Fenster.
 
 **Notizen:**
 

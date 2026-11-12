@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { goOffline } from './helpers';
 
 test('Startseite lädt nach dem ersten Besuch auch offline', async ({ page, context }) => {

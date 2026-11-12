@@ -1,4 +1,5 @@
 import { WORDMARK_NAME, WORDMARK_TAGLINE } from './wordmark.ts';
+import { escapeAttr } from './xml.ts';
 
 /** Größe des Untertitels im Verhältnis zum Namen (wie im Entwurf: 22 px zu 112 px) */
 const TAGLINE_SCALE = 0.2;
@@ -23,7 +24,7 @@ export function wordmarkSvg(options: WordmarkOptions = {}): string {
     ? `<path transform="translate(2 ${taglineY}) scale(${TAGLINE_SCALE})" fill="${taglineColor}" d="${WORDMARK_TAGLINE.d}"/>`
     : '';
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WORDMARK_NAME.width} ${height}" role="img" aria-label="${label}">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WORDMARK_NAME.width} ${height}" role="img" aria-label="${escapeAttr(label)}">` +
     `<path class="wordmark-name" fill="${color}" d="${WORDMARK_NAME.d}"/>` +
     tagline +
     `</svg>`

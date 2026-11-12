@@ -1,0 +1,36 @@
+# Sicherheitsprüfungen (SECURITY.md, Abschnitte 2, 9 und 13). Blockiert das Deployment nicht,
+# ein roter Lauf heißt: Funde ansehen und beheben.
+name: Sicherheit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: Semgrep (statische Analyse)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v5
+      - run: semgrep scan --config p/default --config p/typescript --config p/react --error --metrics=off
+
+  audit:
+    name: npm audit + Secret-Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      # Alle Pakete inkl. Entwicklungswerkzeuge, nur hohe und kritische Funde lassen den Lauf scheitern
+      - run: npm audit --audit-level=high
+      - run: node scripts/check-secrets.mjs --all

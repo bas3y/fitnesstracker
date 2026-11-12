@@ -22,8 +22,10 @@ export function BaseyLogo({
   const id = `logo${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const html = useMemo(() => logoSvg(variant, { id, shape, label }), [variant, id, shape, label]);
   return (
+    // SVG aus festen Konstanten, `label` wird in `artworkSvg` escapt (Test in logo.test.ts)
     <span
       className={`inline-block shrink-0 [&>svg]:block [&>svg]:h-full [&>svg]:w-full ${className}`}
+      // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

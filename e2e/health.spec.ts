@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 import { createZip, sampleAppleHealthXml, type HealthRecordInput } from '../src/test/importFiles';
 import { fillStepper, goOffline } from './helpers';
 

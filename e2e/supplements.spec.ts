@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 import { confirmStart, dailyTile, fillStepper, goOffline, openSettings } from './helpers';
 
 const openNav = (page: Page, name: string) =>

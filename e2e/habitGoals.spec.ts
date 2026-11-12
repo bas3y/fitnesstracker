@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 import { chooseIcon, fillStepper, goOffline } from './helpers';
 
 const nav = (page: Page, name: string) =>

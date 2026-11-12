@@ -124,9 +124,40 @@ export async function blobStream(blob: Blob): Promise<ReadableStream<BufferSourc
   });
 }
 
-export async function decompress(blob: Blob, format: 'deflate-raw' | 'gzip'): Promise<Blob> {
+/**
+ * Obergrenze für eine einzelne Datei, die ganz in den Speicher geladen wird (Schutz vor ZIP-Bomben).
+ * Der Apple-Export wird stückweise gelesen und ist davon ausgenommen.
+ */
+export const MAX_FILE_BYTES = 200 * 1024 * 1024;
+
+export function fileTooLargeError(maxBytes = MAX_FILE_BYTES): ImportFileError {
+  return new ImportFileError(`Datei ist zu groß (über ${Math.round(maxBytes / 1024 / 1024)} MB)`);
+}
+
+/** Bricht ab, sobald mehr als `maxBytes` durchgelaufen sind (Größenangaben im ZIP sind nicht verlässlich) */
+function limitStream(
+  stream: ReadableStream<Uint8Array>,
+  maxBytes: number,
+): ReadableStream<Uint8Array> {
+  let total = 0;
+  return stream.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        total += chunk.byteLength;
+        if (total > maxBytes) controller.error(fileTooLargeError(maxBytes));
+        else controller.enqueue(chunk);
+      },
+    }),
+  );
+}
+
+export async function decompress(
+  blob: Blob,
+  format: 'deflate-raw' | 'gzip',
+  maxBytes = MAX_FILE_BYTES,
+): Promise<Blob> {
   const stream = (await blobStream(blob)).pipeThrough(new DecompressionStream(format));
-  return new Blob([await new Response(stream).arrayBuffer()]);
+  return new Blob([await new Response(limitStream(stream, maxBytes)).arrayBuffer()]);
 }
 
 async function entryData(blob: Blob, entry: ZipEntry): Promise<Blob> {
@@ -141,9 +172,15 @@ async function entryData(blob: Blob, entry: ZipEntry): Promise<Blob> {
   return blob.slice(start, start + entry.compressedSize);
 }
 
-export async function readZipEntry(blob: Blob, entry: ZipEntry): Promise<Blob> {
+export async function readZipEntry(
+  blob: Blob,
+  entry: ZipEntry,
+  maxBytes = MAX_FILE_BYTES,
+): Promise<Blob> {
   const data = await entryData(blob, entry);
-  return entry.method === 0 ? data : decompress(data, 'deflate-raw');
+  if (entry.method !== 0) return decompress(data, 'deflate-raw', maxBytes);
+  if (data.size > maxBytes) throw fileTooLargeError(maxBytes);
+  return data;
 }
 
 /** Entpackt stückweise, ohne den ganzen Inhalt im Speicher zu halten (z. B. `export.xml`) */

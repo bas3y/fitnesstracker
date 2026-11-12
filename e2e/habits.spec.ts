@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './fixtures';
 import { chooseIcon, dailyTile, dragTo, fillStepper, goOffline } from './helpers';
 
 const card = (page: Page, name: string) =>

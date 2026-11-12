@@ -3,7 +3,15 @@ import { GarminHealthCollector, isGarminHealthFile } from './garminHealth';
 import { mergeHealthDays, type HealthDay, type HealthSource } from './health';
 import type { ImportFileProblem } from './readFiles';
 import { ImportFileError } from './types';
-import { blobStream, hasZipSignature, listZipEntries, openZipEntry, readZipEntry } from './zip';
+import {
+  MAX_FILE_BYTES,
+  blobStream,
+  fileTooLargeError,
+  hasZipSignature,
+  listZipEntries,
+  openZipEntry,
+  readZipEntry,
+} from './zip';
 
 export interface ReadHealthResult {
   days: HealthDay[];
@@ -86,8 +94,12 @@ export async function readHealthFiles(
           onProgress?.(null);
           try {
             await readGarminJson(await readZipEntry(file, entry), entry.name);
-          } catch {
-            problems.push({ fileName: baseName(entry.name), message: 'Keine gültige JSON-Datei' });
+          } catch (error) {
+            problems.push({
+              fileName: baseName(entry.name),
+              message:
+                error instanceof ImportFileError ? error.message : 'Keine gültige JSON-Datei',
+            });
           }
         }
         continue;
@@ -103,6 +115,7 @@ export async function readHealthFiles(
         );
         sources.add('apple');
       } else if (/^\s*[[{]/.test(start)) {
+        if (file.size > MAX_FILE_BYTES) throw fileTooLargeError();
         await readGarminJson(file, name);
       } else {
         throw new ImportFileError(

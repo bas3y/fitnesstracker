@@ -2,6 +2,7 @@
 // breites, weich beleuchtetes Band mit Struktur. Nur .ts-Imports mit Endung, damit auch
 // scripts/generate-icons.mjs und vite.config.ts die Datei direkt laden können.
 import { WORDMARK_NAME } from './wordmark.ts';
+import { escapeAttr } from './xml.ts';
 
 /** Charakter des Bands: Form, Licht und Oberfläche */
 export type ArtStyle = 'silk' | 'mesh' | 'speckle' | 'satin';
@@ -129,7 +130,7 @@ export function artworkSvg(art: Artwork, options: ArtworkSvgOptions = {}): strin
       : '';
   const sizeAttrs = size ? ` width="${size}" height="${size}"` : '';
   const aspect = shape === 'cover' ? ' preserveAspectRatio="xMidYMid slice"' : '';
-  const a11y = label ? ` role="img" aria-label="${label}"` : ' aria-hidden="true"';
+  const a11y = label ? ` role="img" aria-label="${escapeAttr(label)}"` : ' aria-hidden="true"';
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${area.x} ${area.y} ${area.width} ${area.height}"${sizeAttrs}${aspect}${a11y}>` +
     `<defs>` +

@@ -2,7 +2,15 @@ import { buildCandidate, type ImportCandidate } from './activity';
 import { isFit, parseFit } from './fit';
 import { ImportFileError, type ParsedActivity } from './types';
 import { isXml, parseGpx, parseTcx } from './xml';
-import { decompress, hasGzipSignature, hasZipSignature, listZipEntries, readZipEntry } from './zip';
+import {
+  MAX_FILE_BYTES,
+  decompress,
+  fileTooLargeError,
+  hasGzipSignature,
+  hasZipSignature,
+  listZipEntries,
+  readZipEntry,
+} from './zip';
 
 export interface ImportFileProblem {
   fileName: string;
@@ -18,7 +26,8 @@ export interface ReadFilesResult {
 
 /** In ZIPs nur diese Einträge ansehen (Konto-Exporte enthalten auch Fotos, JSON …) */
 const ACTIVITY_ENTRY = /\.(fit|gpx|tcx|zip|gz)$/i;
-const MAX_ZIP_DEPTH = 3;
+/** Verschachtelte ZIP/GZ (Garmin-Export: ZIP im ZIP, Strava: .fit.gz im ZIP) */
+const MAX_NESTING = 3;
 
 const baseName = (path: string) => path.split(/[/\\]/).pop() || path;
 
@@ -46,7 +55,7 @@ export async function readImportFiles(
     try {
       const head = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
       if (hasZipSignature(head)) {
-        if (depth >= MAX_ZIP_DEPTH) return;
+        if (depth >= MAX_NESTING) return;
         const entries = (await listZipEntries(blob)).filter(
           (entry) =>
             !entry.name.endsWith('/') &&
@@ -67,9 +76,12 @@ export async function readImportFiles(
         return;
       }
       if (hasGzipSignature(head)) {
-        await read(await decompress(blob, 'gzip'), name.replace(/\.gz$/i, ''), depth);
+        // Zählt mit, sonst läuft eine GZ-Datei, die sich selbst enthält, endlos
+        if (depth >= MAX_NESTING) throw new ImportFileError('Datei ist zu tief verschachtelt');
+        await read(await decompress(blob, 'gzip'), name.replace(/\.gz$/i, ''), depth + 1);
         return;
       }
+      if (blob.size > MAX_FILE_BYTES) throw fileTooLargeError();
       result.fileCount++;
       const activities = await parseBlob(blob);
       activities.forEach((activity, index) => {

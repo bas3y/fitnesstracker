@@ -1,0 +1,14 @@
+#!/bin/sh
+# Secret-Scan vor jedem Commit (SECURITY.md, Abschnitt 2). Einschalten: git config core.hooksPath .githooks
+NODE=node
+if ! command -v node >/dev/null 2>&1; then
+  # Windows: portables Node.js (siehe CLAUDE.md)
+  for candidate in "$LOCALAPPDATA/Programs/nodejs/node.exe" "$(cygpath -u "$LOCALAPPDATA" 2>/dev/null)/Programs/nodejs/node.exe"; do
+    if [ -x "$candidate" ]; then NODE="$candidate"; break; fi
+  done
+fi
+if ! command -v "$NODE" >/dev/null 2>&1 && [ ! -x "$NODE" ]; then
+  echo "Secret-Scan: Node.js nicht gefunden – Commit abgebrochen." >&2
+  exit 1
+fi
+exec "$NODE" scripts/check-secrets.mjs --staged

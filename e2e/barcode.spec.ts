@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 import { fillStepper, goOffline } from './helpers';
 
 const CODE = '4006381333931';

@@ -1,5 +1,6 @@
 import { createZip, gzip, sampleFitRun, sampleGpx } from '../../test/importFiles';
 import { readImportFiles } from './readFiles';
+import { MAX_FILE_BYTES } from './zip';
 
 const START = Date.parse('2026-10-01T06:00:00Z');
 const run = { start: START, step: 5, count: 121, speed: 3, heartRate: () => 150 };
@@ -62,6 +63,25 @@ describe('readImportFiles', () => {
         message: expect.stringContaining('Keine FIT-, GPX- oder TCX-Dateien'),
       },
       { fileName: 'kaputt.gpx', message: expect.stringContaining('kein gültiges XML') },
+    ]);
+  });
+
+  it('bricht bei zu tief verschachtelten GZ-Dateien ab (statt endlos zu entpacken)', async () => {
+    let data: Uint8Array = sampleFitRun(run);
+    for (let i = 0; i < 6; i++) data = await gzip(data);
+    const result = await readImportFiles([file(data, 'bombe.gz')]);
+    expect(result.candidates).toEqual([]);
+    expect(result.problems).toEqual([
+      { fileName: expect.any(String), message: 'Datei ist zu tief verschachtelt' },
+    ]);
+  });
+
+  it('lehnt zu große Dateien ab, ohne sie zu lesen', async () => {
+    const big = file(sampleFitRun(run), 'riesig.fit');
+    Object.defineProperty(big, 'size', { value: MAX_FILE_BYTES + 1 });
+    const result = await readImportFiles([big]);
+    expect(result.problems).toEqual([
+      { fileName: 'riesig.fit', message: expect.stringContaining('zu groß') },
     ]);
   });
 });

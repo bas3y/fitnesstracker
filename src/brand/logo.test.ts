@@ -83,6 +83,14 @@ describe('wordmarkSvg', () => {
     expect(withTagline.match(/<path/g)).toHaveLength(2);
     expect(wordmarkAspect(true)).toBeLessThan(wordmarkAspect(false));
   });
+
+  it('escapes labels so they cannot inject markup', () => {
+    const label = 'Ann "A" <img src=x onerror=alert(1)> & Co';
+    const escaped = 'aria-label="Ann &quot;A&quot; &lt;img src=x onerror=alert(1)&gt; &amp; Co"';
+    expect(wordmarkSvg({ label })).toContain(escaped);
+    expect(logoSvg('charcoal', { label })).toContain(escaped);
+    expect(logoSvg('charcoal', { label })).not.toContain('<img');
+  });
 });
 
 describe('splashHtml', () => {

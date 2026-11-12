@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 import { addExercise, confirmStart, fillStepper, goOffline, skipRest } from './helpers';
 
 const BENCH = 'Bankdrücken (Langhantel)';

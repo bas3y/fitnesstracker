@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { expect, test, type Download, type Page } from '@playwright/test';
+import { expect, test, type Download, type Page } from './fixtures';
 import { sampleFitRun } from '../src/test/importFiles';
 import { confirmStart, fillStepper, goOffline, openSettings, skipRest } from './helpers';
 
