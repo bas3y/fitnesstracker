@@ -43,6 +43,8 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 21 – Standards übernehmen (Regeln, Skills, SECURITY.md)
 - [ ] Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
 - [ ] Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
+- [ ] Schritt 22c – Desktop, Tablet & Querformat
+- [ ] Schritt 22d – Animationen für Kacheln & Inhalte
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 - [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
 - [ ] Schritt 24b – Gym-Bereich (LocalGym): eigene Oberfläche & Verwaltung
@@ -1377,6 +1379,36 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
 - **Navigation zeigt, wo man ist:** aktiver Eintrag in der `BottomNav` deutlicher (Vorschlag: gefülltes Feld/Pille hinter Symbol + Text in Primärfarbe, auch auf Unterseiten des Bereichs aktiv). **Optik vorher mit dem Nutzer abstimmen** (2–3 Varianten als Vorschau zeigen).
 - **Nur noch ein Logo (Nutzerwunsch 12.11.2026):** Logo fest **Charcoal Satin**, die Auswahl entfällt. Karte „App-Logo“ (`LogoPicker`) aus Einstellungen → Darstellung entfernen; `applyLogoVariant`/`localStorage.logo`/Tausch des `apple-touch-icon` entfernen bzw. fest auf `charcoal`; Variante `taupe` aus `LOGO_VARIANTS`/`LOGO_ARTWORKS` und die zugehörigen Icons (`apple-touch-icon-taupe.png`, `npm run icons`) streichen. Daten: `Settings.logoVariant` per neuer Dexie-Version auf `charcoal` setzen oder entfernen; Backup-Import alter Dateien mit `taupe` muss weiter klappen (Wert ignorieren). Tests (`logo.test.ts`, `branding.spec.ts`, Migration) und `CLAUDE.md` (Abschnitt „Logo & Ladebildschirm“) anpassen. Ladebildschirm-Artworks je Farbpalette bleiben.
 - **Vorbereitung für 32b:** Die Antipp-Vorschau und Schnell-Aktionen so bauen, dass sie später in einem Fenster (Schnellansicht einer Kachel) wiederverwendet werden können.
+
+**Notizen:**
+
+### Schritt 22c – Desktop, Tablet & Querformat
+**Ziel:** Die App nutzt den Platz auf großen und quer gehaltenen Bildschirmen, statt nur eine schmale Handy-Spalte in der Mitte zu zeigen (Nutzerwunsch 12.11.2026). Vor 23/24 eingeplant, weil der Admin- und Gym-Bereich vor allem am Computer genutzt wird.
+- **Ist-Stand:** Alles steckt in einer Spalte `max-w-md` (`Page.tsx`, `BottomNav.tsx`), auf dem Desktop bleibt links und rechts viel Schwarz. Das Manifest sperrt die installierte App auf Hochformat (`orientation: 'portrait'` in `vite.config.ts`).
+- **Bildschirmgrößen (beim Start mit dem Nutzer festlegen, 2–3 Entwürfe je Größe zeigen):**
+  - **Handy hoch:** bleibt wie heute.
+  - **Handy quer:** Hochformat-Sperre aufheben (`orientation: 'any'`), schmale Navigationsleiste an der Seite statt unten (sonst bleibt zu wenig Höhe), Notch/Safe-Area links und rechts beachten, Workout und Timer bleiben gut bedienbar.
+  - **Tablet (iPad hoch/quer):** 2 Spalten (Widgets/Kacheln nebeneinander), Navigation als Seitenleiste mit Symbolen.
+  - **Desktop:** Seitenleiste mit Symbol + Text, Inhalt breiter; Startseite als Raster (Widget-Größen `small`/`medium`/`large` werden zu Rasterbreiten), Alltag-/Trainings-Kacheln 3–4 je Zeile, Listen mit Detail daneben (z. B. Verlauf → Workout, Übungen → Übung), Statistik-Diagramme breiter. Hover-Zustände und Tastatur-Bedienung (Fokus sichtbar, Enter/Escape).
+- **Technik:** Tailwind-Breakpoints (`sm`/`md`/`lg`/`xl`) mobile-first, gemeinsamer Layout-Baustein statt Einzellösungen je Seite; Fenster/`Dialog` auf großen Bildschirmen mittig statt als Leiste unten; feste Leisten (Pausen-Timer, `data-bottom-bar`) an die Seitenleiste anpassen; `SortableList`/Ziehen mit der Maus prüfen; Teilen-Bild und PDF bleiben unverändert.
+- **Tests:** zusätzliche Playwright-Projekte `tablet` und `desktop` (und Handy quer) für die wichtigsten Abläufe; Screenshots zum Abstimmen.
+
+**Notizen:**
+
+### Schritt 22d – Animationen für Kacheln & Inhalte
+**Ziel:** Kacheln, Widgets und Inhalte bekommen passende, dezente Animationen (Nutzerwunsch 12.11.2026). Baut auf den Grundlagen aus 18f auf (`anim-*`, `bar-fill`, `usePageTransition`, ohne Paket, nur ohne „Bewegung reduzieren“). Nach 22b/22c, damit die interaktiven Kacheln und die großen Layouts schon stehen.
+- **Ablauf:** Claude schlägt zu **jeder** Kachel und jedem Inhaltsbereich eine Animation vor (Liste + Vorschau als Artifact zum Anschauen), der Nutzer wählt aus bzw. streicht; erst dann umsetzen.
+- **Erste Vorschläge (zum Abstimmen):**
+  - **Allgemein:** Kacheln/Widgets beim Öffnen einer Seite nacheinander leicht einblenden (gestaffelt, kurz); Antippen gibt ein kurzes Eindrücken (Skalierung) als Rückmeldung; Zahlen zählen beim Ändern hoch statt zu springen.
+  - **Fortschritt:** Ringe/Balken (Gewohnheiten, Ernährung, Wasser, Schritte, Ziele) füllen sich auf; Ziel erreicht → kurzes Aufleuchten/Konfetti-Funke im Palettenton.
+  - **Wasser:** Füllstand steigt wie eine Welle bei „+250 ml“. **Schlaf:** Phasenbalken bauen sich von links auf. **Gewicht:** Linie zeichnet sich nach.
+  - **Abhaken** (Gewohnheiten, Supplements, To-dos): Haken zeichnet sich, erledigte Zeile gleitet in „erledigt“; To-do neu → rutscht in die Liste.
+  - **Training:** Satz erledigt → Haken + Pausen-Timer läuft als Ring ab; neuer Rekord → Pokal ploppt auf; Workout beendet → Zusammenfassung baut sich Kachel für Kachel auf.
+  - **Serien & Abzeichen:** Flamme/Serienzahl zählt hoch, neues Abzeichen dreht/glänzt einmal.
+  - **Diagramme/Heatmap:** Balken wachsen, Heatmap-Felder blenden reihenweise ein (nur beim ersten Anzeigen, nicht bei jedem Filterwechsel).
+  - **Anpassen-Modus:** Kacheln wackeln leicht (wie beim Startbildschirm), Ziehen mit Schatten.
+  - **Fenster/Aufklappen:** `Details` klappt weich auf, Fenster aus 32b gleiten von unten (Handy) bzw. blenden mittig ein (Desktop).
+- **Regeln:** nur `transform`/`opacity` (flüssig auf älteren Handys), kurz (≤ 400 ms, Erfolge etwas länger), nie beim Tippen/Scrollen im Weg; `prefers-reduced-motion` schaltet alles ab, ggf. eigener Schalter in Einstellungen → Darstellung. E2E läuft weiter mit `reducedMotion: 'reduce'`, einzelne Tests mit Animation.
 
 **Notizen:**
 
