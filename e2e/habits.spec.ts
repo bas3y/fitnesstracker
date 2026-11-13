@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from './fixtures';
-import { chooseIcon, dailyTile, dragTo, fillStepper, goOffline } from './helpers';
+import { chooseIcon, dailyTile, dragTo, fillStepper, goOffline, openDailyStats } from './helpers';
 
 const card = (page: Page, name: string) =>
   page.locator('section').filter({ has: page.getByRole('heading', { name, exact: true }) });
@@ -99,9 +99,8 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
   await expect(habits.getByText('2 von 2 erledigt')).toBeVisible();
   await expect(habits.getByText('6 von max. 5 Zigaretten')).toBeVisible();
 
-  // Verlauf über die Alltag-Übersicht (Recharts-Chunk offline)
-  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
-  await dailyTile(page, 'Verlauf').click();
+  // Verlauf in der Statistik (Recharts-Chunk offline)
+  await openDailyStats(page);
   const history = page.locator('main');
   const metrics = history.getByRole('group', { name: 'Kennzahl' });
   await metrics.getByRole('button', { name: 'Gewohnheiten' }).click();
@@ -111,7 +110,7 @@ test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offli
     'Ø 6 Zigaretten pro Tag · im Limit an 0 von 1 Tagen',
   );
   await expect(page.getByRole('img', { name: 'Rauchen im Verlauf' })).toBeVisible();
-  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Alltag').click();
   await expect(dailyTile(page, 'Gewohnheiten')).toContainText('2 von 2');
   await dailyTile(page, 'Gewohnheiten').click();
 

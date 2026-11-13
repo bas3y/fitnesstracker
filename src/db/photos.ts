@@ -35,23 +35,41 @@ export async function addProgressPhoto(
   input: PhotoInput,
   image: PhotoImage,
 ): Promise<ProgressPhoto> {
-  const values = photoInputSchema.parse(input);
+  const [photo] = await addProgressPhotos([{ input, image }]);
+  return photo!;
+}
+
+/**
+ * Mehrere Fotos auf einmal (Mehrfachauswahl): alle oder keins. Jedes Foto bekommt eine eigene
+ * UUID, die Bilddaten hängen nur an ihr (Dateinamen werden nicht gespeichert).
+ */
+export async function addProgressPhotos(
+  entries: Array<{ input: PhotoInput; image: PhotoImage }>,
+): Promise<ProgressPhoto[]> {
+  const parsed = entries.map(({ input, image }) => ({
+    values: photoInputSchema.parse(input),
+    image,
+  }));
   return db.transaction('rw', db.progressPhotos, db.photoFiles, async () => {
-    const photo = await create<ProgressPhoto>(db.progressPhotos, {
-      ...values,
-      width: image.width,
-      height: image.height,
-      bytes: image.full.byteLength + image.thumb.byteLength,
-    });
-    for (const variant of ['full', 'thumb'] as const) {
-      await create<PhotoFile>(db.photoFiles, {
-        photoId: photo.id,
-        variant,
-        mimeType: image.mimeType,
-        data: image[variant],
+    const photos: ProgressPhoto[] = [];
+    for (const { values, image } of parsed) {
+      const photo = await create<ProgressPhoto>(db.progressPhotos, {
+        ...values,
+        width: image.width,
+        height: image.height,
+        bytes: image.full.byteLength + image.thumb.byteLength,
       });
+      for (const variant of ['full', 'thumb'] as const) {
+        await create<PhotoFile>(db.photoFiles, {
+          photoId: photo.id,
+          variant,
+          mimeType: image.mimeType,
+          data: image[variant],
+        });
+      }
+      photos.push(photo);
     }
-    return photo;
+    return photos;
   });
 }
 

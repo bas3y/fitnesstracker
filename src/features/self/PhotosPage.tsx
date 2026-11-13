@@ -1,18 +1,23 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { primaryButton, secondaryButton } from '../../components/buttons';
+import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Card, Page } from '../../components/Page';
-import { addProgressPhoto, type PhotoImage as PreparedImage } from '../../db/photos';
-import type { PhotoInput } from '../../db/schemas';
+import { addProgressPhotos, type PhotoImage as PreparedImage } from '../../db/photos';
 import { PHOTO_POSES, type DayKey, type PhotoPose, type ProgressPhoto } from '../../db/types';
 import { formatDayLabel } from '../../domain/daily';
 import { PHOTO_POSE_LABELS } from '../../domain/labels';
-import { defaultComparison, formatBytes, groupPhotosByDate } from '../../domain/photos';
+import {
+  defaultComparison,
+  formatBytes,
+  groupPhotosByDate,
+  PHOTO_BATCH_MAX,
+} from '../../domain/photos';
 import { useDayBackTo, useDayParam } from '../daily/useDaily';
 import { useStorageInfo } from '../settings/storage';
 import { comparePath, photoPath } from './paths';
-import { PhotoFields, PhotoImage, PoseChips } from './PhotoParts';
+import { PhotoDateField, PhotoImage, PhotoNoteField, PoseChips } from './PhotoParts';
 import { prepareImage } from './prepareImage';
 import { useProgressPhotos } from './useSelf';
 
@@ -45,22 +50,42 @@ export function PhotosPage() {
   const [pose, setPose] = usePoseFilter();
   const from = useFromHere();
   const fileInput = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState<PreparedImage | null>(null);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [notes, setNotes] = useState<string[]>([]);
+  const [pending, setPending] = useState<PendingPhoto[] | null>(null);
+  const busy = progress !== null;
 
-  const handleFile = async (file: File | undefined) => {
+  const handleFiles = async (list: FileList | null) => {
+    const files = [...(list ?? [])];
     if (fileInput.current) fileInput.current.value = '';
-    if (!file) return;
-    setError(null);
-    setBusy(true);
-    try {
-      setPending(await prepareImage(file));
-    } catch {
-      setError('Das Bild konnte nicht gelesen werden. Bitte ein JPEG- oder PNG-Foto wählen.');
-    } finally {
-      setBusy(false);
+    if (files.length === 0) return;
+    const chosen = files.slice(0, PHOTO_BATCH_MAX);
+    const messages: string[] = [];
+    if (files.length > chosen.length) {
+      messages.push(`Es werden die ersten ${PHOTO_BATCH_MAX} Fotos übernommen.`);
     }
+    setNotes([]);
+    // Nacheinander verkleinern: immer nur ein Bild gleichzeitig im Speicher
+    const prepared: PendingPhoto[] = [];
+    let failed = 0;
+    for (const [index, file] of chosen.entries()) {
+      setProgress({ done: index, total: chosen.length });
+      try {
+        prepared.push({ key: crypto.randomUUID(), image: await prepareImage(file) });
+      } catch {
+        failed += 1;
+      }
+    }
+    setProgress(null);
+    if (failed > 0) {
+      messages.unshift(
+        failed === chosen.length
+          ? `${failed === 1 ? 'Das Bild konnte' : 'Die Bilder konnten'} nicht gelesen werden. Bitte JPEG- oder PNG-Fotos wählen.`
+          : `${failed === 1 ? '1 Bild konnte' : `${failed} Bilder konnten`} nicht gelesen werden und ${failed === 1 ? 'fehlt' : 'fehlen'}.`,
+      );
+    }
+    setNotes(messages);
+    if (prepared.length > 0) setPending(prepared);
   };
 
   const shown = photos?.filter((photo) => !pose || photo.pose === pose) ?? [];
@@ -69,23 +94,30 @@ export function PhotosPage() {
   return (
     <Page title="Fortschrittsfotos" backTo={backTo}>
       <label className={`${primaryButton} mb-2 cursor-pointer ${busy ? 'opacity-50' : ''}`}>
-        {busy ? 'Foto wird verkleinert …' : '+ Foto hinzufügen'}
+        {!progress
+          ? '+ Foto hinzufügen'
+          : progress.total === 1
+            ? 'Foto wird verkleinert …'
+            : `Fotos werden verkleinert … (${progress.done + 1} von ${progress.total})`}
         <input
           ref={fileInput}
           type="file"
           accept="image/*"
+          multiple
           className="sr-only"
           disabled={busy}
-          onChange={(event) => void handleFile(event.target.files?.[0])}
+          onChange={(event) => void handleFiles(event.target.files)}
         />
       </label>
       <p className={`mb-4 ${HINT}`}>
-        Aufnehmen oder aus der Galerie wählen. Bleibt nur auf diesem Gerät.
+        Aufnehmen oder aus der Galerie wählen, auch mehrere auf einmal. Bleibt nur auf diesem Gerät.
       </p>
-      {error && (
-        <p role="alert" className="mb-4 text-sm text-danger">
-          {error}
-        </p>
+      {notes.length > 0 && (
+        <div role="alert" className="mb-4 text-sm text-danger">
+          {notes.map((note) => (
+            <p key={note}>{note}</p>
+          ))}
+        </div>
       )}
 
       {photos && photos.length > 0 && (
@@ -122,9 +154,10 @@ export function PhotosPage() {
       {photos && <StorageCard photos={photos} />}
 
       {pending && (
-        <AddPhotoDialog
-          image={pending}
-          initial={{ date, pose: pose ?? 'front', note: '' }}
+        <AddPhotosDialog
+          photos={pending}
+          initialDate={date}
+          initialPose={pose ?? 'front'}
           today={today}
           onClose={() => setPending(null)}
         />
@@ -169,33 +202,59 @@ function PhotoGrid({
   );
 }
 
-function AddPhotoDialog({
-  image,
-  initial,
+/** Ausgewähltes, schon verkleinertes Foto; `key` nur für die Liste im Fenster */
+interface PendingPhoto {
+  key: string;
+  image: PreparedImage;
+}
+
+interface PendingValues {
+  pose: PhotoPose;
+  note: string;
+}
+
+/** Ein Fenster für alle gewählten Fotos: Tag gemeinsam, Ansicht und Notiz je Foto */
+function AddPhotosDialog({
+  photos: initialPhotos,
+  initialDate,
+  initialPose,
   today,
   onClose,
 }: {
-  image: PreparedImage;
-  initial: PhotoInput;
+  photos: PendingPhoto[];
+  initialDate: DayKey;
+  initialPose: PhotoPose;
   today: DayKey;
   onClose: () => void;
 }) {
   const titleId = useId();
-  const [value, setValue] = useState(initial);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [preview] = useState(() =>
-    URL.createObjectURL(new Blob([image.thumb], { type: image.mimeType })),
+  const [photos, setPhotos] = useState(initialPhotos);
+  const [date, setDate] = useState(initialDate);
+  const [values, setValues] = useState<Record<string, PendingValues>>(() =>
+    Object.fromEntries(initialPhotos.map(({ key }) => [key, { pose: initialPose, note: '' }])),
   );
-  const close = () => {
-    URL.revokeObjectURL(preview);
-    onClose();
+  const [busy, setBusy] = useState(false);
+  // Sperrt sofort (der Zustand greift erst nach dem nächsten Zeichnen): kein doppeltes Speichern
+  const saving = useRef(false);
+  const [error, setError] = useState<string | null>(null);
+  const single = photos.length === 1;
+
+  const change = (key: string, next: Partial<PendingValues>) =>
+    setValues((current) => ({ ...current, [key]: { ...current[key]!, ...next } }));
+  const remove = (key: string) => {
+    const rest = photos.filter((photo) => photo.key !== key);
+    if (rest.length === 0) onClose();
+    else setPhotos(rest);
   };
   const save = async () => {
+    if (saving.current) return;
+    saving.current = true;
     setBusy(true);
     try {
-      await addProgressPhoto(value, image);
-      close();
+      await addProgressPhotos(
+        photos.map(({ key, image }) => ({ input: { date, ...values[key]! }, image })),
+      );
+      onClose();
     } catch (cause) {
       const quota = cause instanceof Error && cause.name.includes('Quota');
       setError(
@@ -203,6 +262,7 @@ function AddPhotoDialog({
           ? 'Kein Speicherplatz mehr frei. Lösche alte Fotos oder sichere sie per Backup.'
           : 'Speichern fehlgeschlagen.',
       );
+      saving.current = false;
       setBusy(false);
     }
   };
@@ -215,27 +275,49 @@ function AddPhotoDialog({
         className="flex max-h-[90dvh] w-full max-w-sm flex-col gap-3 overflow-y-auto rounded-2xl bg-surface p-4 shadow-lg"
       >
         <h2 id={titleId} className="text-lg font-semibold">
-          Foto speichern
+          {single ? 'Foto speichern' : `${photos.length} Fotos speichern`}
         </h2>
-        <img
-          src={preview}
-          alt="Vorschau"
-          className="mx-auto max-h-48 rounded-xl object-contain"
-          width={image.width}
-          height={image.height}
-        />
-        <p className={HINT}>
-          Verkleinert auf {image.width} × {image.height} px ·{' '}
-          {formatBytes(image.full.byteLength + image.thumb.byteLength)}
-        </p>
-        <PhotoFields value={value} today={today} onChange={setValue} />
+        <PhotoDateField value={date} today={today} onChange={setDate} />
+        {photos.map(({ key, image }, index) => {
+          const name = single ? 'Foto' : `Foto ${index + 1} von ${photos.length}`;
+          return (
+            <section
+              key={key}
+              aria-label={name}
+              className={`flex flex-col gap-3 ${single ? '' : 'rounded-xl bg-subtle p-3'}`}
+            >
+              <div className={single ? 'flex flex-col gap-3' : 'flex items-start gap-3'}>
+                <PendingPreview image={image} large={single} />
+                <div className="min-w-0 flex-1">
+                  {!single && <p className="font-medium">{name}</p>}
+                  <p className={HINT}>
+                    Verkleinert auf {image.width} × {image.height} px ·{' '}
+                    {formatBytes(image.full.byteLength + image.thumb.byteLength)}
+                  </p>
+                </div>
+                {!single && (
+                  <DeleteRowButton name={name} verb="entfernen" onClick={() => remove(key)} />
+                )}
+              </div>
+              <PoseChips
+                label="Ansicht"
+                value={values[key]!.pose}
+                onChange={(pose) => pose && change(key, { pose })}
+              />
+              <PhotoNoteField
+                value={values[key]!.note}
+                onChange={(note) => change(key, { note })}
+              />
+            </section>
+          );
+        })}
         {error && (
           <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         )}
         <div className="flex gap-2">
-          <button type="button" className={secondaryButton} onClick={close}>
+          <button type="button" className={secondaryButton} onClick={onClose}>
             Abbrechen
           </button>
           <button type="button" className={primaryButton} disabled={busy} onClick={save}>
@@ -244,6 +326,26 @@ function AddPhotoDialog({
         </div>
       </div>
     </div>
+  );
+}
+
+/** Vorschau aus den verkleinerten Bilddaten; die Objekt-URL wird beim Entfernen freigegeben */
+function PendingPreview({ image, large }: { image: PreparedImage; large: boolean }) {
+  const ref = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const url = URL.createObjectURL(new Blob([image.thumb], { type: image.mimeType }));
+    if (ref.current) ref.current.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [image]);
+  const size = large ? 'mx-auto max-h-48 w-auto' : 'h-24 w-auto';
+  return (
+    <img
+      ref={ref}
+      alt="Vorschau"
+      className={`${size} shrink-0 rounded-xl bg-subtle-strong object-contain`}
+      width={image.width}
+      height={image.height}
+    />
   );
 }
 

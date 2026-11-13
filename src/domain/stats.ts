@@ -1,6 +1,7 @@
 import type { Exercise, MuscleGroup, WeightUnit, WorkoutSet } from '../db/types';
 import { formatDecimal } from './format';
 import { MUSCLE_LABELS } from './labels';
+import { normalizeSearchText } from './search';
 import {
   byRecordOrder,
   estimateOneRepMax,
@@ -456,6 +457,19 @@ export function sortOverviews(items: ExerciseOverview[], sort: ExerciseSort): Ex
     const left = a.progress?.percent ?? Number.NEGATIVE_INFINITY;
     const right = b.progress?.percent ?? Number.NEGATIVE_INFINITY;
     return right - left || byName(a, b);
+  });
+}
+
+/** So viele Übungen zeigt die Statistik, bevor „Alle anzeigen“ nötig ist */
+export const EXERCISE_PREVIEW_COUNT = 5;
+
+/** Übungen, deren Name alle Suchwörter enthält (Umlaute/ß egal); Reihenfolge bleibt */
+export function searchOverviews(items: ExerciseOverview[], query: string): ExerciseOverview[] {
+  const tokens = normalizeSearchText(query).split(' ').filter(Boolean);
+  if (tokens.length === 0) return items;
+  return items.filter(({ exercise }) => {
+    const name = normalizeSearchText(exercise.name);
+    return tokens.every((token) => name.includes(token));
   });
 }
 

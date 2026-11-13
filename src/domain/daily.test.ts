@@ -4,6 +4,7 @@ import {
   averageSleepPhases,
   averageValue,
   bodyWeightOn,
+  dailyOverview,
   dailyPoints,
   dayKey,
   filterDaysByRange,
@@ -125,6 +126,30 @@ describe('Kennzahlen', () => {
     expect(formatDailyMetric('steps', 8000, 'kg')).toBe('8000 Schritte');
     expect(formatDailyMetric('mood', 3.5, 'kg')).toBe('3,5 von 5');
     expect(formatSleep(7.5 * 3600)).toBe('7,5 h');
+  });
+
+  it('fasst den Zeitraum als Kacheln zusammen', () => {
+    const range = [
+      log('2026-10-01', { steps: 12_000, sleepSeconds: 7 * 3600, weightKg: 80, hrvMs: 50 }),
+      log('2026-10-02', { steps: 8000, sleepSeconds: 9 * 3600, weightKg: 79.2 }),
+      log('2026-10-03', { restingHeartRate: 55 }),
+    ];
+    expect(dailyOverview(range, 'kg', goals)).toEqual([
+      { metric: 'steps', value: 'Ø 10000 Schritte', detail: 'Ziel an 1 von 2 Tagen' },
+      { metric: 'sleep', value: 'Ø 8 h', detail: 'Ziel an 1 von 2 Tagen' },
+      { metric: 'weight', value: '79,2 kg', detail: '−0,8 kg im Zeitraum' },
+      { metric: 'restingHeartRate', value: 'Ø 55 bpm', detail: '1 Tag' },
+      { metric: 'hrv', value: 'Ø 50 ms', detail: '1 Tag' },
+    ]);
+  });
+
+  it('zeigt Gewicht in der Anzeigeeinheit, auch ohne Änderung', () => {
+    expect(dailyOverview([log('2026-10-01', { weightKg: 80 })], 'lb', goals)).toEqual([
+      { metric: 'weight', value: '176,4 lb', detail: '1 Tag' },
+    ]);
+    const same = [log('2026-10-01', { weightKg: 80 }), log('2026-10-05', { weightKg: 80 })];
+    expect(dailyOverview(same, 'kg', goals)[0]!.detail).toBe('±0 im Zeitraum');
+    expect(dailyOverview([], 'kg', goals)).toEqual([]);
   });
 
   it('rechnet Stunden und Sekunden hin und zurück', () => {

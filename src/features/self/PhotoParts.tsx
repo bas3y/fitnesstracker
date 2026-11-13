@@ -52,44 +52,72 @@ export function PhotoFields({
   today: DayKey;
   onChange: (value: PhotoInput) => void;
 }) {
-  const dateId = useId();
-  const noteId = useId();
   return (
     <>
-      <div>
-        <label htmlFor={dateId} className="mb-1 block text-sm font-medium">
-          Tag
-        </label>
-        <input
-          id={dateId}
-          type="date"
-          max={today}
-          className={inputField}
-          value={value.date}
-          onChange={(event) =>
-            event.target.value && onChange({ ...value, date: event.target.value })
-          }
-        />
-      </div>
+      <PhotoDateField
+        value={value.date}
+        today={today}
+        onChange={(date) => onChange({ ...value, date })}
+      />
       <PoseChips
         label="Ansicht"
         value={value.pose}
         onChange={(pose) => pose && onChange({ ...value, pose })}
       />
-      <div>
-        <label htmlFor={noteId} className="mb-1 block text-sm font-medium">
-          Notiz (optional)
-        </label>
-        <textarea
-          id={noteId}
-          rows={2}
-          maxLength={1000}
-          className={`${inputField} h-auto py-2`}
-          value={value.note}
-          onChange={(event) => onChange({ ...value, note: event.target.value })}
-        />
-      </div>
+      <PhotoNoteField value={value.note} onChange={(note) => onChange({ ...value, note })} />
     </>
+  );
+}
+
+export function PhotoDateField({
+  value,
+  today,
+  onChange,
+}: {
+  value: DayKey;
+  today: DayKey;
+  onChange: (date: DayKey) => void;
+}) {
+  const id = useId();
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-sm font-medium">
+        Tag
+      </label>
+      <input
+        id={id}
+        type="date"
+        max={today}
+        className={inputField}
+        value={value}
+        onChange={(event) => event.target.value && onChange(event.target.value)}
+      />
+    </div>
+  );
+}
+
+export function PhotoNoteField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (note: string) => void;
+}) {
+  const id = useId();
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-sm font-medium">
+        Notiz (optional)
+      </label>
+      <textarea
+        id={id}
+        rows={2}
+        maxLength={1000}
+        className={`${inputField} h-auto py-2`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
   );
 }
 

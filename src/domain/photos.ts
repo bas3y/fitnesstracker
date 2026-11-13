@@ -10,6 +10,8 @@ export const PHOTO_MAX_SIDE = 1600;
 export const THUMB_MAX_SIDE = 400;
 export const PHOTO_QUALITY = 0.82;
 export const THUMB_QUALITY = 0.7;
+/** Höchstens so viele Fotos je Auswahl (Speicher beim Verkleinern, v. a. iPhone) */
+export const PHOTO_BATCH_MAX = 10;
 
 /** Verkleinert proportional, vergrößert nie */
 export function fitWithin(

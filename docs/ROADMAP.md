@@ -41,7 +41,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 19 – PDF-Export/Berichte
 - [x] Schritt 20 – Veröffentlichung auf GitHub Pages
 - [x] Schritt 21 – Standards übernehmen (Regeln, Skills, SECURITY.md)
-- [ ] Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
+- [x] Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
 - [ ] Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
 - [ ] Schritt 22c – Desktop, Tablet & Querformat
 - [ ] Schritt 22d – Animationen für Kacheln & Inhalte
@@ -1369,6 +1369,19 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
 - **Alltag in der Statistik:** eigene Ansicht `view=daily` in `useStatsFilter` (Gewicht, Schritte, Schlaf, Wasser, Ruhepuls/HRV) mit Zeitraum, nutzt `DailyHistoryCard`; Recharts nur lazy.
 
 **Notizen:**
+- Mit dem Nutzer abgestimmt (13.11.2026): Ein Foto-Fehler war nie aufgetreten, der Punkt war **Vorsorge** (gleiche Dateinamen, später Trainer/mehrere Nutzer) → nachweisen statt umbauen. Mehrfachauswahl mit **einem Fenster für alle**. Verlauf des Alltags **nur noch in der Statistik**, mit Ø-Kacheln. Zusätzlich: Übungsliste der Kraft-Statistik kompakter (Nutzer: „sehr unübersichtlich“); die Seite insgesamt wird mit Schritt 25 neu geordnet (Notiz dort).
+- Gebaut:
+  - **Fotos – Ergebnis der Prüfung:** Keine Verwechslung möglich. Dateinamen werden nirgends gespeichert, jedes Foto und jede Bilddatei hat eine eigene UUID (`crypto.randomUUID()`), Bilddaten hängen nur an `photoId`, Objekt-URLs sind je Foto getrennt. Auch mit Sync/Trainer (33) kein Konflikt: UUIDs sind global eindeutig, Server-Pfade laut Security-Checkliste mit `organization_id`/Nutzer. Nachweis: Unit-Tests (6 Fotos gleichzeitig, gleicher Tag/Ansicht → jedes mit eigenen Bilddaten; Mehrfachauswahl; ungültiger Eintrag → nichts gespeichert) und E2E (4 Dateien „image.jpg“ als JPEG, gleicher Tag, eins entfernt, Farbe am Pixel von Vorschau und Vollbild geprüft, auch nach Neuladen).
+  - **Mehrfachauswahl:** `<input multiple>`, bis `PHOTO_BATCH_MAX` = 10 Fotos (mehr → Hinweis, die ersten 10), nacheinander verkleinert mit Fortschritt („2 von 5“), nicht lesbare Bilder werden gemeldet, der Rest bleibt. Fenster „3 Fotos speichern“: Tag gemeinsam, je Foto Vorschau, Ansicht, Notiz, Entfernen; Speichern über `addProgressPhotos` in **einer Transaktion** (alle oder keins). Bei einem Foto sieht das Fenster aus wie bisher.
+  - **Absicherung:** Speichern sperrt sofort per Ref (doppeltes Antippen legt nichts doppelt an, E2E mit Doppelklick), `prepareImage` gibt die Zeichenfläche nach dem Kodieren frei (Canvas-Speichergrenze in Safari).
+  - **Statistik → Alltag** (`DailyStats`, `view=daily`): Ø-Kacheln im Zeitraum (`dailyOverview`: Schritte, Schlaf, Wasser mit „Ziel an x von y Tagen“, Gewicht = letzter Wert + Änderung, Ruhepuls, HRV; ohne Werte ausgeblendet; Antippen wählt die Kennzahl), darunter Karte „Verlauf“ wie bisher (alle Tageswerte, Gewohnheiten, Aufhören-Gewohnheiten, Schlafphasen). Kennzahl als `metric` in der URL (übersteht Neuladen und Bereichswechsel). Kachel „Verlauf“ in Alltag und `DailyHistoryPage`/`DailyHistoryCard` entfernt, `/daily/history` leitet um, „Verlauf ansehen“ nach dem Gesundheits-Import führt dorthin.
+  - **Übungsliste Kraft:** gruppierte Liste (`GroupRow`: Einheiten darunter, Fortschritt rechts) statt einzelner Zeilen-Karten, erst 5 (`EXERCISE_PREVIEW_COUNT`), dann „Alle x Übungen anzeigen“ mit Suchfeld (`searchOverviews`, Umlaute egal, Sortierung bleibt). Satzpausen ebenfalls als gruppierte Liste.
+  - Tests: `daily.test.ts` (Übersicht), `stats.test.ts` (Suche), `photos.test.ts` (gleichzeitig, Mehrfachauswahl, alles-oder-nichts); E2E `daily.spec.ts` (Statistik → Alltag, Kacheln, URL, Umleitung), `habits.spec.ts`/`health.spec.ts` angepasst, `stats.spec.ts` (Übungsliste), `timerPhotos.spec.ts` (Mehrfachauswahl). Helfer `openDailyStats`. 947 Unit-Tests, 134 E2E grün. Hauptbundle ~349 KB.
+- Abweichungen:
+  - Ø-Kacheln für Schritte/Schlaf/Wasser/Gewicht/Ruhepuls/HRV; Stimmung, Energie, Schlafqualität nur im Diagramm (sonst zu viele Kacheln).
+  - Satzpausen-Liste mit umgestellt (gleiche Optik wie die Übungen).
+- Offene Punkte:
+  - **Handytest:** Mehrfachauswahl auf iPhone (Fotos-App, „image.jpg“) und Android, 10 große Fotos am Stück (Speicher), Statistik → Alltag mit vier Bereichen auf schmalen Handys.
 
 ### Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
 **Ziel:** Die App reagiert mehr auf Antippen und zeigt klarer, wo man ist (Nutzerwunsch 11.11.2026).
@@ -1476,6 +1489,7 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
 - Eigene SVG-Figur (kein Paket), Muskelbereiche aus den Muskelgruppen der Übungen (primär/sekundär gewichtet).
 - Arbeitssätze je Muskel (Standard 7 Tage, Zeitraum wählbar), Farbintensität über Tokens (`--primary`/`mark`), Antippen → Muskel-Statistik.
 - Logik in `src/domain/` (Sätze je Muskel) + Tests; nicht ins Hauptbundle.
+- **Kraft-Statistik neu ordnen (Nutzerwunsch 13.11.2026, aus Schritt 22):** Die Seite ist mit Aktivität, Fokus, Sätzen pro Woche, Fortschritt je Muskelgruppe, Übungen und Satzpausen unübersichtlich. Zusammen mit der Körperfigur eine sinnvollere Anordnung finden (z. B. Figur + Muskel-Auswahl oben statt Sätze-/Fortschrittsbalken, Übungen darunter) – Entwürfe vorher mit dem Nutzer abstimmen. Die Übungsliste ist seit 22 schon kompakt (5 + „Alle anzeigen“ mit Suche).
 
 **Notizen:**
 

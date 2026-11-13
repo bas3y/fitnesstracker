@@ -15,7 +15,9 @@ export const ENDURANCE_STATS_PATH = `${STATS_PATH}?view=endurance`;
 
 export const REVIEW_STATS_PATH = `${STATS_PATH}?view=review`;
 
-export const STATS_VIEWS = ['strength', 'endurance', 'review'] as const;
+export { DAILY_STATS_PATH } from './paths';
+
+export const STATS_VIEWS = ['strength', 'endurance', 'daily', 'review'] as const;
 export type StatsView = (typeof STATS_VIEWS)[number];
 
 function parseView(value: string | null): StatsView {
@@ -56,6 +58,8 @@ export function useStatsFilter() {
     range: parseRange(params.get('range')),
     muscle: parseMuscle(params.get('muscle')),
     sport: parseSport(params.get('sport')),
+    /** Alltag: gewählte Kennzahl (`null` = Standard); gültige Werte prüft die Ansicht */
+    metric: params.get('metric'),
     /** Rückblick: Art des Zeitraums und ein Tag darin (`null` = heute) */
     reviewPeriod: parsePeriod(params.get('period')),
     reviewDate: isDayKey(params.get('date') ?? '') ? params.get('date') : null,
@@ -74,6 +78,7 @@ export function useStatsFilter() {
     setRange: (range: StatsRange) => change('range', range),
     setMuscle: (muscle: MuscleGroup | null) => change('muscle', muscle),
     setSport: (sport: EnduranceSport | null) => change('sport', sport),
+    setMetric: (metric: string | null) => change('metric', metric),
   };
 }
 

@@ -187,6 +187,61 @@ export function goalDays(
   return { reached: values.filter((value) => value >= goal).length, total: values.length };
 }
 
+/** Kennzahlen der Übersicht in der Statistik (Alltag) */
+export const OVERVIEW_METRICS = [
+  'steps',
+  'sleep',
+  'water',
+  'weight',
+  'restingHeartRate',
+  'hrv',
+] as const satisfies readonly DailyMetric[];
+
+export interface DailyOverviewItem {
+  metric: DailyMetric;
+  /** Ø im Zeitraum, beim Gewicht der letzte Wert */
+  value: string;
+  /** Veränderung (Gewicht) bzw. erreichtes Tagesziel, sonst Anzahl der Tage */
+  detail: string;
+}
+
+/**
+ * Kacheln für den Zeitraum (`logs` schon gefiltert); Kennzahlen ohne Werte fehlen.
+ * Gewicht: letzter Wert und Änderung zum ersten im Zeitraum.
+ */
+export function dailyOverview(
+  logs: DailyLog[],
+  unit: WeightUnit,
+  goals: DailyGoals,
+): DailyOverviewItem[] {
+  return OVERVIEW_METRICS.flatMap((metric): DailyOverviewItem[] => {
+    const points = dailyPoints(logs, metric, unit);
+    if (points.length === 0) return [];
+    const format = (value: number) => formatDailyMetric(metric, value, unit);
+    const days = points.length === 1 ? '1 Tag' : `${points.length} Tage`;
+    if (metric === 'weight') {
+      const first = points[0]!.value;
+      const last = points.at(-1)!.value;
+      const delta = roundTo(last - first, 1);
+      const detail =
+        points.length === 1
+          ? days
+          : delta === 0
+            ? '±0 im Zeitraum'
+            : `${delta > 0 ? '+' : '−'}${format(Math.abs(delta))} im Zeitraum`;
+      return [{ metric, value: format(last), detail }];
+    }
+    const goal = goalDays(logs, metric, goals);
+    return [
+      {
+        metric,
+        value: `Ø ${format(averageValue(points)!)}`,
+        detail: goal ? `Ziel an ${goal.reached} von ${goal.total} Tagen` : days,
+      },
+    ];
+  });
+}
+
 /** Anteil am Ziel in Prozent, für Balken auf 100 begrenzt */
 export function goalPercent(value: number | null, goal: number): number {
   if (!value || goal <= 0) return 0;

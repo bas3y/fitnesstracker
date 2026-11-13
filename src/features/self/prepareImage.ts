@@ -47,6 +47,9 @@ async function encode(source: Source, maxSide: number, quality: number) {
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, 'image/jpeg', quality),
   );
+  // Zeichenfläche sofort freigeben: Safari begrenzt den Canvas-Speicher insgesamt
+  canvas.width = 0;
+  canvas.height = 0;
   if (!blob) throw new Error('Bild kann nicht gespeichert werden');
   return { ...size, data: await blob.arrayBuffer() };
 }

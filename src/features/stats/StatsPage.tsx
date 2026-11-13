@@ -3,7 +3,10 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { WeeklyBarChart } from '../../components/charts';
-import { Card, LinkRow, Page } from '../../components/Page';
+import { secondaryButton } from '../../components/buttons';
+import { Icon } from '../../components/icons';
+import { Card, GroupRow, Page } from '../../components/Page';
+import { SearchInput } from '../../components/SearchInput';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Select } from '../../components/Select';
 import { loadStatsSessions } from '../../db/stats';
@@ -12,6 +15,7 @@ import { formatDecimal } from '../../domain/format';
 import { MUSCLE_LABELS } from '../../domain/labels';
 import {
   averagingWeeks,
+  EXERCISE_PREVIEW_COUNT,
   exerciseOverviews,
   filterByRange,
   focusHints,
@@ -26,6 +30,7 @@ import {
   muscleVolumes,
   NEGLECTED_SETS_PER_WEEK,
   restByExercise,
+  searchOverviews,
   sortOverviews,
   STATS_RANGE_LABELS,
   STATS_RANGES,
@@ -43,6 +48,7 @@ import { useGoals } from '../goals/useGoals';
 import { ACHIEVEMENTS_PATH } from '../motivation/paths';
 import { useSettings } from '../settings/useSettings';
 import { ActivityCard } from './ActivityCard';
+import { DailyStats } from './DailyStats';
 import { EnduranceStats } from './EnduranceStats';
 import { ReviewStats } from './ReviewStats';
 import { exerciseStatsPath, useStatsFilter, type StatsView } from './statsFilter';
@@ -58,6 +64,7 @@ const SORT_OPTIONS: Array<{ value: ExerciseSort; label: string }> = [
 const VIEW_OPTIONS: Array<{ value: StatsView; label: string }> = [
   { value: 'strength', label: 'Kraft' },
   { value: 'endurance', label: 'Ausdauer' },
+  { value: 'daily', label: 'Alltag' },
   { value: 'review', label: 'Rückblick' },
 ];
 
@@ -88,6 +95,7 @@ export function StatsPage() {
       </div>
       {view === 'strength' && <StrengthStats />}
       {view === 'endurance' && <EnduranceStats />}
+      {view === 'daily' && <DailyStats />}
       {view === 'review' && <ReviewStats />}
     </Page>
   );
@@ -344,6 +352,19 @@ function ExercisesCard({
 }) {
   const [params] = useSearchParams();
   const [sort, setSort] = useState(initialSort);
+  const [expanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState('');
+  const sorted = sortOverviews(overviews, sort);
+  const collapsible = sorted.length > EXERCISE_PREVIEW_COUNT;
+  const shown = !collapsible
+    ? sorted
+    : expanded
+      ? searchOverviews(sorted, query)
+      : sorted.slice(0, EXERCISE_PREVIEW_COUNT);
+  const toggle = () => {
+    setExpanded(!expanded);
+    setQuery('');
+  };
   return (
     <section className="mb-4">
       <h2 className="mb-3 text-lg font-semibold">Übungen</h2>
@@ -359,19 +380,38 @@ function ExercisesCard({
               onChange={setSort}
             />
           </div>
-          {sortOverviews(overviews, sort).map(({ exercise, sessionCount, progress }) => (
-            <LinkRow
-              key={exercise.id}
-              to={exerciseStatsPath(exercise.id, params)}
-              label={exercise.name}
-              hint={[
-                sessionCount === 1 ? '1 Einheit' : `${sessionCount} Einheiten`,
-                progress && formatPercent(progress.percent),
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+          {collapsible && expanded && (
+            <SearchInput
+              label="Übung suchen"
+              placeholder="Übung suchen"
+              value={query}
+              onChange={setQuery}
             />
-          ))}
+          )}
+          {shown.length === 0 ? (
+            <p className={`mb-3 ${HINT}`}>Keine Übung gefunden.</p>
+          ) : (
+            <ul
+              aria-label="Übungen im Zeitraum"
+              className="mb-3 divide-y divide-line overflow-hidden rounded-2xl bg-surface"
+            >
+              {shown.map(({ exercise, sessionCount, progress }) => (
+                <GroupRow
+                  key={exercise.id}
+                  to={exerciseStatsPath(exercise.id, params)}
+                  label={exercise.name}
+                  hint={sessionCount === 1 ? '1 Einheit' : `${sessionCount} Einheiten`}
+                  value={progress ? formatPercent(progress.percent) : undefined}
+                />
+              ))}
+            </ul>
+          )}
+          {collapsible && (
+            <button type="button" className={secondaryButton} onClick={toggle}>
+              <Icon name={expanded ? 'chevronUp' : 'chevronDown'} className="h-5 w-5" />
+              {expanded ? 'Weniger anzeigen' : `Alle ${sorted.length} Übungen anzeigen`}
+            </button>
+          )}
         </>
       )}
     </section>
@@ -390,14 +430,19 @@ function RestCard({ sessions }: { sessions: StatsSession[] }) {
           Satzpaare im Zeitraum.
         </p>
       ) : (
-        items.map(({ exercise, analysis }) => (
-          <LinkRow
-            key={exercise.id}
-            to={exerciseStatsPath(exercise.id, params)}
-            label={exercise.name}
-            hint={formatRestAdvice(analysis.advice)}
-          />
-        ))
+        <ul
+          aria-label="Satzpausen je Übung"
+          className="divide-y divide-line overflow-hidden rounded-2xl bg-surface"
+        >
+          {items.map(({ exercise, analysis }) => (
+            <GroupRow
+              key={exercise.id}
+              to={exerciseStatsPath(exercise.id, params)}
+              label={exercise.name}
+              hint={formatRestAdvice(analysis.advice)}
+            />
+          ))}
+        </ul>
       )}
     </section>
   );

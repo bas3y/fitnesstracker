@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures';
-import { dailyTile, fillStepper, goOffline, openSettings } from './helpers';
+import { dailyTile, fillStepper, goOffline, openDailyStats, openSettings } from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -74,15 +74,27 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await expect(water.getByText('1000 von 2000 ml')).toBeVisible();
   await page.getByRole('link', { name: 'Zurück', exact: true }).click();
 
-  // Verlauf als eigene Seite (eigener Chunk mit Recharts, offline aus dem Precache)
-  await dailyTile(page, 'Verlauf').click();
-  await expect(page.getByRole('heading', { name: 'Verlauf', level: 1 })).toBeVisible();
+  // Verlauf nur noch in der Statistik (Recharts-Chunk offline aus dem Precache)
+  await expect(dailyTile(page, 'Verlauf')).toHaveCount(0);
+  await openDailyStats(page);
   const history = page.locator('main');
   const metric = (name: string) =>
     history.getByRole('group', { name: 'Kennzahl' }).getByRole('button', { name, exact: true });
   await expect(history.getByTestId('daily-summary')).toHaveText('80 kg → 79,5 kg (−0,6 %)');
   await expect(page.getByRole('img', { name: 'Gewicht im Verlauf' })).toBeVisible();
-  await metric('Schritte').click();
+
+  // Übersicht: Ø im Zeitraum, Antippen wählt die Kennzahl
+  const overview = history.getByRole('list', { name: 'Übersicht im Zeitraum' });
+  const tile = (name: string) => overview.getByRole('button', { name: new RegExp(`^${name}`) });
+  await expect(overview.getByRole('button')).toHaveCount(4);
+  await expect(tile('Gewicht')).toContainText('79,5 kg');
+  await expect(tile('Gewicht')).toContainText('−0,5 kg im Zeitraum');
+  await expect(tile('Gewicht')).toHaveAttribute('aria-pressed', 'true');
+  await expect(tile('Wasser')).toContainText('Ø 1000 ml');
+  await expect(tile('Wasser')).toContainText('Ziel an 0 von 1 Tagen');
+  await tile('Schritte').click();
+  await expect(tile('Schritte')).toHaveAttribute('aria-pressed', 'true');
+  await expect(metric('Schritte')).toHaveAttribute('aria-pressed', 'true');
   await expect(history.getByTestId('daily-summary')).toHaveText(
     'Ø 10000 Schritte · Ziel an 1 von 2 Tagen',
   );
@@ -90,14 +102,25 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await expect(history.getByTestId('daily-summary')).toHaveText('Ø 5 von 5');
   await metric('Energie').click();
   await expect(history.getByText('Keine Einträge in diesem Zeitraum.')).toBeVisible();
-  // Zeitraum steht in der URL und übersteht das Neuladen
+  // Zeitraum und Kennzahl stehen in der URL und überstehen das Neuladen und den Bereichswechsel
   await history.getByRole('button', { name: '4 Wo.' }).click();
   await page.reload();
   await expect(history.getByRole('button', { name: '4 Wo.' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
+  await expect(metric('Energie')).toHaveAttribute('aria-pressed', 'true');
+  const views = page.getByRole('group', { name: 'Bereich' });
+  await views.getByRole('button', { name: 'Kraft' }).click();
+  await views.getByRole('button', { name: 'Alltag' }).click();
+  await expect(metric('Energie')).toHaveAttribute('aria-pressed', 'true');
+  // Alte Adresse leitet in die Statistik
+  await page.goto('./#/daily/history');
+  await expect(views.getByRole('button', { name: 'Alltag' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await openNav(page, 'Alltag');
   await expect(page.getByRole('heading', { name: 'Alltag', level: 1 })).toBeVisible();
 
   // Widget: bei bestehenden Nutzern unter „Weitere Widgets“
@@ -128,7 +151,7 @@ test('Übersicht → Unterseite → zurück mit gewähltem Tag (offline)', async
 
   await openNav(page, 'Alltag');
   const tiles = page.getByRole('list', { name: 'Bereiche' }).getByRole('link');
-  await expect(tiles).toHaveCount(6);
+  await expect(tiles).toHaveCount(5);
   await expect(dailyTile(page, 'Gewohnheiten')).toContainText('Noch keine');
   await expect(dailyTile(page, 'To-dos')).toContainText('Keine offen');
   await expect(dailyTile(page, 'Ernährung')).toContainText('0 von 2200 kcal');
@@ -145,7 +168,6 @@ test('Übersicht → Unterseite → zurück mit gewähltem Tag (offline)', async
     { tile: 'Gewohnheiten', title: 'Gewohnheiten', withDay: false },
     { tile: 'Supplements', title: 'Supplements', withDay: false },
     { tile: 'To-dos', title: 'To-dos', withDay: false },
-    { tile: 'Verlauf', title: 'Verlauf', withDay: false },
   ];
   for (const { tile, title, withDay } of pages) {
     await dailyTile(page, tile).click();

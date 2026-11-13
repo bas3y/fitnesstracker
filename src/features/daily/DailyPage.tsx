@@ -15,7 +15,7 @@ import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { useSupplementOverview } from '../supplements/useSupplements';
 import { DayNavigator } from './DayNavigator';
 import { GoalBar } from './GoalBar';
-import { BODY_PATH, DAILY_HISTORY_PATH, withDate } from './paths';
+import { BODY_PATH, withDate } from './paths';
 import { useDailyLog, useDayParam } from './useDaily';
 import { HABITS_PATH, useHabits } from './useHabits';
 import { TODOS_PATH, useTodos } from './useTodos';
@@ -43,9 +43,6 @@ export function DailyPage() {
         {settings && <NutritionTile {...day} settings={settings} />}
         {settings && <SupplementsTile {...day} settings={settings} />}
         <BodyTile {...day} />
-        <Tile to={withDate(DAILY_HISTORY_PATH, date, today)} icon="trend" name="Verlauf">
-          <span className={MUTED}>Graphen über Tage und Wochen</span>
-        </Tile>
       </ul>
       <SelfSection {...day} />
     </Page>

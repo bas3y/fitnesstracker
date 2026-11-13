@@ -25,6 +25,7 @@ import {
   recordCounts,
   restByExercise,
   restPairs,
+  searchOverviews,
   sortOverviews,
   summarizeDays,
   trainsMuscle,
@@ -510,6 +511,17 @@ describe('exerciseOverviews und Sortierung', () => {
   it('sortiert nach Name und zuletzt trainiert', () => {
     expect(sortOverviews(overviews, 'name')[0]!.exercise.name).toBe('Bankdrücken');
     expect(sortOverviews(overviews, 'recent')[0]!.exercise.name).toBe('Rudern');
+  });
+
+  it('sucht im Namen ohne Rücksicht auf Umlaute und behält die Reihenfolge', () => {
+    const sorted = sortOverviews(overviews, 'progress');
+    const names = (query: string) =>
+      searchOverviews(sorted, query).map((item) => item.exercise.name);
+    expect(names('bankdrucken')).toEqual(['Bankdrücken']);
+    expect(names('  ')).toEqual(['Bankdrücken', 'Curl', 'Rudern']);
+    expect(names('r')).toEqual(['Bankdrücken', 'Curl', 'Rudern']);
+    expect(names('ru de')).toEqual(['Rudern']);
+    expect(names('kniebeuge')).toEqual([]);
   });
 });
 

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from './fixtures';
+import { expect, test, type Locator, type Page } from './fixtures';
 import { fillStepper, goOffline } from './helpers';
 
 const selfRow = (page: Page, name: string) =>
@@ -125,9 +125,17 @@ test('Timer: Fokus mit Runden, Meditation mit Gewohnheit, Nachtragen, Ziel (offl
 });
 
 /** PNG im Browser zeichnen (groß genug, dass verkleinert wird) */
-async function samplePhoto(page: Page, color: string, width = 2000, height = 3000) {
+async function samplePhoto(
+  page: Page,
+  color: string,
+  width = 2000,
+  height = 3000,
+  /** Wie vom iPhone: JPEG, immer „image.jpg“ */
+  asIphone = false,
+) {
+  const type = asIphone ? 'image/jpeg' : 'image/png';
   const base64 = await page.evaluate(
-    async ({ color, width, height }) => {
+    async ({ color, width, height, type }) => {
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
@@ -136,15 +144,30 @@ async function samplePhoto(page: Page, color: string, width = 2000, height = 300
       context.fillRect(0, 0, width, height);
       context.fillStyle = '#fff';
       context.fillRect(width / 4, height / 4, width / 2, height / 2);
-      return canvas.toDataURL('image/png').split(',')[1]!;
+      return canvas.toDataURL(type).split(',')[1]!;
     },
-    { color, width, height },
+    { color, width, height, type },
   );
   return {
-    name: `foto-${color}.png`,
-    mimeType: 'image/png',
+    name: asIphone ? 'image.jpg' : `foto-${color}.png`,
+    mimeType: type,
     buffer: Buffer.from(base64, 'base64'),
   };
+}
+
+/** Grundfarbe am Rand jedes Bildes (Mitte ist weiß): r, g oder b */
+function edgeColors(images: Locator): Promise<string[]> {
+  return images.evaluateAll((elements) =>
+    (elements as HTMLImageElement[]).map((image) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d')!;
+      context.drawImage(image, 0, 0);
+      const [r, g, b] = context.getImageData(3, 3, 1, 1).data;
+      return r! > g! && r! > b! ? 'r' : g! > r! && g! > b! ? 'g' : 'b';
+    }),
+  );
 }
 
 test.describe('Fortschrittsfotos', () => {
@@ -273,5 +296,62 @@ test.describe('Fortschrittsfotos', () => {
       'naturalWidth',
       1067,
     );
+  });
+
+  test('Mehrfachauswahl: gleicher Name, gleicher Tag – jedes Foto bleibt eindeutig (offline)', async ({
+    page,
+    context,
+  }) => {
+    await page.goto('./#/daily/photos');
+    await goOffline(page, context);
+    await page.reload();
+    await expect(page.getByText('Noch keine Fotos.', { exact: false })).toBeVisible();
+
+    // Vier Fotos, alle „image.jpg“ wie vom iPhone; eins wird vor dem Speichern entfernt
+    const files = [];
+    for (const color of ['#c00', '#0a0', '#00c', '#cc0']) {
+      files.push(await samplePhoto(page, color, 2000, 3000, true));
+    }
+    await page.getByLabel('+ Foto hinzufügen').setInputFiles(files);
+    const dialog = page.getByRole('dialog', { name: '4 Fotos speichern' });
+    await expect(dialog.getByRole('region', { name: /^Foto \d von 4$/ })).toHaveCount(4);
+    await dialog.getByRole('button', { name: 'Foto 4 von 4 entfernen' }).click();
+    const saveDialog = page.getByRole('dialog', { name: '3 Fotos speichern' });
+    await expect(saveDialog.getByRole('img', { name: 'Vorschau' })).toHaveCount(3);
+    await saveDialog
+      .getByRole('region', { name: 'Foto 2 von 3' })
+      .getByRole('group', { name: 'Ansicht' })
+      .getByRole('button', { name: 'Seite' })
+      .click();
+    await saveDialog
+      .getByRole('region', { name: 'Foto 3 von 3' })
+      .getByLabel('Notiz (optional)')
+      .fill('blau');
+    // Doppelt antippen legt nichts doppelt an
+    await saveDialog.getByRole('button', { name: 'Speichern' }).dblclick();
+    await expect(saveDialog).toHaveCount(0);
+    await expect(page.getByTestId('photo-storage')).toContainText('3 Fotos belegen');
+
+    const check = async () => {
+      const today = page.getByRole('region', { name: 'Heute' });
+      await expect(today.getByRole('link')).toHaveCount(3);
+      const front = today.getByRole('img', { name: /^Foto Vorne/ });
+      const side = today.getByRole('img', { name: /^Foto Seite/ });
+      await expect(front).toHaveCount(2);
+      for (const image of [...(await front.all()), ...(await side.all())]) {
+        await expect(image).toHaveJSProperty('complete', true);
+      }
+      await expect.poll(async () => (await edgeColors(front)).sort()).toEqual(['b', 'r']);
+      await expect.poll(() => edgeColors(side)).toEqual(['g']);
+    };
+    await check();
+    await page.reload();
+    await check();
+
+    // Vollbild gehört ebenfalls zum richtigen Foto
+    await page.getByRole('link', { name: /^Foto Seite/ }).click();
+    const full = page.getByRole('main').getByRole('img', { name: /^Foto Seite/ });
+    await expect(full).toHaveJSProperty('complete', true);
+    await expect.poll(() => edgeColors(full)).toEqual(['g']);
   });
 });

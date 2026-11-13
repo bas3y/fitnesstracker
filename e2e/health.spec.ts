@@ -172,7 +172,10 @@ test('Gesundheitsdaten: Apple Health + Garmin importieren, eigene Werte bleiben 
   await page.getByRole('button', { name: '1 Tag übernehmen' }).click();
   await page.getByRole('link', { name: 'Verlauf ansehen' }).click();
 
-  // Verlauf: neue Kennzahlen und Ø-Schlafphasen
+  // Verlauf (Statistik → Alltag): neue Kennzahlen und Ø-Schlafphasen
+  await expect(
+    page.getByRole('group', { name: 'Bereich' }).getByRole('button', { name: 'Alltag' }),
+  ).toHaveAttribute('aria-pressed', 'true');
   const metrics = page.getByRole('group', { name: 'Kennzahl' });
   await metrics.getByRole('button', { name: 'HRV' }).click();
   await expect(page.getByTestId('daily-summary')).toHaveText('Ø 47 ms');

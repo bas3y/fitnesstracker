@@ -2,6 +2,7 @@ import { lazy, type ComponentType } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { HomePage } from './features/dashboard/HomePage';
+import { DAILY_STATS_PATH } from './features/stats/paths';
 
 /** Eigene Chunks halten den Start klein, offline liefert sie der Precache */
 function lazyPage<Name extends string>(
@@ -16,10 +17,6 @@ const BodyMeasurementsPage = lazyPage(
   'BodyMeasurementsPage',
 );
 const BodyPage = lazyPage(() => import('./features/daily/BodyPage'), 'BodyPage');
-const DailyHistoryPage = lazyPage(
-  () => import('./features/daily/DailyHistoryPage'),
-  'DailyHistoryPage',
-);
 const DailyPage = lazyPage(() => import('./features/daily/DailyPage'), 'DailyPage');
 const HealthImportPage = lazyPage(
   () => import('./features/daily/HealthImportPage'),
@@ -195,7 +192,8 @@ export function App() {
           <Route path="training/gear/:id/edit" element={<GearEditPage />} />
           <Route path="training/import" element={<ImportPage />} />
           <Route path="daily" element={<DailyPage />} />
-          <Route path="daily/history" element={<DailyHistoryPage />} />
+          {/* Seit 22 in der Statistik (alte Lesezeichen) */}
+          <Route path="daily/history" element={<Navigate to={DAILY_STATS_PATH} replace />} />
           <Route path="daily/body" element={<BodyPage />} />
           <Route path="daily/import" element={<HealthImportPage />} />
           <Route path="daily/measurements" element={<BodyMeasurementsPage />} />

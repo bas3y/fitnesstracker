@@ -61,6 +61,16 @@ export function dailyTile(page: Page, name: string): Locator {
     .getByRole('link', { name: new RegExp(`^${name}`) });
 }
 
+/** Statistik → Alltag (Verlauf der Tageswerte, seit Schritt 22) */
+export async function openDailyStats(page: Page) {
+  await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Statistik').click();
+  await page
+    .getByRole('group', { name: 'Bereich' })
+    .getByRole('button', { name: 'Alltag' })
+    .click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Verlauf' })).toBeVisible();
+}
+
 export async function skipRest(page: Page) {
   const timer = page.getByRole('timer', { name: 'Pause' });
   await expect(timer).toBeVisible();

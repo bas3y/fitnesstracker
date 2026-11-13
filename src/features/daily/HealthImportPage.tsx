@@ -17,7 +17,8 @@ import {
 import type { ImportFileProblem } from '../../domain/import/readFiles';
 import { DAILY_IMPORT_FIELD_LABELS } from '../../domain/labels';
 import { formatDayKey } from '../../domain/stats';
-import { BODY_PATH, DAILY_HISTORY_PATH } from './paths';
+import { DAILY_STATS_PATH } from '../stats/paths';
+import { BODY_PATH } from './paths';
 
 const MUTED = 'text-sm text-muted';
 
@@ -133,7 +134,7 @@ export function HealthImportPage() {
             <Link to={BODY_PATH} className={primaryButton}>
               Zu Körper & Befinden
             </Link>
-            <Link to={DAILY_HISTORY_PATH} className={secondaryButton}>
+            <Link to={DAILY_STATS_PATH} className={secondaryButton}>
               Verlauf ansehen
             </Link>
             <button type="button" className={secondaryButton} onClick={reset}>

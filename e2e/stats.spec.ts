@@ -14,7 +14,10 @@ const REST_MS = 120_000;
 /** Abstände so gewählt, dass die Grenze von „4 Wochen“ nie auf eine Einheit fällt */
 const SESSION_DAYS_AGO = [49, 42, 35, 30, 21, 14, 7, 0];
 
-function statsBackup() {
+/** Weitere Übungen im letzten Training (für die eingeklappte Übungsliste) */
+const EXTRA_EXERCISES = ['Kniebeuge', 'Rudern', 'Dips', 'Klimmzug', 'Schulterdrücken'];
+
+function statsBackup(extraExercises = 0) {
   const now = Date.now();
   const iso = (time: number) => new Date(time).toISOString();
   const entity = (id: string) => ({
@@ -93,6 +96,11 @@ function statsBackup() {
     });
     addItem(id, 'bench', start, 80 + 2.5 * index, [6, 6, 5]);
     if (index >= 4) addItem(id, 'curl', start + 10 * 60_000, 20, [8, 8]);
+    if (index === SESSION_DAYS_AGO.length - 1) {
+      EXTRA_EXERCISES.slice(0, extraExercises).forEach((_, extra) =>
+        addItem(id, `extra${extra}`, start + 12 * 60_000, 40, [10]),
+      );
+    }
   });
 
   return {
@@ -116,6 +124,9 @@ function statsBackup() {
       exercises: [
         exercise('bench', 'Test-Bankdrücken', 'chest', ['triceps']),
         exercise('curl', 'Test-Curl', 'biceps', []),
+        ...EXTRA_EXERCISES.slice(0, extraExercises).map((name, extra) =>
+          exercise(`extra${extra}`, `Test-${name}`, 'chest', []),
+        ),
       ],
       workouts,
       workoutExercises,
@@ -124,11 +135,11 @@ function statsBackup() {
   };
 }
 
-async function importStatsData(page: Page) {
+async function importStatsData(page: Page, extraExercises = 0) {
   await page.locator('input[type="file"]').setInputFiles({
     name: 'statistik.json',
     mimeType: 'application/json',
-    buffer: Buffer.from(JSON.stringify(statsBackup())),
+    buffer: Buffer.from(JSON.stringify(statsBackup(extraExercises))),
   });
   await page.getByRole('button', { name: 'Importieren', exact: true }).click();
   await expect(page.getByText('Sicherung wurde importiert')).toBeVisible();
@@ -297,4 +308,39 @@ test('Favorit in der Übungssuche setzen, ohne die Auswahl zu verlassen (offline
   await dialog.getByRole('button', { name: /^Bankdrücken \(Langhantel\)/ }).click();
   await expect(dialog).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Bankdrücken (Langhantel)' })).toBeVisible();
+});
+
+test('Statistik: Übungsliste eingeklappt, alle anzeigen und suchen (offline)', async ({
+  page,
+  context,
+}) => {
+  await page.goto('./#/settings/backup');
+  await goOffline(page, context);
+  await importStatsData(page, 5);
+
+  await openNav(page, 'Statistik');
+  const list = page.getByRole('list', { name: 'Übungen im Zeitraum' });
+  await expect(list.getByRole('link')).toHaveCount(5);
+  // Zuletzt trainiert zuerst, Einheiten darunter, Fortschritt rechts
+  await expect(list.getByRole('link', { name: /^Test-Bankdrücken/ })).toContainText('8 Einheiten');
+  await expect(list.getByRole('link', { name: /^Test-Bankdrücken/ })).toContainText('+18,2 %');
+
+  await page.getByRole('button', { name: 'Alle 7 Übungen anzeigen' }).click();
+  await expect(list.getByRole('link')).toHaveCount(7);
+  const search = page.getByRole('searchbox', { name: 'Übung suchen' });
+  await search.fill('schulterdrucken');
+  await expect(list.getByRole('link')).toHaveCount(1);
+  await expect(list.getByRole('link')).toContainText('Test-Schulterdrücken');
+  await search.fill('Kreuzheben');
+  await expect(page.getByText('Keine Übung gefunden.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Weniger anzeigen' }).click();
+  await expect(search).toHaveCount(0);
+  await expect(list.getByRole('link')).toHaveCount(5);
+
+  // Link führt zur Übung und zurück
+  await list.getByRole('link', { name: /^Test-Curl/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Test-Curl' })).toBeVisible();
+  await page.getByRole('link', { name: 'Zurück', exact: true }).click();
+  await expect(page.getByRole('list', { name: 'Übungen im Zeitraum' })).toBeVisible();
 });
