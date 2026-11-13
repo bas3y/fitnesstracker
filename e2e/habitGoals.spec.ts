@@ -178,7 +178,7 @@ test('Eigene Ziele mit Zahl und Ja/Nein: eintragen, Widget, abhaken, löschen (o
   );
 
   // Startseite: im Widget eintragen und abhaken
-  await nav(page, 'Dashboard');
+  await nav(page, 'Heute');
   const welcome = page.getByRole('button', { name: 'Los geht’s' });
   if (await welcome.isVisible()) await welcome.click();
   await page.getByRole('button', { name: 'Anpassen' }).click();

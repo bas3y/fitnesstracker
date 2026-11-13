@@ -1,5 +1,5 @@
 import Dexie from 'dexie';
-import { AppDatabase } from './database';
+import { AppDatabase, withDayHint } from './database';
 import { DEFAULT_DASHBOARD_WIDGETS, DEFAULT_QUICK_ACTIONS } from './types';
 
 describe('AppDatabase-Migration', () => {
@@ -1084,14 +1084,14 @@ describe('AppDatabase-Migration', () => {
 
     const current = new AppDatabase(name);
     expect(await current.settings.get('app-settings')).toMatchObject({
-      dashboardWidgets: ['habits', 'week'],
+      dashboardWidgets: ['dayHint', 'habits', 'week'],
       widgetSizes: {},
     });
     expect(current.verno).toBeGreaterThanOrEqual(31);
     await current.delete();
   });
 
-  it('adds the default logo variant in v32 and keeps the palette', async () => {
+  it('keeps the palette when the logo variant comes and goes (v32–v36)', async () => {
     const name = 'migration-v31-v32';
     const v31 = new Dexie(name);
     v31.version(31).stores({ settings: 'id, updatedAt' });
@@ -1099,10 +1099,10 @@ describe('AppDatabase-Migration', () => {
     v31.close();
 
     const current = new AppDatabase(name);
-    expect(await current.settings.get('app-settings')).toMatchObject({
-      logoVariant: 'charcoal',
-    });
-    expect(current.verno).toBeGreaterThanOrEqual(32);
+    const settings = await current.settings.get('app-settings');
+    expect(settings).toMatchObject({ palette: 'basey' });
+    expect(settings).not.toHaveProperty('logoVariant');
+    expect(current.verno).toBeGreaterThanOrEqual(36);
     await current.delete();
   });
 
@@ -1122,18 +1122,32 @@ describe('AppDatabase-Migration', () => {
     await current.delete();
   });
 
-  it('keeps only Charcoal Satin and Taupe Silk from v34/v35', async () => {
-    const name = 'migration-v33-v34';
-    const v33 = new Dexie(name);
-    v33.version(33).stores({ settings: 'id, updatedAt' });
-    await v33.table('settings').add({ id: 'app-settings', logoVariant: 'graphite' });
-    await v33.table('settings').add({ id: 'other', logoVariant: 'taupe' });
-    v33.close();
+  it('removes the logo choice and puts the day hint on top once in v36', async () => {
+    const name = 'migration-v35-v36';
+    const v35 = new Dexie(name);
+    v35.version(35).stores({ settings: 'id, updatedAt' });
+    await v35.table('settings').add({
+      id: 'app-settings',
+      logoVariant: 'taupe',
+      dashboardWidgets: ['habits', 'week'],
+    });
+    await v35.table('settings').add({ id: 'other', logoVariant: 'charcoal', dashboardWidgets: [] });
+    v35.close();
 
     const current = new AppDatabase(name);
-    expect(await current.settings.get('app-settings')).toMatchObject({ logoVariant: 'charcoal' });
-    expect(await current.settings.get('other')).toMatchObject({ logoVariant: 'taupe' });
-    expect(current.verno).toBe(35);
+    const settings = await current.settings.get('app-settings');
+    expect(settings).toMatchObject({
+      dashboardWidgets: ['dayHint', 'habits', 'week'],
+      dayHintDismissed: null,
+    });
+    expect(settings).not.toHaveProperty('logoVariant');
+    expect(await current.settings.get('other')).toMatchObject({ dashboardWidgets: ['dayHint'] });
+    expect(current.verno).toBe(36);
     await current.delete();
+  });
+
+  it('adds the day hint only once', () => {
+    expect(withDayHint(['week'])).toEqual(['dayHint', 'week']);
+    expect(withDayHint(['week', 'dayHint'])).toEqual(['week', 'dayHint']);
   });
 });

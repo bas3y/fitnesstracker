@@ -1,26 +1,19 @@
 import { useId, useMemo } from 'react';
-import {
-  DEFAULT_LOGO_VARIANT,
-  logoSvg,
-  type LogoSvgOptions,
-  type LogoVariant,
-} from '../brand/logo';
+import { logoSvg, type LogoSvgOptions } from '../brand/logo';
 
 /** Basey-Logo (Schriftzug auf Artwork, SVG aus `src/brand/logo.ts`); Größe über `className` */
 export function BaseyLogo({
-  variant = DEFAULT_LOGO_VARIANT,
   shape,
   label,
   className = 'h-12 w-12',
 }: {
-  variant?: LogoVariant;
   shape?: LogoSvgOptions['shape'];
   label?: string;
   className?: string;
 }) {
   // IDs der Masken/Filter müssen im Dokument eindeutig sein; `useId` enthält Doppelpunkte
   const id = `logo${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const html = useMemo(() => logoSvg(variant, { id, shape, label }), [variant, id, shape, label]);
+  const html = useMemo(() => logoSvg({ id, shape, label }), [id, shape, label]);
   return (
     // SVG aus festen Konstanten, `label` wird in `artworkSvg` escapt (Test in logo.test.ts)
     <span

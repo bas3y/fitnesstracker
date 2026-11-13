@@ -20,6 +20,7 @@ export const WIDGET_SIZE_OPTIONS: Record<DashboardWidget, readonly WidgetSize[]>
   steps: ['small', 'medium', 'large'],
   water: ['small', 'medium', 'large'],
   sleep: ['small', 'medium', 'large'],
+  dayHint: ['medium'],
 };
 
 const ORDER: readonly WidgetSize[] = ['small', 'medium', 'large'];

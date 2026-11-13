@@ -1,4 +1,3 @@
-import type { LogoVariant } from '../brand/logo';
 import type { IconName } from '../components/iconPaths';
 
 /** ISO-8601-Zeitstempel, z. B. `2026-10-28T09:15:00.000Z` */
@@ -27,8 +26,6 @@ export interface Settings extends BaseEntity {
   theme: ThemePreference;
   /** Farbpalette (seit DB-Version 29) */
   palette: ColorPalette;
-  /** Variante des Basey-Logos in der App und beim Start (seit DB-Version 32) */
-  logoVariant: LogoVariant;
   lastBackupAt: Timestamp | null;
   /** Stand der mitgelieferten Daten (`0` = noch nicht eingespielt) */
   seedVersion: number;
@@ -88,6 +85,8 @@ export interface Settings extends BaseEntity {
   trainingWeekTarget: number;
   /** Schon gemeldete Erfolge; `null` = noch nie geprüft (der erste Abgleich meldet nichts) */
   celebrations: Celebrations | null;
+  /** Weggetippter Tageshinweis als `YYYY-MM-DD:<Tageszeit>` (seit DB-Version 36) */
+  dayHintDismissed: string | null;
 }
 
 /** Bereits gezeigte Hinweise, damit jeder Erfolg nur einmal gemeldet wird */
@@ -117,13 +116,18 @@ export const DASHBOARD_WIDGETS = [
   'steps',
   'water',
   'sleep',
+  'dayHint',
 ] as const;
 export type DashboardWidget = (typeof DASHBOARD_WIDGETS)[number];
 /** Klein = halbe Breite, nur der Wert; Mittel = kurz; Groß = mit Details (seit DB-Version 31) */
 export const WIDGET_SIZES = ['small', 'medium', 'large'] as const;
 export type WidgetSize = (typeof WIDGET_SIZES)[number];
-/** Standardaufbau seit DB-Version 14 (bestehende Startseiten wurden einmalig umgestellt) */
+/**
+ * Standardaufbau seit DB-Version 14 (bestehende Startseiten wurden einmalig umgestellt),
+ * `dayHint` seit DB-Version 36 (bei allen einmal oben eingefügt)
+ */
 export const DEFAULT_DASHBOARD_WIDGETS: readonly DashboardWidget[] = [
+  'dayHint',
   'quickActions',
   'habits',
   'todos',

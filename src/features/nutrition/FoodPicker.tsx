@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { primaryButton, secondaryButton } from '../../components/buttons';
+import { lockScroll } from '../../components/scrollRoot';
 import { SearchInput } from '../../components/SearchInput';
 import { createUserFood } from '../../db/foods';
 import { EMPTY_FOOD_INPUT, type MealAmount } from '../../db/schemas';
@@ -59,12 +60,9 @@ export function FoodPicker({
   }, [foods, search, query]);
 
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const unlock = lockScroll();
     dialog.current?.focus();
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
+    return unlock;
   }, []);
 
   const select = (food: Food) => setSelected({ food, amount: defaultMealAmount(food.portions) });

@@ -142,7 +142,7 @@ test('Ernährung: Tag mit 3 Mahlzeiten offline erfassen, Summen, Wiederholen und
   // Kachel auf der Alltag-Übersicht, Startseite mit Widget und Schnellzugriff
   await openNav(page, 'Alltag');
   await expect(dailyTile(page, 'Ernährung')).toContainText('1366 von 2000 kcal');
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await page.getByRole('button', { name: 'Anpassen' }).click();
   await page.getByRole('button', { name: 'Ernährung hinzufügen' }).click();
   await page

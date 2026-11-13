@@ -15,7 +15,7 @@ import { loadFoodMap } from './foods';
 import { create, listActive, softDelete, update } from './repository';
 import { dayKeySchema, mealAmountSchema, savedMealNameSchema, type MealAmount } from './schemas';
 import { loadTrainingDays } from './supplements';
-import type { DayKey, MealEntry, MealType, Nutrients, SavedMeal } from './types';
+import type { DayKey, Food, MealEntry, MealType, Nutrients, SavedMeal } from './types';
 
 const isActive = (entity: { deletedAt: string | null }) => entity.deletedAt === null;
 
@@ -118,6 +118,25 @@ export interface FoodUsage {
 }
 
 /** Für die Schnellauswahl: Einträge der letzten `FREQUENT_DAYS` Tage */
+/**
+ * Lebensmittel für Vorschläge (z. B. „Protein fehlt“): Favoriten, dann häufig und zuletzt
+ * gegessene; ausgeblendete und gelöschte fallen weg
+ */
+export async function loadPreferredFoods(today: DayKey): Promise<Food[]> {
+  const [favorites, usage] = await Promise.all([
+    db.foods
+      .filter((food) => food.isFavorite && isActive(food) && food.hiddenAt === null)
+      .toArray(),
+    loadFoodUsage(today),
+  ]);
+  const ids = [...new Set([...usage.frequent, ...usage.recent])];
+  const used = (await db.foods.bulkGet(ids)).filter(
+    (food): food is Food => !!food && isActive(food) && food.hiddenAt === null,
+  );
+  favorites.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  return [...favorites, ...used];
+}
+
 export async function loadFoodUsage(today: DayKey): Promise<FoodUsage> {
   const entries = await db.mealEntries
     .where('date')

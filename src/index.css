@@ -300,6 +300,46 @@
     overscroll-behavior-y: none;
   }
 
+  /*
+   * Seit 22b scrollt nur der Inhaltsbereich im Layout (`data-scroll-root`), nicht das Dokument:
+   * Auf dem iPhone stand die feste Navigation sonst gelegentlich mitten im Bild.
+   */
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* Artwork der Palette hinter dem Seitenkopf (`PageArtwork`) */
+.page-artwork {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 24rem;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.35;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.6) 45%, transparent 85%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.6) 45%, transparent 85%);
+}
+.page-artwork img {
+  position: absolute;
+  left: 50%;
+  top: -3rem;
+  width: max(140%, 36rem);
+  height: 27rem;
+  max-width: none;
+  object-fit: cover;
+  transform: translateX(-50%);
+}
+:root.dark .page-artwork {
+  opacity: 0.55;
+}
+
+@layer base {
   html {
     -webkit-tap-highlight-color: transparent;
   }

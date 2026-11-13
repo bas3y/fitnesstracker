@@ -1,4 +1,3 @@
-import { DEFAULT_LOGO_VARIANT } from '../brand/logo';
 import { db } from './database';
 import { create, update, type EntityChanges, type NewEntity } from './repository';
 import {
@@ -35,7 +34,6 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   bodyWeightKg: null,
   theme: 'system',
   palette: 'basey',
-  logoVariant: DEFAULT_LOGO_VARIANT,
   lastBackupAt: null,
   seedVersion: 0,
   activePlanId: null,
@@ -63,6 +61,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   meditationHabitId: null,
   trainingWeekTarget: TRAINING_WEEK_TARGET_DEFAULT,
   celebrations: null,
+  dayHintDismissed: null,
 };
 
 export function getSettings(): Promise<Settings | undefined> {

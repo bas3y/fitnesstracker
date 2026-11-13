@@ -133,7 +133,7 @@ test('Startseite: Schnellzugriff, Gewohnheiten und To-dos als Widgets (offline)'
   await page.getByRole('link', { name: '+ Neue Gewohnheit' }).click();
   await page.getByLabel('Name', { exact: true }).fill('Dehnen');
   await page.getByRole('button', { name: 'Anlegen' }).click();
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   const habits = card(page, 'Gewohnheiten');
   await habits.getByRole('checkbox', { name: 'Dehnen' }).click();
   await expect(habits.getByText('1 von 1 erledigt')).toBeVisible();

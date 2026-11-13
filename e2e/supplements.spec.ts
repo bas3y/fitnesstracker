@@ -113,7 +113,7 @@ test('Supplements: anlegen, abhaken, Bestand, Trainingstage, Erinnerung und Widg
   await expect(dailyTile(page, 'Supplements')).toContainText('0 von 1');
 
   // Widget und Schnellzugriff auf der Startseite
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await page.getByRole('button', { name: 'Anpassen' }).click();
   await page.getByRole('button', { name: 'Supplements hinzufügen' }).click();
   await page

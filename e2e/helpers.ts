@@ -97,3 +97,14 @@ export async function chooseIcon(page: Page, label: string) {
     .click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
+
+/** Scrollhöhe des Inhaltsbereichs (seit 22b scrollt nicht mehr das Fenster) */
+export function scrollTop(page: Page): Promise<number> {
+  return page.evaluate(() => document.querySelector('[data-scroll-root]')!.scrollTop);
+}
+
+export async function setScrollTop(page: Page, top: number): Promise<void> {
+  await page.evaluate((value) => {
+    document.querySelector('[data-scroll-root]')!.scrollTop = value;
+  }, top);
+}

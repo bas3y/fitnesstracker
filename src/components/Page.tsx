@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { CompactHeader } from './CompactHeader';
+import { useScrolledPast } from './useScrolledPast';
 import { ChevronLeftIcon, ChevronRightIcon, Icon, IconBadge, type IconName } from './icons';
 
 /** Klassen des runden Kopf-Buttons, auch für Links (`aria-label` setzen) */
@@ -141,6 +143,18 @@ export function MoreLink({
   );
 }
 
+/**
+ * Kopf-Aktion an ihrem Platz; während der mitlaufende Kopf sie zeigt, ist sie hier nicht bedienbar
+ * (sonst gäbe es den Button doppelt)
+ */
+export function HeaderAction({ hidden, children }: { hidden: boolean; children: ReactNode }) {
+  return (
+    <div className="contents" inert={hidden} aria-hidden={hidden || undefined}>
+      {children}
+    </div>
+  );
+}
+
 export function Page({
   title,
   backTo,
@@ -157,26 +171,29 @@ export function Page({
   action?: ReactNode;
   children: ReactNode;
 }) {
-  const heading = (
-    <h1 className="min-w-0 flex-1 text-[1.75rem] leading-tight font-bold tracking-tight text-balance">
-      {title}
-    </h1>
-  );
+  const [header, compact] = useScrolledPast<HTMLDivElement>();
   return (
     <div className="mx-auto max-w-md px-4 pt-[calc(1.25rem+env(safe-area-inset-top))]">
+      {compact && (
+        <CompactHeader title={title} backTo={backTo} backState={backState} action={action} />
+      )}
       {backTo && (
         <Link
           to={backTo}
           state={backState}
+          inert={compact}
+          aria-hidden={compact || undefined}
           className="-ml-3 inline-flex min-h-11 items-center gap-0.5 px-2 text-[0.9375rem] font-medium text-primary-text"
         >
           <ChevronLeftIcon className="h-5 w-5" />
           Zurück
         </Link>
       )}
-      <div className="mb-4 flex items-center gap-3">
-        {heading}
-        {action}
+      <div ref={header} className="mb-4 flex items-center gap-3">
+        <h1 className="min-w-0 flex-1 text-[1.75rem] leading-tight font-bold tracking-tight text-balance">
+          {title}
+        </h1>
+        {action && <HeaderAction hidden={compact}>{action}</HeaderAction>}
       </div>
       {children}
     </div>

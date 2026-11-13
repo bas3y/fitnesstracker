@@ -53,7 +53,7 @@ function ErrorScreen({ error, variant }: { error: Error; variant: 'page' | 'app'
       role="alert"
       className={
         variant === 'app'
-          ? 'flex min-h-dvh items-center justify-center bg-page p-6 text-fg'
+          ? 'flex h-dvh items-center justify-center overflow-y-auto bg-page p-6 text-fg'
           : 'px-4 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-6'
       }
     >

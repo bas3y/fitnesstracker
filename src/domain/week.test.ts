@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lastDays, weekTrainings } from './week';
+import { formatPeekDay, lastDays, trainingsOn, weekTrainings } from './week';
 
 const at = (date: string, time = '10:00') => new Date(`${date}T${time}:00`).toISOString();
 
@@ -45,6 +45,34 @@ describe('lastDays', () => {
       { date: '2026-11-02', value: 0 },
       { date: '2026-11-03', value: 0 },
       { date: '2026-11-04', value: 8000 },
+    ]);
+  });
+});
+
+describe('formatPeekDay', () => {
+  it('nennt heute und gestern beim Namen', () => {
+    expect(formatPeekDay('2026-11-13', '2026-11-13')).toBe('Heute');
+    expect(formatPeekDay('2026-11-12', '2026-11-13')).toBe('Gestern');
+    expect(formatPeekDay('2026-11-11', '2026-11-13')).toMatch(/^Mi\.?, 11\. Nov/);
+  });
+});
+
+describe('trainingsOn', () => {
+  it('listet Kraft vor Ausdauer, je nach Startzeit', () => {
+    const iso = (time: string) => new Date(`2026-11-12T${time}:00`).toISOString();
+    const result = trainingsOn(
+      '2026-11-12',
+      [
+        { id: 'w2', startedAt: iso('18:00'), name: 'Beine' },
+        { id: 'w1', startedAt: iso('07:00'), name: 'Oberkörper' },
+        { id: 'w0', startedAt: new Date('2026-11-11T18:00:00').toISOString(), name: 'Alt' },
+      ],
+      [{ id: 'e1', startedAt: iso('06:00'), name: 'Laufen' }],
+    );
+    expect(result).toEqual([
+      { kind: 'strength', id: 'w1', name: 'Oberkörper' },
+      { kind: 'strength', id: 'w2', name: 'Beine' },
+      { kind: 'endurance', id: 'e1', name: 'Laufen' },
     ]);
   });
 });

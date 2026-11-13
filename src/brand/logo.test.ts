@@ -1,59 +1,38 @@
 import { COLOR_PALETTES } from '../db/types';
 import { artworkSvg, PALETTE_ARTWORKS } from './artwork';
-import {
-  LOGO_ARTWORKS,
-  LOGO_VARIANTS,
-  isLogoVariant,
-  logoDataUrl,
-  logoSvg,
-  toLogoVariant,
-} from './logo';
+import { LOGO_ARTWORK, logoDataUrl, logoSvg } from './logo';
 import { splashHtml, SPLASH_CSS } from './splashHtml';
 import { wordmarkAspect, wordmarkSvg } from './wordmarkSvg';
 
 describe('logoSvg', () => {
-  it('draws the wordmark on the variant artwork', () => {
-    const svg = logoSvg('charcoal');
+  it('draws the wordmark on the Charcoal Satin artwork', () => {
+    const svg = logoSvg();
     expect(svg).toContain('class="art-wordmark"');
-    expect(svg).toContain(`fill="${LOGO_ARTWORKS.charcoal.text}"`);
-    expect(svg).toContain(`fill="${LOGO_ARTWORKS.charcoal.background}"`);
+    expect(svg).toContain(`fill="${LOGO_ARTWORK.text}"`);
+    expect(svg).toContain(`fill="${LOGO_ARTWORK.background}"`);
     expect(svg).toContain('aria-hidden="true"');
-    expect(svg).not.toContain('logo-ring');
+    expect(svg).not.toContain('<pattern');
+    expect(LOGO_ARTWORK.style).toBe('satin');
   });
 
   it('prefixes all ids so several logos can share a page', () => {
-    const svg = logoSvg('taupe', { id: 'a1' });
+    const svg = logoSvg({ id: 'a1' });
     const ids = [...svg.matchAll(/id="([^"]+)"/g)].map((match) => match[1]!);
     expect(ids.length).toBeGreaterThan(0);
     expect(ids.every((id) => id.startsWith('a1-'))).toBe(true);
     for (const ref of svg.matchAll(/url\(#([^)]+)\)/g)) expect(ids).toContain(ref[1]);
   });
 
-  it('gives both variants the satin gradient', () => {
-    expect(LOGO_ARTWORKS.charcoal.style).toBe('satin');
-    expect(LOGO_ARTWORKS.taupe.style).toBe('satin');
-    expect(logoSvg('taupe')).not.toContain('<pattern');
-  });
-
   it('supports rounded, full-bleed and labelled icons', () => {
-    expect(logoSvg('charcoal')).toContain('clip-path=');
-    expect(logoSvg('charcoal', { shape: 'square' })).not.toContain('clip-path=');
-    expect(logoSvg('charcoal', { size: 64, label: 'Basey' })).toMatch(
+    expect(logoSvg()).toContain('clip-path=');
+    expect(logoSvg({ shape: 'square' })).not.toContain('clip-path=');
+    expect(logoSvg({ size: 64, label: 'Basey' })).toMatch(
       /width="64" height="64" role="img" aria-label="Basey"/,
     );
   });
 
   it('builds a data URL', () => {
-    expect(logoDataUrl('taupe')).toMatch(/^data:image\/svg\+xml;charset=utf-8,%3Csvg/);
-  });
-
-  it('recognises variants, Charcoal Satin is the default', () => {
-    expect(LOGO_VARIANTS).toEqual(['charcoal', 'taupe']);
-    expect(isLogoVariant('taupe')).toBe(true);
-    expect(isLogoVariant('stone')).toBe(false);
-    expect(isLogoVariant(null)).toBe(false);
-    expect(toLogoVariant('graphite')).toBe('charcoal');
-    expect(toLogoVariant('taupe')).toBe('taupe');
+    expect(logoDataUrl()).toMatch(/^data:image\/svg\+xml;charset=utf-8,%3Csvg/);
   });
 });
 
@@ -88,8 +67,8 @@ describe('wordmarkSvg', () => {
     const label = 'Ann "A" <img src=x onerror=alert(1)> & Co';
     const escaped = 'aria-label="Ann &quot;A&quot; &lt;img src=x onerror=alert(1)&gt; &amp; Co"';
     expect(wordmarkSvg({ label })).toContain(escaped);
-    expect(logoSvg('charcoal', { label })).toContain(escaped);
-    expect(logoSvg('charcoal', { label })).not.toContain('<img');
+    expect(logoSvg({ label })).toContain(escaped);
+    expect(logoSvg({ label })).not.toContain('<img');
   });
 });
 

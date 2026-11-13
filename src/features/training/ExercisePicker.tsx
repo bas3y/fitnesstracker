@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { primaryButton, secondaryButton } from '../../components/buttons';
+import { lockScroll } from '../../components/scrollRoot';
 import { createUserExercise } from '../../db/exercises';
 import { EMPTY_EXERCISE_INPUT } from '../../db/schemas';
 import type { Exercise } from '../../db/types';
@@ -85,12 +86,9 @@ export function ExercisePicker({
   };
 
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const unlock = lockScroll();
     dialog.current?.focus();
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
+    return unlock;
   }, []);
 
   return (

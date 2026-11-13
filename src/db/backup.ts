@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { base64ToBytes, bytesToBase64 } from '../domain/photos';
-import { db } from './database';
+import { db, withDayHint } from './database';
 import { nowIso } from './repository';
 import {
   bodyMeasureSchema,
@@ -45,7 +45,6 @@ import {
   workoutBlockSchema,
 } from './schemas';
 import { ensureTrackSummaries } from './endurance';
-import { DEFAULT_LOGO_VARIANT, LOGO_VARIANTS } from '../brand/logo';
 import { toIconName } from '../domain/iconChoice';
 import { ensureSeeded } from './seed';
 import { REST_TIMER_DEFAULTS, SETTINGS_ID } from './settings';
@@ -71,6 +70,7 @@ import {
 /** Kennung im Backup; bleibt nach der Umbenennung in „Basey“, damit alte und neue Stände zueinander passen */
 export const BACKUP_APP = 'fitnesstracker';
 export const BACKUP_VERSION = 1;
+const DAY_HINT_DB_VERSION = 36;
 
 const timestamp = z.iso.datetime({ message: 'Ungültiger Zeitstempel' });
 
@@ -148,13 +148,8 @@ const settingsSchema = baseEntitySchema.extend({
     .default('green'),
   // Seit DB-Version 31
   widgetSizes: z.partialRecord(z.enum(DASHBOARD_WIDGETS), z.enum(WIDGET_SIZES)).default({}),
-  // Seit DB-Version 32; Graphite Mesh und Stone Grip gibt es seit Version 35 nicht mehr → Standard
-  logoVariant: z
-    .preprocess(
-      (value) => (value === 'graphite' || value === 'stone' ? DEFAULT_LOGO_VARIANT : value),
-      z.enum(LOGO_VARIANTS),
-    )
-    .default(DEFAULT_LOGO_VARIANT),
+  // `logoVariant` (DB-Version 32–35) fällt beim Einlesen weg; seit DB-Version 36:
+  dayHintDismissed: z.string().nullable().default(null),
 });
 
 const catalogEntryFields = {
@@ -520,7 +515,14 @@ export function parseBackup(data: unknown): ParseResult {
   if (result.data.dbVersion > db.verno) {
     return { ok: false, error: 'Sicherung stammt aus einer neueren App-Version' };
   }
-  return { ok: true, backup: result.data };
+  const backup = result.data;
+  // Wie die Migration auf DB-Version 36: Tageshinweis einmal oben auf der Startseite
+  if (backup.dbVersion < DAY_HINT_DB_VERSION) {
+    for (const settings of backup.tables.settings) {
+      settings.dashboardWidgets = withDayHint(settings.dashboardWidgets);
+    }
+  }
+  return { ok: true, backup };
 }
 
 export function parseBackupText(text: string): ParseResult {

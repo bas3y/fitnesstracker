@@ -885,27 +885,38 @@ describe('Timer und Fortschrittsfotos', () => {
     expect(parseBackup(data).ok).toBe(false);
   });
 
-  it('behält die Logo-Variante und ergänzt sie in Sicherungen aus DB-Version 31', async () => {
-    await updateSettings({ logoVariant: 'taupe' });
+  it('ignoriert die frühere Logo-Variante (bis DB-Version 35), auch unbekannte Werte', async () => {
+    const data = await validBackup();
+    data.dbVersion = 35;
+    for (const variant of ['taupe', 'charcoal', 'stone', 'gold']) {
+      data.tables.settings[0].logoVariant = variant;
+      const result = parseBackup(data);
+      if (!result.ok) throw new Error(result.error);
+      expect(result.backup.tables.settings[0]).not.toHaveProperty('logoVariant');
+    }
+  });
+
+  it('setzt den Tageshinweis bei Sicherungen vor DB-Version 36 einmal oben auf die Startseite', async () => {
+    await updateSettings({
+      dashboardWidgets: ['week', 'habits'],
+      dayHintDismissed: '2026-11-13:evening',
+    });
     const current = parseBackup(await validBackup());
     if (!current.ok) throw new Error(current.error);
-    expect(current.backup.tables.settings[0]).toMatchObject({ logoVariant: 'taupe' });
+    expect(current.backup.tables.settings[0]).toMatchObject({
+      dashboardWidgets: ['week', 'habits'],
+      dayHintDismissed: '2026-11-13:evening',
+    });
 
     const data = await validBackup();
-    data.dbVersion = 31;
-    delete data.tables.settings[0].logoVariant;
-    const result = parseBackup(data);
-    if (!result.ok) throw new Error(result.error);
-    expect(result.backup.tables.settings[0]).toMatchObject({ logoVariant: 'charcoal' });
-
-    // Frühere Varianten werden zum Standard
-    data.tables.settings[0].logoVariant = 'stone';
+    data.dbVersion = 35;
+    delete data.tables.settings[0].dayHintDismissed;
     const old = parseBackup(data);
     if (!old.ok) throw new Error(old.error);
-    expect(old.backup.tables.settings[0]).toMatchObject({ logoVariant: 'charcoal' });
-
-    data.tables.settings[0].logoVariant = 'gold';
-    expect(parseBackup(data).ok).toBe(false);
+    expect(old.backup.tables.settings[0]).toMatchObject({
+      dashboardWidgets: ['dayHint', 'week', 'habits'],
+      dayHintDismissed: null,
+    });
   });
 
   it('ersetzt Emojis aus Sicherungen bis DB-Version 29 durch Symbole', async () => {

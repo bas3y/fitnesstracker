@@ -6,7 +6,6 @@ import {
   DEFAULT_ARTWORK_PALETTE,
   PALETTE_ARTWORKS,
 } from './artwork.ts';
-import { DEFAULT_LOGO_VARIANT, LOGO_VARIANTS } from './logo.ts';
 import { wordmarkSvg } from './wordmarkSvg.ts';
 
 /** Hintergrund von Android-Startbild und Statusleiste beim Start (Standardpalette) */
@@ -53,16 +52,10 @@ export function splashHtml(): string {
         var palette = root.getAttribute('data-palette');
         if (${JSON.stringify(SPLASH_PALETTES)}.indexOf(palette) < 0) palette = '${DEFAULT_ARTWORK_PALETTE}';
         document.querySelector('#splash .splash-art img').setAttribute('src', './splash-' + palette + '.webp');
-        // iPhone: „Zum Home-Bildschirm“ übernimmt das Icon der gewählten Logo-Variante
-        var variant = null;
+        // Bis 22b wählbare Logo-Variante: gemerkten Wert entfernen
         try {
-          variant = localStorage.getItem('logo');
+          localStorage.removeItem('logo');
         } catch (e) {}
-        if (${JSON.stringify(LOGO_VARIANTS.filter((variant) => variant !== DEFAULT_LOGO_VARIANT))}.indexOf(variant) >= 0) {
-          document
-            .querySelector('link[rel="apple-touch-icon"]')
-            .setAttribute('href', './apple-touch-icon-' + variant + '.png');
-        }
         // Notbremse, falls die App nicht startet
         setTimeout(function () {
           root.classList.remove('${SPLASH_ACTIVE_CLASS}');

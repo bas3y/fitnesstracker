@@ -79,7 +79,7 @@ test('komplettes Workout offline loggen, neu laden, in der Historie finden', asy
   await expect(plank.getByRole('button', { name: 'Satz 1: 0:45' })).toBeVisible();
 
   // Banner auf anderen Seiten führt zurück
-  await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Dashboard').click();
+  await page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Heute').click();
   await page.getByRole('status').filter({ hasText: 'Workout läuft' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Workout' })).toBeVisible();
 

@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { dragScrollDelta } from '../domain/dragScroll';
 import { moveItem } from '../domain/workout';
+import { scrollRoot } from './scrollRoot';
 
 /** So weit muss der Zeiger wandern, bevor gescrollt wird – ein Griff kann am Rand liegen */
 const SCROLL_THRESHOLD_PX = 8;
@@ -41,6 +42,11 @@ interface Drag {
   offset: number;
   /** Aktuelle Reihenfolge – Zeigerereignisse können schneller kommen als gerendert wird */
   order: string[];
+  /**
+   * Größte Scrollhöhe beim Greifen: Die verschobene Zeile vergrößert sonst den Scrollbereich und
+   * die Seite liefe am unteren Rand endlos weiter
+   */
+  maxScroll: number;
 }
 
 /**
@@ -111,7 +117,8 @@ export function SortableList<T extends SortableItem>({
       if (current && Math.abs(current.pointerY - current.startY) >= SCROLL_THRESHOLD_PX) {
         const delta = dragScrollDelta(current.pointerY, 0, visibleBottom());
         if (delta !== 0) {
-          window.scrollBy(0, delta);
+          const root = scrollRoot();
+          root.scrollTop = Math.max(0, Math.min(current.maxScroll, root.scrollTop + delta));
           followPointer();
           swapAtPointer();
         }
@@ -144,6 +151,7 @@ export function SortableList<T extends SortableItem>({
       pointerY: event.clientY,
       offset: middleOf(row) - event.clientY,
       order,
+      maxScroll: scrollRoot().scrollHeight - scrollRoot().clientHeight,
     };
     setLocalOrder(order);
     setDraggingId(id);

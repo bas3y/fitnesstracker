@@ -82,6 +82,7 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidget, { name: string; hi
   steps: { name: 'Schritte', hint: 'Schritte heute und Tagesziel' },
   water: { name: 'Wasser', hint: 'Getrunken heute, schnell nachtragen' },
   sleep: { name: 'Schlaf', hint: 'Schlaf der letzten Nacht und Tagesziel' },
+  dayHint: { name: 'Tageshinweis', hint: 'Morgens, nach dem Training und abends das Wichtigste' },
 };
 
 export const WIDGET_SIZE_LABELS: Record<WidgetSize, { short: string; name: string }> = {

@@ -2,11 +2,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react';
 import type { BackState } from '../../components/backNavigation';
 import { Link } from 'react-router-dom';
-import type { LogoVariant } from '../../brand/logo';
 import { BaseyLogo } from '../../components/BaseyLogo';
 import { Chip } from '../../components/Chip';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
-import { Card, CustomizeToggle, LinkRow, type CardTone } from '../../components/Page';
+import { CompactHeader } from '../../components/CompactHeader';
+import { useScrolledPast } from '../../components/useScrolledPast';
+import { Card, CustomizeToggle, HeaderAction, LinkRow, type CardTone } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
 import { updateSettings, updateSettingsFrom } from '../../db/settings';
 import { loadStatsSessions } from '../../db/stats';
@@ -14,6 +15,7 @@ import {
   DASHBOARD_WIDGETS,
   QUICK_ACTIONS,
   type DashboardWidget,
+  type DayKey,
   type EnduranceSession,
   type Goal,
   type QuickAction,
@@ -42,7 +44,11 @@ import {
 } from '../../domain/stats';
 import { formatRecord, type PersonalRecord } from '../../domain/strength';
 import { kgToDisplay } from '../../domain/units';
-import { weekTrainings } from '../../domain/week';
+import { formatPeekDay, trainingsOn, weekTrainings } from '../../domain/week';
+import { formatTrainingGap, trainingGap } from '../../domain/nudges';
+import { DayPeek } from '../../components/DayPeek';
+import { secondaryButton } from '../../components/buttons';
+import { sessionPath } from '../endurance/paths';
 import { sizeChoices, widgetSize } from '../../domain/widgets';
 import {
   formatWorkoutDate,
@@ -65,6 +71,8 @@ import { HISTORY_PATH } from '../training/paths';
 import { TrainingStartCard } from '../training/TrainingStartCard';
 import { useNow, useWorkoutHistory } from '../training/useWorkouts';
 import { DailyMetricWidget } from './DailyMetricWidget';
+import { dayHintVisible, lastTraining } from './dayHintData';
+import { DayHintWidget } from './DayHintWidget';
 import { QuickActions } from './QuickActions';
 import {
   EnduranceSmall,
@@ -156,6 +164,7 @@ function renderWidget(
         <WeekCard
           sessions={sessions}
           endurance={endurance}
+          history={history}
           settings={settings}
           now={now}
           size={size}
@@ -216,6 +225,11 @@ function renderWidget(
           tone={tone}
         />
       ) : null;
+    case 'dayHint': {
+      const training = lastTraining(history, endurance, records, settings, now);
+      if (!dayHintVisible(settings, today, now, training)) return null;
+      return <DayHintWidget settings={settings} today={today} now={now} training={training} />;
+    }
     case 'steps':
     case 'water':
     case 'sleep':
@@ -233,6 +247,7 @@ export function HomePage() {
   const goals = useGoals();
   const now = useNow(true, 60_000);
   const [editing, setEditing] = useState(false);
+  const [header, compact] = useScrolledPast<HTMLDivElement>();
   const bodyWeightKg = settings?.bodyWeightKg ?? null;
   const records = useMemo(
     () => recentRecords(sessions ?? [], bodyWeightKg, RECENT_RECORD_ROWS),
@@ -244,9 +259,11 @@ export function HomePage() {
     history &&
     goals && { settings, sessions, endurance, history, records, goals, now };
 
+  const toggle = <CustomizeToggle editing={editing} onChange={setEditing} />;
   return (
     <div className="mx-auto max-w-md px-4 pt-[calc(1.5rem+env(safe-area-inset-top))]">
-      <div className="mb-4 flex items-end gap-3">
+      {compact && <CompactHeader title="Heute" action={toggle} />}
+      <div ref={header} className="mb-4 flex items-end gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[0.8125rem] font-semibold tracking-wide text-muted uppercase">
             {DATE_FORMAT.format(now)}
@@ -255,25 +272,23 @@ export function HomePage() {
             {settings?.name ? `Hallo, ${settings.name}!` : 'Heute'}
           </h1>
         </div>
-        <CustomizeToggle editing={editing} onChange={setEditing} />
+        <HeaderAction hidden={compact}>{toggle}</HeaderAction>
       </div>
-      {settings && !settings.welcomeDismissed && !editing && (
-        <WelcomeCard logo={settings.logoVariant} />
-      )}
+      {settings && !settings.welcomeDismissed && !editing && <WelcomeCard />}
       {data && (editing ? <WidgetEditor data={data} /> : <WidgetList data={data} />)}
     </div>
   );
 }
 
 /** Beim ersten Öffnen: Was die App ist und wo die Daten liegen */
-function WelcomeCard({ logo }: { logo: LogoVariant }) {
+function WelcomeCard() {
   return (
     <section
       aria-labelledby="welcome-heading"
       className="mb-4 rounded-2xl border border-primary bg-primary-soft p-4"
     >
       <div className="mb-2 flex items-center gap-3">
-        <BaseyLogo variant={logo} className="h-11 w-11" />
+        <BaseyLogo className="h-11 w-11" />
         <h2 id="welcome-heading" className="text-lg font-semibold">
           Willkommen bei Basey!
         </h2>
@@ -398,7 +413,9 @@ function WidgetEditor({ data }: { data: WidgetData }) {
                 <div className={`grid min-w-0 *:mb-0 ${size === 'small' ? '' : 'col-span-2'}`}>
                   {renderWidget(widget, data, size, size === 'small' ? 'accent' : undefined) ?? (
                     <p className={`px-1 pb-1 text-sm ${MUTED}`}>
-                      Zeigt erst nach deinem ersten Workout etwas.
+                      {widget === 'dayHint'
+                        ? 'Erscheint morgens, nach dem Training und abends.'
+                        : 'Zeigt erst nach deinem ersten Workout etwas.'}
                     </p>
                   )}
                 </div>
@@ -560,6 +577,7 @@ function ProgressCard({
 function WeekCard({
   sessions,
   endurance,
+  history,
   settings,
   now,
   size,
@@ -567,14 +585,17 @@ function WeekCard({
 }: {
   sessions: StatsSession[];
   endurance: EnduranceSession[];
+  history: WorkoutSummary[];
   settings: Settings;
   now: Date;
   size: WidgetSize;
   tone?: CardTone;
 }) {
   const today = dayKey(now);
+  const [selected, setSelected] = useState<DayKey>(today);
   const target = settings.trainingWeekTarget;
   const week = weekTrainings(sessions, endurance, today);
+  const gap = useMemo(() => trainingGap(sessions, today), [sessions, today]);
   const label = DASHBOARD_WIDGET_LABELS.week.name;
   const count = `${week.count} von ${target} ${target === 1 ? 'Training' : 'Trainings'}`;
 
@@ -591,13 +612,53 @@ function WeekCard({
       />
     );
   }
+  const day = week.days.some((item) => item.date === selected) ? selected : today;
+  const trainings = trainingsOn(
+    day,
+    history.map(({ workout, planDayName, exerciseNames }) => ({
+      id: workout.id,
+      startedAt: workout.startedAt,
+      name: planDayName ?? (exerciseNames.slice(0, 2).join(', ') || 'Krafttraining'),
+    })),
+    endurance.map((session) => ({
+      id: session.id,
+      startedAt: session.startedAt,
+      name: ENDURANCE_SPORT_LABELS[session.sport].name,
+    })),
+  );
   return (
     <Card>
       <WidgetHeader title={label} aside={count} />
       <div className="mb-4">
         <WeekBar value={week.count} goal={target} />
       </div>
-      <WeekDots days={week.days} today={today} />
+      <WeekDots
+        days={week.days}
+        today={today}
+        selection={{ selected: day, onSelect: setSelected }}
+      />
+      <DayPeek
+        day={formatPeekDay(day, today)}
+        value={
+          trainings.length === 0
+            ? day > today
+              ? 'noch offen'
+              : 'kein Training'
+            : trainings.map((item) => item.name).join(' · ')
+        }
+      >
+        {trainings.slice(0, 2).map((item) => (
+          <Link
+            key={item.id}
+            to={item.kind === 'strength' ? `${HISTORY_PATH}/${item.id}` : sessionPath(item.id)}
+            state={FROM_DASHBOARD}
+            className={secondaryButton}
+          >
+            {trainings.length === 1 ? 'Ansehen' : item.name}
+          </Link>
+        ))}
+      </DayPeek>
+      {gap && <p className="mt-3 text-sm text-muted">{formatTrainingGap(gap)}</p>}
       {size === 'large' && (
         <WeekDetails
           sessions={sessions}

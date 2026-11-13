@@ -1,31 +1,12 @@
-import { applyLogoVariant, hideSplash, LOGO_STORAGE_KEY, storedLogoVariant } from './splash';
+import { hideSplash } from './splash';
 import { SPLASH_CSS, SPLASH_PALETTES, splashHtml, splashImageFile } from './splashHtml';
-
-describe('logo variant storage', () => {
-  beforeEach(() => {
-    localStorage.clear();
-    document.head.innerHTML = '<link rel="apple-touch-icon" href="./apple-touch-icon.png" />';
-  });
-
-  it('falls back to the default variant', () => {
-    expect(storedLogoVariant()).toBe('charcoal');
-    localStorage.setItem(LOGO_STORAGE_KEY, 'unknown');
-    expect(storedLogoVariant()).toBe('charcoal');
-  });
-
-  it('remembers the variant and switches the iPhone icon', () => {
-    applyLogoVariant('taupe');
-    expect(storedLogoVariant()).toBe('taupe');
-    const link = document.querySelector('link[rel="apple-touch-icon"]')!;
-    expect(link.getAttribute('href')).toBe('/apple-touch-icon-taupe.png');
-    applyLogoVariant('charcoal');
-    expect(link.getAttribute('href')).toBe('/apple-touch-icon.png');
-  });
-});
 
 describe('splashHtml', () => {
   it('nutzt je Palette ein vorgerendertes Bild statt SVG-Filtern', () => {
     const html = splashHtml();
+    // Seit 22b ein festes Logo: kein Tausch des iPhone-Icons mehr, alter Speicherwert wird entfernt
+    expect(html).not.toContain('apple-touch-icon-');
+    expect(html).toContain("localStorage.removeItem('logo')");
     expect(html).not.toContain('<filter');
     expect(html).toContain('<img');
     const files = Object.keys(import.meta.glob('../../public/splash-*.webp'));

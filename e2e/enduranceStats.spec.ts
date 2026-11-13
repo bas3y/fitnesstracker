@@ -133,7 +133,7 @@ test('Ausdauer: Bestzeiten, Teilen-Bild, Statistik, Widget und Kalorien (offline
   await expect(page.getByText(/Noch keine beendeten Trainings/)).toBeVisible();
 
   // Startseite: Widget „Ausdauer“, „Diese Woche“ und Trainingstage kennen die Läufe
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await page.getByRole('button', { name: 'Anpassen' }).click();
   await page.getByRole('button', { name: 'Ausdauer hinzufügen' }).click();
   await page.getByRole('button', { name: 'Trainingstage hinzufügen' }).click();

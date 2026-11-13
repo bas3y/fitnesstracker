@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures';
-import { confirmStart, dragTo, fillStepper, goOffline, skipRest } from './helpers';
+import { confirmStart, dragTo, fillStepper, goOffline, scrollTop, skipRest } from './helpers';
 
 const openTraining = (page: Page) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText('Training').click();
@@ -229,10 +229,13 @@ test('Ziehen per Touch scrollt am Bildschirmrand mit (offline)', async ({ page, 
   const rows = list.getByRole('listitem');
   const name = 'Bankdrücken (Langhantel)';
   await expect(rows.first()).toContainText(name);
-  const scrollY = () => page.evaluate(() => window.scrollY);
+  const scrollY = () => scrollTop(page);
 
   const maxScrollY = () =>
-    page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+    page.evaluate(() => {
+      const root = document.querySelector('[data-scroll-root]')!;
+      return root.scrollHeight - root.clientHeight;
+    });
 
   const from = (await list.getByRole('button', { name: `${name} verschieben` }).boundingBox())!;
   const x = from.x + from.width / 2;

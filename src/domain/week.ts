@@ -41,6 +41,46 @@ export function weekTrainings(
   };
 }
 
+const PEEK_DAY_FORMAT = new Intl.DateTimeFormat('de-DE', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+});
+
+/** Tag in der Antipp-Vorschau: „Heute“, „Gestern“, sonst z. B. „Mi., 11. Nov.“ */
+export function formatPeekDay(date: DayKey, today: DayKey): string {
+  if (date === today) return 'Heute';
+  if (date === shiftDay(today, -1)) return 'Gestern';
+  return PEEK_DAY_FORMAT.format(new Date(`${date}T12:00:00`));
+}
+
+export interface DayTraining {
+  kind: 'strength' | 'endurance';
+  id: string;
+  name: string;
+}
+
+/** Trainings eines Tages (Kraft zuerst), z. B. für die Antipp-Vorschau der Wochenpunkte */
+export function trainingsOn(
+  date: DayKey,
+  workouts: readonly { id: string; startedAt: Timestamp; name: string }[],
+  endurance: readonly { id: string; startedAt: Timestamp; name: string }[],
+): DayTraining[] {
+  const onDay = (item: { startedAt: Timestamp }) => dayKey(new Date(item.startedAt)) === date;
+  const byStart = (a: { startedAt: Timestamp }, b: { startedAt: Timestamp }) =>
+    a.startedAt.localeCompare(b.startedAt);
+  return [
+    ...workouts
+      .filter(onDay)
+      .sort(byStart)
+      .map(({ id, name }) => ({ kind: 'strength' as const, id, name })),
+    ...endurance
+      .filter(onDay)
+      .sort(byStart)
+      .map(({ id, name }) => ({ kind: 'endurance' as const, id, name })),
+  ];
+}
+
 export interface DayValuePoint {
   date: DayKey;
   value: number;

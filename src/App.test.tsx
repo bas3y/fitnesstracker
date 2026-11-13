@@ -58,7 +58,7 @@ describe('App', () => {
       expect(settings?.bodyWeightKg).toBeCloseTo(165 * 0.45359237);
     });
 
-    await user.click(screen.getByRole('link', { name: 'Dashboard' }));
+    await user.click(screen.getByRole('link', { name: 'Heute' }));
     expect(await screen.findByText('Hallo, Alex!')).toBeInTheDocument();
   });
 

@@ -54,38 +54,28 @@ test.describe('mit Animationen', () => {
   });
 });
 
-test('Name, Logo-Auswahl und iPhone-Icon (offline)', async ({ page, context }) => {
+test('Name, ein festes Logo und iPhone-Icon (offline)', async ({ page, context }) => {
+  // Gemerkte Variante aus der Zeit vor 22b wird beim Start entfernt
+  await page.addInitScript(() => localStorage.setItem('logo', 'taupe'));
   await page.goto('./');
   await expect(page).toHaveTitle('Basey');
   await expect(page.getByRole('region', { name: 'Willkommen bei Basey!' })).toBeVisible();
   await goOffline(page, context);
 
-  await openSettings(page, 'Darstellung');
-  const logos = page.getByRole('radiogroup', { name: 'App-Logo' });
-  await expect(logos.getByRole('radio')).toHaveCount(2);
-  await expect(logos.getByRole('radio', { name: 'Charcoal Satin' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
-  await logos.getByRole('radio', { name: 'Taupe Silk' }).click();
-  await expect(logos.getByRole('radio', { name: 'Taupe Silk' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
   const icon = page.locator('link[rel="apple-touch-icon"]');
-  await expect(icon).toHaveAttribute('href', /apple-touch-icon-taupe\.png$/);
-
-  // Nach dem Neuladen wählt schon index.html Logo und Icon (vor der App)
-  await page.reload();
-  await expect(icon).toHaveAttribute('href', /apple-touch-icon-taupe\.png$/);
-  await expect(
-    page.getByRole('radiogroup', { name: 'App-Logo' }).getByRole('radio', { name: 'Taupe Silk' }),
-  ).toHaveAttribute('aria-checked', 'true');
+  await expect(icon).toHaveAttribute('href', /\/apple-touch-icon\.png$/);
   const iconFile = await page.evaluate(
     async (href) => (await fetch(href)).ok,
     (await icon.getAttribute('href')) ?? '',
   );
   expect(iconFile).toBe(true);
+  expect(await page.evaluate(() => localStorage.getItem('logo'))).toBeNull();
+
+  // Keine Logo-Auswahl mehr in der Darstellung
+  await openSettings(page, 'Darstellung');
+  await expect(page.getByRole('radiogroup', { name: 'Farbpalette' })).toBeVisible();
+  await expect(page.getByRole('radiogroup', { name: 'App-Logo' })).toHaveCount(0);
+  await expect(page.getByText('App-Logo')).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await page.getByRole('main').getByRole('link', { name: /Über/ }).click();

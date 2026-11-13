@@ -17,7 +17,7 @@ const dashboardHeading = (page: Page) => page.getByRole('heading', { level: 1, n
 
 /** Widgets, die nicht zum Standardaufbau gehören, über „Anpassen“ hinzufügen */
 async function addWidgets(page: Page, names: string[]) {
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await page.getByRole('button', { name: 'Anpassen' }).click();
   for (const name of names) {
     await page.getByRole('button', { name: `${name} hinzufügen` }).click();
@@ -105,7 +105,7 @@ test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offl
   await finishWorkout(page);
 
   // Dashboard zeigt das Training, noch kein Rekord
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await expect(weekTiles(page)).toHaveText(['1', '1', '600']);
   await expect(page.getByRole('link', { name: /^Push/ })).toContainText('1 Satz');
   await expect(page.getByRole('heading', { name: 'Neue Rekorde' })).toHaveCount(0);
@@ -125,13 +125,13 @@ test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offl
   await expect(page.getByRole('status').filter({ hasText: 'Neuer Rekord' })).toBeVisible();
   await skipRest(page);
 
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await page.getByRole('status').filter({ hasText: 'Workout läuft' }).click();
   await expect(page.getByRole('heading', { name: 'Push', level: 1 })).toBeVisible();
   await finishWorkout(page);
 
   // Dashboard nach dem Neuladen: Woche, Erfolge, Heatmap
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await page.reload();
   await expect(weekTiles(page)).toHaveText(['2', '2', '1225']);
   const record = page.getByRole('link', { name: /^Bankdrücken \(Langhantel\)/ });
@@ -198,7 +198,7 @@ test('MVP 1 komplett: Plan, Training, Dashboard, Statistik, CSV und Backup (offl
   await page.getByRole('button', { name: 'Importieren', exact: true }).click();
   await expect(page.getByText('Sicherung wurde importiert')).toBeVisible();
 
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await expect(weekTiles(page)).toHaveText(['2', '2', '1225']);
   await expect(record).toContainText('Gewicht: 62,5 kg');
   await openNav(page, 'Training');
@@ -253,7 +253,7 @@ test('Zurück führt dorthin, woher man kam (offline)', async ({ page, context }
   await openNav(page, 'Training');
   await page.getByRole('button', { name: 'Workout starten' }).click();
   await confirmStart(page);
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await page.getByRole('status').filter({ hasText: 'Workout läuft' }).click();
   await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(dashboardHeading(page)).toBeVisible();
@@ -267,7 +267,7 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
   await goOffline(page, context);
   await logWorkout(page, '60');
   await logWorkout(page, '62,5');
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await page.getByRole('button', { name: 'Los geht’s' }).click();
 
   const headings = page.getByRole('main').getByRole('heading', { level: 2 });
@@ -283,10 +283,11 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
   const list = page.getByRole('list', { name: 'Widgets', exact: true });
   // Nur die Zeilen, nicht die Listen in den Vorschauen
   const widgets = list.locator(':scope > li');
-  await expect(widgets).toHaveCount(5);
+  // Tageshinweis (in E2E ausgeblendet) + 5
+  await expect(widgets).toHaveCount(6);
 
   // Vorschau ist nicht antippbar
-  await expect(list.locator('[inert]')).toHaveCount(5);
+  await expect(list.locator('[inert]')).toHaveCount(6);
 
   // Buttons im Schnellzugriff wählen
   const quickPicker = page.getByRole('group', { name: 'Buttons im Schnellzugriff' });
@@ -321,9 +322,9 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
 
   // Entfernen und hinzufügen
   await page.getByRole('button', { name: 'Gewohnheiten entfernen' }).click();
-  await expect(widgets).toHaveCount(4);
-  await page.getByRole('button', { name: 'Nächstes Training hinzufügen' }).click();
   await expect(widgets).toHaveCount(5);
+  await page.getByRole('button', { name: 'Nächstes Training hinzufügen' }).click();
+  await expect(widgets).toHaveCount(6);
   await expect(page.getByRole('list', { name: 'Weitere Widgets' }).getByRole('button')).toHaveCount(
     13,
   );
@@ -365,6 +366,7 @@ test('Dashboard anpassen: Widgets ziehen, entfernen und hinzufügen (offline)', 
     'To-dos',
     'Diese Woche',
     'Nächstes Training',
+    'Tageshinweis',
   ]) {
     await page.getByRole('button', { name: `${name} entfernen` }).click();
   }

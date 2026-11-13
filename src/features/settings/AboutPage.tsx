@@ -2,15 +2,13 @@ import type { ReactNode } from 'react';
 import { Card, Page } from '../../components/Page';
 import { BaseyLogo } from '../../components/BaseyLogo';
 import { SEED_VERSION } from '../../db/seed';
-import { useSettings } from './useSettings';
 
 export function AboutPage() {
-  const settings = useSettings();
   return (
     <Page title="Über & Lizenzen" backTo="/settings">
       <Card>
         <div className="mb-3 flex items-center gap-4">
-          <BaseyLogo variant={settings?.logoVariant} label="Basey" className="h-16 w-16" />
+          <BaseyLogo label="Basey" className="h-16 w-16" />
           <div>
             <p className="text-lg font-bold">Basey</p>
             <p className="text-sm text-muted">Fitness & Lifestyle</p>

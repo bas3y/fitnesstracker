@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useLocation, useNavigationType } from 'react-router-dom';
+import { scrollRoot } from './scrollRoot';
 
 /** Gemerkte Scrollhöhe je Seite (Pfad), solange die App offen ist */
 const positions = new Map<string, number>();
@@ -12,6 +13,7 @@ const RESTORE_MS = 1500;
  * „Zurück“ = Browser-Zurück oder ein Link auf die vorherige Seite (z. B. `useBackTo`, „Fertig“).
  * Wechsel nur der Parameter (`?date=…`, Filter) lassen die Scrollhöhe in Ruhe.
  * Seiten laden ihre Daten nach: Wiederherstellen wird kurz wiederholt, bis die Seite hoch genug ist.
+ * Gescrollt wird der Inhaltsbereich (`scrollRoot()`), nicht das Fenster.
  */
 export function useScrollMemory(): void {
   const { pathname } = useLocation();
@@ -20,11 +22,12 @@ export function useScrollMemory(): void {
 
   useEffect(() => {
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    const root = scrollRoot();
     const onScroll = () => {
-      if (current.current) positions.set(current.current, window.scrollY);
+      if (current.current) positions.set(current.current, root.scrollTop);
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    root.addEventListener('scroll', onScroll, { passive: true });
+    return () => root.removeEventListener('scroll', onScroll);
   }, []);
 
   useLayoutEffect(() => {
@@ -47,12 +50,13 @@ export function useScrollMemory(): void {
     }
     trail.push(pathname);
     if (trail.length > 50) trail.shift();
-    window.scrollTo(0, 0);
+    scrollRoot().scrollTop = 0;
   }, [pathname, navigationType]);
 }
 
 /** Scrollt wiederholt zur Höhe, bis sie erreicht ist; Antippen/Scrollen durch den Nutzer bricht ab */
 function restoreScroll(y: number): () => void {
+  const root = scrollRoot();
   let frame = 0;
   const started = performance.now();
   const stop = () => {
@@ -61,8 +65,8 @@ function restoreScroll(y: number): () => void {
     window.removeEventListener('wheel', stop);
   };
   const step = () => {
-    window.scrollTo(0, y);
-    if (Math.abs(window.scrollY - y) < 2 || performance.now() - started > RESTORE_MS) return stop();
+    root.scrollTop = y;
+    if (Math.abs(root.scrollTop - y) < 2 || performance.now() - started > RESTORE_MS) return stop();
     frame = requestAnimationFrame(step);
   };
   window.addEventListener('touchstart', stop, { passive: true });

@@ -92,7 +92,7 @@ test('Ziele anlegen, Fortschritt sehen, auf der Startseite zeigen, erreichen und
   await expect(weekly).toContainText('33 %');
 
   // Startseite: Widget „Ziele“ hinzufügen
-  await nav(page, 'Dashboard');
+  await nav(page, 'Heute');
   const welcome = page.getByRole('button', { name: 'Los geht’s' });
   if (await welcome.isVisible()) await welcome.click();
   await page.getByRole('button', { name: 'Anpassen' }).click();

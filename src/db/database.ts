@@ -1,5 +1,4 @@
 import Dexie, { type Table } from 'dexie';
-import { DEFAULT_LOGO_VARIANT, toLogoVariant } from '../brand/logo';
 import { toIconName } from '../domain/iconChoice';
 import { trackSummary } from '../domain/track';
 import {
@@ -18,6 +17,7 @@ import {
   type BookNote,
   type BodyMeasurement,
   type DailyLog,
+  type DashboardWidget,
   type EnduranceSession,
   type EnduranceTrack,
   type Exercise,
@@ -576,7 +576,7 @@ export class AppDatabase extends Dexie {
           .table<Settings, string>('settings')
           .toCollection()
           .modify((settings) => {
-            settings.logoVariant ??= DEFAULT_LOGO_VARIANT;
+            (settings as LegacySettings).logoVariant ??= 'charcoal';
           }),
       );
     // Basey wird für alle Geräte einmalig zur Farbpalette (Graphit entfällt, war zu ähnlich)
@@ -600,11 +600,33 @@ export class AppDatabase extends Dexie {
             .table<Settings, string>('settings')
             .toCollection()
             .modify((settings) => {
-              settings.logoVariant = toLogoVariant(settings.logoVariant);
+              const legacy = settings as LegacySettings;
+              if (legacy.logoVariant !== 'taupe') legacy.logoVariant = 'charcoal';
             }),
         );
     }
+    // Nur noch ein Logo (Charcoal Satin); Tageshinweis einmal oben auf der Startseite
+    this.version(36)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            delete (settings as LegacySettings).logoVariant;
+            settings.dayHintDismissed ??= null;
+            settings.dashboardWidgets = withDayHint(settings.dashboardWidgets ?? []);
+          }),
+      );
   }
+}
+
+/** Felder früherer DB-Versionen, die es nicht mehr gibt */
+type LegacySettings = Settings & { logoVariant?: string };
+
+/** Tageshinweis (seit DB-Version 36) einmal an den Anfang der Startseite */
+export function withDayHint(widgets: readonly DashboardWidget[]): DashboardWidget[] {
+  return widgets.includes('dayHint') ? [...widgets] : ['dayHint', ...widgets];
 }
 
 export const db = new AppDatabase();

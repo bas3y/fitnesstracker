@@ -1,13 +1,14 @@
 import { expect, test } from './fixtures';
+import { scrollTop, setScrollTop } from './helpers';
 
 test('Zurück stellt die Scrollhöhe wieder her, neue Seiten beginnen oben', async ({ page }) => {
   await page.goto('./#/training/exercises');
   const links = page.locator('a[href^="#/training/exercises/"]:not([href$="/new"])');
   await expect(links.nth(60)).toBeAttached();
 
-  await page.evaluate(() => window.scrollTo(0, 2000));
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1500);
-  const before = await page.evaluate(() => window.scrollY);
+  await setScrollTop(page, 2000);
+  await expect.poll(() => scrollTop(page)).toBeGreaterThan(1500);
+  const before = await scrollTop(page);
 
   // Erste Übung, die gerade im Bild ist
   const index = await links.evaluateAll((elements) =>
@@ -20,12 +21,12 @@ test('Zurück stellt die Scrollhöhe wieder her, neue Seiten beginnen oben', asy
   await links.nth(index).click();
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
   // Neue Seite beginnt oben
-  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  expect(await scrollTop(page)).toBe(0);
 
   await page.getByRole('link', { name: 'Zurück', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Übungen' })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before - 5);
-  expect(await page.evaluate(() => window.scrollY)).toBeLessThan(before + 5);
+  await expect.poll(() => scrollTop(page)).toBeGreaterThan(before - 5);
+  expect(await scrollTop(page)).toBeLessThan(before + 5);
 });
 
 test('Datum und Beginn überlappen auch auf schmalen Handys nicht', async ({ page }) => {

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { applyLogoVariant, hideSplash } from '../brand/splash';
+import { hideSplash } from '../brand/splash';
 import { ensureSettings } from '../db/settings';
 import { getBackupReminder } from '../domain/backupReminder';
 import { useApplyTheme } from '../features/settings/theme';
@@ -11,6 +11,8 @@ import { ActiveWorkoutBanner } from '../features/training/ActiveWorkoutBanner';
 import { RestTimerAlarm } from '../features/training/RestTimer';
 import { BottomNav } from './BottomNav';
 import { ErrorBoundary } from './ErrorBoundary';
+import { PageArtwork } from './PageArtwork';
+import { SCROLL_ROOT_ATTRIBUTE } from './scrollRoot';
 import { usePageTransition } from './usePageTransition';
 import { useScrollMemory } from './useScrollMemory';
 import { ToastHost } from './Toast';
@@ -22,6 +24,12 @@ const CelebrationWatcher = lazy(() =>
   })),
 );
 
+const scrollRootProps = { [SCROLL_ROOT_ATTRIBUTE]: '' };
+
+/**
+ * App-Rahmen: oben der Scrollbereich (Hinweise + Seite), unten die Navigation außerhalb davon –
+ * so kann sie nicht mitwandern (siehe `scrollRoot.ts`)
+ */
 export function Layout() {
   const settings = useSettings();
   useApplyTheme(settings?.theme, settings?.palette);
@@ -30,12 +38,10 @@ export function Layout() {
     void ensureSettings();
   }, []);
 
-  const logoVariant = settings?.logoVariant;
+  const ready = settings !== undefined;
   useEffect(() => {
-    if (!logoVariant) return;
-    applyLogoVariant(logoVariant);
-    hideSplash();
-  }, [logoVariant]);
+    if (ready) hideSplash();
+  }, [ready]);
 
   const { pathname } = useLocation();
   const main = usePageTransition();
@@ -43,20 +49,35 @@ export function Layout() {
   const reminder = settings ? getBackupReminder(settings, new Date()) : null;
 
   return (
-    <div className="min-h-dvh pb-[calc(5rem+env(safe-area-inset-bottom))]">
-      {reminder && (
-        <Link
-          to="/settings/backup"
-          role="status"
-          className="block bg-warn-soft px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 text-center text-sm font-medium text-on-warn-soft"
-        >
-          {reminder.never
-            ? 'Noch kein Backup erstellt'
-            : `Letztes Backup vor ${reminder.days} Tagen`}{' '}
-          – jetzt sichern
-        </Link>
-      )}
-      <ActiveWorkoutBanner first={!reminder} />
+    <div className="flex h-dvh flex-col">
+      <div
+        {...scrollRootProps}
+        // Keine eigene Stapelebene (kein `isolate`/`z-*`): Vollbild-Fenster der Seiten müssen über
+        // der Navigation liegen; das Artwork (`z-index: -1`) liegt trotzdem hinter dem Inhalt
+        className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-none"
+      >
+        {settings && <PageArtwork palette={settings.palette} />}
+        {reminder && (
+          <Link
+            to="/settings/backup"
+            role="status"
+            className="block bg-warn-soft px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 text-center text-sm font-medium text-on-warn-soft"
+          >
+            {reminder.never
+              ? 'Noch kein Backup erstellt'
+              : `Letztes Backup vor ${reminder.days} Tagen`}{' '}
+            – jetzt sichern
+          </Link>
+        )}
+        <ActiveWorkoutBanner first={!reminder} />
+        <main ref={main} className="pb-6">
+          <ErrorBoundary variant="page" resetKey={pathname}>
+            <Suspense fallback={null}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
+        </main>
+      </div>
       <RestTimerAlarm />
       <TimerAlarm />
       <SupplementReminder />
@@ -64,13 +85,6 @@ export function Layout() {
       <Suspense fallback={null}>
         <CelebrationWatcher />
       </Suspense>
-      <main ref={main}>
-        <ErrorBoundary variant="page" resetKey={pathname}>
-          <Suspense fallback={null}>
-            <Outlet />
-          </Suspense>
-        </ErrorBoundary>
-      </main>
       <BottomNav />
     </div>
   );

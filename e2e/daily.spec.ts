@@ -124,7 +124,7 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
   await expect(page.getByRole('heading', { name: 'Alltag', level: 1 })).toBeVisible();
 
   // Widget: bei bestehenden Nutzern unter „Weitere Widgets“
-  await openNav(page, 'Dashboard');
+  await openNav(page, 'Heute');
   await page.getByRole('button', { name: 'Anpassen' }).click();
   await page.getByRole('button', { name: 'Heute hinzufügen' }).click();
   await page.getByRole('button', { name: 'Fertig' }).click();

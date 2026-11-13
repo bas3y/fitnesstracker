@@ -132,7 +132,7 @@ test('Serien, Abzeichen und Erfolgs-Hinweise (offline)', async ({ page, context 
   await slow(toast(page)).toContainText('Ziele: Erstes Ziel erreicht');
 
   // Startseite nach dem Neuladen: Serien im Widget, kein erneuter Hinweis
-  await nav(page, 'Dashboard');
+  await nav(page, 'Heute');
   await page.reload();
   await expect(widget.getByRole('list', { name: 'Laufende Serien' })).toContainText('Training');
   await expect(widget.getByRole('list', { name: 'Laufende Serien' })).toContainText('Journal');

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { dayKeyNavigation } from '../../components/dayKeyNavigation';
 import { CheckIcon, Icon, type IconName } from '../../components/icons';
 import type { CardTone } from '../../components/Page';
 import type { DayKey } from '../../db/types';
@@ -8,6 +9,12 @@ import type { WeekDay } from '../../domain/week';
 import { GoalBar } from '../daily/GoalBar';
 
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+/** Antippbare Tage: gewählter Tag + Auswahl (sonst nur Anzeige) */
+export interface DaySelection {
+  selected: DayKey;
+  onSelect: (date: DayKey) => void;
+}
 
 /** Kleines Widget (halbe Breite): Name mit Symbol, große Zahl, Balken oder kurzer Hinweis */
 export function SmallWidget({
@@ -64,62 +71,140 @@ export function WidgetHeader({ title, aside }: { title: string; aside?: ReactNod
   );
 }
 
-/** Mo–So als Kreise, trainierte Tage mit Haken, heute umrandet */
-export function WeekDots({ days, today }: { days: readonly WeekDay[]; today: DayKey }) {
+function weekdayOf(date: DayKey): string {
+  return WEEKDAYS[(new Date(`${date}T12:00:00`).getDay() + 6) % 7]!;
+}
+
+/**
+ * Mo–So als Kreise, trainierte Tage mit Haken, heute umrandet. Mit `selection` sind die Tage
+ * antippbar (Pfeiltasten wechseln), der gewählte ist unterstrichen.
+ */
+export function WeekDots({
+  days,
+  today,
+  selection,
+}: {
+  days: readonly WeekDay[];
+  today: DayKey;
+  selection?: DaySelection;
+}) {
+  const keys = days.map((day) => day.date);
   return (
-    <ol aria-label="Trainingstage dieser Woche" className="flex justify-between">
-      {days.map(({ date, trained }, index) => (
-        <li
-          key={date}
-          aria-label={`${WEEKDAYS[index]}: ${trained ? 'trainiert' : 'kein Training'}`}
-          className="flex flex-col items-center gap-1.5 text-xs text-muted"
-        >
-          <span
-            className={`flex h-8 w-8 items-center justify-center rounded-full border-[1.5px] ${
-              trained
-                ? 'border-primary bg-primary text-on-primary'
-                : date === today
-                  ? 'border-fg'
-                  : 'border-line-strong'
-            }`}
-          >
-            {trained && <CheckIcon className="h-4 w-4" />}
-          </span>
-          {WEEKDAYS[index]}
-        </li>
-      ))}
+    <ol
+      aria-label="Trainingstage dieser Woche"
+      className="flex justify-between"
+      onKeyDown={selection && dayKeyNavigation(keys, selection.selected, selection.onSelect)}
+    >
+      {days.map(({ date, trained }, index) => {
+        const label = `${WEEKDAYS[index]}: ${trained ? 'trainiert' : 'kein Training'}`;
+        const selected = selection?.selected === date;
+        const content = (
+          <>
+            <span
+              className={`flex h-8 w-8 items-center justify-center rounded-full border-[1.5px] ${
+                trained
+                  ? 'border-primary bg-primary text-on-primary'
+                  : date === today
+                    ? 'border-fg'
+                    : 'border-line-strong'
+              }`}
+            >
+              {trained && <CheckIcon className="h-4 w-4" />}
+            </span>
+            <span className={selected ? 'font-bold text-fg underline underline-offset-4' : ''}>
+              {WEEKDAYS[index]}
+            </span>
+          </>
+        );
+        return (
+          <li key={date} aria-label={label}>
+            {selection ? (
+              <button
+                type="button"
+                data-day={date}
+                aria-label={label}
+                aria-pressed={selected}
+                tabIndex={selected ? 0 : -1}
+                className="flex min-h-11 min-w-10 flex-col items-center gap-1.5 rounded-xl text-xs text-muted"
+                onClick={() => selection.onSelect(date)}
+              >
+                {content}
+              </button>
+            ) : (
+              <span className="flex flex-col items-center gap-1.5 text-xs text-muted">
+                {content}
+              </span>
+            )}
+          </li>
+        );
+      })}
     </ol>
   );
 }
 
-/** Balken der letzten Tage (ältester zuerst); erreichte Tage kräftig, andere blass */
+/**
+ * Balken der letzten Tage (ältester zuerst); erreichte Tage kräftig, andere blass. Mit `selection`
+ * sind die Balken antippbar (Pfeiltasten wechseln), der gewählte ist umrandet.
+ */
 export function MiniBars({
   label,
   points,
   goal,
+  selection,
 }: {
   label: string;
   points: readonly { date: DayKey; value: number }[];
   goal: number;
+  selection?: DaySelection;
 }) {
   const top = Math.max(goal, ...points.map((point) => point.value), 1);
+  const keys = points.map((point) => point.date);
   return (
-    <ol aria-label={label} className="flex h-20 items-end gap-1.5">
+    <ol
+      aria-label={label}
+      className="flex h-20 items-end gap-1.5"
+      onKeyDown={selection && dayKeyNavigation(keys, selection.selected, selection.onSelect)}
+    >
       {points.map(({ date, value }) => {
-        const weekday = WEEKDAYS[(new Date(`${date}T12:00:00`).getDay() + 6) % 7];
-        return (
-          <li
-            key={date}
-            aria-label={`${weekday}: ${goalPercent(value, goal)} % vom Ziel`}
-            className="flex h-full flex-1 flex-col items-center justify-end gap-1"
-          >
+        const weekday = weekdayOf(date);
+        const text = `${weekday}: ${goalPercent(value, goal)} % vom Ziel`;
+        const selected = selection?.selected === date;
+        const content = (
+          <>
             <span className="flex w-full flex-1 items-end">
               <span
-                className={`block w-full rounded-md bg-primary ${value >= goal ? '' : 'opacity-45'}`}
+                className={`block w-full rounded-md bg-primary ${value >= goal ? '' : 'opacity-45'} ${
+                  selected ? 'outline-2 outline-offset-2 outline-fg' : ''
+                }`}
                 style={{ height: `${Math.max(4, (value / top) * 100)}%` }}
               />
             </span>
-            <span className="text-[0.6875rem] text-muted">{weekday}</span>
+            <span className={`text-[0.6875rem] ${selected ? 'font-bold text-fg' : 'text-muted'}`}>
+              {weekday}
+            </span>
+          </>
+        );
+        return (
+          <li
+            key={date}
+            aria-label={selection ? undefined : text}
+            className="flex h-full flex-1 flex-col items-center justify-end gap-1"
+          >
+            {selection ? (
+              <button
+                type="button"
+                data-day={date}
+                aria-label={text}
+                aria-pressed={selected}
+                tabIndex={selected ? 0 : -1}
+                className="flex h-full w-full flex-col items-center justify-end gap-1"
+                onClick={() => selection.onSelect(date)}
+              >
+                {content}
+              </button>
+            ) : (
+              content
+            )}
           </li>
         );
       })}

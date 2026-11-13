@@ -138,7 +138,7 @@ test('nur Protein erfassen: Ernährung, Kachel, Startseite und normaler Modus (o
   await expect(summary).not.toContainText('kcal');
 
   // Startseiten-Widget im Protein-Modus mit Buttons
-  await nav(page, 'Dashboard');
+  await nav(page, 'Heute');
   await page.getByRole('button', { name: 'Anpassen' }).click();
   await page.getByRole('button', { name: 'Ernährung hinzufügen' }).click();
   await page.getByRole('button', { name: 'Fertig' }).click();

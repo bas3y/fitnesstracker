@@ -16,9 +16,9 @@ test('Bottom-Navigation funktioniert offline', async ({ page, context }) => {
   await page.reload();
 
   const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
-  for (const label of ['Training', 'Alltag', 'Statistik', 'Einstellungen', 'Dashboard']) {
+  for (const label of ['Training', 'Alltag', 'Statistik', 'Einstellungen', 'Heute']) {
     await nav.getByRole('link', { name: label }).click();
-    const heading = label === 'Dashboard' ? 'Heute' : label;
+    const heading = label;
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
   }
 });

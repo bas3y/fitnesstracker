@@ -11,6 +11,8 @@ import { dayGoal, dayNutrients, formatKcal, proteinPerKg } from '../../domain/nu
 import { GoalBar } from '../daily/GoalBar';
 import { withDate } from '../daily/paths';
 import { NUTRITION_PATH } from './paths';
+import { PROTEIN_SUGGEST_FROM_G } from '../../domain/nudges';
+import { ProteinNudge } from './ProteinNudge';
 import { ProteinQuickAdd } from './ProteinQuickAdd';
 import { useNutritionDay } from './useNutrition';
 
@@ -110,6 +112,8 @@ export function NutritionDayCard({
   const from = useFromHere();
   if (!data) return null;
   const to = withDate(NUTRITION_PATH, date, today);
+  const missing =
+    dayGoal(settings, data).protein - dayNutrients(data.entries, data.quickProteinGrams).protein;
   return (
     <NutritionSummary
       data={data}
@@ -120,6 +124,9 @@ export function NutritionDayCard({
         <div className="mt-3">
           <ProteinQuickAdd date={date} grams={data.quickProteinGrams} withTotal={false} />
         </div>
+      )}
+      {!settings.proteinOnly && date === today && missing >= PROTEIN_SUGGEST_FROM_G && (
+        <ProteinNudge date={date} missing={missing} />
       )}
       <Link
         to={to}
