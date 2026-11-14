@@ -78,6 +78,21 @@ export function sizeChoices(id: DashboardWidget): WidgetSize[] {
   return ORDER.filter((size) => WIDGET_SIZE_OPTIONS[id].includes(size));
 }
 
+/**
+ * Feldraster der Startseite (22c, Variante R1): Ein Feld ist so breit wie ein kleines Widget am
+ * Handy. Klein = 1 Feld, mittel = 2 (Handybreite), groß = 4; je Zeile passen so viele Felder, wie
+ * `WIDGET_GRID_COLUMNS` für die Breite angibt.
+ */
+export const WIDGET_FIELDS: Record<WidgetSize, number> = { small: 1, medium: 2, large: 4 };
+
+/** Felder je Zeile: Handy hoch, ab `sm` (Handy quer, Tablet hoch), ab `lg` (Tablet quer, Desktop) */
+export const WIDGET_GRID_COLUMNS = { base: 2, sm: 4, lg: 6 } as const;
+
+/** Breite eines Widgets in Feldern bei `columns` Feldern je Zeile */
+export function widgetSpan(size: WidgetSize, columns: number): number {
+  return Math.max(1, Math.min(WIDGET_FIELDS[size], columns));
+}
+
 /** Gespeicherte Größe, falls das Widget sie kann, sonst seine Standardgröße */
 export function widgetSize(
   id: DashboardWidget,

@@ -18,7 +18,7 @@ export function ToastHost() {
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 top-0 z-40 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))]"
+      className="pointer-events-none fixed top-0 right-0 left-(--nav-left) z-40 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))]"
     >
       {toast && (
         <button

@@ -11,7 +11,7 @@ export function UpdatePrompt() {
   return (
     <div
       role="alert"
-      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-fg p-3 text-sm text-surface shadow-lg"
+      className="fixed right-3 bottom-[calc(var(--nav-bottom)+0.75rem)] left-[calc(var(--nav-left)+0.75rem)] z-30 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-fg p-3 text-sm text-surface shadow-lg"
     >
       <span className="flex-1">Neue Version verfügbar</span>
       <button

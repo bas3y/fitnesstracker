@@ -49,13 +49,14 @@ export function Layout() {
   const reminder = settings ? getBackupReminder(settings, new Date()) : null;
 
   return (
-    <div className="flex h-dvh flex-col">
+    // Ab `xl` nebeneinander: Seitenleiste links (`order-first` in `BottomNav`), Inhalt rechts
+    <div className="flex h-dvh flex-col xl:flex-row">
       <div
         {...scrollRootProps}
         // Keine eigene Stapelebene (kein `isolate`/`z-*`): Vollbild-Fenster der Seiten müssen über
         // der Navigation liegen; das Artwork (`z-index: -1`) liegt trotzdem hinter dem Inhalt.
         // `scroll-pt-16`: Hineinscrollen (Fokus, scrollIntoView) endet unter dem mitlaufenden Kopf
-        className="relative min-h-0 flex-1 scroll-pt-16 overflow-y-auto overscroll-y-none"
+        className="relative min-h-0 min-w-0 flex-1 scroll-pt-16 overflow-y-auto overscroll-y-none"
       >
         {settings && <PageArtwork palette={settings.palette} />}
         {reminder && (

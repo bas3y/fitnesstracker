@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { primaryButton } from '../../components/buttons';
 import { Page } from '../../components/Page';
 import type { Exercise } from '../../db/types';
@@ -39,12 +39,15 @@ export function ExerciseListPage() {
 function ExerciseListRow({ exercise }: { exercise: Exercise }) {
   return (
     <div className="flex items-center">
-      <Link
+      <NavLink
         to={`/training/exercises/${exercise.id}`}
-        className="flex min-h-14 min-w-0 flex-1 items-center py-2 pl-4 active:bg-page"
+        // Aktiv nur neben dem Detail (`SplitView`, große Bildschirme)
+        className={({ isActive }) =>
+          `flex min-h-14 min-w-0 flex-1 items-center py-2 pl-4 hover:bg-subtle active:bg-page ${isActive ? 'bg-primary-soft' : ''}`
+        }
       >
         <ExerciseSummary exercise={exercise} />
-      </Link>
+      </NavLink>
       <FavoriteButton exercise={exercise} />
     </div>
   );

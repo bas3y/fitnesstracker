@@ -43,7 +43,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 21 – Standards übernehmen (Regeln, Skills, SECURITY.md)
 - [x] Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
 - [x] Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
-- [ ] Schritt 22c – Desktop, Tablet & Querformat
+- [x] Schritt 22c – Desktop, Tablet & Querformat
 - [ ] Schritt 22d – Animationen für Kacheln & Inhalte
 - [ ] Schritt 22e – Texte aufräumen, Erklärungen hinter Info-Button
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
@@ -1436,6 +1436,23 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
 - **Tests:** zusätzliche Playwright-Projekte `tablet` und `desktop` (und Handy quer) für die wichtigsten Abläufe; Screenshots zum Abstimmen.
 
 **Notizen:**
+- Mit dem Nutzer abgestimmt (14.11.2026, Entwurf im Artifact „Basey 22c Großformate“, https://claude.ai/artifact/75oTEQzrviXDibmJTCkcTS): **Handy quer Q3** (Leiste bleibt unten, flach, nur Symbole), **Tablet T3** (Leiste unten wie am Handy, Inhalt als Raster), **Desktop D1** (Seitenleiste mit Symbol + Name, Einstellungen unten abgesetzt), **Raster R1** (Feldraster: S = 1, M = 2, L = 4 Felder; 2/4/6 Felder je Zeile nach Breite), **Listen L1** (Detail rechts neben der Liste ab großer Breite), **Auswahl F1** (Übungs-/Lebensmittelauswahl als großes Fenster mittig).
+- Gebaut:
+  - **Bildschirmgrößen (Tailwind):** Handy hoch unverändert. `short` (eigene Variante: quer und höchstens 500 px hoch, unter `xl`) = Handy quer; ab `sm` breiterer Inhalt; ab `lg` (1024 px) Raster mit 6 Feldern, Liste mit Detail, Auswahl als Fenster; ab `xl` (1280 px) Seitenleiste. Ein iPad quer (1180/1194 px) hat also Leiste unten (T3), aber Liste mit Detail und Fenster mittig.
+  - **Navigation (`BottomNav`):** quer flach (44 px) nur mit Symbolen (Name für Screenreader), Tablet wie am Handy, ab `xl` Seitenleiste 240 px links mit Logo, Symbol + Name, Einstellungen unten abgesetzt, Hover. Maße als CSS-Variablen `--nav-bottom`/`--nav-left` (`index.css`), danach richten sich mitlaufender Kopf, Pausen-Timer, Hinweise und Update-Hinweis. Safe-Area links/rechts (Notch quer) in Leiste und Seiten.
+  - **Seitenbreite:** `PAGE_WIDTH` (`src/components/pageLayout.ts`) statt `max-w-md`: `normal` (ab `sm` 42 rem) für Formulare/Listen, `wide` (48 rem, ab `lg` 72 rem) für Startseite, Training, Alltag, Statistik. `Page`-Prop `width`.
+  - **Startseite R1:** `WIDGET_FIELDS`/`WIDGET_GRID_COLUMNS`/`widgetSpan` (`src/domain/widgets.ts`), Raster `grid-flow-dense` (Lücken werden gefüllt). Anpassen-Modus im selben Raster (`SortableList`-Prop `grid` jetzt `{ columns, span }`), Ziehen mit der Maus geht auch seitlich. Kacheln (Training, Alltag) über `TILE_GRID`: 2/3/4 je Zeile. Statistik → Kraft ab `lg` zweispaltig (Aktivität und Fokus über die ganze Breite).
+  - **Liste mit Detail (L1):** `SplitView` als Eltern-Route für Verlauf → Workout und Übungen → Übung. Ab `lg` Liste links (klebt, scrollt für sich, Eintrag markiert über `NavLink`), Detail rechts ohne „Zurück“, mitlaufender Kopf nur über der Detailspalte; ohne Auswahl ein Hinweis. Adressen bleiben gleich, am Handy wie bisher.
+  - **Auswahl (F1):** `ExercisePicker`/`FoodPicker` ab `lg` als Fenster mittig (`PICKER_DIALOG`, Hintergrund `PICKER_SCRIM` schließt beim Klicken, Escape wie bisher).
+  - **Maus & Tastatur:** Hover für Buttons, Listenzeilen, Kacheln und Navigation; sichtbarer Fokusrahmen (`:focus-visible`) überall.
+  - **Manifest:** `orientation: 'any'` (Querformat erlaubt).
+  - Tests: `widgets.test.ts` (Feldraster); neue Playwright-Projekte `android-quer` (Pixel 7 quer), `tablet` (iPad Pro 11 quer), `desktop` (1440 × 900), die nur `e2e/layout.spec.ts` ausführen (Navigation je Größe, Kacheln je Zeile, kein seitliches Scrollen, Raster 4/6 Felder auch beim Anpassen, Workout mit Auswahlfenster + Escape + Pausen-Timer an der Leiste, Liste mit Detail, Manifest). `android`/`iphone` ignorieren diese Datei.
+- Abweichungen:
+  - Liste mit Detail nur für Verlauf und Übungen (laut Plan); Pläne, Ausdauer-Einheiten, Lebensmittel, Gewohnheiten könnten folgen.
+  - Anpassen-Liste der Trainings-Kacheln bleibt eine einfache Liste (wenige Einträge).
+- Offene Punkte:
+  - **Handytest:** App quer drehen (iPhone mit Notch links/rechts, Leiste flach, Workout und Timer), iPad hoch/quer (Leiste unten, Raster, Liste mit Detail ab quer), Desktop-Browser (Seitenleiste, Hover, Tab-Taste). Installierte App: Querformat erst nach Neuinstallation bzw. Manifest-Update.
+  - Ideen: Liste mit Detail für Pläne, Ausdauer und Lebensmittel; Tastenkürzel am Desktop (z. B. Pfeiltasten in der Liste); Seitenleiste einklappbar.
 
 ### Schritt 22d – Animationen für Kacheln & Inhalte
 **Ziel:** Kacheln, Widgets und Inhalte bekommen passende, dezente Animationen (Nutzerwunsch 12.11.2026). Baut auf den Grundlagen aus 18f auf (`anim-*`, `bar-fill`, `usePageTransition`, ohne Paket, nur ohne „Bewegung reduzieren“). Nach 22b/22c, damit die interaktiven Kacheln und die großen Layouts schon stehen.

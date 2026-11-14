@@ -14,12 +14,17 @@ import { scrollRoot } from './scrollRoot';
 /** So weit muss der Zeiger wandern, bevor gescrollt wird – ein Griff kann am Rand liegen */
 const SCROLL_THRESHOLD_PX = 8;
 
-/** Unterkante des sichtbaren Bereichs ohne feste Leisten (`data-bottom-bar`) */
+/**
+ * Unterkante des sichtbaren Bereichs ohne feste Leisten (`data-bottom-bar`); Leisten, die nicht
+ * unten liegen (Navigation als Seitenleiste am Desktop), zählen nicht
+ */
 function visibleBottom(): number {
   const bars = document.querySelectorAll('[data-bottom-bar]');
   return Math.min(
     window.innerHeight,
-    ...Array.from(bars, (bar) => bar.getBoundingClientRect().top),
+    ...Array.from(bars, (bar) => bar.getBoundingClientRect().top).filter(
+      (top) => top > window.innerHeight / 2,
+    ),
   );
 }
 
@@ -58,27 +63,26 @@ interface Drag {
  * um die Strecke des Zeigers. Positionen kommen aus dem DOM – Zeilen dürfen also unterschiedlich
  * hoch sein. Am Bildschirmrand scrollt die Seite mit (auch bei Zeilen, die höher als der
  * Bildschirm sind).
- * Mit `grid` stehen die Zeilen in zwei Spalten (`wide` = ganze Breite) und lassen sich auch seitlich
- * ziehen: Getauscht wird mit der Zeile, über deren Fläche die Mitte der gezogenen Zeile liegt.
+ * Mit `grid` stehen die Zeilen in einem Raster (Spalten und Breite je Zeile als Tailwind-Klassen)
+ * und lassen sich auch seitlich ziehen: Getauscht wird mit der Zeile, über deren Fläche die Mitte
+ * der gezogenen Zeile liegt. Pfeiltasten links/rechts gehen dann auch.
  */
 export function SortableList<T extends SortableItem>({
   label,
   items,
   onReorder,
   renderItem,
-  grid = false,
-  wide,
+  grid: gridLayout,
 }: {
   label: string;
   items: T[];
   /** Bekommt die neue Reihenfolge; `items` kommen danach aktualisiert zurück */
   onReorder: (ids: string[]) => Promise<void>;
   renderItem: (item: T, row: SortableRowProps) => ReactNode;
-  /** Zwei Spalten statt einer Liste */
-  grid?: boolean;
-  /** Im Raster: Zeile über die ganze Breite */
-  wide?: (item: T) => boolean;
+  /** Raster statt Liste: `columns` z. B. `grid-cols-2 sm:grid-cols-4`, `span` je Zeile `col-span-…` */
+  grid?: { columns: string; span: (item: T) => string };
 }) {
+  const grid = gridLayout !== undefined;
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const drag = useRef<Drag | null>(null);
@@ -232,7 +236,7 @@ export function SortableList<T extends SortableItem>({
     <ul
       ref={list}
       aria-label={label}
-      className={`relative [overflow-anchor:none] ${grid ? 'grid grid-cols-2 gap-x-3' : 'flex flex-col'}`}
+      className={`relative [overflow-anchor:none] ${gridLayout ? `grid grid-flow-dense gap-x-3 ${gridLayout.columns}` : 'flex flex-col'}`}
     >
       {items.map((item) => {
         const { id } = item;
@@ -258,8 +262,7 @@ export function SortableList<T extends SortableItem>({
             style={{ order: order.indexOf(id) }}
             className={
               [
-                grid && (wide?.(item) ?? true) ? 'col-span-2' : '',
-                grid ? 'min-w-0' : '',
+                gridLayout ? `min-w-0 ${gridLayout.span(item)}` : '',
                 draggingId === id ? 'relative z-10 rounded-2xl shadow-lg' : '',
               ]
                 .filter(Boolean)

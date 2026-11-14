@@ -3,6 +3,29 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
+ * Bildschirmgrößen (seit 22c): `short` = Handy quer (wenig Höhe, Leiste unten flach, nur Symbole),
+ * ab `xl` (80 rem) Seitenleiste links statt Leiste unten. Feste Elemente richten sich nach
+ * `--nav-bottom` (Höhe der Leiste unten) und `--nav-left` (Breite der Seitenleiste).
+ */
+@custom-variant short (@media (orientation: landscape) and (max-height: 31.25rem) and (width < 80rem));
+
+:root {
+  --nav-bottom: calc(3.5rem + 1px + env(safe-area-inset-bottom));
+  --nav-left: 0px;
+}
+@media (orientation: landscape) and (max-height: 31.25rem) and (width < 80rem) {
+  :root {
+    --nav-bottom: calc(2.75rem + 1px + env(safe-area-inset-bottom));
+  }
+}
+@media (width >= 80rem) {
+  :root {
+    --nav-bottom: 0px;
+    --nav-left: 15rem;
+  }
+}
+
+/*
  * Design-Tokens: Jede Palette setzt nur ihre vier Grundfarben (--p-*) und die Akzentfarbe im
  * Dunkelmodus, alles andere wird daraus berechnet. Im Dunkelmodus tauschen Hell und Dunkel.
  * Palette: `data-palette` am <html> (siehe `src/features/settings/theme.ts`).
@@ -342,6 +365,12 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Tastatur-Fokus sichtbar (Desktop), Antippen zeigt keinen Rahmen */
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
 
   /*

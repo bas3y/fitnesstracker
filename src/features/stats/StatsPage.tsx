@@ -73,7 +73,7 @@ export function StatsPage() {
   const from = useFromHere();
   const goals = useGoals();
   return (
-    <Page title="Statistik">
+    <Page title="Statistik" width="wide">
       <ul aria-label="Erfolge und Ziele" className="mb-4 grid grid-cols-2 gap-3">
         <Tile to={ACHIEVEMENTS_PATH} state={from} icon="trophy" name="Erfolge" tone="accent">
           <span className={HINT}>Serien und Abzeichen</span>
@@ -180,11 +180,14 @@ function StatsContent({
     enoughHistory: hasEnoughHistory(firstAt, now),
   }).filter((hint) => !muscle || hint.muscle === muscle);
 
+  // Ab `lg` zwei Spalten: Aktivität und Fokus über die ganze Breite, Karten paarweise daneben
   return (
-    <>
-      <ActivityCard sessions={ofMuscle(sessions)} now={now} filter={filter} />
+    <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-4">
+      <div className="col-span-full">
+        <ActivityCard sessions={ofMuscle(sessions)} now={now} filter={filter} />
+      </div>
       {hints.length > 0 && (
-        <Card title="Fokus">
+        <Card title="Fokus" wide>
           <ul className="flex list-disc flex-col gap-1 pl-5">
             {hints.map((hint) => (
               <li key={hint.muscle}>{formatFocusHint(hint)}</li>
@@ -203,15 +206,17 @@ function StatsContent({
       <ProgressCard
         progress={muscle ? progress.filter((item) => item.muscle === muscle) : progress}
       />
-      <ExercisesCard
-        key={muscle ?? 'all'}
-        overviews={
-          muscle ? overviews.filter(({ exercise }) => trainsMuscle(exercise, muscle)) : overviews
-        }
-        initialSort={muscle ? 'progress' : 'recent'}
-      />
+      <div className={restAnalysis ? '' : 'col-span-full'}>
+        <ExercisesCard
+          key={muscle ?? 'all'}
+          overviews={
+            muscle ? overviews.filter(({ exercise }) => trainsMuscle(exercise, muscle)) : overviews
+          }
+          initialSort={muscle ? 'progress' : 'recent'}
+        />
+      </div>
       {restAnalysis && <RestCard sessions={ofMuscle(ranged)} />}
-    </>
+    </div>
   );
 }
 

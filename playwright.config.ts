@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
+const LAYOUT_SPEC = /layout\.spec\.ts$/;
 
 // Läuft gegen den Produktions-Build (`npm run preview`), damit der Service Worker aktiv ist
 export default defineConfig({
@@ -16,9 +17,25 @@ export default defineConfig({
     reducedMotion: 'reduce',
   },
   projects: [
-    { name: 'android', use: { ...devices['Pixel 7'] } },
+    { name: 'android', use: { ...devices['Pixel 7'] }, testIgnore: LAYOUT_SPEC },
     // iPhone-Viewport mit Chromium, da WebKit unter Windows keine Service Worker im Test unterstützt
-    { name: 'iphone', use: { ...devices['iPhone 14'], browserName: 'chromium' } },
+    {
+      name: 'iphone',
+      use: { ...devices['iPhone 14'], browserName: 'chromium' },
+      testIgnore: LAYOUT_SPEC,
+    },
+    // Große und quer gehaltene Bildschirme (seit 22c): nur die Abläufe aus `layout.spec.ts`
+    { name: 'android-quer', use: { ...devices['Pixel 7 landscape'] }, testMatch: LAYOUT_SPEC },
+    {
+      name: 'tablet',
+      use: { ...devices['iPad Pro 11 landscape'], browserName: 'chromium' },
+      testMatch: LAYOUT_SPEC,
+    },
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      testMatch: LAYOUT_SPEC,
+    },
   ],
   webServer: {
     command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,

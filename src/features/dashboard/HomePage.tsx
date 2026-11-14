@@ -6,6 +6,7 @@ import { BaseyLogo } from '../../components/BaseyLogo';
 import { Chip } from '../../components/Chip';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { CompactHeader } from '../../components/CompactHeader';
+import { PAGE_WIDTH } from '../../components/pageLayout';
 import { useScrolledPast } from '../../components/useScrolledPast';
 import { Card, CustomizeToggle, HeaderAction, LinkRow, type CardTone } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
@@ -270,8 +271,8 @@ export function HomePage() {
 
   const toggle = <CustomizeToggle editing={editing} onChange={setEditing} />;
   return (
-    <div className="mx-auto max-w-md px-4 pt-[calc(1.5rem+env(safe-area-inset-top))]">
-      {compact && <CompactHeader title="Heute" action={toggle} />}
+    <div className={`${PAGE_WIDTH.wide} pt-[calc(1.5rem+env(safe-area-inset-top))]`}>
+      {compact && <CompactHeader title="Heute" action={toggle} width="wide" />}
       <div ref={header} className="mb-4 flex items-end gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[0.8125rem] font-semibold tracking-wide text-muted uppercase">
@@ -342,7 +343,18 @@ function WelcomeCard() {
 /** Kleine Widgets als Farbblöcke: das erste in Akzentfarbe, das zweite im Hellton */
 const SMALL_TONES: readonly CardTone[] = ['accent', 'soft'];
 
-/** Raster: kleine Widgets nehmen eine halbe Zeile, alle anderen die ganze */
+/**
+ * Feldraster (R1, `WIDGET_FIELDS`/`WIDGET_GRID_COLUMNS`): 2 Felder je Zeile am Handy, ab `sm` 4,
+ * ab `lg` 6. Lücken füllt das Raster auf (`grid-flow-dense`).
+ */
+const WIDGET_GRID = 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-6';
+const WIDGET_SPAN: Record<WidgetSize, string> = {
+  small: 'col-span-1',
+  medium: 'col-span-2',
+  large: 'col-span-2 sm:col-span-4',
+};
+
+/** Raster der Widgets: kleine Widgets nebeneinander, mittlere und große breiter */
 function WidgetList({ data }: { data: WidgetData }) {
   const { dashboardWidgets, widgetSizes } = data.settings;
   const sizes = dashboardWidgets.map((id) => widgetSize(id, widgetSizes));
@@ -365,13 +377,9 @@ function WidgetList({ data }: { data: WidgetData }) {
     );
   }
   return (
-    <div className="mb-4 grid grid-cols-2 gap-3">
+    <div className={`mb-4 grid grid-flow-dense gap-3 ${WIDGET_GRID}`}>
       {visible.map(({ id, size, content }) => (
-        <div
-          key={id}
-          data-widget={id}
-          className={`grid min-w-0 *:mb-0 ${size === 'small' ? '' : 'col-span-2'}`}
-        >
+        <div key={id} data-widget={id} className={`grid min-w-0 *:mb-0 ${WIDGET_SPAN[size]}`}>
           {content}
         </div>
       ))}
@@ -396,8 +404,10 @@ function WidgetEditor({ data }: { data: WidgetData }) {
       {/* Raster wie auf der Startseite: kleine Widgets stehen nebeneinander, auch beim Ziehen */}
       <SortableList
         label="Widgets"
-        grid
-        wide={({ id }) => widgetSize(id as DashboardWidget, widgetSizes) !== 'small'}
+        grid={{
+          columns: WIDGET_GRID,
+          span: ({ id }) => WIDGET_SPAN[widgetSize(id as DashboardWidget, widgetSizes)],
+        }}
         items={dashboardWidgets.map((id) => ({ id, name: DASHBOARD_WIDGET_LABELS[id].name }))}
         onReorder={(ids) => save(ids as DashboardWidget[])}
         renderItem={({ id, name }, { handle }) => {

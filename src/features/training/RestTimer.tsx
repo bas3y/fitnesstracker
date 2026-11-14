@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { PAGE_WIDTH } from '../../components/pageLayout';
 import { adjustRest, setRestEndsAt } from '../../db/workouts';
 import type { Workout } from '../../db/types';
 import { formatClock, restRemainingSeconds } from '../../domain/workout';
@@ -54,11 +55,12 @@ export function RestTimerBar({ workout }: { workout: Workout }) {
       role="timer"
       aria-label="Pause"
       data-bottom-bar
-      className={`fixed inset-x-0 bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom))] z-20 ${
+      // Über der Leiste unten bzw. rechts der Seitenleiste (`--nav-bottom`/`--nav-left`)
+      className={`fixed right-0 bottom-(--nav-bottom) left-(--nav-left) z-20 ${
         done ? 'bg-mark text-surface' : 'bg-hero text-on-hero'
       }`}
     >
-      <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-2">
+      <div className={`${PAGE_WIDTH.normal} flex items-center gap-2 py-2`}>
         <div className="mr-auto">
           <span className="block text-xs font-medium uppercase opacity-80">Pause</span>
           <span className="block text-2xl font-bold tabular-nums">

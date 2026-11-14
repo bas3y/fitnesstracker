@@ -1,6 +1,7 @@
 import { lazy, type ComponentType } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { SplitView } from './components/SplitView';
 import { HomePage } from './features/dashboard/HomePage';
 import { DAILY_STATS_PATH } from './features/stats/paths';
 
@@ -168,14 +169,35 @@ export function App() {
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="training" element={<TrainingPage />} />
-          <Route path="training/exercises" element={<ExerciseListPage />} />
+          {/* Liste mit Detail daneben auf großen Bildschirmen (22c, `SplitView`) */}
+          <Route
+            path="training/exercises"
+            element={
+              <SplitView
+                list={<ExerciseListPage />}
+                detailPattern="/training/exercises/:id"
+                emptyText="Übung auswählen, um sie hier zu sehen."
+              />
+            }
+          >
+            <Route path=":id" element={<ExerciseDetailPage />} />
+          </Route>
           <Route path="training/exercises/new" element={<ExerciseCreatePage />} />
-          <Route path="training/exercises/:id" element={<ExerciseDetailPage />} />
           <Route path="training/exercises/:id/edit" element={<ExerciseEditPage />} />
           <Route path="training/workout" element={<WorkoutPage />} />
-          <Route path="training/history" element={<WorkoutHistoryPage />} />
+          <Route
+            path="training/history"
+            element={
+              <SplitView
+                list={<WorkoutHistoryPage />}
+                detailPattern="/training/history/:id"
+                emptyText="Workout auswählen, um es hier zu sehen."
+              />
+            }
+          >
+            <Route path=":id" element={<WorkoutDetailPage />} />
+          </Route>
           <Route path="training/history/new" element={<WorkoutLogPage />} />
-          <Route path="training/history/:id" element={<WorkoutDetailPage />} />
           <Route path="training/history/:id/edit" element={<WorkoutEditPage />} />
           <Route path="training/plans" element={<PlanListPage />} />
           <Route path="training/plans/new" element={<PlanNewPage />} />

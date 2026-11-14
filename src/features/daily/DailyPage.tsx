@@ -1,5 +1,5 @@
 import { Page } from '../../components/Page';
-import { Tile } from '../../components/Tile';
+import { Tile, TILE_GRID } from '../../components/Tile';
 import type { DayKey, Settings } from '../../db/types';
 import { formatSleep } from '../../domain/daily';
 import { formatDecimal } from '../../domain/format';
@@ -35,9 +35,9 @@ export function DailyPage() {
   const day = { date, today };
 
   return (
-    <Page title="Alltag">
+    <Page title="Alltag" width="wide">
       <DayNavigator date={date} today={today} onChange={setDate} />
-      <ul aria-label="Bereiche" className="mb-4 grid grid-cols-2 gap-3">
+      <ul aria-label="Bereiche" className={`mb-4 ${TILE_GRID}`}>
         <HabitsTile {...day} />
         <TodosTile {...day} />
         {settings && <NutritionTile {...day} settings={settings} />}

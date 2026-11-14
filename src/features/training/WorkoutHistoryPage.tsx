@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Icon, TrophyIcon } from '../../components/icons';
@@ -50,9 +50,12 @@ export function WorkoutHistoryPage() {
             const time = formatTime(workout.startedAt);
             return (
               <li key={workout.id} className="flex items-center rounded-2xl bg-surface">
-                <Link
+                <NavLink
                   to={`${HISTORY_PATH}/${workout.id}`}
-                  className="block min-w-0 flex-1 rounded-2xl px-4 py-3 active:bg-page"
+                  // Aktiv nur neben dem Detail (`SplitView`, große Bildschirme)
+                  className={({ isActive }) =>
+                    `block min-w-0 flex-1 rounded-2xl px-4 py-3 hover:bg-subtle active:bg-page ${isActive ? 'bg-primary-soft' : ''}`
+                  }
                 >
                   <span className="flex items-baseline justify-between gap-2">
                     <span className="font-semibold">{date}</span>
@@ -82,7 +85,7 @@ export function WorkoutHistoryPage() {
                       </span>
                     )}
                   </span>
-                </Link>
+                </NavLink>
                 <DeleteRowButton
                   name={`Workout vom ${date}, ${time} Uhr`}
                   onClick={() => setDeleting(workout)}

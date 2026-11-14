@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { CompactHeader } from './CompactHeader';
+import { PAGE_WIDTH, useSplitPane, type PageWidth } from './pageLayout';
 import { useScrolledPast } from './useScrolledPast';
 import { ChevronLeftIcon, ChevronRightIcon, Icon, IconBadge, type IconName } from './icons';
 
 /** Klassen des runden Kopf-Buttons, auch für Links (`aria-label` setzen) */
 export const HEADER_ICON_BUTTON =
-  'flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-primary-text active:bg-pressed';
+  'flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-primary-text hover:bg-subtle active:bg-pressed';
 
 /** Runder Symbol-Button für die Kopfzeile (`Page`-Prop `action`) */
 export function HeaderButton({
@@ -102,7 +103,7 @@ export function GroupRow({
       <Link
         to={to}
         state={state}
-        className="flex min-h-14 items-center gap-3 px-4 py-2.5 active:bg-pressed"
+        className="flex min-h-14 items-center gap-3 px-4 py-2.5 hover:bg-subtle active:bg-pressed"
       >
         {icon && <IconBadge name={icon} solid={solid} />}
         <span className="min-w-0 flex-1">
@@ -157,9 +158,10 @@ export function HeaderAction({ hidden, children }: { hidden: boolean; children: 
 
 export function Page({
   title,
-  backTo,
+  backTo: backLink,
   backState,
   action,
+  width = 'normal',
   children,
 }: {
   title: string;
@@ -169,13 +171,26 @@ export function Page({
   backState?: unknown;
   /** Schaltfläche rechts neben der Überschrift (z. B. „Anpassen“) */
   action?: ReactNode;
+  /** Breite ab Handy quer (`PAGE_WIDTH`): `wide` für Raster, Kacheln, Statistik */
+  width?: PageWidth;
   children: ReactNode;
 }) {
-  const [header, compact] = useScrolledPast<HTMLDivElement>();
+  const pane = useSplitPane();
+  // Neben der Liste (`SplitView`) braucht das Detail kein „Zurück“; die Liste scrollt für sich
+  const backTo = pane === 'detail' ? undefined : backLink;
+  const [header, scrolledPast] = useScrolledPast<HTMLDivElement>();
+  const compact = scrolledPast && pane !== 'list';
   return (
-    <div className="mx-auto max-w-md px-4 pt-[calc(1.25rem+env(safe-area-inset-top))]">
+    <div className={`${PAGE_WIDTH[width]} pt-[calc(1.25rem+env(safe-area-inset-top))]`}>
       {compact && (
-        <CompactHeader title={title} backTo={backTo} backState={backState} action={action} />
+        <CompactHeader
+          title={title}
+          backTo={backTo}
+          backState={backState}
+          action={action}
+          width={width}
+          inPane={pane === 'detail'}
+        />
       )}
       {backTo && (
         <Link
@@ -189,6 +204,8 @@ export function Page({
           Zurück
         </Link>
       )}
+      {/* Platz des „Zurück“ neben der Liste: Überschriften auf einer Höhe, Kopf erscheint erst beim Scrollen */}
+      {pane === 'detail' && backLink && <div aria-hidden="true" className="min-h-11" />}
       <div ref={header} className="mb-4 flex items-center gap-3">
         <h1 className="min-w-0 flex-1 text-[1.75rem] leading-tight font-bold tracking-tight text-balance">
           {title}
@@ -206,14 +223,19 @@ export type CardTone = 'hero' | 'accent' | 'soft';
 export function Card({
   title,
   tone,
+  wide = false,
   children,
 }: {
   title?: string;
   tone?: CardTone;
+  /** In einem Raster (z. B. Statistik ab `lg`) über alle Spalten */
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section className={`mb-4 rounded-2xl bg-surface ${tone ? `tone-${tone} p-5` : 'p-4'}`}>
+    <section
+      className={`mb-4 rounded-2xl bg-surface ${tone ? `tone-${tone} p-5` : 'p-4'} ${wide ? 'col-span-full' : ''}`}
+    >
       {title && <h2 className="mb-3 text-[1.0625rem] font-semibold">{title}</h2>}
       {children}
     </section>
@@ -264,7 +286,7 @@ export function LinkRow({
       <Link
         to={to}
         state={state}
-        className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 active:bg-pressed"
+        className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl px-4 py-3 hover:bg-subtle active:bg-pressed"
       >
         <span className="min-w-0">
           <span className="block font-medium">{label}</span>

@@ -3,7 +3,7 @@ import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Icon } from '../../components/icons';
 import { CustomizeToggle, Page } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
-import { Tile } from '../../components/Tile';
+import { Tile, TILE_GRID } from '../../components/Tile';
 import { updateSettings, updateSettingsFrom } from '../../db/settings';
 import {
   ENDURANCE_SPORTS,
@@ -41,7 +41,11 @@ export function TrainingPage() {
   const today = dayKey(now);
 
   return (
-    <Page title="Training" action={<CustomizeToggle editing={editing} onChange={setEditing} />}>
+    <Page
+      title="Training"
+      width="wide"
+      action={<CustomizeToggle editing={editing} onChange={setEditing} />}
+    >
       <TrainingStartCard />
       <StrengthSection today={today} now={now} />
       <section aria-labelledby="endurance-heading" className="mb-4">
@@ -51,7 +55,7 @@ export function TrainingPage() {
           (editing ? (
             <TileEditor tiles={settings.trainingTiles} />
           ) : (
-            <ul aria-label="Aktivitäten" className="mb-3 grid grid-cols-2 gap-3">
+            <ul aria-label="Aktivitäten" className={`mb-3 ${TILE_GRID}`}>
               {settings.trainingTiles.map((sport) => (
                 <ActivityTile
                   key={sport}
@@ -63,7 +67,7 @@ export function TrainingPage() {
               ))}
             </ul>
           ))}
-        <ul aria-label="Ausdauer-Werkzeuge" className="grid grid-cols-2 gap-3">
+        <ul aria-label="Ausdauer-Werkzeuge" className={TILE_GRID}>
           <GearTile />
           <Tile to={IMPORT_PATH} icon="upload" name="Importieren">
             <span className={MUTED}>Sportuhr, Strava</span>
@@ -112,7 +116,7 @@ function StrengthSection({ today, now }: { today: string; now: Date }) {
           )
         }
       />
-      <ul aria-label="Krafttraining" className="grid grid-cols-2 gap-3">
+      <ul aria-label="Krafttraining" className={TILE_GRID}>
         <Tile to={PLANS_PATH} icon="clipboard" name="Trainingspläne">
           {plans && (
             <span className={`${MUTED} truncate`}>

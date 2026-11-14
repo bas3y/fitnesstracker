@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { primaryButton, secondaryButton } from '../../components/buttons';
+import { PAGE_WIDTH, PICKER_DIALOG, PICKER_SCRIM } from '../../components/pageLayout';
 import { lockScroll } from '../../components/scrollRoot';
 import { SearchInput } from '../../components/SearchInput';
 import { createUserFood } from '../../db/foods';
@@ -125,110 +126,113 @@ export function FoodPicker({
   );
 
   return (
-    <div
-      ref={dialog}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      tabIndex={-1}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') onClose();
-      }}
-      className="fixed inset-0 z-50 overflow-y-auto bg-page outline-none"
-    >
-      <div className="sticky top-0 z-10 border-b border-line bg-page/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-2 px-4 py-2">
-          <h2 id={titleId} className="min-w-0 truncate text-lg font-semibold">
-            {heading}
-          </h2>
-          <button
-            type="button"
-            className="min-h-11 shrink-0 px-2 font-medium text-primary-text"
-            onClick={back ?? onClose}
-          >
-            {back ? 'Zurück' : added.length > 0 ? 'Fertig' : 'Schließen'}
-          </button>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-md px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        {added.length > 0 && !selected && !creating && !scanning && (
-          <p
-            role="status"
-            className="mb-4 rounded-xl bg-primary-soft px-4 py-3 text-sm font-medium text-primary-text"
-          >
-            Hinzugefügt: {added.join(', ')}
-          </p>
-        )}
-        {creating ? (
-          <FoodForm
-            initial={{ ...EMPTY_FOOD_INPUT, name: query.trim() }}
-            submitLabel="Anlegen und auswählen"
-            onSubmit={async (input) => {
-              select(await createUserFood(input));
-              setCreating(false);
-            }}
-            onCancel={() => setCreating(false)}
-          />
-        ) : scanning ? (
-          <BarcodeFoodFlow
-            submitLabel="Speichern und auswählen"
-            onFood={scanned}
-            onCancel={() => setScanning(false)}
-          />
-        ) : selected ? (
-          <div className="flex flex-col gap-4">
-            <p className={MUTED}>{formatNutrientLine(selected.food)} pro 100 g</p>
-            <AmountForm
-              portions={selected.food.portions}
-              nutrients={selected.food}
-              value={selected.amount}
-              onChange={(amount) => setSelected({ ...selected, amount })}
-            />
-            <button type="button" className={primaryButton} onClick={() => void add()}>
-              Hinzufügen
-            </button>
-          </div>
-        ) : (
-          <>
+    <>
+      <div aria-hidden="true" className={PICKER_SCRIM} onClick={onClose} />
+      <div
+        ref={dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') onClose();
+        }}
+        className={PICKER_DIALOG}
+      >
+        <div className="sticky top-0 z-10 border-b border-line bg-page/95 pt-[env(safe-area-inset-top)] backdrop-blur lg:pt-0">
+          <div className={`${PAGE_WIDTH.normal} flex items-center justify-between gap-2 py-2`}>
+            <h2 id={titleId} className="min-w-0 truncate text-lg font-semibold">
+              {heading}
+            </h2>
             <button
               type="button"
-              className={`${secondaryButton} mb-4`}
-              onClick={() => setCreating(true)}
+              className="min-h-11 shrink-0 px-2 font-medium text-primary-text"
+              onClick={back ?? onClose}
             >
-              + Eigenes Lebensmittel anlegen
+              {back ? 'Zurück' : added.length > 0 ? 'Fertig' : 'Schließen'}
             </button>
-            <ScanButton onClick={() => setScanning(true)} />
-            <SearchInput
-              label="Lebensmittel suchen"
-              placeholder="Name oder Strichcode-Nummer"
-              value={query}
-              onChange={setQuery}
+          </div>
+        </div>
+
+        <div className={`${PAGE_WIDTH.normal} pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]`}>
+          {added.length > 0 && !selected && !creating && !scanning && (
+            <p
+              role="status"
+              className="mb-4 rounded-xl bg-primary-soft px-4 py-3 text-sm font-medium text-primary-text"
+            >
+              Hinzugefügt: {added.join(', ')}
+            </p>
+          )}
+          {creating ? (
+            <FoodForm
+              initial={{ ...EMPTY_FOOD_INPUT, name: query.trim() }}
+              submitLabel="Anlegen und auswählen"
+              onSubmit={async (input) => {
+                select(await createUserFood(input));
+                setCreating(false);
+              }}
+              onCancel={() => setCreating(false)}
             />
-            {allFoods === undefined ? null : query.trim() !== '' ? (
-              results.length === 0 ? (
-                <p role="status" className={MUTED}>
-                  Keine Treffer für „{query.trim()}“.
+          ) : scanning ? (
+            <BarcodeFoodFlow
+              submitLabel="Speichern und auswählen"
+              onFood={scanned}
+              onCancel={() => setScanning(false)}
+            />
+          ) : selected ? (
+            <div className="flex flex-col gap-4">
+              <p className={MUTED}>{formatNutrientLine(selected.food)} pro 100 g</p>
+              <AmountForm
+                portions={selected.food.portions}
+                nutrients={selected.food}
+                value={selected.amount}
+                onChange={(amount) => setSelected({ ...selected, amount })}
+              />
+              <button type="button" className={primaryButton} onClick={() => void add()}>
+                Hinzufügen
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={`${secondaryButton} mb-4`}
+                onClick={() => setCreating(true)}
+              >
+                + Eigenes Lebensmittel anlegen
+              </button>
+              <ScanButton onClick={() => setScanning(true)} />
+              <SearchInput
+                label="Lebensmittel suchen"
+                placeholder="Name oder Strichcode-Nummer"
+                value={query}
+                onChange={setQuery}
+              />
+              {allFoods === undefined ? null : query.trim() !== '' ? (
+                results.length === 0 ? (
+                  <p role="status" className={MUTED}>
+                    Keine Treffer für „{query.trim()}“.
+                  </p>
+                ) : (
+                  <FoodList label="Suchergebnisse">{results.map(option)}</FoodList>
+                )
+              ) : sections.length === 0 ? (
+                <p className={MUTED}>
+                  Suche nach einem Lebensmittel. Favoriten (Stern) und zuletzt verwendete erscheinen
+                  hier ohne Suchen.
                 </p>
               ) : (
-                <FoodList label="Suchergebnisse">{results.map(option)}</FoodList>
-              )
-            ) : sections.length === 0 ? (
-              <p className={MUTED}>
-                Suche nach einem Lebensmittel. Favoriten (Stern) und zuletzt verwendete erscheinen
-                hier ohne Suchen.
-              </p>
-            ) : (
-              sections.map(({ label, items }) => (
-                <section key={label}>
-                  <h3 className="mb-2 font-semibold">{label}</h3>
-                  <FoodList label={label}>{items.map(option)}</FoodList>
-                </section>
-              ))
-            )}
-          </>
-        )}
+                sections.map(({ label, items }) => (
+                  <section key={label}>
+                    <h3 className="mb-2 font-semibold">{label}</h3>
+                    <FoodList label={label}>{items.map(option)}</FoodList>
+                  </section>
+                ))
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

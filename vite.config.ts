@@ -52,7 +52,8 @@ export default defineConfig({
         description: 'Fitness & Lifestyle – offline, deine Daten bleiben auf dem Gerät',
         lang: 'de',
         display: 'standalone',
-        orientation: 'portrait',
+        // Seit 22c: auch quer (Handy quer, Tablet)
+        orientation: 'any',
         start_url: '.',
         scope: '.',
         theme_color: THEME_COLOR,

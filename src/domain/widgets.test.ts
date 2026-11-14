@@ -4,10 +4,36 @@ import { DASHBOARD_WIDGET_LABELS } from './labels';
 import {
   filterWidgets,
   sizeChoices,
+  WIDGET_FIELDS,
+  WIDGET_GRID_COLUMNS,
   WIDGET_GROUP_OF,
   WIDGET_SIZE_OPTIONS,
   widgetSize,
+  widgetSpan,
 } from './widgets';
+
+describe('widgetSpan (Feldraster)', () => {
+  it('Handy hoch: klein halbe Zeile, mittel und groß ganze Zeile', () => {
+    const columns = WIDGET_GRID_COLUMNS.base;
+    expect(widgetSpan('small', columns)).toBe(1);
+    expect(widgetSpan('medium', columns)).toBe(columns);
+    expect(widgetSpan('large', columns)).toBe(columns);
+  });
+
+  it('ab sm/lg: mittel = Handybreite, groß = doppelt so breit', () => {
+    for (const columns of [WIDGET_GRID_COLUMNS.sm, WIDGET_GRID_COLUMNS.lg]) {
+      expect(widgetSpan('small', columns)).toBe(1);
+      expect(widgetSpan('medium', columns)).toBe(2);
+      expect(widgetSpan('large', columns)).toBe(4);
+    }
+  });
+
+  it('nie breiter als die Zeile und nie unter einem Feld', () => {
+    expect(widgetSpan('large', 3)).toBe(3);
+    expect(widgetSpan('small', 0)).toBe(1);
+    expect(Object.values(WIDGET_FIELDS).every((fields) => fields >= 1)).toBe(true);
+  });
+});
 
 describe('widgetSize', () => {
   it('nimmt ohne Auswahl die Standardgröße', () => {

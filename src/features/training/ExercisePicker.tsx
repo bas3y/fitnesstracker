@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { primaryButton, secondaryButton } from '../../components/buttons';
+import { PAGE_WIDTH, PICKER_DIALOG, PICKER_SCRIM } from '../../components/pageLayout';
 import { lockScroll } from '../../components/scrollRoot';
 import { createUserExercise } from '../../db/exercises';
 import { EMPTY_EXERCISE_INPUT } from '../../db/schemas';
@@ -92,89 +93,96 @@ export function ExercisePicker({
   }, []);
 
   return (
-    <div
-      ref={dialog}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      tabIndex={-1}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') onClose();
-      }}
-      className="fixed inset-0 z-50 overflow-y-auto bg-page outline-none"
-    >
-      <div className="sticky top-0 z-10 border-b border-line bg-page/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-2 px-4 py-2">
-          <h2 id={titleId} className="text-lg font-semibold">
-            {creating ? 'Eigene Übung anlegen' : title}
-          </h2>
-          <button
-            type="button"
-            className="min-h-11 px-2 font-medium text-primary-text"
-            onClick={creating ? () => setCreating(false) : onClose}
-          >
-            {creating ? 'Zurück' : 'Schließen'}
-          </button>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-md px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        {creating ? (
-          <ExerciseForm
-            initial={{ ...EMPTY_EXERCISE_INPUT, name: state.query.trim() }}
-            submitLabel="Anlegen und auswählen"
-            onSubmit={async (input) => {
-              const created = await createUserExercise(input);
-              if (onSelect) {
-                onSelect(created);
-              } else {
-                setSelected((current) => [...current, created]);
-                setCreating(false);
-              }
-            }}
-            onCancel={() => setCreating(false)}
-          />
-        ) : (
-          <>
+    <>
+      <div aria-hidden="true" className={PICKER_SCRIM} onClick={onClose} />
+      <div
+        ref={dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') onClose();
+        }}
+        className={PICKER_DIALOG}
+      >
+        <div className="sticky top-0 z-10 border-b border-line bg-page/95 pt-[env(safe-area-inset-top)] backdrop-blur lg:pt-0">
+          <div className={`${PAGE_WIDTH.normal} flex items-center justify-between gap-2 py-2`}>
+            <h2 id={titleId} className="text-lg font-semibold">
+              {creating ? 'Eigene Übung anlegen' : title}
+            </h2>
             <button
               type="button"
-              className={`${secondaryButton} mb-4`}
-              onClick={() => setCreating(true)}
+              className="min-h-11 px-2 font-medium text-primary-text"
+              onClick={creating ? () => setCreating(false) : onClose}
             >
-              + Eigene Übung anlegen
-            </button>
-            {suggestions.length > 0 && state.query.trim() === '' && (
-              <>
-                <h3 className="mb-2 font-semibold">Vorschläge</h3>
-                <ul
-                  aria-label="Vorschläge"
-                  className="mb-4 divide-y divide-line overflow-hidden rounded-2xl bg-surface"
-                >
-                  {suggestions.map((exercise) => (
-                    <li key={exercise.id}>{renderOption(exercise)}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <ExerciseBrowser
-              exercises={exercises}
-              state={state}
-              onStateChange={setState}
-              renderItem={renderOption}
-            />
-          </>
-        )}
-      </div>
-
-      {onSelectMany && !creating && selected.length > 0 && (
-        <div className="sticky bottom-0 z-10 border-t border-line bg-page/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-          <div className="mx-auto max-w-md px-4 py-3">
-            <button type="button" className={primaryButton} onClick={() => onSelectMany(selected)}>
-              {selected.length === 1 ? '1 Übung' : `${selected.length} Übungen`} hinzufügen
+              {creating ? 'Zurück' : 'Schließen'}
             </button>
           </div>
         </div>
-      )}
-    </div>
+
+        <div className={`${PAGE_WIDTH.normal} pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]`}>
+          {creating ? (
+            <ExerciseForm
+              initial={{ ...EMPTY_EXERCISE_INPUT, name: state.query.trim() }}
+              submitLabel="Anlegen und auswählen"
+              onSubmit={async (input) => {
+                const created = await createUserExercise(input);
+                if (onSelect) {
+                  onSelect(created);
+                } else {
+                  setSelected((current) => [...current, created]);
+                  setCreating(false);
+                }
+              }}
+              onCancel={() => setCreating(false)}
+            />
+          ) : (
+            <>
+              <button
+                type="button"
+                className={`${secondaryButton} mb-4`}
+                onClick={() => setCreating(true)}
+              >
+                + Eigene Übung anlegen
+              </button>
+              {suggestions.length > 0 && state.query.trim() === '' && (
+                <>
+                  <h3 className="mb-2 font-semibold">Vorschläge</h3>
+                  <ul
+                    aria-label="Vorschläge"
+                    className="mb-4 divide-y divide-line overflow-hidden rounded-2xl bg-surface"
+                  >
+                    {suggestions.map((exercise) => (
+                      <li key={exercise.id}>{renderOption(exercise)}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              <ExerciseBrowser
+                exercises={exercises}
+                state={state}
+                onStateChange={setState}
+                renderItem={renderOption}
+              />
+            </>
+          )}
+        </div>
+
+        {onSelectMany && !creating && selected.length > 0 && (
+          <div className="sticky bottom-0 z-10 border-t border-line bg-page/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+            <div className={`${PAGE_WIDTH.normal} py-3`}>
+              <button
+                type="button"
+                className={primaryButton}
+                onClick={() => onSelectMany(selected)}
+              >
+                {selected.length === 1 ? '1 Übung' : `${selected.length} Übungen`} hinzufügen
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
