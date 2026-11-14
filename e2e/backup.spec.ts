@@ -65,7 +65,8 @@ test('Einstellungen überstehen Backup, Löschen der DB und Import (offline)', a
   await expect(page.getByText('Einstellungen: 1')).toBeVisible();
   await page.getByRole('button', { name: 'Importieren', exact: true }).click();
 
-  await expect(page.getByText('Sicherung wurde importiert')).toBeVisible();
+  // Import spielt danach die mitgelieferten Daten ein – unter Last im vollen Lauf dauert das länger
+  await expect(page.getByText('Sicherung wurde importiert')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText('Letztes Backup: heute')).toBeVisible();
   await expect(page.locator('html')).toHaveClass(/dark/);
   await openSection(page, 'Profil & Einheiten');

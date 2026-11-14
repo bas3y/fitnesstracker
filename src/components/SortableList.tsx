@@ -38,8 +38,11 @@ interface Drag {
   id: string;
   startY: number;
   pointerY: number;
+  pointerX: number;
   /** Abstand Zeilenmitte–Zeiger beim Greifen */
   offset: number;
+  /** Waagrecht (nur im Raster) */
+  offsetX: number;
   /** Aktuelle Reihenfolge – Zeigerereignisse können schneller kommen als gerendert wird */
   order: string[];
   /**
@@ -55,18 +58,26 @@ interface Drag {
  * um die Strecke des Zeigers. Positionen kommen aus dem DOM – Zeilen dürfen also unterschiedlich
  * hoch sein. Am Bildschirmrand scrollt die Seite mit (auch bei Zeilen, die höher als der
  * Bildschirm sind).
+ * Mit `grid` stehen die Zeilen in zwei Spalten (`wide` = ganze Breite) und lassen sich auch seitlich
+ * ziehen: Getauscht wird mit der Zeile, über deren Fläche die Mitte der gezogenen Zeile liegt.
  */
 export function SortableList<T extends SortableItem>({
   label,
   items,
   onReorder,
   renderItem,
+  grid = false,
+  wide,
 }: {
   label: string;
   items: T[];
   /** Bekommt die neue Reihenfolge; `items` kommen danach aktualisiert zurück */
   onReorder: (ids: string[]) => Promise<void>;
   renderItem: (item: T, row: SortableRowProps) => ReactNode;
+  /** Zwei Spalten statt einer Liste */
+  grid?: boolean;
+  /** Im Raster: Zeile über die ganze Breite */
+  wide?: (item: T) => boolean;
 }) {
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -78,12 +89,36 @@ export function SortableList<T extends SortableItem>({
   const rowOf = (id: string) => list.current?.querySelector<HTMLElement>(`[data-sort-id="${id}"]`);
   const middleOf = (row: HTMLElement) =>
     list.current!.getBoundingClientRect().top + row.offsetTop + row.offsetHeight / 2;
+  const centerOf = (row: HTMLElement) =>
+    list.current!.getBoundingClientRect().left + row.offsetLeft + row.offsetWidth / 2;
 
   const followPointer = () => {
     const current = drag.current;
     const row = current && rowOf(current.id);
     if (!current || !row) return;
-    row.style.transform = `translateY(${current.pointerY + current.offset - middleOf(row)}px)`;
+    const y = current.pointerY + current.offset - middleOf(row);
+    const x = grid ? current.pointerX + current.offsetX - centerOf(row) : 0;
+    row.style.transform = grid ? `translate(${x}px, ${y}px)` : `translateY(${y}px)`;
+  };
+
+  // Raster: Zeile, über deren Fläche (ohne Verschiebung) die Mitte der gezogenen Zeile liegt
+  const swapInGrid = (current: Drag) => {
+    const x = current.pointerX + current.offsetX;
+    const y = current.pointerY + current.offset;
+    const listBox = list.current!.getBoundingClientRect();
+    const target = current.order.find((id) => {
+      const row = id === current.id ? null : rowOf(id);
+      if (!row) return false;
+      const left = listBox.left + row.offsetLeft;
+      const top = listBox.top + row.offsetTop;
+      return x >= left && x <= left + row.offsetWidth && y >= top && y <= top + row.offsetHeight;
+    });
+    if (!target) return;
+    const next = current.order.filter((id) => id !== current.id);
+    const at = current.order.indexOf(target);
+    next.splice(at, 0, current.id);
+    current.order = next;
+    setLocalOrder(next);
   };
 
   // Getauscht wird, sobald die Kante der gezogenen Zeile die Mitte des Nachbarn überquert –
@@ -92,6 +127,7 @@ export function SortableList<T extends SortableItem>({
     const current = drag.current;
     const row = current && rowOf(current.id);
     if (!current || !row) return;
+    if (grid) return swapInGrid(current);
     const middle = current.pointerY + current.offset;
     const top = middle - row.offsetHeight / 2;
     const bottom = middle + row.offsetHeight / 2;
@@ -107,7 +143,7 @@ export function SortableList<T extends SortableItem>({
   };
 
   // Nach jedem Tausch, weil sich dann das Layout ändert
-  useLayoutEffect(followPointer, [draggingId, localOrder]);
+  useLayoutEffect(followPointer, [draggingId, localOrder, grid]);
 
   // Läuft bildweise weiter, weil ein ruhender Finger am Rand keine Zeigerereignisse auslöst
   useEffect(() => {
@@ -149,7 +185,9 @@ export function SortableList<T extends SortableItem>({
       id,
       startY: event.clientY,
       pointerY: event.clientY,
+      pointerX: event.clientX,
       offset: middleOf(row) - event.clientY,
+      offsetX: centerOf(row) - event.clientX,
       order,
       maxScroll: scrollRoot().scrollHeight - scrollRoot().clientHeight,
     };
@@ -161,6 +199,7 @@ export function SortableList<T extends SortableItem>({
     const current = drag.current;
     if (!current) return;
     current.pointerY = event.clientY;
+    current.pointerX = event.clientX;
     followPointer();
     swapAtPointer();
   };
@@ -178,7 +217,9 @@ export function SortableList<T extends SortableItem>({
   };
 
   const onKeyDown = (event: KeyboardEvent, id: string) => {
-    const direction = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+    const back = event.key === 'ArrowUp' || (grid && event.key === 'ArrowLeft');
+    const forward = event.key === 'ArrowDown' || (grid && event.key === 'ArrowRight');
+    const direction = back ? -1 : forward ? 1 : 0;
     if (!direction || saving.current) return;
     event.preventDefault();
     const next = moveItem(order, order.indexOf(id), direction);
@@ -188,7 +229,11 @@ export function SortableList<T extends SortableItem>({
   return (
     // Reihenfolge per CSS: Würde die gezogene Zeile im DOM wandern, ginge die Pointer-Capture verloren.
     // Ohne Scroll-Anker: Sonst verschiebt der Browser nach einem Tausch hoher Zeilen die Seite.
-    <ul ref={list} aria-label={label} className="relative flex flex-col [overflow-anchor:none]">
+    <ul
+      ref={list}
+      aria-label={label}
+      className={`relative [overflow-anchor:none] ${grid ? 'grid grid-cols-2 gap-x-3' : 'flex flex-col'}`}
+    >
       {items.map((item) => {
         const { id } = item;
         const handle =
@@ -211,7 +256,15 @@ export function SortableList<T extends SortableItem>({
             key={id}
             data-sort-id={id}
             style={{ order: order.indexOf(id) }}
-            className={draggingId === id ? 'relative z-10 rounded-2xl shadow-lg' : undefined}
+            className={
+              [
+                grid && (wide?.(item) ?? true) ? 'col-span-2' : '',
+                grid ? 'min-w-0' : '',
+                draggingId === id ? 'relative z-10 rounded-2xl shadow-lg' : '',
+              ]
+                .filter(Boolean)
+                .join(' ') || undefined
+            }
           >
             {renderItem(item, { handle })}
           </li>

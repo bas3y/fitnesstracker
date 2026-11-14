@@ -49,7 +49,16 @@ import { formatTrainingGap, trainingGap } from '../../domain/nudges';
 import { DayPeek } from '../../components/DayPeek';
 import { secondaryButton } from '../../components/buttons';
 import { sessionPath } from '../endurance/paths';
-import { sizeChoices, widgetSize } from '../../domain/widgets';
+import {
+  filterWidgets,
+  sizeChoices,
+  WIDGET_GROUP_LABELS,
+  WIDGET_GROUP_OF,
+  WIDGET_GROUPS,
+  widgetSize,
+  type WidgetGroup,
+} from '../../domain/widgets';
+import { SearchInput } from '../../components/SearchInput';
 import {
   formatWorkoutDate,
   formatWorkoutDuration,
@@ -379,79 +388,136 @@ function WidgetEditor({ data }: { data: WidgetData }) {
   const setSize = (id: DashboardWidget, size: WidgetSize) =>
     updateSettingsFrom((current) => ({ widgetSizes: { ...current.widgetSizes, [id]: size } }));
   const hidden = DASHBOARD_WIDGETS.filter((id) => !dashboardWidgets.includes(id));
+  const remove = (id: DashboardWidget) =>
+    void change((current) => current.filter((item) => item !== id));
 
   return (
     <>
+      {/* Raster wie auf der Startseite: kleine Widgets stehen nebeneinander, auch beim Ziehen */}
       <SortableList
         label="Widgets"
+        grid
+        wide={({ id }) => widgetSize(id as DashboardWidget, widgetSizes) !== 'small'}
         items={dashboardWidgets.map((id) => ({ id, name: DASHBOARD_WIDGET_LABELS[id].name }))}
         onReorder={(ids) => save(ids as DashboardWidget[])}
         renderItem={({ id, name }, { handle }) => {
           const widget = id as DashboardWidget;
           const size = widgetSize(widget, widgetSizes);
+          const small = size === 'small';
+          const sizes = (
+            <SizePicker
+              name={name}
+              choices={sizeChoices(widget)}
+              value={size}
+              stretch={small}
+              onChange={(next) => void setSize(widget, next)}
+            />
+          );
+          const preview = (
+            <div inert className={`grid min-w-0 *:mb-0 ${small ? 'px-1.5' : 'px-2'}`}>
+              {renderWidget(widget, data, size, small ? 'accent' : undefined) ?? (
+                <p className={`px-1 pb-1 text-sm ${MUTED}`}>
+                  {widget === 'dayHint'
+                    ? 'Erscheint morgens, nach dem Training und abends.'
+                    : 'Zeigt erst nach deinem ersten Workout etwas.'}
+                </p>
+              )}
+            </div>
+          );
+          if (small) {
+            return (
+              <div className="mb-3 flex h-[calc(100%-0.75rem)] flex-col rounded-2xl border-2 border-dashed border-line-strong bg-page">
+                <div className="flex min-h-14 items-center">
+                  {handle ?? <span className="w-3 shrink-0" />}
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{name}</span>
+                  <DeleteRowButton name={name} verb="entfernen" onClick={() => remove(widget)} />
+                </div>
+                <div className="flex-1">{preview}</div>
+                <div className="p-1.5">{sizes}</div>
+              </div>
+            );
+          }
           return (
             <div className="mb-3 rounded-2xl border-2 border-dashed border-line-strong bg-page">
               <div className="flex min-h-14 items-center">
                 {handle ?? <span className="w-3 shrink-0" />}
                 <span className="min-w-0 flex-1 truncate font-semibold">{name}</span>
-                <SizePicker
-                  name={name}
-                  choices={sizeChoices(widget)}
-                  value={size}
-                  onChange={(next) => void setSize(widget, next)}
-                />
-                <DeleteRowButton
-                  name={name}
-                  verb="entfernen"
-                  onClick={() => void change((current) => current.filter((item) => item !== id))}
-                />
+                {sizes}
+                <DeleteRowButton name={name} verb="entfernen" onClick={() => remove(widget)} />
               </div>
               {widget === 'quickActions' && (
                 <QuickActionPicker selected={data.settings.quickActions} />
               )}
-              <div inert className="grid grid-cols-2 px-2 pb-2 *:mb-0">
-                <div className={`grid min-w-0 *:mb-0 ${size === 'small' ? '' : 'col-span-2'}`}>
-                  {renderWidget(widget, data, size, size === 'small' ? 'accent' : undefined) ?? (
-                    <p className={`px-1 pb-1 text-sm ${MUTED}`}>
-                      {widget === 'dayHint'
-                        ? 'Erscheint morgens, nach dem Training und abends.'
-                        : 'Zeigt erst nach deinem ersten Workout etwas.'}
-                    </p>
-                  )}
-                </div>
-              </div>
+              <div className="pb-2">{preview}</div>
             </div>
           );
         }}
       />
       {hidden.length > 0 && (
-        <section className="mb-4">
-          <h2 className="mb-3 text-lg font-semibold">Weitere Widgets</h2>
-          <ul aria-label="Weitere Widgets">
-            {hidden.map((id) => (
-              <li key={id} className="mb-2">
-                <button
-                  type="button"
-                  aria-label={`${DASHBOARD_WIDGET_LABELS[id].name} hinzufügen`}
-                  className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-left active:bg-pressed"
-                  onClick={() =>
-                    void change((current) => (current.includes(id) ? current : [...current, id]))
-                  }
-                >
-                  <Icon name="plus" className="h-5 w-5 text-primary-text" />
-                  <span className="min-w-0">
-                    <span className="block font-medium">{DASHBOARD_WIDGET_LABELS[id].name}</span>
-                    <span className="block text-sm text-muted">
-                      {DASHBOARD_WIDGET_LABELS[id].hint}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <MoreWidgets
+          hidden={hidden}
+          onAdd={(id) =>
+            void change((current) => (current.includes(id) ? current : [...current, id]))
+          }
+        />
       )}
     </>
+  );
+}
+
+const WIDGET_NAMES = Object.fromEntries(
+  DASHBOARD_WIDGETS.map((id) => [id, DASHBOARD_WIDGET_LABELS[id].name]),
+) as Record<DashboardWidget, string>;
+
+/** Noch nicht gewählte Widgets mit Bereichs-Filter und Suche */
+function MoreWidgets({
+  hidden,
+  onAdd,
+}: {
+  hidden: DashboardWidget[];
+  onAdd: (id: DashboardWidget) => void;
+}) {
+  const [group, setGroup] = useState<WidgetGroup | null>(null);
+  const [query, setQuery] = useState('');
+  const shown = filterWidgets(hidden, WIDGET_NAMES, group, query);
+  const chips: { value: WidgetGroup | null; label: string }[] = [
+    { value: null, label: 'Alle' },
+    ...WIDGET_GROUPS.map((value) => ({ value, label: WIDGET_GROUP_LABELS[value] })),
+  ];
+  return (
+    <section className="mb-4">
+      <h2 className="mb-3 text-lg font-semibold">Weitere Widgets</h2>
+      <SearchInput label="Widgets suchen" value={query} onChange={setQuery} placeholder="Suchen" />
+      <div role="group" aria-label="Bereich" className="-mt-1 mb-3 flex flex-wrap gap-1.5">
+        {chips.map(({ value, label }) => (
+          <Chip key={label} pressed={group === value} onClick={() => setGroup(value)}>
+            {label}
+          </Chip>
+        ))}
+      </div>
+      {shown.length === 0 ? (
+        <p className={`text-sm ${MUTED}`}>Kein Widget gefunden.</p>
+      ) : (
+        <ul aria-label="Weitere Widgets">
+          {shown.map((id) => (
+            <li key={id} className="mb-2">
+              <button
+                type="button"
+                aria-label={`${WIDGET_NAMES[id]} hinzufügen`}
+                className="flex min-h-13 w-full items-center gap-3 rounded-2xl bg-surface px-4 py-2 text-left active:bg-pressed"
+                onClick={() => onAdd(id)}
+              >
+                <Icon name="plus" className="h-5 w-5 text-primary-text" />
+                <span className="min-w-0 flex-1 truncate font-medium">{WIDGET_NAMES[id]}</span>
+                <span className="shrink-0 text-xs text-muted">
+                  {WIDGET_GROUP_LABELS[WIDGET_GROUP_OF[id]]}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -460,11 +526,14 @@ function SizePicker({
   name,
   choices,
   value,
+  stretch = false,
   onChange,
 }: {
   name: string;
   choices: WidgetSize[];
   value: WidgetSize;
+  /** Ganze Breite (unter kleinen Widgets) */
+  stretch?: boolean;
   onChange: (size: WidgetSize) => void;
 }) {
   if (choices.length < 2) return null;
@@ -472,7 +541,7 @@ function SizePicker({
     <div
       role="group"
       aria-label={`Größe: ${name}`}
-      className="flex shrink-0 gap-0.5 rounded-xl bg-subtle p-0.5"
+      className={`flex shrink-0 gap-0.5 rounded-xl bg-subtle p-0.5 ${stretch ? '*:flex-1' : ''}`}
     >
       {choices.map((size) => (
         <button

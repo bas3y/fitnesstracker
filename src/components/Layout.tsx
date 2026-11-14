@@ -53,8 +53,9 @@ export function Layout() {
       <div
         {...scrollRootProps}
         // Keine eigene Stapelebene (kein `isolate`/`z-*`): Vollbild-Fenster der Seiten müssen über
-        // der Navigation liegen; das Artwork (`z-index: -1`) liegt trotzdem hinter dem Inhalt
-        className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-none"
+        // der Navigation liegen; das Artwork (`z-index: -1`) liegt trotzdem hinter dem Inhalt.
+        // `scroll-pt-16`: Hineinscrollen (Fokus, scrollIntoView) endet unter dem mitlaufenden Kopf
+        className="relative min-h-0 flex-1 scroll-pt-16 overflow-y-auto overscroll-y-none"
       >
         {settings && <PageArtwork palette={settings.palette} />}
         {reminder && (

@@ -27,6 +27,8 @@ test('Ausdauer: Kacheln, Einheiten erfassen, Ausrüstung und Anpassen (offline)'
   page,
   context,
 }) => {
+  // Langer Ablauf (allein gut 20 s), im vollen Lauf unter Last sonst über 30 s
+  test.slow();
   const body = page.locator('body');
   await page.goto('./#/training');
   await goOffline(page, context);

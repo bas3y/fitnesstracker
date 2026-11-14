@@ -150,3 +150,62 @@ test.describe('Tageshinweis', () => {
     );
   });
 });
+
+test('Anpassen: Widgets filtern, kleine nebeneinander und seitlich tauschen (offline)', async ({
+  page,
+  context,
+}) => {
+  await start(page);
+  await goOffline(page, context);
+  await page.getByRole('button', { name: 'Anpassen' }).click();
+
+  const more = page.getByRole('list', { name: 'Weitere Widgets' });
+  const bereich = page.getByRole('group', { name: 'Bereich' });
+  await bereich.getByRole('button', { name: 'Ziele & Erfolge' }).click();
+  await expect(more.getByRole('button')).toHaveText([/Ziele/, /Serien & Abzeichen/]);
+  await bereich.getByRole('button', { name: 'Alle' }).click();
+  await page.getByLabel('Widgets suchen').fill('wass');
+  await expect(more.getByRole('button')).toHaveText([/Wasser/]);
+  await more.getByRole('button', { name: 'Wasser hinzufügen' }).click();
+  await expect(page.getByText('Kein Widget gefunden.')).toBeVisible();
+  await page.getByLabel('Widgets suchen').fill('');
+  await more.getByRole('button', { name: 'Schritte hinzufügen' }).click();
+
+  // Wasser und Schritte klein: schon beim Bearbeiten nebeneinander
+  for (const name of ['Wasser', 'Schritte']) {
+    await page
+      .getByRole('group', { name: `Größe: ${name}` })
+      .getByRole('button', { name: 'Klein' })
+      .click();
+  }
+  const list = page.getByRole('list', { name: 'Widgets', exact: true });
+  const water = list.locator(':scope > li[data-sort-id="water"]');
+  const steps = list.locator(':scope > li[data-sort-id="steps"]');
+  await steps.scrollIntoViewIfNeeded();
+  const waterBox = (await water.boundingBox())!;
+  const stepsBox = (await steps.boundingBox())!;
+  expect(Math.abs(waterBox.y - stepsBox.y)).toBeLessThan(2);
+  expect(stepsBox.x).toBeGreaterThan(waterBox.x + waterBox.width - 1);
+
+  // Schritte seitlich auf den Platz von Wasser ziehen
+  const handle = page.getByRole('button', { name: 'Schritte verschieben' });
+  const from = (await handle.boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(waterBox.x + waterBox.width / 2, waterBox.y + waterBox.height / 2, {
+    steps: 10,
+  });
+  await page.mouse.up();
+  await expect
+    .poll(async () => (await steps.boundingBox())!.x)
+    .toBeLessThan((await water.boundingBox())!.x);
+
+  // Auf der Startseite in derselben Reihenfolge nebeneinander
+  await page.getByRole('button', { name: 'Fertig' }).click();
+  const small = page.locator('[data-widget="steps"], [data-widget="water"]');
+  await expect(small).toHaveCount(2);
+  await expect(small.first()).toHaveAttribute('data-widget', 'steps');
+  const a = (await small.first().boundingBox())!;
+  const b = (await small.last().boundingBox())!;
+  expect(Math.abs(a.y - b.y)).toBeLessThan(2);
+});

@@ -45,6 +45,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
 - [ ] Schritt 22c – Desktop, Tablet & Querformat
 - [ ] Schritt 22d – Animationen für Kacheln & Inhalte
+- [ ] Schritt 22e – Texte aufräumen, Erklärungen hinter Info-Button
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 - [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
 - [ ] Schritt 24b – Gym-Bereich (LocalGym): eigene Oberfläche & Verwaltung
@@ -1416,6 +1417,12 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
   - **Handytest:** Leiste bleibt auf dem iPhone unten (Tastatur, App-Wechsel, Ende der Seite), mitlaufender Kopf unter der Notch, Artwork hell/dunkel je Palette, Balken antippen mit dem Daumen, Tageshinweis morgens/abends. Vor dem nächsten Push an ein Backup erinnern (DB-Version 35 → 36).
   - Durch den eigenen Scrollbereich gibt es auf dem iPhone kein „Statusleiste antippen = nach oben“ mehr; falls gewünscht, eigenen Knopf im mitlaufenden Kopf ergänzen.
   - Ideen: Tageszeiten des Hinweises einstellbar; schwebende Navigation (Entwürfe D–I) für später, wenn mehr Bereiche dazukommen.
+- **Nachtrag (Nutzerwunsch 14.11.2026, Entwurf „Nachtrag – Startseite anpassen“ im Artifact):** Textaufräumen → eigener Schritt 22e. Gebaut:
+  - **„Weitere Widgets“ mit Filter:** Suchfeld + Chips Alle · Training · Alltag · Ziele & Erfolge (`WIDGET_GROUPS`, `WIDGET_GROUP_OF`, `filterWidgets` in `src/domain/widgets.ts`, Umlaute egal), je Zeile nur Name + Bereich (kein Erklärsatz mehr), „Kein Widget gefunden.“
+  - **Kleine Widgets schon beim Bearbeiten nebeneinander:** `SortableList` mit `grid` (zwei Spalten, `wide` = ganze Breite) – gezogen wird auch seitlich, getauscht mit der Zeile unter der Mitte der gezogenen; Pfeiltasten links/rechts gehen auch. Kleine Karte: Griff + Name + Entfernen oben, Vorschau, Größe S/M/L unten über die ganze Breite.
+  - Scrollbereich mit `scroll-padding-top` (`scroll-pt-16`): Hineinscrollen endet unter dem mitlaufenden Kopf (vorher verdeckte er gelegentlich die Kopf-Taste – auch in E2E).
+  - E2E-Stabilität: `endurance.spec` (langer Ablauf) mit `test.slow()`, `backup.spec` wartet 15 s auf den Import; beide waren im vollen Lauf unter Last über der Zeit.
+  - Tests: `widgets.test.ts` (Bereiche, Filter), E2E `interaction.spec.ts` (Filter, Suche, kleine Widgets nebeneinander, seitlich tauschen, Reihenfolge auf der Startseite).
 
 ### Schritt 22c – Desktop, Tablet & Querformat
 **Ziel:** Die App nutzt den Platz auf großen und quer gehaltenen Bildschirmen, statt nur eine schmale Handy-Spalte in der Mitte zu zeigen (Nutzerwunsch 12.11.2026). Vor 23/24 eingeplant, weil der Admin- und Gym-Bereich vor allem am Computer genutzt wird.
@@ -1444,6 +1451,14 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
   - **Anpassen-Modus:** Kacheln wackeln leicht (wie beim Startbildschirm), Ziehen mit Schatten.
   - **Fenster/Aufklappen:** `Details` klappt weich auf, Fenster aus 32b gleiten von unten (Handy) bzw. blenden mittig ein (Desktop).
 - **Regeln:** nur `transform`/`opacity` (flüssig auf älteren Handys), kurz (≤ 400 ms, Erfolge etwas länger), nie beim Tippen/Scrollen im Weg; `prefers-reduced-motion` schaltet alles ab, ggf. eigener Schalter in Einstellungen → Darstellung. E2E läuft weiter mit `reducedMotion: 'reduce'`, einzelne Tests mit Animation.
+
+**Notizen:**
+
+### Schritt 22e – Texte aufräumen, Erklärungen hinter Info-Button
+**Ziel:** Weniger Text auf allen Seiten, damit alles übersichtlicher wird (Nutzerwunsch 14.11.2026): „Alle Texte, die unnötig sind, wegmachen; wenn eine Erklärung nötig ist, einen Info-Button mit Popup.“
+- **Ablauf:** Erst Entwürfe im Artifact (3–4 typische Seiten vorher/nachher, Optik des Info-Buttons und des Popups), Nutzer entscheidet, dann Seite für Seite (Startseite + Widgets, Training, Alltag, Statistik, Einstellungen, Formulare).
+- **Regeln (Vorschlag):** Hinweis- und Erklärsätze unter Überschriften/Kennzahlen entfernen oder in `InfoButton` (rundes „i“-Symbol, ≥ 44 px Touch-Ziel, `Dialog` mit Titel + kurzem Text, Escape/Zurück schließt) verschieben; Leer-Zustände kurz halten (eine Zeile + Aktion); Wichtiges (Warnungen, Datenverlust, Online-Hinweise) bleibt sichtbar.
+- E2E, die Texte prüfen, entsprechend anpassen; Info-Popups per E2E stichprobenartig öffnen.
 
 **Notizen:**
 
