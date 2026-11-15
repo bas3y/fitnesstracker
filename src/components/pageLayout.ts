@@ -29,8 +29,9 @@ export const PAGE_WIDTH: Record<PageWidth, string> = {
  * Vollbild-Auswahl (Übungen, Lebensmittel): am Handy und Tablet hoch ganzer Bildschirm, ab `lg`
  * großes Fenster in der Mitte (22c, Variante F1) über `PICKER_SCRIM`. Das Fenster scrollt selbst.
  */
+// `anim-sheet`: gleitet am Handy von unten herein, ab `lg` springt es mittig auf (22d, O2)
 export const PICKER_DIALOG =
-  'fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-page outline-none lg:inset-auto lg:top-1/2 lg:left-1/2 lg:h-[min(85dvh,56rem)] lg:w-[min(42rem,calc(100vw-4rem))] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-3xl lg:shadow-2xl';
+  'anim-sheet fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-page outline-none lg:inset-auto lg:top-1/2 lg:left-1/2 lg:h-[min(85dvh,56rem)] lg:w-[min(42rem,calc(100vw-4rem))] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-3xl lg:shadow-2xl';
 export const PICKER_SCRIM = 'anim-fade-in fixed inset-0 z-50 hidden bg-scrim lg:block';
 
 /** Liste mit Detail daneben (L1) ab dieser Breite */

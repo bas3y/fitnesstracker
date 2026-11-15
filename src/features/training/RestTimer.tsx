@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { nextRestSpan, restShare, type RestSpan } from '../../domain/motion';
 import { PAGE_WIDTH } from '../../components/pageLayout';
 import { adjustRest, setRestEndsAt } from '../../db/workouts';
 import type { Workout } from '../../db/types';
@@ -44,6 +45,11 @@ export function RestTimerAlarm() {
 export function RestTimerBar({ workout }: { workout: Workout }) {
   const now = useNow(workout.restEndsAt !== null, 250);
   const remaining = restRemainingSeconds(workout.restEndsAt, now);
+  // Gesamtlänge für die ablaufende Linie (22d, T2): neu bei neuer Pause, ±15 s ändern sie
+  const [span, setSpan] = useState<RestSpan | null>(null);
+  if ((span?.endsAt ?? null) !== workout.restEndsAt) {
+    setSpan(nextRestSpan(span, workout.restEndsAt, now.getTime()));
+  }
   if (remaining === null || !workout.restEndsAt) return null;
   if (now.getTime() - Date.parse(workout.restEndsAt) > EXPIRED_VISIBLE_MS) return null;
 
@@ -95,6 +101,14 @@ export function RestTimerBar({ workout }: { workout: Workout }) {
           {done ? 'OK' : 'Überspringen'}
         </button>
       </div>
+      {!done && (
+        <span
+          aria-hidden="true"
+          data-testid="rest-progress"
+          className="absolute inset-x-0 bottom-0 h-1 origin-left bg-mark motion-safe:transition-[scale] motion-safe:duration-250 motion-safe:ease-linear"
+          style={{ scale: `${restShare(span, remaining)} 1` }}
+        />
+      )}
     </div>
   );
 }

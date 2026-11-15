@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-
-const reducedMotion = () =>
-  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+import { motionAllowed } from './motion';
 
 /**
  * Blendet den Seiteninhalt beim Wechsel der Seite kurz ein. Nur Deckkraft (kein `transform`),
@@ -19,7 +17,7 @@ export function usePageTransition() {
       first.current = false;
       return;
     }
-    if (reducedMotion()) return;
+    if (!motionAllowed()) return;
     ref.current?.animate?.([{ opacity: 0 }, { opacity: 1 }], {
       duration: 180,
       easing: 'ease-out',

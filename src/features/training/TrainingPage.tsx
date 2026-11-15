@@ -212,6 +212,7 @@ function TileEditor({ tiles }: { tiles: EnduranceSport[] }) {
       {tiles.length === 0 && <p className={`mb-3 ${MUTED}`}>Alle Aktivitäten sind ausgeblendet.</p>}
       <SortableList
         label="Kacheln"
+        wiggle
         items={tiles.map((sport) => ({ id: sport, name: ENDURANCE_SPORT_LABELS[sport].name }))}
         onReorder={(ids) => updateSettings({ trainingTiles: ids as EnduranceSport[] })}
         renderItem={({ id }, { handle }) => (

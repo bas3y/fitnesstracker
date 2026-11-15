@@ -22,6 +22,8 @@ import {
 import { kgToDisplay } from '../../domain/units';
 import { goalEditPath } from './paths';
 import { Icon } from '../../components/icons';
+import { useJustReached } from '../../components/motion';
+import { GoalSparks } from '../daily/GoalBar';
 
 const HINT = 'text-sm text-muted';
 // Farben getrennt halten: zwei bg-/text-Klassen gleichzeitig entscheidet die CSS-Reihenfolge, nicht die Angabe
@@ -57,23 +59,28 @@ export function GoalBar({
   const fill =
     color ??
     (status === 'achieved' ? 'bg-primary' : status === 'missed' ? 'bg-faint' : 'bg-primary');
+  // Gerade erreicht: Aufleuchten + Funken (22d, F2)
+  const celebrating = useJustReached(status === 'achieved');
   return (
-    <div
-      role="progressbar"
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={percent}
-      className="relative h-3 overflow-hidden rounded-full bg-subtle-strong"
-    >
-      <div className={`bar-fill h-full rounded-full ${fill}`} style={{ width: `${percent}%` }} />
-      {expectedPercent !== null && (
-        <div
-          aria-hidden="true"
-          className="absolute inset-y-0 w-0.5 bg-scrim"
-          style={{ left: `${Math.min(100, expectedPercent)}%` }}
-        />
-      )}
+    <div className="relative">
+      <div
+        role="progressbar"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        className="relative h-3 overflow-hidden rounded-full bg-subtle-strong"
+      >
+        <div className={`bar-fill h-full rounded-full ${fill}`} style={{ width: `${percent}%` }} />
+        {expectedPercent !== null && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-y-0 w-0.5 bg-scrim"
+            style={{ left: `${Math.min(100, expectedPercent)}%` }}
+          />
+        )}
+      </div>
+      {celebrating && <GoalSparks />}
     </div>
   );
 }

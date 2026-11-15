@@ -4,7 +4,8 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Card, Page } from '../../components/Page';
 import { clearDoneTodos } from '../../db/todos';
 import type { Todo } from '../../db/types';
-import { todayTodos, upcomingTodos } from '../../domain/todos';
+import { useLeavingIds } from '../../components/motion';
+import { todayTodos, upcomingTodos, withOpen } from '../../domain/todos';
 import { TodoAddForm, TodoRow } from './TodoParts';
 import { useDayBackTo, useDayParam } from './useDaily';
 import { useTodos } from './useTodos';
@@ -19,16 +20,27 @@ export function TodoPage() {
   const backTo = useDayBackTo(date, today);
   const [confirmClear, setConfirmClear] = useState(false);
 
-  const open = todos ? todayTodos(todos, today) : [];
+  const realOpen = todos ? todayTodos(todos, today) : [];
+  const leaving = useLeavingIds(
+    realOpen.map((todo) => todo.id),
+    today,
+  );
+  // Gerade abgehakte gleiten erst aus „Heute“, dann erscheinen sie unter „Erledigt“
+  const open = todos && leaving.size > 0 ? todayTodos(withOpen(todos, leaving), today) : realOpen;
   const upcoming = todos ? upcomingTodos(todos, today) : [];
   const done = (todos ?? [])
-    .filter((todo) => todo.completedAt !== null)
+    .filter((todo) => todo.completedAt !== null && !leaving.has(todo.id))
     .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!));
 
   const list = (label: string, items: Todo[]) => (
     <ul aria-label={label}>
       {items.map((todo) => (
-        <TodoRow key={todo.id} todo={todo} today={today} />
+        <TodoRow
+          key={todo.id}
+          todo={todos?.find((item) => item.id === todo.id) ?? todo}
+          today={today}
+          leaving={leaving.has(todo.id)}
+        />
       ))}
     </ul>
   );

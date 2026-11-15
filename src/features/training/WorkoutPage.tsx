@@ -149,7 +149,11 @@ function FinishCard({ detail, onCancel }: { detail: WorkoutDetail; onCancel: () 
                 className={primaryButton}
                 onClick={async () => {
                   await finishWorkout(detail.workout.id, notes);
-                  navigate(`${HISTORY_PATH}/${detail.workout.id}`, { replace: true, state });
+                  // `finished`: Zusammenfassung baut sich Karte für Karte auf (22d, T4)
+                  navigate(`${HISTORY_PATH}/${detail.workout.id}`, {
+                    replace: true,
+                    state: { ...(state as object | null), finished: true },
+                  });
                 }}
               >
                 Speichern

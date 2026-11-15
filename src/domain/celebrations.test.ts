@@ -48,6 +48,8 @@ describe('celebrate', () => {
     expect(result.toast).toEqual({
       title: 'Geschafft!',
       lines: ['Ziel g', 'Krafttraining: 10 Krafttrainings'],
+      // Mit Abzeichen: Medaille statt Pokal (22d)
+      variant: 'badge',
     });
     expect(result.next).toEqual({ badges: { workouts: 2 }, goals: { g: 'once' } });
 

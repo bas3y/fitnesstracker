@@ -1,12 +1,11 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { CHECK_HINT, checkNameClass } from './checkStyles';
 import { CheckIcon, IconBadge, type IconName } from './icons';
+import { useChangedSinceMount } from './motion';
 
 export function StatusCircle({ done, warn = false }: { done: boolean; warn?: boolean }) {
-  // Nur nach dem Abhaken springen, nicht beim Öffnen der Seite
-  const [initial] = useState(done);
-  const [changed, setChanged] = useState(false);
-  if (!changed && done !== initial) setChanged(true);
+  // Nur nach dem Abhaken springen und den Haken zeichnen, nicht beim Öffnen der Seite
+  const changed = useChangedSinceMount(done);
   return (
     <span
       aria-hidden="true"
@@ -18,7 +17,7 @@ export function StatusCircle({ done, warn = false }: { done: boolean; warn?: boo
             : 'border-line-strong'
       }`}
     >
-      {warn ? '!' : done && <CheckIcon className="h-5 w-5" />}
+      {warn ? '!' : done && <CheckIcon className={`h-5 w-5 ${changed ? 'anim-draw' : ''}`} />}
     </span>
   );
 }

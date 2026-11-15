@@ -51,12 +51,15 @@ export function BottomNav() {
             >
               {({ isActive }) => (
                 <>
-                  <span
-                    className={`flex h-7 w-13 items-center justify-center rounded-full transition-colors short:h-8 short:w-14 xl:h-auto xl:w-auto ${
-                      isActive ? 'bg-primary-soft' : ''
-                    }`}
-                  >
-                    <Icon className="h-6 w-6" strokeWidth={isActive ? 2.2 : 1.8} />
+                  <span className="relative flex h-7 w-13 items-center justify-center short:h-8 short:w-14 xl:h-auto xl:w-auto">
+                    {/* Pille wächst beim Wechsel auf (22d, N1); ab `xl` ist die ganze Zeile hinterlegt */}
+                    <span
+                      aria-hidden="true"
+                      className={`absolute inset-0 rounded-full bg-primary-soft motion-safe:transition-[scale,opacity] motion-safe:duration-250 motion-safe:ease-[cubic-bezier(0.3,1.3,0.5,1)] xl:hidden ${
+                        isActive ? 'scale-100 opacity-100' : 'scale-x-40 opacity-0'
+                      }`}
+                    />
+                    <Icon className="relative h-6 w-6" strokeWidth={isActive ? 2.2 : 1.8} />
                   </span>
                   <span className="max-w-full truncate short:sr-only">{label}</span>
                 </>

@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { IconBadge, type IconName } from './icons';
+import { CountUpText } from './CountUpText';
 import type { CardTone } from './Page';
 
 /** Raster der Kacheln: 2 je Zeile am Handy, ab `sm` 3, ab `lg` 4 (seit 22c) */
-export const TILE_GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4';
+export const TILE_GRID = 'anim-stagger grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4';
 
 /** Kachel im Raster `TILE_GRID` (Alltag, Training, Statistik); muss in einer `<ul>` stehen */
 export function Tile({
@@ -31,7 +32,7 @@ export function Tile({
       <Link
         to={to}
         state={state}
-        className={`flex min-h-32 min-w-0 flex-col gap-1 rounded-2xl bg-surface p-4 hover:brightness-[0.97] active:opacity-90 ${
+        className={`press flex min-h-32 min-w-0 flex-col gap-1 rounded-2xl bg-surface p-4 hover:brightness-[0.97] active:opacity-90 ${
           tone ? `tone-${tone}` : ''
         }`}
       >
@@ -39,7 +40,7 @@ export function Tile({
         <span className="font-semibold">{name}</span>
         {value && (
           <span className="text-2xl leading-tight font-bold tracking-tight tabular-nums">
-            {value}
+            <CountUpText text={value} />
           </span>
         )}
         <span className="flex min-w-0 flex-col gap-1">{children}</span>

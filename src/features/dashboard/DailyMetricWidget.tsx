@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { secondaryButton } from '../../components/buttons';
+import { CountUpText } from '../../components/CountUpText';
 import { DayPeek } from '../../components/DayPeek';
+import { useFloatUp } from '../../components/useFloatUp';
 import { Icon, type IconName } from '../../components/icons';
 import { Card, type CardTone } from '../../components/Page';
 import { addWater } from '../../db/daily';
@@ -98,7 +100,7 @@ export function DailyMetricWidget({
       </div>
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <span className="text-[1.75rem] leading-tight font-bold tracking-tight tabular-nums">
-          {shown}
+          <CountUpText text={shown} />
         </span>
         <span className="text-sm text-muted tabular-nums">
           {remainingHint(value ?? 0, goal, format)}
@@ -128,15 +130,20 @@ function DayActions({
   from: unknown;
   inPeek?: boolean;
 }) {
+  const { float, floats } = useFloatUp();
   const buttons = (
     <>
       {metric === 'water' && (
         <button
           type="button"
-          className={secondaryButton}
-          onClick={() => void addWater(date, QUICK_WATER_ML)}
+          className={`${secondaryButton} relative`}
+          onClick={() => {
+            float(`+${QUICK_WATER_ML} ml`);
+            void addWater(date, QUICK_WATER_ML);
+          }}
         >
           +{QUICK_WATER_ML} ml
+          {floats}
         </button>
       )}
       <Link to={withDate(BODY_PATH, date, today)} state={from} className={secondaryButton}>
@@ -177,6 +184,7 @@ function History({
         points={points}
         goal={goal}
         selection={{ selected: day, onSelect: setSelected }}
+        wave={metric === 'water'}
       />
       <p className="mt-2 text-sm text-muted">Ziel an {reached} von 7 Tagen erreicht</p>
       <DayPeek day={formatPeekDay(day, today)} value={peekValue(value, goal, format)}>

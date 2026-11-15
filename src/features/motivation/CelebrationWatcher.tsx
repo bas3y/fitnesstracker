@@ -25,7 +25,7 @@ function touchesRelevantTable(parts: ObservabilitySet): boolean {
 }
 
 /** Zeigt den Hinweis, sobald kein anderer (z. B. Rekord) mehr zu sehen ist */
-function showWhenFree(toast: { title: string; lines: string[] }) {
+function showWhenFree(toast: { title: string; lines: string[]; variant?: 'badge' }) {
   if (!getToast()) {
     showToast(toast);
     return;

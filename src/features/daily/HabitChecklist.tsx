@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
+import { Bump, ToggleChevron } from '../../components/Bump';
 import { CheckButton, StatusCircle } from '../../components/CheckButton';
+import { useLeavingIds } from '../../components/motion';
 import { CHECK_HINT as HINT, checkNameClass as nameClass } from '../../components/checkStyles';
 import { Card } from '../../components/Page';
 import {
@@ -108,10 +110,22 @@ function ChecklistBody({
   const tasks = items.filter(({ habit }) => habit.kind !== 'quit');
   const quits = items.filter(({ habit }) => habit.kind === 'quit');
   const isDone = ({ habit, entries }: HabitWithChecks) => isHabitDoneOn(habit, entries, date);
-  const open = tasks.filter((item) => !isDone(item));
   const done = tasks.filter(isDone);
+  // Gerade abgehakte gleiten erst hinaus, dann wandern sie zu „erledigt“ (22d, C2)
+  const leaving = useLeavingIds(
+    tasks.filter((item) => !isDone(item)).map(({ habit }) => habit.id),
+    `${title}:${date}`,
+  );
+  const open = tasks.filter((item) => !isDone(item) || leaving.has(item.habit.id));
+  const doneListed = done.filter(({ habit }) => !leaving.has(habit.id));
   const row = (item: HabitWithChecks) => (
-    <HabitRow key={item.habit.id} item={item} date={date} today={today} />
+    <HabitRow
+      key={item.habit.id}
+      item={item}
+      date={date}
+      today={today}
+      leaving={leaving.has(item.habit.id)}
+    />
   );
 
   if (limit !== undefined) {
@@ -152,7 +166,7 @@ function ChecklistBody({
         {open.map(row)}
         {quits.map(row)}
       </ul>
-      {done.length > 0 && (
+      {doneListed.length > 0 && (
         <>
           <button
             type="button"
@@ -160,10 +174,16 @@ function ChecklistBody({
             className="flex min-h-11 w-full items-center gap-2 text-left text-sm font-semibold text-muted"
             onClick={() => setShowDone(!showDone)}
           >
-            <Icon name={showDone ? 'chevronDown' : 'chevronRight'} className="h-4 w-4" />
-            {done.length} erledigt
+            <ToggleChevron open={showDone} />
+            <span>
+              <Bump value={doneListed.length}>{doneListed.length}</Bump> erledigt
+            </span>
           </button>
-          {showDone && <ul aria-label={`${title}: erledigt`}>{done.map(row)}</ul>}
+          {showDone && (
+            <ul aria-label={`${title}: erledigt`} className="anim-rise">
+              {doneListed.map(row)}
+            </ul>
+          )}
         </>
       )}
     </>
@@ -183,17 +203,28 @@ function streakHint({ habit, entries, dates }: HabitWithChecks, date: DayKey, to
   return parts.join(' · ') || null;
 }
 
-function HabitRow({ item, date, today }: { item: HabitWithChecks; date: DayKey; today: DayKey }) {
+function HabitRow({
+  item,
+  date,
+  today,
+  leaving = false,
+}: {
+  item: HabitWithChecks;
+  date: DayKey;
+  today: DayKey;
+  leaving?: boolean;
+}) {
   const { habit, entries } = item;
   const streak = streakHint(item, date, today);
   const amount = dayAmount(entries, date);
   const done = isHabitDoneOn(habit, entries, date);
   const details = <DetailsLink id={habit.id} name={habit.name} />;
+  const rowClass = `flex items-center ${leaving ? 'anim-leave' : ''}`;
 
   switch (habit.kind) {
     case 'check':
       return (
-        <li className="flex items-center">
+        <li className={rowClass}>
           <CheckButton
             label={habit.name}
             icon={habit.icon}
@@ -206,7 +237,7 @@ function HabitRow({ item, date, today }: { item: HabitWithChecks; date: DayKey; 
       );
     case 'count':
       return (
-        <li className="flex items-center">
+        <li className={rowClass}>
           {isSingleTap(habit) ? (
             <CheckButton
               label={habit.name}
@@ -259,7 +290,9 @@ function HabitRow({ item, date, today }: { item: HabitWithChecks; date: DayKey; 
       );
     }
     case 'items':
-      return <ItemsRow item={item} date={date} streak={streak} details={details} />;
+      return (
+        <ItemsRow item={item} date={date} streak={streak} details={details} leaving={leaving} />
+      );
   }
 }
 
@@ -268,11 +301,13 @@ function ItemsRow({
   date,
   streak,
   details,
+  leaving,
 }: {
   item: HabitWithChecks;
   date: DayKey;
   streak: string | null;
   details: ReactNode;
+  leaving: boolean;
 }) {
   const { habit, entries } = item;
   const doneCount = itemsDone(habit, entries, date);
@@ -280,7 +315,7 @@ function ItemsRow({
   const [open, setOpen] = useState(!done);
 
   return (
-    <li>
+    <li className={leaving ? 'anim-leave' : undefined}>
       <div className="flex items-center">
         <button
           type="button"

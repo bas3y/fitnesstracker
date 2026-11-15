@@ -10,6 +10,8 @@ const LEVEL_CLASSES = [
 ];
 const WEEKDAY_LABELS = ['Mo', '', 'Mi', '', 'Fr', '', ''];
 const CELL = 'h-4 w-4 shrink-0';
+/** Etwa so viele Wochen sind am Handy zu sehen (Start rechts bei heute) */
+const VISIBLE_WEEKS = 20;
 
 /**
  * Jahresansicht wie bei GitHub: scrollbar, damit die Felder antippbar bleiben, Start bei heute.
@@ -54,8 +56,14 @@ export function Heatmap({
         <div className="flex w-max gap-[3px]">
           {weeks.map((days, weekIndex) => {
             const newMonth = days.find((day) => day?.isFirstOfMonth);
+            // Wochenweise von links einblenden (22d, D2); nur die sichtbaren letzten Wochen gestaffelt
+            const delay = Math.max(0, weekIndex - (weeks.length - VISIBLE_WEEKS)) * 25;
             return (
-              <div key={weekIndex} className="flex w-4 shrink-0 flex-col gap-[3px]">
+              <div
+                key={weekIndex}
+                className="anim-fade-in flex w-4 shrink-0 flex-col gap-[3px]"
+                style={{ animationDelay: `${delay}ms` }}
+              >
                 <span
                   aria-hidden="true"
                   className="h-4 text-[10px] leading-4 whitespace-nowrap text-muted"

@@ -23,11 +23,15 @@ export function SleepPhasesBar({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex h-3 overflow-hidden rounded-full bg-subtle-strong" aria-hidden>
-        {SLEEP_PHASES.map((phase) => (
+        {/* Phasen bauen sich nacheinander von links auf (22d, S1) */}
+        {SLEEP_PHASES.map((phase, index) => (
           <div
             key={phase}
-            className={COLORS[phase]}
-            style={{ width: `${(phases[phase] / total) * 100}%` }}
+            className={`anim-grow-x ${COLORS[phase]}`}
+            style={{
+              width: `${(phases[phase] / total) * 100}%`,
+              animationDelay: `${index * 180}ms`,
+            }}
           />
         ))}
       </div>

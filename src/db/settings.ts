@@ -62,6 +62,7 @@ export const DEFAULT_SETTINGS: NewEntity<Settings> = {
   trainingWeekTarget: TRAINING_WEEK_TARGET_DEFAULT,
   celebrations: null,
   dayHintDismissed: null,
+  animations: true,
 };
 
 export function getSettings(): Promise<Settings | undefined> {

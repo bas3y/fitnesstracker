@@ -26,12 +26,13 @@ import { JOURNAL_PATH, PHOTOS_PATH, READING_PATH, TIMER_PATH } from '../self/pat
 import { SUPPLEMENTS_PATH } from '../supplements/paths';
 import { useActiveWorkout } from '../training/useWorkouts';
 import { Icon, type IconName } from '../../components/icons';
+import { useFloatUp } from '../../components/useFloatUp';
 
 const WATER_ML = 250;
 const PROTEIN_G = 20;
 const FROM_DASHBOARD: BackState = { from: '/' };
 const TILE =
-  'flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl bg-subtle px-2 py-2 text-center text-sm font-semibold active:bg-subtle-strong';
+  'press relative flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl bg-subtle px-2 py-2 text-center text-sm font-semibold active:bg-subtle-strong';
 
 type OpenDialog = 'weight' | 'steps' | 'todo' | 'endurance' | null;
 
@@ -41,6 +42,8 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
   const activeWorkout = useActiveWorkout();
   const log = useDailyLog(today);
   const water = log?.waterMl ?? 0;
+  const waterFloat = useFloatUp();
+  const proteinFloat = useFloatUp();
 
   const tile = (action: QuickAction, content?: { name: string; icon: IconName }) => {
     const { name, icon } = content ?? QUICK_ACTION_LABELS[action];
@@ -70,6 +73,7 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
             type="button"
             className={TILE}
             onClick={() => {
+              waterFloat.float(`+${WATER_ML} ml`);
               void addWater(today, WATER_ML);
               showToast({
                 variant: 'info',
@@ -81,6 +85,7 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
             }}
           >
             {tile(action)}
+            {waterFloat.floats}
           </button>
         );
       case 'protein':
@@ -89,6 +94,7 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
             type="button"
             className={TILE}
             onClick={async () => {
+              proteinFloat.float(`+${PROTEIN_G} g`);
               await addProtein(today, PROTEIN_G);
               const day = await loadNutritionDay(today);
               const total = dayNutrients(day.entries, day.quickProteinGrams).protein;
@@ -102,6 +108,7 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
             }}
           >
             {tile(action)}
+            {proteinFloat.floats}
           </button>
         );
       case 'measurements':

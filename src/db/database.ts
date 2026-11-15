@@ -618,6 +618,17 @@ export class AppDatabase extends Dexie {
             settings.dashboardWidgets = withDayHint(settings.dashboardWidgets ?? []);
           }),
       );
+    // Schalter „Animationen“ (Einstellungen → Darstellung), Standard an
+    this.version(37)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Settings, string>('settings')
+          .toCollection()
+          .modify((settings) => {
+            settings.animations ??= true;
+          }),
+      );
   }
 }
 

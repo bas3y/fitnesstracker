@@ -65,6 +65,8 @@ import {
   formatWorkoutDuration,
   workoutDurationSeconds,
 } from '../../domain/workout';
+import { CountUpText } from '../../components/CountUpText';
+import { GoalBar } from '../daily/GoalBar';
 import { HabitChecklist } from '../daily/HabitChecklist';
 import { EnduranceWidget } from '../endurance/EnduranceWidget';
 import { GoalsWidget } from '../goals/GoalsWidget';
@@ -377,7 +379,7 @@ function WidgetList({ data }: { data: WidgetData }) {
     );
   }
   return (
-    <div className={`mb-4 grid grid-flow-dense gap-3 ${WIDGET_GRID}`}>
+    <div className={`anim-stagger mb-4 grid grid-flow-dense gap-3 ${WIDGET_GRID}`}>
       {visible.map(({ id, size, content }) => (
         <div key={id} data-widget={id} className={`grid min-w-0 *:mb-0 ${WIDGET_SPAN[size]}`}>
           {content}
@@ -404,6 +406,7 @@ function WidgetEditor({ data }: { data: WidgetData }) {
       {/* Raster wie auf der Startseite: kleine Widgets stehen nebeneinander, auch beim Ziehen */}
       <SortableList
         label="Widgets"
+        wiggle
         grid={{
           columns: WIDGET_GRID,
           span: ({ id }) => WIDGET_SPAN[widgetSize(id as DashboardWidget, widgetSizes)],
@@ -630,7 +633,9 @@ function ProgressCard({
         {tiles.map(({ label, value }) => (
           <div key={label} className="flex flex-col-reverse">
             <dt className="text-sm text-muted">{label}</dt>
-            <dd className="text-xl font-bold tabular-nums">{value}</dd>
+            <dd className="text-xl font-bold tabular-nums">
+              <CountUpText text={value} />
+            </dd>
           </div>
         ))}
       </dl>
@@ -709,7 +714,7 @@ function WeekCard({
     <Card>
       <WidgetHeader title={label} aside={count} />
       <div className="mb-4">
-        <WeekBar value={week.count} goal={target} />
+        <GoalBar label="Wochenziel Trainings" value={week.count} goal={target} />
       </div>
       <WeekDots
         days={week.days}
@@ -751,22 +756,6 @@ function WeekCard({
   );
 }
 
-function WeekBar({ value, goal }: { value: number; goal: number }) {
-  const percent = Math.min(100, Math.round((value / Math.max(goal, 1)) * 100));
-  return (
-    <div
-      role="progressbar"
-      aria-label="Wochenziel Trainings"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={percent}
-      className="h-2 overflow-hidden rounded-full bg-subtle-strong"
-    >
-      <div className="bar-fill h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
-    </div>
-  );
-}
-
 function WeekDetails({
   sessions,
   endurance,
@@ -794,7 +783,9 @@ function WeekDetails({
         {tiles.map(({ label, value }) => (
           <div key={label} className="flex flex-col-reverse">
             <dt className="text-sm text-muted">{label}</dt>
-            <dd className="text-xl font-bold tabular-nums">{value}</dd>
+            <dd className="text-xl font-bold tabular-nums">
+              <CountUpText text={value} />
+            </dd>
           </div>
         ))}
       </dl>

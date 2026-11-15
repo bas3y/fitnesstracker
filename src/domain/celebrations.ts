@@ -9,8 +9,8 @@ export interface CelebratedGoal {
 }
 
 export interface CelebrationResult {
-  /** `null` = nichts zu melden */
-  toast: { title: string; lines: string[] } | null;
+  /** `null` = nichts zu melden; `badge` = mit neuem Abzeichen (Medaille statt Pokal) */
+  toast: { title: string; lines: string[]; variant?: 'badge' } | null;
   next: Celebrations;
   /** Muss gespeichert werden */
   changed: boolean;
@@ -81,5 +81,9 @@ export function celebrate(
           ? 'Neues Abzeichen!'
           : 'Neue Abzeichen!'
         : 'Geschafft!';
-  return { toast: { title, lines: shown }, next, changed };
+  const toast =
+    badgeLines.length > 0
+      ? { title, lines: shown, variant: 'badge' as const }
+      : { title, lines: shown };
+  return { toast, next, changed };
 }

@@ -55,6 +55,7 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
   const bodyWeightKg = settings?.bodyWeightKg ?? null;
   const records = useWorkoutRecords(workout.id);
   const { state } = useLocation();
+  const finished = (state as { finished?: boolean } | null)?.finished === true;
   const backTo = useBackTo(HISTORY_PATH);
   const [sharing, setSharing] = useState(false);
   const shareContent = useMemo(
@@ -84,74 +85,83 @@ function WorkoutSummary({ detail }: { detail: WorkoutDetail }) {
           </span>
         )}
       </p>
-      {workout.notes && (
-        <Card>
-          <p className="whitespace-pre-line">{workout.notes}</p>
-        </Card>
-      )}
-      {items.map(({ workoutExercise, exercise, sets }) => {
-        const format = {
-          unit,
-          isTimed: exercise?.isTimed ?? false,
-          isBodyweight: exercise?.equipment === 'bodyweight',
-        };
-        let working = 0;
-        const exerciseRecords = sets.flatMap((set) => records?.get(set.id) ?? []);
-        return (
-          <Card key={workoutExercise.id} title={exercise?.name ?? 'Unbekannte Übung'}>
-            <ol className="flex flex-col gap-1">
-              {sets.map((set) => (
-                <li key={set.id} className="flex items-center gap-3 tabular-nums">
-                  <span className="w-6 shrink-0 text-muted">{set.isWarmup ? 'A' : ++working}</span>
-                  <span>{formatSetSummary(set, format)}</span>
-                  {records?.has(set.id) && (
-                    <TrophyIcon
-                      role="img"
-                      aria-hidden={false}
-                      aria-label="Rekord"
-                      className="h-5 w-5 text-star"
-                    />
-                  )}
-                </li>
-              ))}
-            </ol>
-            {exerciseRecords.length > 0 && (
-              <ul
-                aria-label={`Rekorde ${exercise?.name ?? ''}`.trim()}
-                className="mt-3 flex flex-col gap-1 rounded-xl bg-warn-soft p-3 text-sm text-on-warn-soft"
-              >
-                {exerciseRecords.map((record) => {
-                  const { label, value } = formatRecord(record, format);
-                  return (
-                    <li key={`${record.type}-${record.load}`} className="flex gap-2">
-                      <TrophyIcon className="h-4 w-4 shrink-0 translate-y-0.5 text-star" />
-                      <span>
-                        {label}: <span className="font-semibold">{value}</span>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+      {/* Direkt nach „Workout beenden“ erscheinen die Karten nacheinander (22d, T4) */}
+      <div className={finished ? 'anim-stagger' : undefined}>
+        {workout.notes && (
+          <Card>
+            <p className="whitespace-pre-line">{workout.notes}</p>
           </Card>
-        );
-      })}
-      <Card>
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            className={secondaryButton}
-            disabled={records === undefined}
-            onClick={() => setSharing(true)}
-          >
-            Teilen-Bild
-          </button>
-          <Link to={`${HISTORY_PATH}/${workout.id}/edit`} state={state} className={secondaryButton}>
-            Bearbeiten
-          </Link>
-          <DeleteWorkoutButton id={workout.id} />
-        </div>
-      </Card>
+        )}
+        {items.map(({ workoutExercise, exercise, sets }) => {
+          const format = {
+            unit,
+            isTimed: exercise?.isTimed ?? false,
+            isBodyweight: exercise?.equipment === 'bodyweight',
+          };
+          let working = 0;
+          const exerciseRecords = sets.flatMap((set) => records?.get(set.id) ?? []);
+          return (
+            <Card key={workoutExercise.id} title={exercise?.name ?? 'Unbekannte Übung'}>
+              <ol className="flex flex-col gap-1">
+                {sets.map((set) => (
+                  <li key={set.id} className="flex items-center gap-3 tabular-nums">
+                    <span className="w-6 shrink-0 text-muted">
+                      {set.isWarmup ? 'A' : ++working}
+                    </span>
+                    <span>{formatSetSummary(set, format)}</span>
+                    {records?.has(set.id) && (
+                      <TrophyIcon
+                        role="img"
+                        aria-hidden={false}
+                        aria-label="Rekord"
+                        className="h-5 w-5 text-star"
+                      />
+                    )}
+                  </li>
+                ))}
+              </ol>
+              {exerciseRecords.length > 0 && (
+                <ul
+                  aria-label={`Rekorde ${exercise?.name ?? ''}`.trim()}
+                  className="mt-3 flex flex-col gap-1 rounded-xl bg-warn-soft p-3 text-sm text-on-warn-soft"
+                >
+                  {exerciseRecords.map((record) => {
+                    const { label, value } = formatRecord(record, format);
+                    return (
+                      <li key={`${record.type}-${record.load}`} className="flex gap-2">
+                        <TrophyIcon className="h-4 w-4 shrink-0 translate-y-0.5 text-star" />
+                        <span>
+                          {label}: <span className="font-semibold">{value}</span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Card>
+          );
+        })}
+        <Card>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              className={secondaryButton}
+              disabled={records === undefined}
+              onClick={() => setSharing(true)}
+            >
+              Teilen-Bild
+            </button>
+            <Link
+              to={`${HISTORY_PATH}/${workout.id}/edit`}
+              state={state}
+              className={secondaryButton}
+            >
+              Bearbeiten
+            </Link>
+            <DeleteWorkoutButton id={workout.id} />
+          </div>
+        </Card>
+      </div>
       <Link to={backTo} className={`${primaryButton} mb-4`}>
         Fertig
       </Link>

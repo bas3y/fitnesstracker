@@ -1142,7 +1142,23 @@ describe('AppDatabase-Migration', () => {
     });
     expect(settings).not.toHaveProperty('logoVariant');
     expect(await current.settings.get('other')).toMatchObject({ dashboardWidgets: ['dayHint'] });
-    expect(current.verno).toBe(36);
+    expect(current.verno).toBeGreaterThanOrEqual(36);
+    await current.delete();
+  });
+
+  it('switches animations on in v37', async () => {
+    const name = 'migration-v36-v37';
+    const v36 = new Dexie(name);
+    v36.version(36).stores({ settings: 'id, updatedAt' });
+    await v36.table('settings').add({ id: 'app-settings', palette: 'basey' });
+    v36.close();
+
+    const current = new AppDatabase(name);
+    expect(await current.settings.get('app-settings')).toMatchObject({
+      palette: 'basey',
+      animations: true,
+    });
+    expect(current.verno).toBe(37);
     await current.delete();
   });
 

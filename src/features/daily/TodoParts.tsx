@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { dangerButton, inputField, primaryButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
 import { CheckIcon } from '../../components/icons';
+import { useChangedSinceMount } from '../../components/motion';
 import { createTodo, deleteTodo, setTodoDone, updateTodo } from '../../db/todos';
 import { todoInputSchema, type TodoInput } from '../../db/schemas';
 import { TODO_PRIORITIES, type DayKey, type Todo, type TodoPriority } from '../../db/types';
@@ -148,14 +149,30 @@ export function TodoAddForm({
   );
 }
 
-export function TodoRow({ todo, today }: { todo: Todo; today: DayKey }) {
+/** So frisch angelegte Aufgaben rutschen in die Liste (22d, C3) */
+const FRESH_MS = 2000;
+
+export function TodoRow({
+  todo,
+  today,
+  leaving = false,
+}: {
+  todo: Todo;
+  today: DayKey;
+  /** Gerade abgehakt: gleitet aus der offenen Liste */
+  leaving?: boolean;
+}) {
   const [editing, setEditing] = useState(false);
+  const [fresh] = useState(() => Date.now() - Date.parse(todo.createdAt) < FRESH_MS);
   const done = todo.completedAt !== null;
+  const changed = useChangedSinceMount(done);
   const dateHint = done ? null : formatTodoDate(todo, today);
   const badge = PRIORITY_BADGE[todo.priority];
 
   return (
-    <li className="flex items-center gap-1">
+    <li
+      className={`flex items-center gap-1 ${leaving ? 'anim-leave' : fresh ? 'anim-slide-in' : ''}`}
+    >
       <button
         type="button"
         role="checkbox"
@@ -174,7 +191,7 @@ export function TodoRow({ todo, today }: { todo: Todo; today: DayKey }) {
                 : 'border-line-strong'
           }`}
         >
-          {done && <CheckIcon className="h-5 w-5" />}
+          {done && <CheckIcon className={`h-5 w-5 ${changed ? 'anim-draw' : ''}`} />}
         </span>
       </button>
       <button

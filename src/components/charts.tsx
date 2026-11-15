@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { motionAllowed } from './motion';
 import {
   Bar,
   BarChart,
@@ -21,6 +22,23 @@ const grid = { stroke: 'currentColor', strokeOpacity: 0.15, vertical: false };
 
 const shortDate = (time: number) =>
   new Date(time).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+
+const LINE_DRAW_MS = 900;
+const BAR_GROW_MS = 500;
+
+/**
+ * Animation nur beim ersten Anzeigen (22d, D1/D3): Linie zeichnet sich, Balken wachsen. Danach
+ * aus, damit Zeitraum- und Filterwechsel ruhig bleiben.
+ */
+function useFirstShow(durationMs: number): boolean {
+  const [animate, setAnimate] = useState(motionAllowed);
+  useEffect(() => {
+    if (!animate) return;
+    const timer = setTimeout(() => setAnimate(false), durationMs + 300);
+    return () => clearTimeout(timer);
+  }, [animate, durationMs]);
+  return animate;
+}
 
 function ChartTooltip({ title, value }: { title: string; value: string }) {
   return (
@@ -66,6 +84,7 @@ export function ProgressChart({
   /** Kleinere Werte oben (z. B. Pace) */
   reversed?: boolean;
 }) {
+  const animate = useFirstShow(LINE_DRAW_MS);
   const first = points[0]?.time ?? 0;
   const last = points.at(-1)?.time ?? 0;
   // Ein einzelner Punkt braucht eine Achse mit Breite
@@ -119,7 +138,9 @@ export function ProgressChart({
               />
             );
           }}
-          isAnimationActive={false}
+          isAnimationActive={animate}
+          animationDuration={LINE_DRAW_MS}
+          animationEasing="ease-out"
         />
       </LineChart>
     </ChartFrame>
@@ -145,6 +166,7 @@ export function SeriesChart({
   formatValue: (value: number) => string;
   color?: string;
 }) {
+  const animate = useFirstShow(LINE_DRAW_MS);
   return (
     <ChartFrame label={label}>
       <LineChart data={points} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
@@ -170,7 +192,9 @@ export function SeriesChart({
           stroke={color}
           strokeWidth={2}
           dot={false}
-          isAnimationActive={false}
+          isAnimationActive={animate}
+          animationDuration={LINE_DRAW_MS}
+          animationEasing="ease-out"
         />
       </LineChart>
     </ChartFrame>
@@ -191,6 +215,7 @@ export function WeeklyBarChart({
   bars: ChartBar[];
   formatValue: (value: number) => string;
 }) {
+  const animate = useFirstShow(BAR_GROW_MS);
   return (
     <ChartFrame label={label}>
       <BarChart data={bars} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
@@ -205,7 +230,14 @@ export function WeeklyBarChart({
             return <ChartTooltip title={bar.name} value={formatValue(bar.value)} />;
           }}
         />
-        <Bar dataKey="value" fill={LINE_COLOR} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+        <Bar
+          dataKey="value"
+          fill={LINE_COLOR}
+          radius={[3, 3, 0, 0]}
+          isAnimationActive={animate}
+          animationDuration={BAR_GROW_MS}
+          animationEasing="ease-out"
+        />
       </BarChart>
     </ChartFrame>
   );

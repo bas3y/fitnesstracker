@@ -44,7 +44,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 22 – Fotos zuverlässig & Alltag in der Statistik
 - [x] Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
 - [x] Schritt 22c – Desktop, Tablet & Querformat
-- [ ] Schritt 22d – Animationen für Kacheln & Inhalte
+- [x] Schritt 22d – Animationen für Kacheln & Inhalte
 - [ ] Schritt 22e – Texte aufräumen, Erklärungen hinter Info-Button
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 - [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
@@ -1471,6 +1471,27 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
 - **Regeln:** nur `transform`/`opacity` (flüssig auf älteren Handys), kurz (≤ 400 ms, Erfolge etwas länger), nie beim Tippen/Scrollen im Weg; `prefers-reduced-motion` schaltet alles ab, ggf. eigener Schalter in Einstellungen → Darstellung. E2E läuft weiter mit `reducedMotion: 'reduce'`, einzelne Tests mit Animation.
 
 **Notizen:**
+- Mit dem Nutzer abgestimmt (15.11.2026, Entwurf im Artifact „Basey 22d Animationen“, https://claude.ai/artifact/MJJJaJbt9qkmJaTHF6YJNr): **alle Vorschläge übernommen** – G1 gestaffeltes Einblenden, G2 Eindrücken, G3 Zahlen zählen, N1 Navigations-Pille wächst, F2 Ziel erreicht (Aufleuchten + Funken), W1 Wasser-Welle, Q1 Schnell-Eintrag schwebt hoch, S1 Schlafphasen bauen sich auf, P1 Tageswechsel blendet über, C1 Haken zeichnet sich, C2 Erledigt gleitet weg, C3 neues To-do rutscht rein, T1 Satzzeile leuchtet, T2 Pause als ablaufende **Linie** (statt Ring), T3 Pokal ploppt, T4 Zusammenfassung baut sich auf, M1 Flamme/Serienzahl, M2 Abzeichen dreht + glänzt, D1 Balken wachsen, D2 Heatmap wochenweise, D3 Linie zeichnet sich, **A1 Wackeln im Anpassen-Modus (trotz Empfehlung „optional“ gewünscht)**, A2 Kachel hebt sich beim Ziehen, O1 Aufklappen weich, O2 Auswahl gleitet am Handy von unten, E1 Schalter „Animationen“ in Darstellung. G4 (Seitenwechsel) und F1 (Balken) bleiben wie in 18f.
+- Gebaut:
+  - **Grundlage:** `motionAllowed()` (`src/components/motion.ts`) = System erlaubt Bewegung **und** Schalter an; alle JS-Animationen fragen nur das. Schalter **„Animationen“** in Einstellungen → Darstellung (`Settings.animations`, **Dexie v37**, Backup-Feld mit Standard an): `data-motion="off"` am `<html>`, gespiegelt in `localStorage.motion` und vom Script in `index.html` vor dem ersten Rendern gesetzt (gilt auch für Ladebildschirm und Seitenwechsel); `index.css` schaltet dann alle Animationen und Übergänge ab. Reine Logik in `src/domain/motion.ts` (Hochzählen deutscher Zahlen, wegrutschende Zeilen, Pausenlänge) mit Tests.
+  - **Allgemein:** G1 `anim-stagger` (Widget-Raster, alle `TILE_GRID`-Kacheln, Workout-Zusammenfassung), G2 `press` (Kacheln, kleine Widgets, Schnellzugriff, Haupt-/Zweitknöpfe), G3 `CountUpText` (Kachel- und Widget-Werte, „Heute“-Karte, Trainingsfortschritt, Serien), N1 Pille der Navigation wächst federnd auf.
+  - **Fortschritt/Alltag:** F2 `GoalSparks` in `GoalBar` (Alltag, Widgets, Gewohnheiten, Supplements, Wochenziel – der eigene `WeekBar` ist jetzt `GoalBar`) und im Ziel-Balken (`GoalCard`), nur beim Erreichen, nicht beim Öffnen. W1 Wasserbalken im großen Widget wächst vom alten Stand federnd nach, oben läuft kurz eine Welle. Q1 `useFloatUp`/`QuickAddButton`: „+250 ml“, „+20 g“ schweben auf (Schnellzugriff, Wasser-Widget, „Heute“-Karte, Körper & Befinden, Protein). S1 Schlafphasen nacheinander. P1 `DayPeek` blendet beim Tageswechsel über (Web Animations, keine neu gemountete Live-Region).
+  - **Listen:** C1 Haken zeichnet sich (`StatusCircle`, To-dos, Sätze). C2 `useLeavingIds`: abgehakte Gewohnheiten/To-dos gleiten erst aus der offenen Liste (0,34 s), dann ploppt die Zahl bei „erledigt“ (`Bump`); Auf/Zu-Pfeil dreht (`ToggleChevron`), Liste blendet ein. C3 neue To-dos (jünger als 2 s) rutschen herein.
+  - **Training:** T1 Satzzeile leuchtet nach dem Abhaken. T2 ablaufende Linie unten in der Pausen-Leiste (Länge über `nextRestSpan`, ±15 s ändern sie, auch ohne Animation sichtbar). T3 Pokal im Rekord-Hinweis ploppt. T4 nach „Speichern“ erscheinen die Karten der Zusammenfassung nacheinander (`state.finished`).
+  - **Motivation:** M1 Flamme flackert und Serienzahl zählt, wenn die Serie wächst. M2 Erfolgs-Hinweis mit Abzeichen zeigt eine Medaille, die sich hereindreht und glänzt (`ToastMessage.variant: 'badge'`, gesetzt von `celebrate`).
+  - **Diagramme:** D1 `MiniBars` wachsen gestaffelt, Recharts-Balken wachsen; D3 Linien zeichnen sich – Recharts nur beim ersten Anzeigen (`useFirstShow`), danach aus. D2 Heatmap blendet die sichtbaren Wochen von links ein.
+  - **Bedienung:** A1 Wackeln im Anpassen-Modus (Startseite, Trainings-Kacheln; `SortableList`-Prop `wiggle`; steht still unter Zeiger/Finger und während gezogen wird). A2 gezogene Kachel hebt sich (3 %). O1 `Details` mit drehendem Pfeil + einblendendem Inhalt. O2 Übungs-/Lebensmittelauswahl gleitet am Handy von unten herein, ab `lg` springt sie mittig auf.
+  - Tests: `motion.test.ts`, `todos.test.ts` (`withOpen`), Migration v36→v37, Backup (Schalter), `celebrations`/`motivation` (Abzeichen-Hinweis). E2E `motion.spec.ts` mit Bewegung: Widgets gestaffelt, Wackeln im Anpassen-Modus, „+250 ml“ schwebt + Welle, To-do rutscht rein und gleitet in „Erledigt“, Schalter aus (sofort + nach Neuladen vor dem ersten Rendern, keine Animation mehr), Satz leuchtet, Pausen-Linie wird kürzer und +15 s verlängert, Zusammenfassung gestaffelt. 984 Unit-Tests, 163 E2E grün (ganze Suite). Hauptbundle ~378 KB (vorher ~359 seit 22b/22c).
+- Abweichungen:
+  - W1: Auf der Seite „Körper & Befinden“ gibt es kein Glas (wäre ein neues Element); dort füllt sich wie bisher der Balken, dazu schwebt der Betrag auf. Die Welle läuft im Wasserbalken des großen Widgets.
+  - M2: Ein neues Abzeichen dreht sich im Erfolgs-Hinweis; auf der Erfolge-Seite nicht (dafür müsste „schon gesehen“ gespeichert werden).
+  - T4: Die Zusammenfassung hat keine Kennzahl-Kacheln, gestaffelt erscheinen die Übungskarten.
+  - F2 gilt für alle Balken mit Ziel (`GoalBar`), nicht für Abzeichen-Fortschritt und Statistik-Balken.
+  - Statistik-Kacheln: keine eigenen Kacheln vorhanden, gestaffelt sind nur die `TILE_GRID`-Raster.
+  - Wackelnde Kacheln sind für Playwright nie „stabil“ → im Test `click({ force: true })`; Wackeln pausiert unter Zeiger/Fokus.
+- Offene Punkte:
+  - **Handytest:** Flüssigkeit auf älteren Handys (Startseite mit vielen Widgets, Wackeln im Anpassen-Modus), Schalter „Animationen“ aus/an, „Bewegung reduzieren“ in iOS/Android, Welle im Wasserbalken, Pausen-Linie im Training, Auswahl gleitet von unten. Vor dem nächsten Push an ein Backup erinnern (DB-Version 36 → 37).
+  - Ideen: Erfolge-Seite markiert neu erreichte Abzeichen (gesehen-Stand speichern); Ring-Variante für den Pausen-Timer, falls er einmal groß angezeigt wird; „Alle anzeigen“ in der Statistik ebenfalls weich aufklappen.
 
 ### Schritt 22e – Texte aufräumen, Erklärungen hinter Info-Button
 **Ziel:** Weniger Text auf allen Seiten, damit alles übersichtlicher wird (Nutzerwunsch 14.11.2026): „Alle Texte, die unnötig sind, wegmachen; wenn eine Erklärung nötig ist, einen Info-Button mit Popup.“

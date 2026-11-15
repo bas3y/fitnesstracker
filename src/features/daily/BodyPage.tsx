@@ -1,6 +1,6 @@
 import { useFromHere } from '../../components/backNavigation';
-import { secondaryButton } from '../../components/buttons';
 import { Card, LinkRow, Page } from '../../components/Page';
+import { QuickAddButton } from '../../components/QuickAddButton';
 import { Stepper } from '../../components/Stepper';
 import { addWater, updateDailyLog } from '../../db/daily';
 import {
@@ -98,14 +98,7 @@ function DayForm({
           <GoalBar label="Wasserziel" value={water} goal={settings.waterGoalMl} />
           <div className="flex gap-2">
             {[WATER_STEP_ML, WATER_BOTTLE_ML].map((ml) => (
-              <button
-                key={ml}
-                type="button"
-                className={secondaryButton}
-                onClick={() => void addWater(date, ml)}
-              >
-                +{ml} ml
-              </button>
+              <QuickAddButton key={ml} text={`+${ml} ml`} onAdd={() => void addWater(date, ml)} />
             ))}
           </div>
           <Stepper

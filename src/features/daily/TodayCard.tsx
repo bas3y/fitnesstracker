@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { secondaryButton } from '../../components/buttons';
+import { CountUpText } from '../../components/CountUpText';
 import { Card } from '../../components/Page';
+import { QuickAddButton } from '../../components/QuickAddButton';
 import { addWater } from '../../db/daily';
 import type { Settings } from '../../db/types';
 import { dayKey, formatDailyMetric, formatSleep } from '../../domain/daily';
@@ -51,20 +53,19 @@ export function TodayCard({ settings, now }: { settings: Settings; now: Date }) 
           <div key={label}>
             <dt className="text-sm text-muted">{label}</dt>
             <dd>
-              <span className="block text-xl font-bold tabular-nums">{value}</span>
+              <span className="block text-xl font-bold tabular-nums">
+                <CountUpText text={value} />
+              </span>
               {bar && <GoalBar label={`Ziel ${label}`} value={bar.value} goal={bar.goal} />}
             </dd>
           </div>
         ))}
       </dl>
       <div className="flex gap-2">
-        <button
-          type="button"
-          className={secondaryButton}
-          onClick={() => void addWater(today, QUICK_WATER_ML)}
-        >
-          +{QUICK_WATER_ML} ml
-        </button>
+        <QuickAddButton
+          text={`+${QUICK_WATER_ML} ml`}
+          onAdd={() => void addWater(today, QUICK_WATER_ML)}
+        />
         <Link to={BODY_PATH} state={from} className={secondaryButton}>
           Eintragen
         </Link>

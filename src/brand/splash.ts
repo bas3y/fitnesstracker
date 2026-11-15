@@ -5,7 +5,9 @@
 export const SPLASH_ANIMATION_MS = 1900;
 const FADE_MS = 400;
 
+// Wie `motionAllowed()` (src/components/motion.ts): System oder Schalter „Animationen“ aus
 const reducedMotion = () =>
+  document.documentElement.dataset.motion === 'off' ||
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
 let hiding = false;

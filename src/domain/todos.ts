@@ -35,6 +35,11 @@ export function upcomingTodos<T extends TodoFields>(todos: readonly T[], today: 
     .sort((a, b) => a.date.localeCompare(b.date) || byPriority(a, b));
 }
 
+/** Gerade abgehakte wie offene einsortieren (bleiben beim Hinausgleiten an ihrem Platz, 22d) */
+export function withOpen<T extends TodoFields>(todos: readonly T[], ids: ReadonlySet<string>): T[] {
+  return todos.map((todo) => (ids.has(todo.id) ? { ...todo, completedAt: null } : todo));
+}
+
 /** Heute erledigte Aufgaben, zuletzt erledigte zuerst */
 export function doneOn<T extends TodoFields>(todos: readonly T[], day: DayKey): T[] {
   return todos

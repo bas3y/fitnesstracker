@@ -12,7 +12,9 @@ import {
 import { formatGoalDate } from '../../domain/goals';
 import { formatStreak } from '../../domain/habits';
 import type { StreakItem } from '../../domain/streaks';
+import { CountUpText } from '../../components/CountUpText';
 import { Icon } from '../../components/icons';
+import { useChangedSinceMount } from '../../components/motion';
 
 const HINT = 'text-sm text-muted';
 
@@ -70,7 +72,9 @@ export function StreakRow({
   trainingWeekTarget: number;
   compact?: boolean;
 }) {
-  const [count, unit] = formatStreak(item.current, item.unit).split(' ');
+  const [count = '', unit] = formatStreak(item.current, item.unit).split(' ');
+  // Serie gewachsen: Flamme flackert einmal, Zahl zählt hoch (22d, M1)
+  const grew = useChangedSinceMount(item.current);
   return (
     <li className="flex min-h-14 items-center gap-3 py-2">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-on-primary-soft">
@@ -84,8 +88,10 @@ export function StreakRow({
       <div className={`shrink-0 text-right ${item.current > 0 ? '' : 'text-faint'}`}>
         <p className="text-xl leading-tight font-bold tabular-nums">
           <span className="inline-flex items-center gap-1">
-            {item.todayDone && <Icon name="flame" className="h-5 w-5 text-mark" />}
-            {count}
+            {item.todayDone && (
+              <Icon name="flame" className={`h-5 w-5 text-mark ${grew ? 'anim-flicker' : ''}`} />
+            )}
+            <CountUpText text={count} />
           </span>
         </p>
         <p className="text-xs text-muted">{unit}</p>

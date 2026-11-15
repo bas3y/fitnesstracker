@@ -919,6 +919,20 @@ describe('Timer und Fortschrittsfotos', () => {
     });
   });
 
+  it('übernimmt den Schalter „Animationen“, ältere Sicherungen haben sie an', async () => {
+    await updateSettings({ animations: false });
+    const current = parseBackup(await validBackup());
+    if (!current.ok) throw new Error(current.error);
+    expect(current.backup.tables.settings[0]).toMatchObject({ animations: false });
+
+    const data = await validBackup();
+    data.dbVersion = 36;
+    delete data.tables.settings[0].animations;
+    const old = parseBackup(data);
+    if (!old.ok) throw new Error(old.error);
+    expect(old.backup.tables.settings[0]).toMatchObject({ animations: true });
+  });
+
   it('ersetzt Emojis aus Sicherungen bis DB-Version 29 durch Symbole', async () => {
     const habit = await createHabit({ ...EMPTY_HABIT_INPUT, name: 'Lesen', icon: 'book' });
     const goal = await createGoal({

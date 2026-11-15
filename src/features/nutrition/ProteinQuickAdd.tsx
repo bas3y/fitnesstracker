@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { secondaryButton } from '../../components/buttons';
+import { QuickAddButton } from '../../components/QuickAddButton';
 import { Stepper } from '../../components/Stepper';
 import { addProtein, updateDailyLog } from '../../db/daily';
 import { MAX_QUICK_PROTEIN_G } from '../../db/schemas';
@@ -28,18 +28,15 @@ export function ProteinQuickAdd({
     <div className="flex flex-col gap-3">
       <div role="group" aria-label="Protein hinzufügen" className="flex gap-2">
         {PROTEIN_STEPS_G.map((step) => (
-          <button
+          <QuickAddButton
             key={step}
-            type="button"
-            aria-label={`+${step} g Protein`}
-            className={secondaryButton}
-            onClick={() => {
+            text={`+${step} g`}
+            label={`+${step} g Protein`}
+            onAdd={() => {
               setLast(step);
               void addProtein(date, step);
             }}
-          >
-            +{step} g
-          </button>
+          />
         ))}
       </div>
       {last !== null && (

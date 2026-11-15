@@ -11,6 +11,7 @@ import { ActiveWorkoutBanner } from '../features/training/ActiveWorkoutBanner';
 import { RestTimerAlarm } from '../features/training/RestTimer';
 import { BottomNav } from './BottomNav';
 import { ErrorBoundary } from './ErrorBoundary';
+import { useApplyMotion } from './motion';
 import { PageArtwork } from './PageArtwork';
 import { SCROLL_ROOT_ATTRIBUTE } from './scrollRoot';
 import { usePageTransition } from './usePageTransition';
@@ -33,6 +34,7 @@ const scrollRootProps = { [SCROLL_ROOT_ATTRIBUTE]: '' };
 export function Layout() {
   const settings = useSettings();
   useApplyTheme(settings?.theme, settings?.palette);
+  useApplyMotion(settings?.animations);
 
   useEffect(() => {
     void ensureSettings();

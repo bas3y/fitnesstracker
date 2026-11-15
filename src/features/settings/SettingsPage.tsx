@@ -278,6 +278,11 @@ function AppearanceCard({ settings }: { settings: Settings }) {
           value={settings.palette}
           onChange={(palette) => void updateSettings({ palette })}
         />
+        <Switch
+          label="Animationen"
+          checked={settings.animations}
+          onChange={(animations) => void updateSettings({ animations })}
+        />
       </div>
     </Card>
   );

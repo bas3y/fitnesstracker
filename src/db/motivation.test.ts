@@ -82,6 +82,7 @@ describe('checkCelebrations', () => {
     expect(await checkCelebrations(TODAY)).toEqual({
       title: 'Geschafft!',
       lines: ['Führerschein', 'Ziele: Erstes Ziel erreicht'],
+      variant: 'badge',
     });
     expect(await checkCelebrations(TODAY)).toBeNull();
 

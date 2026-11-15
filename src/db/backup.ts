@@ -150,6 +150,8 @@ const settingsSchema = baseEntitySchema.extend({
   widgetSizes: z.partialRecord(z.enum(DASHBOARD_WIDGETS), z.enum(WIDGET_SIZES)).default({}),
   // `logoVariant` (DB-Version 32–35) fällt beim Einlesen weg; seit DB-Version 36:
   dayHintDismissed: z.string().nullable().default(null),
+  // Seit DB-Version 37
+  animations: z.boolean().default(true),
 });
 
 const catalogEntryFields = {

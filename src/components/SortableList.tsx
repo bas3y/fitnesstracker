@@ -73,7 +73,10 @@ export function SortableList<T extends SortableItem>({
   onReorder,
   renderItem,
   grid: gridLayout,
+  wiggle = false,
 }: {
+  /** Anpassen-Modus: Einträge wackeln leicht, solange nichts gezogen wird (22d, A1) */
+  wiggle?: boolean;
   label: string;
   items: T[];
   /** Bekommt die neue Reihenfolge; `items` kommen danach aktualisiert zurück */
@@ -263,7 +266,8 @@ export function SortableList<T extends SortableItem>({
             className={
               [
                 gridLayout ? `min-w-0 ${gridLayout.span(item)}` : '',
-                draggingId === id ? 'relative z-10 rounded-2xl shadow-lg' : '',
+                draggingId === id ? 'anim-lift relative z-10 rounded-2xl shadow-lg' : '',
+                wiggle && draggingId === null ? 'anim-wiggle' : '',
               ]
                 .filter(Boolean)
                 .join(' ') || undefined

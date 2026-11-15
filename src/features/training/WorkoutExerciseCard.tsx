@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { dangerButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
 import { CheckIcon, TrophyIcon } from '../../components/icons';
+import { useChangedSinceMount } from '../../components/motion';
 import { Stepper } from '../../components/Stepper';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { showToast } from '../../components/toastStore';
@@ -396,11 +397,13 @@ function SetRow({
   onComplete: () => Promise<void>;
 }) {
   const done = set.completedAt !== null;
+  // Nach dem Abhaken: Zeile leuchtet kurz, Haken zeichnet sich (22d, T1)
+  const justDone = useChangedSinceMount(done) && done && mode === 'live';
   return (
     <li
       className={`rounded-xl border ${
         expanded ? 'border-primary' : 'border-line'
-      } ${done && mode === 'live' ? 'bg-primary-soft' : ''}`}
+      } ${done && mode === 'live' ? 'bg-primary-soft' : ''} ${justDone ? 'anim-flash' : ''}`}
     >
       <div className="flex items-center">
         <button
@@ -431,7 +434,7 @@ function SetRow({
             }`}
             onClick={() => void (done ? uncompleteSet(set.id) : onComplete())}
           >
-            <CheckIcon className="h-6 w-6" />
+            <CheckIcon className={`h-6 w-6 ${justDone ? 'anim-draw' : ''}`} />
           </button>
         )}
       </div>

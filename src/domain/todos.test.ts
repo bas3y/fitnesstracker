@@ -5,6 +5,7 @@ import {
   formatTodoDate,
   todayTodos,
   upcomingTodos,
+  withOpen,
   type TodoFields,
 } from './todos';
 
@@ -32,6 +33,11 @@ describe('To-dos', () => {
 
   it('heute: offene bis heute, überfällige wandern mit, nach Priorität', () => {
     expect(todayTodos(todos, TODAY).map(({ id }) => id)).toEqual(['wichtig', 'heute', 'alt']);
+  });
+
+  it('gerade abgehakte bleiben beim Hinausgleiten an ihrem Platz', () => {
+    const ids = todayTodos(withOpen(todos, new Set(['erledigt'])), TODAY).map(({ id }) => id);
+    expect(ids).toEqual(['erledigt', 'wichtig', 'heute', 'alt']);
   });
 
   it('geplant: offene ab morgen nach Datum', () => {

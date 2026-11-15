@@ -87,6 +87,8 @@ export interface Settings extends BaseEntity {
   celebrations: Celebrations | null;
   /** Weggetippter Tageshinweis als `YYYY-MM-DD:<Tageszeit>` (seit DB-Version 36) */
   dayHintDismissed: string | null;
+  /** Animationen der App (seit DB-Version 37); „Bewegung reduzieren“ des Systems gilt zusätzlich */
+  animations: boolean;
 }
 
 /** Bereits gezeigte Hinweise, damit jeder Erfolg nur einmal gemeldet wird */

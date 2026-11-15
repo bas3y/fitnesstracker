@@ -272,6 +272,269 @@
   }
 }
 
+/*
+ * Animationen für Kacheln & Inhalte (seit 22d). Nur `transform`/`opacity` (bzw. die Eigenschaften
+ * `scale`/`rotate`, die sich mit gesetzten Transforms vertragen). Erscheinen-Animationen mit
+ * `backwards`, damit danach kein Transform bleibt (sonst wären feste Elemente darin gefangen).
+ *  - `anim-stagger`: Kinder erscheinen nacheinander (erste 8 je 40 ms versetzt)
+ *  - `press`: Eindrücken beim Antippen
+ *  - `anim-glow`/`anim-spark`: Ziel erreicht (`GoalSparks`)
+ *  - `anim-grow-x`/`anim-grow-y`: wächst beim Erscheinen (Verzögerung per `animation-delay`)
+ *  - `anim-wave`: Welle im Wasserbalken, `anim-float-up`: Betrag schwebt auf (`useFloatUp`)
+ *  - `anim-draw`: Haken zeichnet sich (Symbol `check`), `anim-flash`: Zeile leuchtet kurz
+ *  - `anim-leave`/`anim-slide-in`/`anim-rise`/`anim-bump`: Listen (wegrutschen, neu, aufklappen, Zahl)
+ *  - `anim-pop-late`/`anim-badge`/`anim-shine`/`anim-flicker`: Rekord, Abzeichen, Serien-Flamme
+ *  - `anim-wiggle`/`anim-lift`: Anpassen-Modus, `anim-sheet`: Auswahl gleitet von unten
+ * Schalter „Animationen“ aus (`data-motion="off"`) wirkt wie „Bewegung reduzieren“.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .anim-stagger > * {
+    animation: anim-rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+  .anim-stagger > :nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .anim-stagger > :nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .anim-stagger > :nth-child(4) {
+    animation-delay: 120ms;
+  }
+  .anim-stagger > :nth-child(5) {
+    animation-delay: 160ms;
+  }
+  .anim-stagger > :nth-child(6) {
+    animation-delay: 200ms;
+  }
+  .anim-stagger > :nth-child(7) {
+    animation-delay: 240ms;
+  }
+  .anim-stagger > :nth-child(n + 8) {
+    animation-delay: 280ms;
+  }
+  .press {
+    transition: scale 0.12s ease-out;
+  }
+  .press:active {
+    scale: 0.97;
+  }
+  .anim-glow {
+    animation: anim-glow 0.7s 0.45s ease-out backwards;
+    opacity: 0;
+  }
+  .anim-spark {
+    animation: anim-spark 0.65s 0.45s ease-out backwards;
+    opacity: 0;
+  }
+  .anim-grow-x {
+    transform-origin: left;
+    animation: anim-bar-grow 0.3s ease-out backwards;
+  }
+  .anim-grow-y {
+    transform-origin: bottom;
+    animation: anim-grow-y 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+  .anim-wave {
+    animation:
+      anim-wave 0.7s linear 2,
+      anim-wave-fade 1.4s ease-in;
+  }
+  .anim-float-up {
+    animation: anim-float-up 0.85s ease-out forwards;
+  }
+  .anim-draw path {
+    stroke-dasharray: 24;
+    animation: anim-draw 0.3s 0.1s ease-out backwards;
+  }
+  .anim-flash {
+    position: relative;
+  }
+  .anim-flash::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--primary);
+    opacity: 0;
+    pointer-events: none;
+    animation: anim-flash 0.6s ease-out;
+  }
+  .anim-leave {
+    animation: anim-leave 0.34s ease-in forwards;
+    pointer-events: none;
+  }
+  .anim-slide-in {
+    animation: anim-slide-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1) backwards;
+  }
+  .anim-rise {
+    animation: anim-rise 0.22s ease-out backwards;
+  }
+  .anim-bump {
+    animation: anim-check 0.35s 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) backwards;
+  }
+  .anim-pop-late {
+    animation: anim-check 0.45s 0.2s cubic-bezier(0.3, 1.6, 0.5, 1) backwards;
+  }
+  .anim-badge {
+    animation: anim-badge 0.7s cubic-bezier(0.3, 1.3, 0.5, 1) backwards;
+  }
+  .anim-shine {
+    transform: translateX(-120%) skewX(-20deg);
+    animation: anim-shine 0.7s 0.6s ease-in-out backwards;
+  }
+  .anim-flicker {
+    animation: anim-flicker 0.6s ease-in-out;
+  }
+  .anim-wiggle {
+    animation: anim-wiggle 0.28s ease-in-out infinite alternate;
+  }
+  .anim-wiggle:nth-child(2n) {
+    animation-direction: alternate-reverse;
+    animation-delay: -0.14s;
+  }
+  /* Unter dem Finger/Zeiger und beim Bedienen still, damit Knöpfe (Größe, Entfernen) gut treffen */
+  .anim-wiggle:hover,
+  .anim-wiggle:focus-within,
+  .anim-wiggle:active {
+    animation-play-state: paused;
+  }
+  .anim-lift {
+    scale: 1.03;
+    transition: scale 0.15s ease-out;
+  }
+  .anim-sheet {
+    animation: anim-sheet 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) backwards;
+  }
+  @media (width >= 64rem) {
+    .anim-sheet {
+      animation: anim-pop-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
+    }
+  }
+  details[open] > .details-body {
+    animation: anim-rise 0.22s ease-out backwards;
+  }
+}
+@keyframes anim-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes anim-glow {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.02, 3.5);
+  }
+}
+@keyframes anim-spark {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(var(--spark-x), var(--spark-y)) scale(0.4);
+  }
+}
+@keyframes anim-grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes anim-wave {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes anim-wave-fade {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes anim-float-up {
+  from {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-2rem);
+  }
+}
+@keyframes anim-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+}
+@keyframes anim-flash {
+  from {
+    opacity: 0.35;
+  }
+}
+@keyframes anim-leave {
+  to {
+    opacity: 0;
+    transform: translateX(2rem);
+  }
+}
+@keyframes anim-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+@keyframes anim-badge {
+  from {
+    opacity: 0;
+    transform: perspective(300px) rotateY(-180deg) scale(0.7);
+  }
+}
+@keyframes anim-shine {
+  to {
+    transform: translateX(260%) skewX(-20deg);
+  }
+}
+@keyframes anim-flicker {
+  30% {
+    transform: scale(1.3) rotate(-8deg);
+  }
+  60% {
+    transform: scale(0.95) rotate(5deg);
+  }
+}
+@keyframes anim-wiggle {
+  from {
+    rotate: -0.6deg;
+  }
+  to {
+    rotate: 0.6deg;
+  }
+}
+@keyframes anim-sheet {
+  from {
+    opacity: 0;
+    transform: translateY(2.5rem);
+  }
+}
+
+/* Schalter „Animationen“ aus (Einstellungen → Darstellung): wie „Bewegung reduzieren“ */
+:root[data-motion='off'] *,
+:root[data-motion='off'] *::before,
+:root[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 @theme {
   /* Etwas weicher als Tailwind-Standard (Karten 20 px, Felder 14 px) */
   --radius-xl: 0.875rem;

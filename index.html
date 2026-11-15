@@ -24,10 +24,14 @@
       // Dark Mode und Palette vor dem ersten Rendern setzen (vermeidet Aufblitzen); Werte spiegeln die Einstellungen
       var theme = null;
       var palette = null;
+      var motion = null;
       try {
         theme = localStorage.getItem('theme');
         palette = localStorage.getItem('palette');
+        motion = localStorage.getItem('motion');
       } catch (e) {}
+      // Schalter „Animationen“ aus (Einstellungen → Darstellung), gilt schon für den Ladebildschirm
+      if (motion === 'off') document.documentElement.setAttribute('data-motion', 'off');
       if (
         theme === 'dark' ||
         (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)

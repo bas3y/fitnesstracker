@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
-import { ChevronRightIcon, Icon } from '../../components/icons';
+import { Bump, ToggleChevron } from '../../components/Bump';
+import { ChevronRightIcon } from '../../components/icons';
+import { useLeavingIds } from '../../components/motion';
 import { Card } from '../../components/Page';
 import type { DayKey } from '../../db/types';
-import { doneOn, todayTodos, upcomingTodos } from '../../domain/todos';
+import { doneOn, todayTodos, upcomingTodos, withOpen } from '../../domain/todos';
 import { TodoAddForm, TodoRow } from './TodoParts';
 import { TODOS_PATH, useTodos } from './useTodos';
 
@@ -24,11 +26,17 @@ export function TodoCard({
   const todos = useTodos();
   const from = useFromHere();
   const [showDone, setShowDone] = useState(false);
+  const open = todos ? todayTodos(todos, today) : [];
+  const leaving = useLeavingIds(
+    open.map((todo) => todo.id),
+    today,
+  );
   if (!todos) return null;
 
-  const open = todayTodos(todos, today);
-  const shown = limit === undefined ? open : open.slice(0, limit);
-  const done = doneOn(todos, today);
+  // Gerade abgehakte bleiben kurz an ihrem Platz und gleiten hinaus
+  const listed = leaving.size === 0 ? open : todayTodos(withOpen(todos, leaving), today);
+  const shown = limit === undefined ? listed : listed.slice(0, limit);
+  const done = doneOn(todos, today).filter((todo) => !leaving.has(todo.id));
   const upcoming = upcomingTodos(todos, today).length;
   const more = [
     open.length > shown.length ? `${open.length - shown.length} weitere` : null,
@@ -45,7 +53,12 @@ export function TodoCard({
       )}
       <ul aria-label="Offene Aufgaben">
         {shown.map((todo) => (
-          <TodoRow key={todo.id} todo={todo} today={today} />
+          <TodoRow
+            key={todo.id}
+            todo={todos.find((item) => item.id === todo.id) ?? todo}
+            today={today}
+            leaving={leaving.has(todo.id)}
+          />
         ))}
       </ul>
       {withDone && done.length > 0 && (
@@ -56,11 +69,11 @@ export function TodoCard({
             className="flex min-h-11 w-full items-center gap-2 text-left text-sm font-semibold text-muted"
             onClick={() => setShowDone(!showDone)}
           >
-            <Icon name={showDone ? 'chevronDown' : 'chevronRight'} className="h-4 w-4" />
-            {done.length} heute erledigt
+            <ToggleChevron open={showDone} />
+            <Bump value={done.length}>{done.length}</Bump> heute erledigt
           </button>
           {showDone && (
-            <ul aria-label="Heute erledigt">
+            <ul aria-label="Heute erledigt" className="anim-rise">
               {done.map((todo) => (
                 <TodoRow key={todo.id} todo={todo} today={today} />
               ))}
