@@ -46,7 +46,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 22c – Desktop, Tablet & Querformat
 - [x] Schritt 22d – Animationen für Kacheln & Inhalte
 - [x] Schritt 22e – Texte aufräumen, Erklärungen hinter Info-Button
-- [ ] Schritt 22f – Hauptversionen: TypeScript 7, jsdom 31 (vor oder nach 23)
+- [x] Schritt 22f – Hauptversionen: TypeScript 7, jsdom 31 (+ iPhone-Leiste, Wackeln entfernt)
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 - [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
 - [ ] Schritt 24b – Gym-Bereich (LocalGym): eigene Oberfläche & Verwaltung
@@ -1527,6 +1527,20 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
 - Je Paket einzeln: einspielen, Definition of Done (Lint, Typecheck, Vitest, E2E, Build), Commit, danach den PR schließen bzw. von Dependabot schließen lassen.
 
 **Notizen:**
+- Zusätzlich gewünscht (Nutzer, 15.11.2026): **iPhone – Leiste unten und Info-Blatt enden über einem leeren Streifen** (installierte App), **Wackeln im Anpassen-Modus entfernen** („führt zu Problemen“). TypeScript-Weg **A** (beide Versionen nebeneinander) vom Nutzer gewählt.
+- Gebaut:
+  - **iPhone-Lücke unten:** Ursache laut Fehlerberichten (WebKit 301108, iOS 26): In der installierten App mit `viewport-fit=cover` + durchsichtiger Statusleiste ist der Viewport um die Statusleiste zu kurz, **solange das Dokument nicht bildschirmhoch ist** – seit 22b (Dokument scrollt nicht mehr, `html` 100 %) also immer. `100%`/`100dvh` und alles mit `fixed bottom-0` (Info-Blatt, Fenster) endeten deshalb zu früh. Lösung in `index.css`: `@media (display-mode: standalone) { html { min-height: min(100lvh, calc(100% + env(safe-area-inset-top))) } }` – dann gibt iOS die volle Höhe frei; `min()` begrenzt auf den Bildschirm (ohne Statusleisten-Abstand, z. B. Android, keine Änderung). `Layout` (und `ErrorBoundary` der App) nutzen `h-full` statt `h-dvh`, folgen also `html`.
+  - **Wackeln entfernt:** `anim-wiggle` (CSS + Keyframes) und `SortableList`-Prop `wiggle` gestrichen (Startseite, Trainings-Kacheln). Gezogene Kachel hebt sich weiter (`anim-lift`). E2E `motion.spec.ts` prüft, dass Kacheln im Anpassen-Modus still stehen, und klickt ohne `force`.
+  - **jsdom 31:** ohne Anpassungen, 987 Unit-Tests grün.
+  - **TypeScript 7:** `typescript-eslint` (8.72.x) verlangt `typescript <6.1` und braucht die klassische JS-Schnittstelle, die TS 7 (nativer Compiler) nicht mehr hat. Deshalb **beide Versionen**: `typescript` 6.0.x nur für ESLint, `typescript-7` (Alias `npm:typescript@^7`) für `npm run typecheck` und `npm run build` (`node node_modules/typescript-7/bin/tsc -b`, Pfad statt `tsc`, weil beide Pakete ein `tsc` mitbringen). Keine neuen Typfehler; Typprüfung ~4 s. `dependabot.yml` ignoriert Hauptversionen von `typescript`.
+- Abweichungen:
+  - Kein eigener E2E für die iPhone-Lücke: Playwright/Chromium kann den kurzen iOS-Viewport nicht nachstellen. Geprüft ist nur, dass Layout/Navigation auf allen Projekten unverändert bleiben (volle Suite).
+  - Ein E2E-Lauf für alle drei Änderungen gemeinsam statt je Paket (Vitest, Lint, Typecheck, Build liefen je Paket).
+- Offene Punkte:
+  - **Handytest iPhone (installierte App, nach Push):** Leiste ganz unten, Info-Blatt bis zum Rand, nichts lässt sich um die Statusleiste verschieben (Seite darf nicht „wackeln“/scrollen), Tastatur, Querformat. Falls die Lücke bleibt: Variante mit `bottom: calc(-1 * (100lvh - 100dvh))` für feste Elemente prüfen.
+  - Dependabot-PRs #4 (jsdom) und #5 (TypeScript) nach dem Push schließen bzw. von Dependabot schließen lassen (#5 würde `typescript` selbst ersetzen und ESLint brechen).
+  - Sobald `typescript-eslint` TypeScript 7 unterstützt: `typescript` auf 7 heben, Alias `typescript-7` entfernen, Skripte wieder `tsc -b`, Ignore-Regel in `dependabot.yml` streichen.
+  - Lint-Warnung `react-hooks/exhaustive-deps` in `Page.tsx:164` (`HeaderAction`, seit dem Platzhalter-Commit): absichtlich ohne Abhängigkeiten (misst nach jedem Rendern, `setSize` nur bei geänderter Größe) – bei Gelegenheit per `ResizeObserver` lösen oder kommentiert abschalten.
 
 ### Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 **Ziel:** Nur angemeldete Personen mit gültiger Lizenz nutzen die App; sie läuft auf neuer, geschützter Adresse.

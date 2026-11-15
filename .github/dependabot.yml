@@ -14,6 +14,11 @@ updates:
       # Kleine Updates gesammelt, große Versionssprünge einzeln
       minor-und-patch:
         update-types: [minor, patch]
+    # `typescript` bleibt auf 6.x, solange typescript-eslint TypeScript 7 nicht unterstützt
+    # (Prüfen/Build laufen mit `typescript-7`, Schritt 22f)
+    ignore:
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
   # Actions sind per Commit-SHA gepinnt (Kommentar = Version), Dependabot hebt SHA und Kommentar an
   - package-ecosystem: github-actions
     directory: /
