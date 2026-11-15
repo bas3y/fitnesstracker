@@ -1,5 +1,12 @@
 import { expect, test, type Page } from './fixtures';
-import { confirmStart, dailyTile, fillStepper, goOffline, openSettings } from './helpers';
+import {
+  confirmStart,
+  dailyTile,
+  fillStepper,
+  goOffline,
+  openSettings,
+  startsWith,
+} from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -15,7 +22,7 @@ async function addSupplement(page: Page, name: string, fill: () => Promise<void>
   await expect(
     page
       .getByRole('list', { name: 'Supplements', exact: true })
-      .getByRole('link', { name: new RegExp(`^${name}`) }),
+      .getByRole('link', { name: startsWith(name) }),
   ).toBeVisible();
 }
 

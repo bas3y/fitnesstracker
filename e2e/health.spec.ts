@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures';
 import { createZip, sampleAppleHealthXml, type HealthRecordInput } from '../src/test/importFiles';
-import { fillStepper, goOffline } from './helpers';
+import { containing, fillStepper, goOffline } from './helpers';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -131,7 +131,7 @@ test('Gesundheitsdaten: Apple Health + Garmin importieren, eigene Werte bleiben 
 
   // „Zurück“ führt zum gewählten Tag
   await page.getByRole('link', { name: 'Zurück', exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`date=${twoDaysAgo}`));
+  await expect(page).toHaveURL(containing(`date=${twoDaysAgo}`));
   await expect(page.getByLabel('Schritte gesamt', { exact: true })).toHaveValue('4000');
   await expect(page.getByRole('list', { name: 'Schlafphasen' })).toContainText(
     'Tiefschlaf 1 h 30 min',

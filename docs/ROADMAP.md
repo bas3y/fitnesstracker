@@ -1515,6 +1515,7 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
 - Offene Punkte:
   - **Handytest:** Info-Blatt mit dem Daumen (iPhone mit Home-Indikator unten, Android-Zurück), lange Texte im Blatt, Info-Knopf neben Schaltern auf schmalen Handys.
   - Vitest: `activity.test.ts` („vereinfacht lange Strecken“) lief im vollen Lauf parallel zum Build einmal über die Zeit; einzeln und im zweiten vollen Lauf grün.
+  - **Nachtrag Push (15.11.2026):** Erster Semgrep-Lauf in der CI (`security.yml` seit 21) meldete 21 Funde, behoben: Dependabot `cooldown: default-days: 7` (npm + Actions), alle Actions in `deploy.yml`/`security.yml` per Commit-SHA gepinnt (`@<sha> # vX.Y.Z`, Dependabot hebt beides an), E2E-Regex nur noch über `startsWith`/`containing` aus `e2e/helpers.ts` (escaped, einziges `nosemgrep`; vorher Fehlalarm ReDoS bei festen Testtexten).
   - Ideen: Info-Blatt per Android-Zurück schließen (für alle Fenster gemeinsam lösen); `CatalogSearch` („x … offline verfügbar“) wird nirgends mehr verwendet – bei Gelegenheit entfernen.
 
 ### Schritt 23 – Server-Grundlage, Anmeldung & Umzug

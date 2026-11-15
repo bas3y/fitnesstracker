@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures';
-import { chooseIcon, fillStepper, goOffline } from './helpers';
+import { chooseIcon, fillStepper, goOffline, containing } from './helpers';
 
 const nav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -11,7 +11,7 @@ async function addHabit(page: Page, name: string, fill: () => Promise<void>) {
   await page.getByLabel('Name', { exact: true }).fill(name);
   await fill();
   await page.getByRole('button', { name: 'Anlegen' }).click();
-  await expect(allHabits(page).getByRole('link', { name: new RegExp(name) })).toBeVisible();
+  await expect(allHabits(page).getByRole('link', { name: containing(name) })).toBeVisible();
 }
 
 async function newGoal(page: Page, kind: string) {

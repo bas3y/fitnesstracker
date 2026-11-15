@@ -1,5 +1,29 @@
 import { expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
 
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Regex für Playwright-Namen aus festem Testtext (Sonderzeichen escaped). Einzige Stelle mit
+ * `new RegExp` in den E2E-Tests: Semgrep warnt sonst vor ReDoS, hier kommen nur feste Texte an.
+ */
+function textRegExp(text: string, anchored: boolean): RegExp {
+  const source = `${anchored ? '^' : ''}${escapeRegExp(text)}`;
+  // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
+  return new RegExp(source);
+}
+
+/** Name beginnt mit `text` (z. B. Kachel mit Wert dahinter) */
+export function startsWith(text: string): RegExp {
+  return textRegExp(text, true);
+}
+
+/** Name enthält `text` */
+export function containing(text: string): RegExp {
+  return textRegExp(text, false);
+}
+
 /** Wartet, bis der Service Worker die Seite kontrolliert, und schaltet dann offline */
 export async function goOffline(page: Page, context: BrowserContext): Promise<void> {
   await page.evaluate(async () => {
@@ -41,7 +65,7 @@ export async function addExercise(page: Page, name: string) {
   const dialog = page.getByRole('dialog', { name: 'Übung hinzufügen' });
   await dialog.getByRole('searchbox', { name: 'Übung suchen' }).fill(name);
   await dialog
-    .getByRole('button', { name: new RegExp(`^${name.replace(/[()]/g, '\\$&')}`) })
+    .getByRole('button', { name: startsWith(name) })
     .first()
     .click();
   await expect(dialog).toHaveCount(0);
@@ -56,9 +80,7 @@ export async function fillStepper(card: Locator, label: string, value: string) {
 
 /** Kachel auf der Alltag-Übersicht (Name steht vor dem Tagesstand) */
 export function dailyTile(page: Page, name: string): Locator {
-  return page
-    .getByRole('list', { name: 'Bereiche' })
-    .getByRole('link', { name: new RegExp(`^${name}`) });
+  return page.getByRole('list', { name: 'Bereiche' }).getByRole('link', { name: startsWith(name) });
 }
 
 /** Statistik → Alltag (Verlauf der Tageswerte, seit Schritt 22) */

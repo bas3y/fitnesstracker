@@ -7,12 +7,18 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # Neue Versionen erst nach 7 Tagen vorschlagen (manipulierte Pakete fallen meist vorher auf)
+    cooldown:
+      default-days: 7
     groups:
       # Kleine Updates gesammelt, große Versionssprünge einzeln
       minor-und-patch:
         update-types: [minor, patch]
+  # Actions sind per Commit-SHA gepinnt (Kommentar = Version), Dependabot hebt SHA und Kommentar an
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 7

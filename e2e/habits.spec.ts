@@ -1,5 +1,13 @@
 import { expect, test, type Locator, type Page } from './fixtures';
-import { chooseIcon, dailyTile, dragTo, fillStepper, goOffline, openDailyStats } from './helpers';
+import {
+  chooseIcon,
+  dailyTile,
+  dragTo,
+  fillStepper,
+  goOffline,
+  openDailyStats,
+  containing,
+} from './helpers';
 
 const card = (page: Page, name: string) =>
   page.locator('section').filter({ has: page.getByRole('heading', { name, exact: true }) });
@@ -19,7 +27,7 @@ async function addHabit(page: Page, name: string, fill?: () => Promise<void>) {
   await page.getByLabel('Name', { exact: true }).fill(name);
   await fill?.();
   await page.getByRole('button', { name: 'Anlegen' }).click();
-  await expect(allHabits(page).getByRole('link', { name: new RegExp(name) })).toBeVisible();
+  await expect(allHabits(page).getByRole('link', { name: containing(name) })).toBeVisible();
 }
 
 test('Zählen, Unterpunkte, Aufhören, Verlauf, Pausieren und Archivieren (offline)', async ({
@@ -267,7 +275,7 @@ test('Gewohnheiten anlegen, abhaken, Streak und Kalender (offline)', async ({ pa
     const date = new Date();
     return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
   });
-  const today = calendar.getByRole('button', { name: new RegExp(todayLabel) });
+  const today = calendar.getByRole('button', { name: containing(todayLabel) });
   await expect(today).toHaveAttribute('aria-pressed', 'true');
   await today.click();
   await expect(today).toHaveAttribute('aria-pressed', 'false');

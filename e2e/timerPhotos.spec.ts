@@ -1,10 +1,10 @@
 import { expect, test, type Locator, type Page } from './fixtures';
-import { fillStepper, goOffline } from './helpers';
+import { fillStepper, goOffline, startsWith } from './helpers';
 
 const selfRow = (page: Page, name: string) =>
   page
     .getByRole('list', { name: 'Persönliche Entwicklung' })
-    .getByRole('link', { name: new RegExp(`^${name}`) });
+    .getByRole('link', { name: startsWith(name) });
 
 const dayKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;

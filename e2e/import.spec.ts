@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures';
 import { createZip, sampleFitRun, sampleGpx } from '../src/test/importFiles';
-import { fillStepper, goOffline } from './helpers';
+import { fillStepper, goOffline, startsWith } from './helpers';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -34,9 +34,7 @@ async function chooseFiles(page: Page, files: ReturnType<typeof fileOf>[]) {
 }
 
 const tile = (page: Page, name: string) =>
-  page
-    .getByRole('list', { name: 'Aktivitäten' })
-    .getByRole('link', { name: new RegExp(`^${name}`) });
+  page.getByRole('list', { name: 'Aktivitäten' }).getByRole('link', { name: startsWith(name) });
 
 test('Import: FIT, GPX und ZIP mit Vorschau, Ergänzen und Duplikaten (offline)', async ({
   page,

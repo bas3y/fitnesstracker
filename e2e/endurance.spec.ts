@@ -1,14 +1,12 @@
 import { expect, test, type Page } from './fixtures';
-import { dragTo, fillStepper, goOffline } from './helpers';
+import { dragTo, fillStepper, goOffline, startsWith } from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
 
 const tiles = (page: Page) => page.getByRole('list', { name: 'Aktivitäten' }).getByRole('link');
 const tile = (page: Page, name: string) =>
-  page
-    .getByRole('list', { name: 'Aktivitäten' })
-    .getByRole('link', { name: new RegExp(`^${name}`) });
+  page.getByRole('list', { name: 'Aktivitäten' }).getByRole('link', { name: startsWith(name) });
 
 function todayInput(): string {
   const now = new Date();

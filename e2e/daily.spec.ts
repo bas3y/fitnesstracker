@@ -1,5 +1,12 @@
 import { expect, test, type Page } from './fixtures';
-import { dailyTile, fillStepper, goOffline, openDailyStats, openSettings } from './helpers';
+import {
+  dailyTile,
+  fillStepper,
+  goOffline,
+  openDailyStats,
+  openSettings,
+  startsWith,
+} from './helpers';
 
 const openNav = (page: Page, name: string) =>
   page.getByRole('navigation', { name: 'Hauptnavigation' }).getByText(name).click();
@@ -85,7 +92,7 @@ test('Tag erfassen, Verlauf, Ziele und Dashboard-Widget (offline)', async ({ pag
 
   // Übersicht: Ø im Zeitraum, Antippen wählt die Kennzahl
   const overview = history.getByRole('list', { name: 'Übersicht im Zeitraum' });
-  const tile = (name: string) => overview.getByRole('button', { name: new RegExp(`^${name}`) });
+  const tile = (name: string) => overview.getByRole('button', { name: startsWith(name) });
   await expect(overview.getByRole('button')).toHaveCount(4);
   await expect(tile('Gewicht')).toContainText('79,5 kg');
   await expect(tile('Gewicht')).toContainText('−0,5 kg im Zeitraum');
