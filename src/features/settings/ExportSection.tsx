@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { secondaryButton } from '../../components/buttons';
-import { Card } from '../../components/Page';
+import { Card, MoreLink } from '../../components/Page';
 import type { WeightUnit } from '../../db/types';
 import { createWorkoutsCsvFile } from '../../db/workoutExport';
 import { REVIEW_STATS_PATH } from '../stats/statsFilter';
@@ -33,11 +32,22 @@ export function ExportSection({ unit }: { unit: WeightUnit }) {
   };
 
   return (
-    <Card title="Export">
-      <p className="mb-3 text-sm text-muted">
-        Alle Sätze als Tabelle, z. B. für Excel. Ersetzt kein Backup: CSV-Dateien lassen sich nicht
-        wieder importieren.
-      </p>
+    <Card
+      title="Export"
+      info={
+        <>
+          <p>
+            Alle Sätze als Tabelle, z. B. für Excel. Ersetzt kein Backup: CSV-Dateien lassen sich
+            nicht wieder importieren.
+          </p>
+          <p>
+            Wochen-, Monats- und Jahresberichte als PDF gibt es im Rückblick der Statistik, einzelne
+            Übungen und Ausdauer-Statistiken lassen sich dort ebenfalls als PDF oder CSV
+            exportieren.
+          </p>
+        </>
+      }
+    >
       <button type="button" className={secondaryButton} disabled={busy} onClick={handleExport}>
         Workouts als CSV exportieren
       </button>
@@ -51,14 +61,11 @@ export function ExportSection({ unit }: { unit: WeightUnit }) {
           {status.text}
         </p>
       )}
-      <p className="mt-4 text-sm text-muted">
-        Wochen-, Monats- und Jahresberichte als PDF gibt es im{' '}
-        <Link to={REVIEW_STATS_PATH} state={from} className="font-semibold text-primary-text">
-          Rückblick der Statistik
-        </Link>
-        , einzelne Übungen und Ausdauer-Statistiken lassen sich dort ebenfalls als PDF oder CSV
-        exportieren.
-      </p>
+      <div>
+        <MoreLink to={REVIEW_STATS_PATH} state={from}>
+          PDF-Berichte im Rückblick
+        </MoreLink>
+      </div>
     </Card>
   );
 }

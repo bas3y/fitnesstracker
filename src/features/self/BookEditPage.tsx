@@ -211,11 +211,16 @@ function BookForm({
                 max={input.totalPages ?? MAX_BOOK_PAGES}
                 decimals={0}
                 onChange={(startPage) => change({ startPage: startPage ?? 0 })}
+                info={{
+                  title: 'Vorher gelesen',
+                  content: (
+                    <p>
+                      Für Bücher, die du schon vor der App angefangen hast. Diese Seiten zählen
+                      nicht zu Zielen.
+                    </p>
+                  ),
+                }}
               />
-              <p className={HINT}>
-                Für Bücher, die du schon vor der App angefangen hast. Diese Seiten zählen nicht zu
-                Zielen.
-              </p>
               {dateField('Begonnen am', input.startedOn, 'startedOn')}
             </>
           )}

@@ -23,12 +23,8 @@ export function ShareAppPage() {
     <Page title="Installieren & weitergeben" backTo={backTo}>
       <Card title="Link teilen">
         <p className={`mb-3 ${HINT}`}>
-          Wer den Link öffnet, bekommt eine eigene, leere App. Deine Daten bleiben auf deinem Gerät
-          und werden nicht mitgeschickt.
-        </p>
-        <p className={`mb-3 ${HINT}`}>
-          Jede Person hat ihre eigenen Daten nur auf ihrem eigenen Handy. Es gibt keine Verbindung
-          zwischen den Geräten: Was andere eintragen, siehst du nicht, und umgekehrt.
+          Wer den Link öffnet, bekommt eine eigene, leere App. Deine Daten werden nicht
+          mitgeschickt, die Geräte sind nicht verbunden.
         </p>
         <p
           data-testid="app-url"

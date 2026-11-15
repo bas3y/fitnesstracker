@@ -101,9 +101,7 @@ function DayEditor({
         </div>
       </Card>
 
-      {items.length === 0 && (
-        <p className="mb-4 text-muted">Noch keine Übungen. Füge die erste Übung hinzu.</p>
-      )}
+      {items.length === 0 && <p className="mb-4 text-muted">Noch keine Übungen.</p>}
       <SortableList
         label="Übungen im Training"
         items={items.map((item) => ({

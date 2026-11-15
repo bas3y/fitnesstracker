@@ -1,4 +1,5 @@
 import { useFromHere } from '../../components/backNavigation';
+import { InfoButton } from '../../components/InfoButton';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { QuickAddButton } from '../../components/QuickAddButton';
 import { Stepper } from '../../components/Stepper';
@@ -85,10 +86,14 @@ function DayForm({
   return (
     <>
       {imported.length > 0 && (
-        <p className={`mb-3 ${HINT}`} data-testid="imported-fields">
-          Aus dem Import: {imported.map((field) => DAILY_IMPORT_FIELD_LABELS[field]).join(', ')}.
-          Änderst du einen Wert, bleibt er beim nächsten Import erhalten.
-        </p>
+        <div className="mb-3 flex items-center">
+          <p className={HINT} data-testid="imported-fields">
+            Aus dem Import: {imported.map((field) => DAILY_IMPORT_FIELD_LABELS[field]).join(', ')}
+          </p>
+          <InfoButton title="Importierte Werte" className="-my-2.5">
+            <p>Änderst du einen Wert, bleibt er beim nächsten Import erhalten.</p>
+          </InfoButton>
+        </div>
       )}
       <Card title="Wasser">
         <div className="flex flex-col gap-3">

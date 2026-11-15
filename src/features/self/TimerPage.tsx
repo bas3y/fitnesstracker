@@ -1,8 +1,16 @@
 import { useId, useState, type ReactNode } from 'react';
-import { primaryButton, secondaryButton, dangerButton, inputField } from '../../components/buttons';
+import { Link } from 'react-router-dom';
+import {
+  primaryButton,
+  secondaryButton,
+  dangerButton,
+  inputField,
+  smallButton,
+} from '../../components/buttons';
 import { Chip } from '../../components/Chip';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
+import { InfoButton } from '../../components/InfoButton';
 import { Card, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Select } from '../../components/Select';
@@ -41,7 +49,7 @@ import {
 } from '../../domain/timer';
 import { formatClock, formatTime } from '../../domain/workout';
 import { useDayBackTo, useDayParam } from '../daily/useDaily';
-import { useHabits } from '../daily/useHabits';
+import { HABITS_PATH, useHabits } from '../daily/useHabits';
 import { useSettings } from '../settings/useSettings';
 import { playGong, primeAudio } from '../training/restAlarm';
 import { useNow } from '../training/useWorkouts';
@@ -176,12 +184,19 @@ function TimerSetup({ presets }: { presets: TimerPresets }) {
             />
           </>
         )}
-        <p className={HINT}>
-          {kind === 'focus'
-            ? `Insgesamt ${formatTimerDuration(totalMinutes * 60)}. Gong am Ende jeder Phase.`
-            : 'Gong zu Beginn und am Ende.'}{' '}
-          Klingelt nur, solange die App geöffnet ist; der Bildschirm bleibt dafür an.
-        </p>
+        <div className="flex items-center">
+          <p className={HINT}>
+            {kind === 'focus'
+              ? `Insgesamt ${formatTimerDuration(totalMinutes * 60)}`
+              : 'Gong zu Beginn und am Ende'}
+          </p>
+          <InfoButton title="Gong" className="-my-2.5">
+            <p>
+              {kind === 'focus' ? 'Gong am Ende jeder Phase.' : 'Gong zu Beginn und am Ende.'}{' '}
+              Klingelt nur, solange die App geöffnet ist; der Bildschirm bleibt dafür an.
+            </p>
+          </InfoButton>
+        </div>
         <button type="button" className={primaryButton} onClick={start}>
           {kind === 'focus' ? 'Fokus starten' : 'Meditation starten'}
         </button>
@@ -620,12 +635,29 @@ function HabitLinks({ settings }: { settings: Settings }) {
   );
   const valid = (id: string | null) => (linkable.some((habit) => habit.id === id) ? id : null);
   return (
-    <Card title="Mit Gewohnheit verknüpfen">
+    <Card
+      title="Mit Gewohnheit verknüpfen"
+      info={
+        linkable.length === 0 ? (
+          <p>
+            Lege eine Gewohnheit an (z. B. „Meditieren“ zum Abhaken oder „Fokus“ zum Zählen in
+            Minuten), dann zählen Sitzungen dort automatisch mit.
+          </p>
+        ) : (
+          <p>
+            Zählen: Minuten werden addiert. Abhaken: Der Tag wird abgehakt. Gelöschte Sitzungen
+            werden wieder abgezogen.
+          </p>
+        )
+      }
+    >
       {linkable.length === 0 ? (
-        <p className={HINT}>
-          Lege eine Gewohnheit an (z. B. „Meditieren“ zum Abhaken oder „Fokus“ zum Zählen in
-          Minuten), dann zählen Sitzungen dort automatisch mit.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className={HINT}>Noch keine passende Gewohnheit.</p>
+          <Link to={HABITS_PATH} className={smallButton}>
+            Gewohnheit anlegen
+          </Link>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           {(['focus', 'meditation'] as const).map((kind) => (
@@ -639,10 +671,6 @@ function HabitLinks({ settings }: { settings: Settings }) {
               onChange={(habitId) => void setTimerHabit(kind, habitId)}
             />
           ))}
-          <p className={HINT}>
-            Zählen: Minuten werden addiert. Abhaken: Der Tag wird abgehakt. Gelöschte Sitzungen
-            werden wieder abgezogen.
-          </p>
         </div>
       )}
     </Card>

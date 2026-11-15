@@ -115,8 +115,9 @@ test('nur Protein erfassen: Ernährung, Kachel, Startseite und normaler Modus (o
   await page.goto('./#/settings/nutrition');
   await goOffline(page, context);
 
-  await page.getByLabel('Nur Protein erfassen').click();
-  await expect(page.getByLabel('Nur Protein erfassen')).toBeChecked();
+  const proteinOnly = page.getByRole('switch', { name: 'Nur Protein erfassen' });
+  await proteinOnly.click();
+  await expect(proteinOnly).toBeChecked();
   await expect(page.getByLabel('Kalorien (Ruhetag)', { exact: true })).toHaveCount(0);
   await fillStepper(page.locator('body'), 'Protein (Ruhetag)', '120');
 
@@ -149,8 +150,8 @@ test('nur Protein erfassen: Ernährung, Kachel, Startseite und normaler Modus (o
 
   // Normaler Modus: Protein ohne Lebensmittel zählt weiter mit
   await openSettings(page, 'Ernährung');
-  await page.getByLabel('Nur Protein erfassen').click();
-  await expect(page.getByLabel('Nur Protein erfassen')).not.toBeChecked();
+  await page.getByRole('switch', { name: 'Nur Protein erfassen' }).click();
+  await expect(page.getByRole('switch', { name: 'Nur Protein erfassen' })).not.toBeChecked();
   await nav(page, 'Alltag');
   await expect(dailyTile(page, 'Ernährung')).toContainText('kcal');
   await dailyTile(page, 'Ernährung').click();

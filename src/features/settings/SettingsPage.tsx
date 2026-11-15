@@ -291,7 +291,18 @@ function AppearanceCard({ settings }: { settings: Settings }) {
 function TrainingSettings({ settings }: { settings: Settings }) {
   return (
     <>
-      <Card title="Pausen">
+      <Card
+        title="Pausen"
+        info={
+          <>
+            <p>Pläne können je Übung eine eigene Pausenzeit festlegen.</p>
+            <p>
+              Ton und Vibration kommen nur, solange die App geöffnet ist. Vibration gibt es auf dem
+              iPhone nicht.
+            </p>
+          </>
+        }
+      >
         <div className="flex flex-col gap-2">
           <Switch
             label="Pausen-Timer"
@@ -311,23 +322,29 @@ function TrainingSettings({ settings }: { settings: Settings }) {
                   value !== null && void updateSettings({ restTimerSeconds: value })
                 }
               />
-              <p className={HINT}>Pläne können je Übung eine eigene Pausenzeit festlegen.</p>
               <Switch
                 label="Ton am Ende der Pause"
                 checked={settings.restTimerSound}
                 onChange={(restTimerSound) => void updateSettings({ restTimerSound })}
               />
               <Switch
-                label="Vibration (nicht auf dem iPhone)"
+                label="Vibration"
                 checked={settings.restTimerVibrate}
                 onChange={(restTimerVibrate) => void updateSettings({ restTimerVibrate })}
               />
-              <p className={HINT}>Signale kommen nur, solange die App geöffnet ist.</p>
             </>
           )}
         </div>
       </Card>
-      <Card title="Puls">
+      <Card
+        title="Puls"
+        info={
+          <p>
+            Für die Pulszonen importierter Einheiten. Mit Ruhepuls rechnet die App nach
+            Herzfrequenzreserve (Karvonen), sonst in % des max. Pulses.
+          </p>
+        }
+      >
         <div className="flex flex-col gap-2">
           <Stepper
             label="Max. Puls"
@@ -353,10 +370,6 @@ function TrainingSettings({ settings }: { settings: Settings }) {
             allowEmpty
             onChange={(restingHeartRate) => void updateSettings({ restingHeartRate })}
           />
-          <p className={HINT}>
-            Für die Pulszonen importierter Einheiten. Mit Ruhepuls rechnet die App nach
-            Herzfrequenzreserve (Karvonen), sonst in % des max. Pulses.
-          </p>
         </div>
       </Card>
       <Card title="Erweitert">
@@ -364,11 +377,16 @@ function TrainingSettings({ settings }: { settings: Settings }) {
           label="Pausen-Auswertung"
           checked={settings.restAnalysisEnabled}
           onChange={(restAnalysisEnabled) => void updateSettings({ restAnalysisEnabled })}
+          info={{
+            title: 'Pausen-Auswertung',
+            content: (
+              <p>
+                Zeigt in der Statistik, wie sich die Pausenlänge auf den nächsten Satz auswirkt.
+                Rechnet auch mit bisherigen Trainings und funktioniert ohne Pausen-Timer.
+              </p>
+            ),
+          }}
         />
-        <p className={HINT}>
-          Zeigt in der Statistik, wie sich die Pausenlänge auf den nächsten Satz auswirkt. Rechnet
-          auch mit bisherigen Trainings und funktioniert ohne Pausen-Timer.
-        </p>
       </Card>
     </>
   );
@@ -433,18 +451,36 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
           label="Nur Protein erfassen"
           checked={settings.proteinOnly}
           onChange={(proteinOnly) => void updateSettings({ proteinOnly })}
+          info={{
+            title: 'Nur Protein erfassen',
+            content: (
+              <p>
+                Statt Mahlzeiten nur die Protein-Menge des Tages eintragen – ein Feld mit Buttons
+                wie beim Wasser, ohne Lebensmittel und Kalorien. Bisherige Mahlzeiten bleiben
+                gespeichert.
+              </p>
+            ),
+          }}
         />
-        <p className={HINT}>
-          {settings.proteinOnly
-            ? 'Die Ernährung zeigt nur ein Protein-Feld mit Buttons wie beim Wasser, ohne Lebensmittel und Kalorien. Bisherige Mahlzeiten bleiben gespeichert.'
-            : 'Statt Mahlzeiten nur die Protein-Menge des Tages eintragen (ohne Lebensmittel und Kalorien).'}
-        </p>
       </Card>
       {DAY_TYPES.map(({ key, label }) => {
         const goal = settings.nutritionGoals[key];
         const perKg = proteinPerKg(goal.protein, settings.bodyWeightKg);
         return (
-          <Card key={key} title={label}>
+          <Card
+            key={key}
+            title={label}
+            info={
+              key === 'training' ? (
+                <>
+                  <p>An einem Trainingstag gibt es ein Workout oder eine Ausdauer-Einheit.</p>
+                  {!settings.proteinOnly && (
+                    <p>Kohlenhydrate und Fett sind optional (leer = kein Ziel).</p>
+                  )}
+                </>
+              ) : undefined
+            }
+          >
             <div className="flex flex-col gap-3">
               {!settings.proteinOnly && (
                 <Stepper
@@ -500,22 +536,23 @@ function NutritionGoalsCard({ settings }: { settings: Settings }) {
           </Card>
         );
       })}
-      <p className={`mb-4 px-1 ${HINT}`}>
-        Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit.
-        {!settings.proteinOnly && ' Kohlenhydrate und Fett sind optional (leer = kein Ziel).'}
-      </p>
       {!settings.proteinOnly && (
         <Card>
           <Switch
             label="Verbrannte Kalorien zum Ziel addieren"
             checked={settings.addBurnedCalories}
             onChange={(addBurnedCalories) => void updateSettings({ addBurnedCalories })}
+            info={{
+              title: 'Verbrannte Kalorien',
+              content: (
+                <p>
+                  Kalorien aus Ausdauer-Einheiten (von der Uhr oder eingetragen) erhöhen das
+                  Kalorienziel des Tages. Am besten dann für Trainings- und Ruhetag dasselbe Ziel
+                  wählen, sonst zählt das Training doppelt.
+                </p>
+              ),
+            }}
           />
-          <p className={HINT}>
-            Kalorien aus Ausdauer-Einheiten (von der Uhr oder eingetragen) erhöhen das Kalorienziel
-            des Tages. Am besten dann für Trainings- und Ruhetag dasselbe Ziel wählen, sonst zählt
-            das Training doppelt.
-          </p>
         </Card>
       )}
     </>
@@ -554,6 +591,21 @@ function SupplementSettingsCard({ settings }: { settings: Settings }) {
           onChange={(supplementRemindersEnabled) =>
             void updateSettings({ supplementRemindersEnabled })
           }
+          info={{
+            title: 'Erinnerungen',
+            content: (
+              <>
+                <p>
+                  Ohne Server gibt es keine echten Push-Nachrichten: Erinnerungen kommen nur,
+                  solange die App geöffnet ist oder noch im Hintergrund läuft.
+                </p>
+                <p>
+                  Ist sie geschlossen, siehst du offene Einnahmen beim nächsten Öffnen. Auf dem
+                  iPhone kommen sie nur in der geöffneten App.
+                </p>
+              </>
+            ),
+          }}
         />
         {settings.supplementRemindersEnabled && (
           <>
@@ -571,11 +623,6 @@ function SupplementSettingsCard({ settings }: { settings: Settings }) {
             )}
           </>
         )}
-        <p className={HINT}>
-          Ohne Server gibt es keine echten Push-Nachrichten: Erinnerungen kommen nur, solange die
-          App geöffnet ist oder noch im Hintergrund läuft. Ist sie geschlossen, siehst du offene
-          Einnahmen beim nächsten Öffnen. Auf dem iPhone kommen sie nur in der geöffneten App.
-        </p>
       </div>
     </Card>
   );
@@ -618,8 +665,8 @@ function ProfileCard({ settings }: { settings: Settings }) {
           onChange={(value) =>
             void setCurrentBodyWeight(value === null ? null : displayToKg(value, unit))
           }
+          info={{ content: <p>Wird auch als Gewicht von heute im Alltag eingetragen.</p> }}
         />
-        <p className={HINT}>Wird auch als Gewicht von heute im Alltag eingetragen.</p>
       </div>
     </Card>
   );

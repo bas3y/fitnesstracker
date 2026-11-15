@@ -1,4 +1,4 @@
-import { useId, useMemo, useState, type FormEvent } from 'react';
+import { useId, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { dangerButton, inputField, primaryButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
@@ -205,7 +205,19 @@ export function GoalForm({
 
   return (
     <form onSubmit={(event) => void submit(event)}>
-      <Card>
+      <Card
+        title="Art"
+        info={
+          <ul className="flex flex-col gap-1.5">
+            {GOAL_KINDS.map((kind) => (
+              <li key={kind}>
+                <span className="font-semibold">{GOAL_KIND_LABELS[kind].name}:</span>{' '}
+                {GOAL_KIND_LABELS[kind].hint}
+              </li>
+            ))}
+          </ul>
+        }
+      >
         <div className="flex flex-col gap-3">
           <div role="group" aria-label="Art des Ziels" className="grid grid-cols-3 gap-2">
             {GOAL_KINDS.map((kind) => (
@@ -225,12 +237,18 @@ export function GoalForm({
               </button>
             ))}
           </div>
-          <p className={HINT}>{GOAL_KIND_LABELS[input.kind].hint}</p>
         </div>
       </Card>
 
       {input.kind === 'strength' && (
-        <Card title="Übung">
+        <Card
+          title="Übung"
+          info={
+            input.strengthMetric === 'oneRepMax' ? (
+              <p>1RM wird geschätzt aus Sätzen mit 1–12 Wiederholungen.</p>
+            ) : undefined
+          }
+        >
           <div className="flex flex-col gap-4">
             <button
               type="button"
@@ -297,9 +315,6 @@ export function GoalForm({
                       onChange={(minReps) => change({ minReps })}
                     />
                   )}
-                  {input.strengthMetric === 'oneRepMax' && (
-                    <p className={HINT}>Geschätzt aus Sätzen mit 1–12 Wiederholungen.</p>
-                  )}
                 </>
               )}
           </div>
@@ -307,7 +322,15 @@ export function GoalForm({
       )}
 
       {input.kind === 'effort' && (
-        <Card title="Bestzeit">
+        <Card
+          title="Bestzeit"
+          info={
+            <p>
+              Zählt die schnellste Zeit über die Strecke aus importierten Verläufen. Ohne Verlauf
+              zählt eine Einheit ab dieser Strecke mit ihrer Ø-Pace.
+            </p>
+          }
+        >
           <div className="flex flex-col gap-4">
             <SegmentedControl
               label="Sportart"
@@ -346,31 +369,31 @@ export function GoalForm({
               value={input.target}
               onChange={(target) => change({ target })}
             />
-            <p className={HINT}>
-              Zählt die schnellste Zeit über die Strecke aus importierten Verläufen. Ohne Verlauf
-              zählt eine Einheit ab dieser Strecke mit ihrer Ø-Pace.
-            </p>
           </div>
         </Card>
       )}
 
       {input.kind === 'bodyWeight' && (
-        <Card title="Gewicht">
+        <Card
+          title="Gewicht"
+          info={
+            <p>
+              Der Fortschritt kommt aus dem Gewicht im Alltag (Körper). Liegt das Ziel unter dem
+              Start, geht es ums Abnehmen, sonst ums Zunehmen.
+            </p>
+          }
+        >
           <div className="flex flex-col gap-4">
             {kgStepper('Startgewicht', input.startValue ?? null, (startValue) =>
               change({ startValue }),
             )}
             {kgStepper('Zielgewicht', input.target, (target) => change({ target: target ?? 0 }))}
-            <p className={HINT}>
-              Der Fortschritt kommt aus dem Gewicht im Alltag (Körper). Liegt das Ziel unter dem
-              Start, geht es ums Abnehmen, sonst ums Zunehmen.
-            </p>
           </div>
         </Card>
       )}
 
       {input.kind === 'total' && (
-        <Card title="Menge">
+        <Card title="Menge" info={totalMetricInfo(input, settings)}>
           <div className="flex flex-col gap-4">
             <Select
               label="Was zählt"
@@ -393,13 +416,12 @@ export function GoalForm({
             )}
             {periodFields}
             <TotalTarget input={input} units={units} onChange={(target) => change({ target })} />
-            <DailyGoalHint input={input} settings={settings} />
           </div>
         </Card>
       )}
 
       {input.kind === 'habit' && (
-        <Card title="Gewohnheit">
+        <Card title="Gewohnheit" info={habit ? <p>{habitMetricHint(input, habit)}</p> : undefined}>
           {selectableHabits.length === 0 ? (
             <p className={HINT}>
               Noch keine Gewohnheiten.{' '}
@@ -438,7 +460,6 @@ export function GoalForm({
                   }
                 />
               )}
-              {habit && <p className={HINT}>{habitMetricHint(input, habit)}</p>}
               {habit && input.habitMetric !== 'streak' && periodFields}
               {habit && (
                 <HabitTarget
@@ -453,7 +474,16 @@ export function GoalForm({
       )}
 
       {input.kind === 'custom' && (
-        <Card title="Eigenes Ziel">
+        <Card
+          title="Eigenes Ziel"
+          info={
+            input.customType === 'check' ? (
+              <p>Wird auf der Ziele-Seite und im Widget abgehakt, z. B. „Führerschein machen“.</p>
+            ) : (
+              <p>Fortschritt trägst du selbst ein (+1, beliebige Menge, Rückgängig).</p>
+            )
+          }
+        >
           <div className="flex flex-col gap-4">
             <div>
               <label htmlFor={titleId} className={LABEL}>
@@ -483,11 +513,7 @@ export function GoalForm({
               value={input.customType ?? 'number'}
               onChange={(customType) => change({ customType, target: 0 })}
             />
-            {input.customType === 'check' ? (
-              <p className={HINT}>
-                Wird auf der Ziele-Seite und im Widget abgehakt, z. B. „Führerschein machen“.
-              </p>
-            ) : (
+            {input.customType !== 'check' && (
               <>
                 <div className="grid grid-cols-[1fr_7rem] items-end gap-2">
                   <Stepper
@@ -515,9 +541,6 @@ export function GoalForm({
                     />
                   </div>
                 </div>
-                <p className={HINT}>
-                  Fortschritt trägst du selbst ein (+1, beliebige Menge, Rückgängig).
-                </p>
               </>
             )}
           </div>
@@ -903,8 +926,8 @@ function TotalTarget({
   }
 }
 
-/** Welches Tagesziel zählt (aus den Einstellungen) */
-function DailyGoalHint({ input, settings }: { input: GoalInput; settings: Settings }) {
+/** Was bei „Menge“ zählt (Info-Knopf der Karte); `null` = selbsterklärend */
+function totalMetricInfo(input: GoalInput, settings: Settings): ReactNode {
   const goal =
     input.totalMetric === 'stepsGoalDays'
       ? `${formatDecimal(settings.stepsGoal, 0)} Schritte`
@@ -914,17 +937,17 @@ function DailyGoalHint({ input, settings }: { input: GoalInput; settings: Settin
           ? `${formatWorkoutDuration(settings.sleepGoalSeconds)} Schlaf`
           : null;
   if (input.totalMetric === 'steps') {
-    return <p className={HINT}>Summe der Schritte aus dem Alltag (Körper).</p>;
+    return <p>Summe der Schritte aus dem Alltag (Körper).</p>;
   }
   if (input.totalMetric === 'pages') {
-    return <p className={HINT}>Summe der eingetragenen Seiten aller Bücher (Alltag › Lesen).</p>;
+    return <p>Summe der eingetragenen Seiten aller Bücher (Alltag › Lesen).</p>;
   }
   if (input.totalMetric === 'books') {
-    return <p className={HINT}>Zählt Bücher, die im Zeitraum als gelesen markiert wurden.</p>;
+    return <p>Zählt Bücher, die im Zeitraum als gelesen markiert wurden.</p>;
   }
   if (input.totalMetric === 'focusTime' || input.totalMetric === 'meditationTime') {
     return (
-      <p className={HINT}>
+      <p>
         Summe der {input.totalMetric === 'focusTime' ? 'Fokus-Zeit' : 'Meditationszeit'} aus dem
         Timer (Alltag › Fokus & Meditation), ohne Pausen.
       </p>
@@ -932,7 +955,7 @@ function DailyGoalHint({ input, settings }: { input: GoalInput; settings: Settin
   }
   if (!goal) return null;
   return (
-    <p className={HINT}>
+    <p>
       Zählt Tage mit mindestens {goal} (Tagesziel aus den Einstellungen; eine Änderung gilt auch
       rückwirkend).
     </p>

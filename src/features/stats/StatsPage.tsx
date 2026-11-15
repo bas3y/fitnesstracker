@@ -1,11 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { WeeklyBarChart } from '../../components/charts';
-import { secondaryButton } from '../../components/buttons';
+import { secondaryButton, smallButton } from '../../components/buttons';
 import { Icon } from '../../components/icons';
-import { Card, GroupRow, Page } from '../../components/Page';
+import { Card, EmptyState, GroupRow, Page } from '../../components/Page';
 import { SearchInput } from '../../components/SearchInput';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Select } from '../../components/Select';
@@ -47,6 +47,7 @@ import { GOALS_PATH } from '../goals/paths';
 import { useGoals } from '../goals/useGoals';
 import { ACHIEVEMENTS_PATH } from '../motivation/paths';
 import { useSettings } from '../settings/useSettings';
+import { TRAINING_PATH } from '../training/paths';
 import { ActivityCard } from './ActivityCard';
 import { DailyStats } from './DailyStats';
 import { EnduranceStats } from './EnduranceStats';
@@ -109,12 +110,11 @@ function StrengthStats() {
   return (
     <>
       {sessions?.length === 0 && (
-        <Card>
-          <p className="text-muted">
-            Noch keine beendeten Trainings. Nach dem ersten Workout siehst du hier deinen
-            Fortschritt.
-          </p>
-        </Card>
+        <EmptyState text="Noch keine beendeten Trainings.">
+          <Link to={TRAINING_PATH} className={smallButton}>
+            Zum Training
+          </Link>
+        </EmptyState>
       )}
       {sessions && sessions.length > 0 && (
         <StatsContent
@@ -187,15 +187,18 @@ function StatsContent({
         <ActivityCard sessions={ofMuscle(sessions)} now={now} filter={filter} />
       </div>
       {hints.length > 0 && (
-        <Card title="Fokus" wide>
+        <Card
+          title="Fokus"
+          wide
+          info={
+            <p>Grobe Orientierung: Kleine Muskeln und Fortgeschrittene steigern sich langsamer.</p>
+          }
+        >
           <ul className="flex list-disc flex-col gap-1 pl-5">
             {hints.map((hint) => (
               <li key={hint.muscle}>{formatFocusHint(hint)}</li>
             ))}
           </ul>
-          <p className={`${HINT} mt-2`}>
-            Grobe Orientierung: Kleine Muskeln und Fortgeschrittene steigern sich langsamer.
-          </p>
         </Card>
       )}
       {muscle ? (
@@ -252,7 +255,7 @@ function Bar({
 function VolumeCard({ volumes }: { volumes: MuscleVolume[] }) {
   const top = volumes[0]?.setsPerWeek ?? 1;
   return (
-    <Card title="Sätze pro Woche">
+    <Card title="Sätze pro Woche" info={<p>Durchschnitt im Zeitraum, Hilfsmuskeln zählen halb.</p>}>
       {volumes.length === 0 ? (
         <p className={HINT}>Keine Krafttrainings in diesem Zeitraum.</p>
       ) : (
@@ -273,7 +276,6 @@ function VolumeCard({ volumes }: { volumes: MuscleVolume[] }) {
             ))}
           </ul>
           <p className={`${HINT} mt-2`}>
-            Durchschnitt im Zeitraum, Hilfsmuskeln zählen halb.{' '}
             <span
               aria-hidden="true"
               className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-mark"
@@ -297,7 +299,10 @@ function MuscleWeeksCard({
 }) {
   const weeks = weeklyMuscleSets(sessions, muscle, now);
   return (
-    <Card title={`Sätze pro Woche: ${MUSCLE_LABELS[muscle]}`}>
+    <Card
+      title={`Sätze pro Woche: ${MUSCLE_LABELS[muscle]}`}
+      info={<p>Hilfsmuskeln zählen halb.</p>}
+    >
       {weeks.length === 0 ? (
         <p className={HINT}>Keine Sätze in diesem Zeitraum.</p>
       ) : (
@@ -310,7 +315,6 @@ function MuscleWeeksCard({
             }))}
             formatValue={(value) => `${formatDecimal(value, 1)} Sätze`}
           />
-          <p className={`${HINT} mt-2`}>Hilfsmuskeln zählen halb.</p>
         </>
       )}
     </Card>
@@ -320,12 +324,17 @@ function MuscleWeeksCard({
 function ProgressCard({ progress }: { progress: MuscleProgress[] }) {
   const top = Math.max(1, ...progress.map(({ percent }) => Math.abs(percent)));
   return (
-    <Card title="Fortschritt je Muskelgruppe">
-      {progress.length === 0 ? (
-        <p className={HINT}>
-          Noch zu wenig Daten: Eine Übung braucht mindestens {MIN_PROGRESS_SESSIONS} Einheiten im
-          Zeitraum.
+    <Card
+      title="Fortschritt je Muskelgruppe"
+      info={
+        <p>
+          Bestwert der ersten gegen die letzten zwei Einheiten im Zeitraum. Eine Übung zählt ab{' '}
+          {MIN_PROGRESS_SESSIONS} Einheiten im Zeitraum.
         </p>
+      }
+    >
+      {progress.length === 0 ? (
+        <p className={HINT}>Noch zu wenig Daten.</p>
       ) : (
         <>
           <ul aria-label="Fortschritt je Muskelgruppe" className="flex flex-col gap-2">
@@ -339,9 +348,6 @@ function ProgressCard({ progress }: { progress: MuscleProgress[] }) {
               />
             ))}
           </ul>
-          <p className={`${HINT} mt-2`}>
-            Bestwert der ersten gegen die letzten zwei Einheiten im Zeitraum.
-          </p>
         </>
       )}
     </Card>
@@ -431,8 +437,7 @@ function RestCard({ sessions }: { sessions: StatsSession[] }) {
       <h2 className="mb-3 text-lg font-semibold">Satzpausen</h2>
       {items.length === 0 ? (
         <p className={HINT}>
-          Noch zu wenig Daten: Eine Übung braucht mindestens {MIN_REST_PAIRS} vergleichbare
-          Satzpaare im Zeitraum.
+          Noch zu wenig Daten: mindestens {MIN_REST_PAIRS} vergleichbare Satzpaare je Übung.
         </p>
       ) : (
         <ul

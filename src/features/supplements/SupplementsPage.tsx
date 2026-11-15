@@ -5,7 +5,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/icons';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Dialog } from '../../components/Dialog';
-import { LinkRow, Page } from '../../components/Page';
+import { LinkRow, MoreLink, Page } from '../../components/Page';
 import { SortableList } from '../../components/SortableList';
 import { showToast } from '../../components/toastStore';
 import {
@@ -59,10 +59,7 @@ export function SupplementsPage() {
       )}
 
       {overview && active.length === 0 && (
-        <p className={`mb-4 ${MUTED}`}>
-          Noch keine Supplements. Lege das erste an: mit Dosis, Uhrzeit und optional Bestand. Es
-          erscheint dann hier zum Abhaken.
-        </p>
+        <p className={`mb-4 ${MUTED}`}>Noch keine Supplements.</p>
       )}
       {active.length > 0 && <h2 className="mb-3 text-lg font-semibold">Alle Supplements</h2>}
       <SortableList
@@ -117,17 +114,11 @@ export function SupplementsPage() {
         </section>
       )}
 
-      <p className={`mb-4 ${MUTED}`}>
-        Erinnerungen und Warnschwelle für den Bestand stellst du in den{' '}
-        <Link
-          to={settingsPath('supplements')}
-          state={from}
-          className="font-semibold text-primary-text"
-        >
-          Einstellungen
-        </Link>{' '}
-        ein.
-      </p>
+      <div className="mb-4">
+        <MoreLink to={settingsPath('supplements')} state={from}>
+          Erinnerungen & Bestand einstellen
+        </MoreLink>
+      </div>
 
       {importing && <ImportDialog onClose={() => setImporting(false)} />}
       {deleting && (

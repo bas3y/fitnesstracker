@@ -17,9 +17,7 @@ export function WorkoutEditor({ detail, mode }: { detail: WorkoutDetail; mode: W
 
   return (
     <>
-      {items.length === 0 && (
-        <p className="mb-4 text-muted">Noch keine Übungen. Füge die erste Übung hinzu.</p>
-      )}
+      {items.length === 0 && <p className="mb-4 text-muted">Noch keine Übungen.</p>}
       <SortableList
         label="Übungen im Workout"
         items={items.map((item) => ({

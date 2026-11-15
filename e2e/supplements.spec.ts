@@ -139,7 +139,11 @@ test('Supplements: anlegen, abhaken, Bestand, Trainingstage, Erinnerung und Widg
   await expect(settings.getByLabel('Warnung ab Restbestand für', { exact: true })).toHaveValue(
     '14',
   );
-  await expect(settings).toContainText('keine echten Push-Nachrichten');
+  // Erklärung zu Erinnerungen ohne Server steckt seit 22e im Info-Blatt
+  await settings.getByRole('button', { name: 'Info: Erinnerungen' }).click();
+  await expect(page.getByRole('dialog', { name: 'Erinnerungen' })).toContainText(
+    'keine echten Push-Nachrichten',
+  );
 });
 
 test('Supplements aus einer Gewohnheit übernehmen (offline)', async ({ page, context }) => {

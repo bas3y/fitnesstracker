@@ -47,11 +47,16 @@ export function WorkoutLogPage() {
 
   return (
     <Page title="Training nachtragen" backTo={backTo}>
-      <p className="mb-4 text-sm text-muted">
-        Für Trainings, die du z. B. auf Papier notiert hast. Alle Sätze zählen direkt als erledigt –
-        für Statistik, Rekorde und Trainingstage. Ein laufendes Workout bleibt davon unberührt.
-      </p>
-      <Card>
+      <Card
+        title="Zeitpunkt"
+        info={
+          <p>
+            Für Trainings, die du z. B. auf Papier notiert hast. Alle Sätze zählen direkt als
+            erledigt – für Statistik, Rekorde und Trainingstage. Ein laufendes Workout bleibt davon
+            unberührt.
+          </p>
+        }
+      >
         <form
           noValidate
           className="flex flex-col gap-3"

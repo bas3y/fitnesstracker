@@ -191,6 +191,25 @@ test('Übungen: Liste mit Detail daneben bzw. eigene Seite', async ({ page }, in
   }
 });
 
+test('Info-Blatt: ab großer Breite mittig, sonst unten', async ({ page }, info) => {
+  const screen = screenOf(info);
+  await page.goto('./#/settings/training');
+  await page.getByRole('main').getByRole('button', { name: 'Info: Puls' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Puls' });
+  await expect(sheet).toBeVisible();
+  const box = (await sheet.boundingBox())!;
+  const viewport = page.viewportSize()!;
+  const bottomGap = viewport.height - (box.y + box.height);
+  if (large(screen)) {
+    expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThan(2);
+    expect(bottomGap).toBeGreaterThan(40);
+  } else {
+    expect(bottomGap).toBeLessThan(2);
+  }
+  await page.keyboard.press('Escape');
+  await expect(sheet).toHaveCount(0);
+});
+
 test('Manifest erlaubt Querformat', async ({ page }) => {
   await page.goto('./');
   const href = await page.locator('link[rel="manifest"]').getAttribute('href');

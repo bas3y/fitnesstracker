@@ -254,10 +254,10 @@ export function SessionForm({
               startValue={40}
               allowEmpty
               onChange={(swolf) => change({ swolf })}
+              info={{
+                content: <p>SWOLF = Zeit + Züge pro Bahn, steht in der Auswertung deiner Uhr.</p>,
+              }}
             />
-            <p className={HINT}>
-              SWOLF = Zeit + Züge pro Bahn, steht in der Auswertung deiner Uhr.
-            </p>
           </div>
         </Card>
       )}

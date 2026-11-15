@@ -45,7 +45,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 22b – Bedienung: Anpassen-Stift, interaktive Widgets, Navigation
 - [x] Schritt 22c – Desktop, Tablet & Querformat
 - [x] Schritt 22d – Animationen für Kacheln & Inhalte
-- [ ] Schritt 22e – Texte aufräumen, Erklärungen hinter Info-Button
+- [x] Schritt 22e – Texte aufräumen, Erklärungen hinter Info-Button
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 - [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
 - [ ] Schritt 24b – Gym-Bereich (LocalGym): eigene Oberfläche & Verwaltung
@@ -1500,6 +1500,22 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
 - E2E, die Texte prüfen, entsprechend anpassen; Info-Popups per E2E stichprobenartig öffnen.
 
 **Notizen:**
+- Mit dem Nutzer abgestimmt (15.11.2026, Entwurf im Artifact „Basey 22e Texte & Info-Button“, https://claude.ai/artifact/G7KwPeMtTWU7qr1bAm21gG): **Popup B** (Blatt von unten, ✕ / daneben tippen / Escape schließt, ab `lg` mittig). Regeln und Beispiele aus dem Entwurf passen; Claude entscheidet Seite für Seite selbst nach den Regeln und listet das Ergebnis hier.
+- Gebaut:
+  - **`InfoButton`** (`src/components/InfoButton.tsx`): rundes „i“ (44 px, `aria-label` „Info: …“, `aria-expanded`), Blatt per Portal in `body` (gleitet am Handy von unten herein = `anim-sheet`, ab `lg` mittig), Titel + ✕, Escape und Antippen daneben schließen, Fokus geht zurück auf den Knopf, Seite scrollt dahinter nicht (`lockScroll`). Klicks reichen nicht an umgebende Zeilen/Kacheln durch. Eingebaut als Prop `info` in `Card` (neben der Überschrift), `WidgetHeader`, `Switch` (`{ title, content }`, Knopf außerhalb des `<label>` → Name des Schalters bleibt gleich) und `Stepper` (`{ title?, content }`).
+  - **`EmptyState`** (`Page.tsx`): Leer-Zustand als eine Zeile + optional ein Knopf (`smallButton` aus `buttons.ts`) und optional `info`.
+  - **Hinter (i) gewandert:** Einstellungen (Pausen, Puls, Pausen-Auswertung, Nur Protein, Trainingstag-Ziele, verbrannte Kalorien, Supplement-Erinnerungen, Körpergewicht, Fotos im Backup, Export), Startseite (Trainingsfortschritt – Vormonat jetzt als „+2 zum Vormonat“ unter der Kachel –, Diese Woche groß), Statistik (Fokus, Sätze pro Woche, Fortschritt je Muskelgruppe, Pace, Rückblick Ø-Hinweise, Satzpausen der Übung, alle Export-Karten), Training (Training nachtragen, Zusatzgewicht/Negativ-Gewicht im Satz, Ausdauer-Tipp bei Cardio-Übungen), Pläne (Blöcke, Sätze anpassen, Prozente, aktueller Block, Ablauf, Vorlagen), Alltag (importierte Werte, Unterpunkte und Aufhören-Ziel im Gewohnheits-Formular, To-dos), Supplements-Formular, Ausrüstung, SWOLF, Lebensmittel-Formular, Ernährung (Nur Protein, Protein schnell), Ziele-Formular (Art mit allen Beispielen, 1RM, Bestzeit, Gewicht, Menge, Gewohnheit, Eigenes), Ziele-Seite (Fortschritt/Marke), Erfolge (Serien, Trainingsserie, Abzeichen), Timer (Gong), Lesen/Timer-Gewohnheit, „Vorher gelesen“, Fotos-Tipp.
+  - **Gekürzt/entfernt:** Leer-Zustände (Gewohnheiten, Supplements, Ziele, Statistik Kraft/Ausdauer mit Knopf „Zum Training“, Startseite, Schnellzugriff, Workout/Plan ohne Übungen, Ziele-/Serien-Widget, Timer-/Lese-Gewohnheit mit Knopf „Gewohnheit anlegen“), „Aktiver Plan“, „Ausgeblendet – erscheint nicht in der Auswahl.“, Portionen-Satz (Platzhalter reicht), Fotos-Seite nur noch „Bleibt nur auf diesem Gerät.“, Weitergeben-Seite in einem Satz, Supplements-Link „Erinnerungen & Bestand einstellen“, Export-Link „PDF-Berichte im Rückblick“, Schalter „Vibration“ (iPhone-Hinweis im Info-Blatt).
+  - **Bleibt sichtbar:** Warnungen (Speicher nicht dauerhaft, Backup ersetzt Daten, Fotos nicht im Backup), „Nur mit Internet“, Fehler, Fortschritt/Werte, Hinweise zum Handeln („Letztes Beintraining vor 6 Tagen“, „Wähle oben eine Sportart …“, Körpergewicht für 1RM), kurze Beschreibungen in Auswahl-Knöpfen (Gewohnheits-Art, Block-Art, Plan-Vorlagen), Willkommens-Karte (einmalig), Installations-Anleitung, „Über & Lizenzen“.
+  - Tests: `InfoButton.test.tsx` (öffnen/schließen mit ✕, Escape, daneben; Fokus; kein Durchreichen an die Zeile; in Karte und Schalter); E2E `info.spec.ts` (offline: Einstellungen → Training, Blatt unten angedockt, Schalter behält Namen, Leer-Zustand Ziele mit Beispielen; Export-Karte), `layout.spec.ts` (Blatt ab `lg` mittig, quer unten), angepasst `blocks.spec.ts` (Erklärung im Blatt), `safety.spec.ts` (kürzerer Satz), `supplements.spec.ts` (Push-Hinweis im Blatt), `usage.spec.ts` (Schalter per Rolle, `getByLabel` träfe auch „Info: …“). 987 Unit-Tests, 170 E2E grün (gegen eigenen Build auf Port 4183, weil ein Preview auf 4173 lief).
+- Abweichungen:
+  - „Zurück“ (Android-Zurück-Taste) schließt das Blatt nicht – wie bei den übrigen Fenstern (`Dialog`, `ConfirmDialog`), dafür bräuchte es einen History-Eintrag. Escape, ✕ und daneben tippen gehen.
+  - Kurze Beschreibungen in Auswahl-Knöpfen und Listen-Untertitel (`hint` an `LinkRow`/`GroupRow`) bleiben – sie beschreiben die Auswahl selbst.
+  - Leer-Zustand „Schnellzugriff“ ohne Knopf: Auswählen geht nur im Anpassen-Modus (Stift oben).
+- Offene Punkte:
+  - **Handytest:** Info-Blatt mit dem Daumen (iPhone mit Home-Indikator unten, Android-Zurück), lange Texte im Blatt, Info-Knopf neben Schaltern auf schmalen Handys.
+  - Vitest: `activity.test.ts` („vereinfacht lange Strecken“) lief im vollen Lauf parallel zum Build einmal über die Zeit; einzeln und im zweiten vollen Lauf grün.
+  - Ideen: Info-Blatt per Android-Zurück schließen (für alle Fenster gemeinsam lösen); `CatalogSearch` („x … offline verfügbar“) wird nirgends mehr verwendet – bei Gelegenheit entfernen.
 
 ### Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 **Ziel:** Nur angemeldete Personen mit gültiger Lizenz nutzen die App; sie läuft auf neuer, geschützter Adresse.

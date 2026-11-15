@@ -25,7 +25,6 @@ import {
 import { WEEKDAYS } from '../../domain/plans';
 
 const LABEL = 'mb-1 block text-sm font-medium';
-const HINT = 'text-sm text-muted';
 
 export function HabitForm({
   initial,
@@ -297,7 +296,15 @@ function QuitFields({
   const dateId = useId();
   const reduce = input.target > 0;
   return (
-    <Card title="Ziel">
+    <Card
+      title="Ziel"
+      info={
+        <>
+          <p>Ganz aufhören: Jeder Tag ohne Eintrag gilt als geschafft. Trag nur Rückfälle ein.</p>
+          <p>Reduzieren: Ein Tag gilt als geschafft, solange du unter dem Limit bleibst.</p>
+        </>
+      }
+    >
       <div className="flex flex-col gap-3">
         <SegmentedControl
           label="Ziel"
@@ -310,11 +317,6 @@ function QuitFields({
             onChange({ target: mode === 'reduce' ? Math.max(input.target, 5) : 0 })
           }
         />
-        <p className={HINT}>
-          {reduce
-            ? 'Ein Tag gilt als geschafft, solange du unter dem Limit bleibst.'
-            : 'Jeder Tag ohne Eintrag gilt als geschafft. Trag nur Rückfälle ein.'}
-        </p>
         {reduce && (
           <Stepper
             label="Tageslimit"
@@ -371,11 +373,15 @@ function ItemFields({
     onChange(items.map((item) => (item.id === id ? { ...item, ...changes } : item)));
 
   return (
-    <Card title="Unterpunkte">
-      <p className={`mb-3 ${HINT}`}>
-        Erledigt, wenn alle Unterpunkte erledigt sind. Ist „Pro Tipp“ so groß wie die Menge, reicht
-        ein Tipp zum Abhaken.
-      </p>
+    <Card
+      title="Unterpunkte"
+      info={
+        <p>
+          Erledigt, wenn alle Unterpunkte erledigt sind. Ist „Pro Tipp“ so groß wie die Menge,
+          reicht ein Tipp zum Abhaken.
+        </p>
+      }
+    >
       <ol aria-label="Unterpunkte" className="flex flex-col gap-4">
         {items.map((item, index) => (
           <ItemRow

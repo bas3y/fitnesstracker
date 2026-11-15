@@ -1,15 +1,14 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useBackTo } from '../../components/backNavigation';
-import { Card, Page } from '../../components/Page';
+import { InfoButton } from '../../components/InfoButton';
+import { EmptyState, Page } from '../../components/Page';
 import { dayKey } from '../../domain/daily';
 import { goalProgress, goalSubject, sortGoalsByDeadline } from '../../domain/goals';
 import { useSettings } from '../settings/useSettings';
 import { GoalCard } from './GoalCard';
 import { NEW_GOAL_PATH } from './paths';
 import { useGoalData, useGoalExercises, useGoals } from './useGoals';
-
-const HINT = 'text-sm text-muted';
 
 export function GoalsPage() {
   const backTo = useBackTo('/stats');
@@ -66,25 +65,36 @@ export function GoalsPage() {
   return (
     <Page title="Ziele" backTo={backTo} action={action}>
       {items.length === 0 && (
-        <Card>
-          <p className="mb-2 text-muted">Noch keine Ziele. Setze dir zum Beispiel:</p>
-          <ul className="flex list-disc flex-col gap-1 pl-5 text-sm">
-            <li>Bankdrücken 100 kg bis Dezember</li>
-            <li>10 km unter 50 Minuten laufen</li>
-            <li>Auf 80 kg Körpergewicht</li>
-            <li>12 Trainings pro Monat oder 500 km im Jahr</li>
-            <li>1000 Seiten lesen oder 30 Tage rauchfrei</li>
-            <li>Eigene Ziele wie „50 Lektionen Spanisch“</li>
-          </ul>
-        </Card>
+        <EmptyState
+          text="Noch keine Ziele."
+          info={{
+            title: 'Beispiele',
+            content: (
+              <ul className="flex list-disc flex-col gap-1 pl-5">
+                <li>Bankdrücken 100 kg bis Dezember</li>
+                <li>10 km unter 50 Minuten laufen</li>
+                <li>Auf 80 kg Körpergewicht</li>
+                <li>12 Trainings pro Monat oder 500 km im Jahr</li>
+                <li>1000 Seiten lesen oder 30 Tage rauchfrei</li>
+                <li>Eigene Ziele wie „50 Lektionen Spanisch“</li>
+              </ul>
+            ),
+          }}
+        />
       )}
       {active.length > 0 && (
         <section aria-label="Aktive Ziele" className="mb-4">
+          <div className="mb-3 flex items-center">
+            <h2 className="text-lg font-semibold">Aktiv</h2>
+            <InfoButton title="Fortschritt" className="-my-2.5">
+              <p>
+                Der Fortschritt kommt aus deinen Trainings und Einträgen, bei eigenen Zielen trägst
+                du ihn selbst ein.
+              </p>
+              <p>Die Marke im Balken zeigt, wo du bei gleichmäßigem Tempo heute wärst.</p>
+            </InfoButton>
+          </div>
           {active.map(card)}
-          <p className={HINT}>
-            Der Fortschritt kommt aus deinen Trainings und Einträgen, bei eigenen Zielen trägst du
-            ihn selbst ein. Die Marke im Balken zeigt, wo du bei gleichmäßigem Tempo heute wärst.
-          </p>
         </section>
       )}
       {done.length > 0 && (

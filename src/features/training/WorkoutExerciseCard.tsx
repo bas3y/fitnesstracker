@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { dangerButton, secondaryButton } from '../../components/buttons';
 import { Chip } from '../../components/Chip';
 import { CheckIcon, TrophyIcon } from '../../components/icons';
+import { InfoButton } from '../../components/InfoButton';
 import { useChangedSinceMount } from '../../components/motion';
 import { Stepper } from '../../components/Stepper';
 import { SegmentedControl } from '../../components/SegmentedControl';
@@ -46,6 +47,8 @@ import { useActiveExercises } from './useExercises';
 import { useLastPerformance } from './useWorkouts';
 
 export type WorkoutMode = 'live' | 'edit';
+
+const ECCENTRIC_INFO = <p>Last in der negativen Phase, falls die Maschine dort mehr gibt.</p>;
 
 interface WorkoutExerciseCardProps {
   item: WorkoutItem;
@@ -110,6 +113,11 @@ export function WorkoutExerciseCard({
       <div className="-ml-3 flex items-center gap-1">
         {handle}
         <h2 className="mr-auto min-w-0 text-lg leading-tight font-semibold">{name}</h2>
+        {exercise?.category === 'cardio' && (
+          <InfoButton title="Ausdauer erfassen">
+            <p>Mit Distanz, Pace und Puls erfasst du das unter Training → Ausdauer-Kacheln.</p>
+          </InfoButton>
+        )}
         <button
           type="button"
           className={iconButton}
@@ -121,11 +129,6 @@ export function WorkoutExerciseCard({
       </div>
 
       {target && <p className="text-sm text-muted">{target}</p>}
-      {exercise?.category === 'cardio' && (
-        <p className="text-sm text-muted">
-          Tipp: Mit Distanz, Pace und Puls erfasst du das unter Training → Ausdauer-Kacheln.
-        </p>
-      )}
 
       {exercise && (
         <LastTime
@@ -508,10 +511,10 @@ function SetEditor({
           startValue={isBodyweight ? 0 : unit === 'kg' ? 20 : 45}
           allowEmpty
           onChange={(value) => save({ weight: value === null ? null : displayToKg(value, unit) })}
+          info={
+            isBodyweight ? { content: <p>Negativ = Unterstützung (Band, Maschine).</p> } : undefined
+          }
         />
-      )}
-      {isBodyweight && (
-        <p className="-mt-2 text-xs text-muted">Negativ = Unterstützung (Band, Maschine)</p>
       )}
       {isTimed ? (
         <Stepper
@@ -581,6 +584,7 @@ function SetEditor({
               startValue={(set.level ?? 5) + 1}
               allowEmpty
               onChange={(eccentricLevel) => save({ eccentricLevel })}
+              info={{ content: ECCENTRIC_INFO }}
             />
           ) : (
             <Stepper
@@ -595,11 +599,9 @@ function SetEditor({
               onChange={(value) =>
                 save({ eccentricWeight: value === null ? null : displayToKg(value, unit) })
               }
+              info={{ content: ECCENTRIC_INFO }}
             />
           )}
-          <p className="mt-1 text-xs text-muted">
-            Last in der negativen Phase, falls die Maschine dort mehr gibt
-          </p>
         </div>
       )}
       {showExtras && (

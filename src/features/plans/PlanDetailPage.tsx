@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { dangerButton, primaryButton, secondaryButton } from '../../components/buttons';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
+import { InfoButton } from '../../components/InfoButton';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { SortableList } from '../../components/SortableList';
@@ -92,7 +93,16 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
             onSave={(name) => void updatePlan(plan.id, { name })}
           />
           <div>
-            <p className="mb-1 text-sm font-medium">Ablauf</p>
+            <div className="mb-1 flex items-center">
+              <p className="text-sm font-medium">Ablauf</p>
+              <InfoButton title="Ablauf" className="-my-3 -ml-1">
+                <p>
+                  {PLAN_SCHEDULE_LABELS.rotation}: Die Trainings kommen der Reihe nach dran, egal an
+                  welchem Tag.
+                </p>
+                <p>{PLAN_SCHEDULE_LABELS.weekdays}: Jedes Training gehört zu festen Wochentagen.</p>
+              </InfoButton>
+            </div>
             <SegmentedControl
               label="Ablauf"
               options={PLAN_SCHEDULES.map((value) => ({
@@ -102,16 +112,9 @@ function PlanEditor({ detail }: { detail: PlanDetail }) {
               value={plan.schedule}
               onChange={(schedule) => void updatePlan(plan.id, { schedule })}
             />
-            <p className="mt-1 text-xs text-muted">
-              {plan.schedule === 'rotation'
-                ? 'Die Trainings kommen der Reihe nach dran, egal an welchem Tag.'
-                : 'Jedes Training gehört zu festen Wochentagen.'}
-            </p>
           </div>
           {isActive ? (
-            <p className="text-sm font-medium text-primary-text">
-              Aktiver Plan – wird auf der Trainingsseite vorgeschlagen.
-            </p>
+            <p className="text-sm font-medium text-primary-text">Aktiver Plan</p>
           ) : (
             <button
               type="button"

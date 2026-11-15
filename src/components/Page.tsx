@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { CompactHeader } from './CompactHeader';
+import { InfoButton } from './InfoButton';
 import { PAGE_WIDTH, useSplitPane, type PageWidth } from './pageLayout';
 import { useScrolledPast } from './useScrolledPast';
 import { ChevronLeftIcon, ChevronRightIcon, Icon, IconBadge, type IconName } from './icons';
@@ -224,19 +225,59 @@ export function Card({
   title,
   tone,
   wide = false,
+  info,
   children,
 }: {
   title?: string;
   tone?: CardTone;
   /** In einem Raster (z. B. Statistik ab `lg`) über alle Spalten */
   wide?: boolean;
+  /** Erklärung hinter dem „i“ rechts neben der Überschrift (statt Erklärsatz in der Karte) */
+  info?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section
       className={`mb-4 rounded-2xl bg-surface ${tone ? `tone-${tone} p-5` : 'p-4'} ${wide ? 'col-span-full' : ''}`}
     >
-      {title && <h2 className="mb-3 text-[1.0625rem] font-semibold">{title}</h2>}
+      {title && (
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="min-w-0 flex-1 text-[1.0625rem] font-semibold">{title}</h2>
+          {info && (
+            <InfoButton title={title} className="-my-2.5 -mr-2.5">
+              {info}
+            </InfoButton>
+          )}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+/**
+ * Leer-Zustand (seit 22e): eine kurze Zeile, daneben höchstens eine Aktion
+ * (Link/Knopf mit `smallButton`). Tipps gehören hinter `info`.
+ */
+export function EmptyState({
+  text,
+  info,
+  children,
+}: {
+  text: string;
+  info?: { title: string; content: ReactNode };
+  children?: ReactNode;
+}) {
+  return (
+    <section className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-2xl bg-surface p-4">
+      <span className="flex min-w-0 items-center">
+        <p className="text-muted">{text}</p>
+        {info && (
+          <InfoButton title={info.title} className="-my-2.5">
+            {info.content}
+          </InfoButton>
+        )}
+      </span>
       {children}
     </section>
   );

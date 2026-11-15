@@ -49,13 +49,18 @@ export function TodoPage() {
     <Page title="To-dos" backTo={backTo}>
       <Card>
         <TodoAddForm today={today} withPicker />
-        <p className={HINT}>
-          Nicht erledigte Aufgaben wandern automatisch in den nächsten Tag. Antippen zum Bearbeiten.
-        </p>
       </Card>
       {todos && (
         <>
-          <Card title="Heute">
+          <Card
+            title="Heute"
+            info={
+              <p>
+                Nicht erledigte Aufgaben wandern automatisch in den nächsten Tag. Antippen zum
+                Bearbeiten.
+              </p>
+            }
+          >
             {open.length === 0 ? (
               <p className={HINT}>Keine offenen Aufgaben.</p>
             ) : (

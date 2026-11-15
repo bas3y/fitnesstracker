@@ -225,9 +225,8 @@ function ReviewRows({ rows, label }: { rows: ReviewRow[]; label: string }) {
 function RowsCard({ title, rows, hint }: { title: string; rows: ReviewRow[]; hint?: string }) {
   if (shownRows(rows).length === 0) return null;
   return (
-    <Card title={title}>
+    <Card title={title} info={hint && <p>{hint}</p>}>
       <ReviewRows rows={rows} label={`${title} im Vergleich`} />
-      {hint && <p className={`mt-2 ${HINT}`}>{hint}</p>}
     </Card>
   );
 }

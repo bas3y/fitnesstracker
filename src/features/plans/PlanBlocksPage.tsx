@@ -5,6 +5,7 @@ import { Switch } from '../../components/Switch';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
 import { Dialog } from '../../components/Dialog';
+import { InfoButton } from '../../components/InfoButton';
 import { Card, Page } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Select } from '../../components/Select';
@@ -85,13 +86,16 @@ function BlockTemplates({ plan, today }: { plan: Plan; today: DayKey }) {
   };
   return (
     <>
-      <Card>
-        <p className="text-muted">
-          Teile „{plan.name}“ in Blöcke: z. B. ein paar Wochen Aufbau, dann eine leichte
-          Deload-Woche. Beim Start eines Trainings werden die Sätze passend zum Block vorbefüllt.
-        </p>
-      </Card>
-      <h2 className="mb-2 text-lg font-semibold">Vorlage wählen</h2>
+      <div className="mb-2 flex items-center">
+        <h2 className="text-lg font-semibold">Vorlage wählen</h2>
+        <InfoButton title="Blöcke" className="-my-2.5">
+          <p>
+            Teile „{plan.name}“ in Blöcke: z. B. ein paar Wochen Aufbau, dann eine leichte
+            Deload-Woche. Beim Start eines Trainings werden die Sätze passend zum Block vorbefüllt.
+          </p>
+          <p>Eine Vorlage startet heute mit dem ersten Block, alles bleibt änderbar.</p>
+        </InfoButton>
+      </div>
       <ul aria-label="Vorlagen für Blöcke" className="mb-4 flex flex-col gap-2">
         {BLOCK_TEMPLATES.map((template) => (
           <li key={template.key}>
@@ -112,7 +116,6 @@ function BlockTemplates({ plan, today }: { plan: Plan; today: DayKey }) {
       >
         Eigene Abfolge
       </button>
-      <p className={`${HINT} mt-2`}>Startet heute mit dem ersten Block, alles bleibt änderbar.</p>
     </>
   );
 }
@@ -130,9 +133,7 @@ function CurrentBlockCard({ plan, today }: { plan: Plan; today: DayKey }) {
   if (!progress) {
     return (
       <Card title="Aktueller Block">
-        <p className="mb-3 text-muted">
-          Die Blöcke laufen gerade nicht – Trainings werden wie gewohnt vorbefüllt.
-        </p>
+        <p className="mb-3 text-muted">Die Blöcke laufen gerade nicht.</p>
         <button
           type="button"
           className={primaryButton}
@@ -144,7 +145,7 @@ function CurrentBlockCard({ plan, today }: { plan: Plan; today: DayKey }) {
     );
   }
   return (
-    <Card title="Aktueller Block">
+    <Card title="Aktueller Block" info={<p>Wählst du einen anderen Block, beginnt er heute.</p>}>
       <BlockStatusPanel plan={plan} today={today} />
       <div className="flex flex-col gap-3">
         <Select
@@ -171,7 +172,6 @@ function CurrentBlockCard({ plan, today }: { plan: Plan; today: DayKey }) {
               }
             }}
           />
-          <p className={`${HINT} mt-1`}>Ein anderer Block beginnt heute.</p>
         </div>
         <button
           type="button"
@@ -192,12 +192,19 @@ function AdjustCard({ plan }: { plan: Plan }) {
         label="Sätze automatisch an den Block anpassen"
         checked={plan.blockAdjust}
         onChange={(blockAdjust) => void updatePlan(plan.id, { blockAdjust })}
+        info={{
+          title: 'Sätze anpassen',
+          content: (
+            <>
+              <p>
+                An: Beim Start werden Sätze, Gewicht und Wdh. nach dem Block vorbefüllt. Im Training
+                kannst du alles ändern.
+              </p>
+              <p>Aus: Der Block wird nur angezeigt, die Sätze bleiben wie gewohnt.</p>
+            </>
+          ),
+        }}
       />
-      <p className={HINT}>
-        {plan.blockAdjust
-          ? 'Beim Start werden Sätze, Gewicht und Wdh. nach dem Block vorbefüllt. Im Training kannst du alles ändern.'
-          : 'Aus: Der Block wird nur angezeigt, die Sätze bleiben wie gewohnt.'}
-      </p>
     </Card>
   );
 }
@@ -214,7 +221,7 @@ function BlockSequence({ plan }: { plan: Plan }) {
   return (
     <>
       <h2 className="mb-1 text-lg font-semibold">Abfolge</h2>
-      <p className={`${HINT} mb-2`}>{formatWeeks(totalWeeks)} insgesamt. Antippen zum Ändern.</p>
+      <p className={`${HINT} mb-2`}>{formatWeeks(totalWeeks)} insgesamt</p>
       <SortableList
         label="Blöcke"
         items={blocks.map((block, index) => ({
@@ -363,6 +370,15 @@ function BlockDialog({
         max={MAX_BLOCK_PERCENT}
         decimals={0}
         unit="%"
+        info={{
+          title: 'Prozente',
+          content: (
+            <p>
+              Prozente beziehen sich auf das letzte normale Training; Deload-, Peak- und Test-Wochen
+              zählen dafür nicht.
+            </p>
+          ),
+        }}
       />
       <Stepper
         label="Wdh. verschieben"
@@ -378,10 +394,6 @@ function BlockDialog({
         checked={block.progression}
         onChange={(progression) => set({ progression })}
       />
-      <p className={HINT}>
-        Prozente beziehen sich auf das letzte normale Training; Deload-, Peak- und Test-Wochen
-        zählen dafür nicht.
-      </p>
       {!isDefault && (
         <button
           type="button"

@@ -29,7 +29,6 @@ import {
 } from '../../domain/supplements';
 
 const LABEL = 'mb-1 block text-sm font-medium';
-const HINT = 'text-sm text-muted';
 
 function newDose(): SupplementDose {
   return { id: crypto.randomUUID(), amount: 1, timing: 'time', time: '08:00', period: null };
@@ -109,11 +108,15 @@ export function SupplementForm({
         </div>
       </Card>
 
-      <Card title="Einnahmen">
-        <p className={`mb-3 ${HINT}`}>
-          Pro fälligem Tag. „Vor/Nach dem Training“ wird mit dem Start bzw. Ende des Workouts
-          fällig.
-        </p>
+      <Card
+        title="Einnahmen"
+        info={
+          <p>
+            Pro fälligem Tag. „Vor/Nach dem Training“ wird mit dem Start bzw. Ende des Workouts
+            fällig.
+          </p>
+        }
+      >
         <ol aria-label="Einnahmen" className="flex flex-col gap-4">
           {input.doses.map((dose, index) => (
             <DoseFields
@@ -140,7 +143,15 @@ export function SupplementForm({
         )}
       </Card>
 
-      <Card title="Rhythmus">
+      <Card
+        title="Rhythmus"
+        info={
+          <p>
+            Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit. Ausdauer zählt
+            bei einer Einheit (außer Mobility) oder einem Workout mit Ausdauerübung.
+          </p>
+        }
+      >
         <div className="flex flex-col gap-3">
           <SegmentedControl
             label="Rhythmus"
@@ -176,16 +187,15 @@ export function SupplementForm({
                 value={input.trainingKind}
                 onChange={(trainingKind) => change({ trainingKind })}
               />
-              <p className={HINT}>
-                Trainingstag = an dem Tag gibt es ein Workout oder eine Ausdauer-Einheit. Ausdauer
-                zählt bei einer Einheit (außer Mobility) oder einem Workout mit Ausdauerübung.
-              </p>
             </>
           )}
         </div>
       </Card>
 
-      <Card title="Bestand">
+      <Card
+        title="Bestand"
+        info={<p>Jede Einnahme zieht ihre Menge ab. „Neue Packung“ addiert die Packungsgröße.</p>}
+      >
         <div className="flex flex-col gap-3">
           <Switch
             label="Bestand erfassen"
@@ -215,9 +225,6 @@ export function SupplementForm({
                 allowEmpty
                 onChange={(packageSize) => change({ packageSize })}
               />
-              <p className={HINT}>
-                Jede Einnahme zieht ihre Menge ab. „Neue Packung“ addiert die Packungsgröße.
-              </p>
             </>
           )}
         </div>

@@ -16,7 +16,6 @@ import { displayToMeters, metersToDisplay, roundTo } from '../../domain/units';
 import { Icon } from '../../components/icons';
 
 const LABEL = 'mb-1 block text-sm font-medium';
-const HINT = 'text-sm text-muted';
 
 export function GearForm({
   initial,
@@ -93,7 +92,15 @@ export function GearForm({
         </div>
       </Card>
 
-      <Card title="Kilometerstand">
+      <Card
+        title="Kilometerstand"
+        info={
+          <>
+            <p>Bisherige Strecke = vor dem Erfassen in der App.</p>
+            <p>Laufschuhe halten meist 600–800 km. Leer = keine Warnung.</p>
+          </>
+        }
+      >
         <div className="flex flex-col gap-4">
           <Stepper
             label="Bisherige Strecke"
@@ -120,10 +127,6 @@ export function GearForm({
               change({ warnDistanceMeters: value === null ? null : displayToMeters(value, unit) })
             }
           />
-          <p className={HINT}>
-            Bisherige Strecke = vor dem Erfassen in der App. Laufschuhe halten meist 600–800 km.
-            Leer = keine Warnung.
-          </p>
         </div>
       </Card>
 

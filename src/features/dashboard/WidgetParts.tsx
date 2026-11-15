@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CountUpText } from '../../components/CountUpText';
 import { motionAllowed } from '../../components/motion';
 import { dayKeyNavigation } from '../../components/dayKeyNavigation';
+import { InfoButton } from '../../components/InfoButton';
 import { CheckIcon, Icon, type IconName } from '../../components/icons';
 import type { CardTone } from '../../components/Page';
 import type { DayKey } from '../../db/types';
@@ -64,11 +65,29 @@ export function SmallWidget({
 }
 
 /** Kopfzeile eines Widgets: Titel links, kurzer Stand rechts */
-export function WidgetHeader({ title, aside }: { title: string; aside?: ReactNode }) {
+export function WidgetHeader({
+  title,
+  aside,
+  info,
+}: {
+  title: string;
+  aside?: ReactNode;
+  /** Erklärung hinter dem „i“ am Ende der Kopfzeile */
+  info?: ReactNode;
+}) {
   return (
-    <div className="mb-3 flex items-baseline justify-between gap-3">
+    <div className={`mb-3 flex justify-between gap-3 ${info ? 'items-center' : 'items-baseline'}`}>
       <h2 className="text-[1.0625rem] font-semibold">{title}</h2>
-      {aside && <span className="shrink-0 text-sm text-muted tabular-nums">{aside}</span>}
+      {(aside || info) && (
+        <span className="flex shrink-0 items-center gap-1">
+          {aside && <span className="text-sm text-muted tabular-nums">{aside}</span>}
+          {info && (
+            <InfoButton title={title} className="-my-2.5 -mr-2.5">
+              {info}
+            </InfoButton>
+          )}
+        </span>
+      )}
     </div>
   );
 }

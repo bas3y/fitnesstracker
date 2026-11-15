@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useBackTo } from '../../components/backNavigation';
+import { InfoButton } from '../../components/InfoButton';
 import { Card, Page } from '../../components/Page';
 import { Stepper } from '../../components/Stepper';
 import { setTrainingWeekTarget } from '../../db/motivation';
@@ -34,12 +35,23 @@ export function AchievementsPage() {
 
   return (
     <Page title="Erfolge" backTo={backTo}>
-      <Card title="Serien">
+      <Card
+        title="Serien"
+        info={
+          <>
+            <p>
+              Trainiere, erreiche deine Tagesziele, schreib Journal oder hak Gewohnheiten ab – hier
+              siehst du, wie viele Tage am Stück du dranbleibst.
+            </p>
+            <p>
+              Heute noch offen unterbricht keine Serie. Tagesziele zählen mit den aktuellen Zielen
+              aus den Einstellungen.
+            </p>
+          </>
+        }
+      >
         {streaks.length === 0 ? (
-          <p className={HINT}>
-            Noch keine Serien. Trainiere, erreiche deine Tagesziele, schreib Journal oder hak
-            Gewohnheiten ab – dann siehst du hier, wie viele Tage am Stück du dranbleibst.
-          </p>
+          <p className={HINT}>Noch keine Serien.</p>
         ) : (
           <ul aria-label="Serien" className="divide-y divide-line">
             {streaks.map((item) => (
@@ -47,12 +59,16 @@ export function AchievementsPage() {
             ))}
           </ul>
         )}
-        <p className={`${HINT} mt-2`}>
-          Heute noch offen unterbricht keine Serie. Tagesziele zählen mit den aktuellen Zielen aus
-          den Einstellungen.
-        </p>
       </Card>
-      <Card title="Trainingsserie">
+      <Card
+        title="Trainingsserie"
+        info={
+          <p>
+            Eine Woche (Mo–So) hält die Serie, wenn du so oft trainierst. Krafttrainings und
+            Ausdauer-Einheiten zählen beide.
+          </p>
+        }
+      >
         <Stepper
           label="Trainings pro Woche"
           value={trainingWeekTarget}
@@ -64,16 +80,18 @@ export function AchievementsPage() {
             if (value !== null) void setTrainingWeekTarget(value);
           }}
         />
-        <p className={`${HINT} mt-2`}>
-          Eine Woche (Mo–So) hält die Serie, wenn du so oft trainierst. Krafttrainings und
-          Ausdauer-Einheiten zählen beide.
-        </p>
       </Card>
       <section aria-labelledby="badges-heading" className="mb-4">
-        <div className="mb-3 flex items-baseline justify-between gap-3">
+        <div className="mb-3 flex items-center gap-1">
           <h2 id="badges-heading" className="text-lg font-semibold">
             Abzeichen
           </h2>
+          <InfoButton title="Abzeichen" className="-my-2.5 mr-auto">
+            <p>
+              Abzeichen werden aus deinen Einträgen berechnet. Neue Stufen meldet die App mit einem
+              Hinweis. Antippen zeigt, was für die nächste Stufe fehlt.
+            </p>
+          </InfoButton>
           <span className={HINT}>
             {unlocked} von {total} Stufen
           </span>
@@ -95,10 +113,6 @@ export function AchievementsPage() {
             </div>
           </Card>
         ))}
-        <p className={HINT}>
-          Abzeichen werden aus deinen Einträgen berechnet. Neue Stufen meldet die App mit einem
-          Hinweis.
-        </p>
       </section>
       {open && <BadgeDialog state={open} units={settings} onClose={() => setOpenBadge(null)} />}
     </Page>

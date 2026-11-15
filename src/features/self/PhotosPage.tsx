@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { primaryButton, secondaryButton } from '../../components/buttons';
 import { DeleteRowButton } from '../../components/DeleteRowButton';
-import { Card, Page } from '../../components/Page';
+import { Card, EmptyState, Page } from '../../components/Page';
 import { addProgressPhotos, type PhotoImage as PreparedImage } from '../../db/photos';
 import { PHOTO_POSES, type DayKey, type PhotoPose, type ProgressPhoto } from '../../db/types';
 import { formatDayLabel } from '../../domain/daily';
@@ -109,9 +109,7 @@ export function PhotosPage() {
           onChange={(event) => void handleFiles(event.target.files)}
         />
       </label>
-      <p className={`mb-4 ${HINT}`}>
-        Aufnehmen oder aus der Galerie wählen, auch mehrere auf einmal. Bleibt nur auf diesem Gerät.
-      </p>
+      <p className={`mb-4 ${HINT}`}>Bleibt nur auf diesem Gerät.</p>
       {notes.length > 0 && (
         <div role="alert" className="mb-4 text-sm text-danger">
           {notes.map((note) => (
@@ -143,12 +141,18 @@ export function PhotosPage() {
         </>
       )}
       {photos?.length === 0 && (
-        <Card>
-          <p className={HINT}>
-            Noch keine Fotos. Tipp: immer gleiches Licht, gleicher Ort und gleiche Haltung, z. B.
-            morgens alle zwei Wochen von vorne, seitlich und hinten.
-          </p>
-        </Card>
+        <EmptyState
+          text="Noch keine Fotos."
+          info={{
+            title: 'Tipp',
+            content: (
+              <p>
+                Immer gleiches Licht, gleicher Ort und gleiche Haltung, z. B. morgens alle zwei
+                Wochen von vorne, seitlich und hinten.
+              </p>
+            ),
+          }}
+        />
       )}
 
       {photos && <StorageCard photos={photos} />}

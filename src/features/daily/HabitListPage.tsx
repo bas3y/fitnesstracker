@@ -48,11 +48,7 @@ export function HabitListPage() {
           <h2 className="mb-3 text-lg font-semibold">Alle Gewohnheiten</h2>
         </>
       )}
-      {habits && active.length === 0 && (
-        <p className="mb-4 text-muted">
-          Noch keine Gewohnheiten. Lege die erste an, sie erscheint dann hier als Checkliste.
-        </p>
-      )}
+      {habits && active.length === 0 && <p className="mb-4 text-muted">Noch keine Gewohnheiten.</p>}
       <SortableList
         label="Alle Gewohnheiten"
         items={active}

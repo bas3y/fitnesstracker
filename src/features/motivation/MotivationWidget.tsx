@@ -62,9 +62,7 @@ export function MotivationWidget({
   return (
     <Card title={DASHBOARD_WIDGET_LABELS.motivation.name}>
       {running.length === 0 ? (
-        <p className="text-sm text-muted">
-          Gerade keine laufende Serie – heute ist ein guter Tag, eine zu starten.
-        </p>
+        <p className="text-sm text-muted">Gerade keine laufende Serie.</p>
       ) : (
         <ul aria-label="Laufende Serien" className="divide-y divide-line">
           {running.map((item) => (

@@ -107,11 +107,9 @@ function ExerciseDetail({ exercise }: { exercise: Exercise }) {
               >
                 {hidden ? 'Wieder einblenden' : 'Ausblenden'}
               </button>
-              <p className="text-sm text-muted">
-                {hidden
-                  ? 'Ausgeblendete Übungen erscheinen nicht in der Übungsauswahl.'
-                  : 'Mitgelieferte Übungen können nicht gelöscht, aber ausgeblendet werden.'}
-              </p>
+              {hidden && (
+                <p className="text-sm text-muted">Ausgeblendet – erscheint nicht in der Auswahl.</p>
+              )}
             </>
           )}
         </div>

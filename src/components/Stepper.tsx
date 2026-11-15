@@ -1,4 +1,5 @@
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
+import { InfoButton } from './InfoButton';
 import { formatDecimal, parseDecimal } from '../domain/format';
 import { roundTo } from '../domain/units';
 
@@ -14,6 +15,8 @@ interface StepperProps {
   /** Startwert, wenn bei leerem Feld + oder − gedrückt wird */
   startValue?: number;
   allowEmpty?: boolean;
+  /** „i“ hinter dem Namen (Titel Standard: `label`) */
+  info?: { title?: string; content: ReactNode };
 }
 
 export function Stepper({
@@ -27,6 +30,7 @@ export function Stepper({
   unit,
   startValue = 0,
   allowEmpty = false,
+  info,
 }: StepperProps) {
   const id = useId();
   const [draft, setDraft] = useState<string | null>(null);
@@ -49,9 +53,20 @@ export function Stepper({
 
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium">
-        {label}
-      </label>
+      {info ? (
+        <div className="mb-1 flex items-center">
+          <label htmlFor={id} className="text-sm font-medium">
+            {label}
+          </label>
+          <InfoButton title={info.title ?? label} className="-my-3 -ml-1">
+            {info.content}
+          </InfoButton>
+        </div>
+      ) : (
+        <label htmlFor={id} className="mb-1 block text-sm font-medium">
+          {label}
+        </label>
+      )}
       <div className="flex items-center gap-2">
         <button
           type="button"

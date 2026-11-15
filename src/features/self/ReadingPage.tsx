@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { primaryButton, secondaryButton } from '../../components/buttons';
+import { primaryButton, secondaryButton, smallButton } from '../../components/buttons';
 import { Details } from '../../components/Details';
 import { Card, LinkRow, Page } from '../../components/Page';
 import { Select } from '../../components/Select';
@@ -20,7 +20,7 @@ import {
 } from '../../domain/reading';
 import { GoalBar } from '../daily/GoalBar';
 import { useDayBackTo, useDayParam } from '../daily/useDaily';
-import { useHabits } from '../daily/useHabits';
+import { HABITS_PATH, useHabits } from '../daily/useHabits';
 import { useSettings } from '../settings/useSettings';
 import { bookPath, NEW_BOOK_PATH } from './paths';
 import { ReadingLogDialog } from './ReadingLogDialog';
@@ -194,26 +194,37 @@ function HabitLink({ settings }: { settings: Settings }) {
     counting.map((habit) => [habit.id, `${habit.name}${habit.unit ? ` (${habit.unit})` : ''}`]),
   );
   return (
-    <Card title="Mit Gewohnheit verknüpfen">
-      {counting.length === 0 ? (
-        <p className={HINT}>
-          Lege eine Gewohnheit mit der Art „Zählen“ an (z. B. Lesen, Einheit Seiten), dann zählen
-          eingetragene Seiten dort automatisch mit.
-        </p>
-      ) : (
-        <>
-          <Select
-            label="Seiten zählen auch bei"
-            value={linked}
-            options={counting.map((habit) => habit.id)}
-            labels={labels}
-            emptyLabel="Keiner Gewohnheit"
-            onChange={(habitId) => void setReadingHabit(habitId)}
-          />
-          <p className={`mt-2 ${HINT}`}>
+    <Card
+      title="Mit Gewohnheit verknüpfen"
+      info={
+        counting.length === 0 ? (
+          <p>
+            Lege eine Gewohnheit mit der Art „Zählen“ an (z. B. Lesen, Einheit Seiten), dann zählen
+            eingetragene Seiten dort automatisch mit.
+          </p>
+        ) : (
+          <p>
             Neu eingetragene Seiten werden bei der Gewohnheit addiert, gelöschte wieder abgezogen.
           </p>
-        </>
+        )
+      }
+    >
+      {counting.length === 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className={HINT}>Noch keine Zähl-Gewohnheit.</p>
+          <Link to={HABITS_PATH} className={smallButton}>
+            Gewohnheit anlegen
+          </Link>
+        </div>
+      ) : (
+        <Select
+          label="Seiten zählen auch bei"
+          value={linked}
+          options={counting.map((habit) => habit.id)}
+          labels={labels}
+          emptyLabel="Keiner Gewohnheit"
+          onChange={(habitId) => void setReadingHabit(habitId)}
+        />
       )}
     </Card>
   );

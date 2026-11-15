@@ -372,8 +372,8 @@ function WidgetList({ data }: { data: WidgetData }) {
       <Card>
         <p className={MUTED}>
           {dashboardWidgets.length === 0
-            ? 'Keine Widgets ausgewählt. Über „Anpassen“ stellst du dir die Startseite zusammen.'
-            : 'Nach deinem ersten Workout siehst du hier deine Woche, deine Rekorde und deine Trainingstage.'}
+            ? 'Keine Widgets ausgewählt.'
+            : 'Noch keine Daten für deine Widgets.'}
         </p>
       </Card>
     );
@@ -618,34 +618,47 @@ function ProgressCard({
     [sessions, bodyWeightKg, now],
   );
   const { strengthPercent, workoutsThisMonth, workoutsLastMonth, recordsThisMonth } = progress;
+  const diff = workoutsThisMonth - workoutsLastMonth;
   const tiles = [
     {
       label: 'Kraft (3 Monate)',
       value: strengthPercent === null ? '–' : formatPercent(strengthPercent),
     },
-    { label: 'Workouts im Monat', value: String(workoutsThisMonth) },
+    {
+      label: 'Workouts im Monat',
+      value: String(workoutsThisMonth),
+      note:
+        diff === 0 ? 'wie im Vormonat' : `${diff > 0 ? '+' : '−'}${Math.abs(diff)} zum Vormonat`,
+    },
     { label: 'Rekorde im Monat', value: String(recordsThisMonth) },
   ];
-  const diff = workoutsThisMonth - workoutsLastMonth;
   return (
-    <Card title={DASHBOARD_WIDGET_LABELS.progress.name}>
+    <Card
+      title={DASHBOARD_WIDGET_LABELS.progress.name}
+      info={
+        <p>
+          Kraft = mittlere Steigerung (Median) deiner Kraftübungen in den letzten 3 Monaten
+          {strengthPercent === null
+            ? '; zählt ab 4 Einheiten einer Übung.'
+            : ` über ${progress.exerciseCount} ${progress.exerciseCount === 1 ? 'Übung' : 'Übungen'} mit mindestens 4 Einheiten.`}
+        </p>
+      }
+    >
       <dl data-testid="training-progress" className="grid grid-cols-3 gap-2 text-center">
-        {tiles.map(({ label, value }) => (
-          <div key={label} className="flex flex-col-reverse">
-            <dt className="text-sm text-muted">{label}</dt>
-            <dd className="text-xl font-bold tabular-nums">
+        {tiles.map(({ label, value, note }) => (
+          <div key={label} className="flex flex-col">
+            <dt className="order-2 text-sm text-muted">
+              {label}
+              {note && (
+                <span className="block text-xs font-semibold text-primary-text">{note}</span>
+              )}
+            </dt>
+            <dd className="order-1 text-xl font-bold tabular-nums">
               <CountUpText text={value} />
             </dd>
           </div>
         ))}
       </dl>
-      <p className="mt-2 text-sm text-muted">
-        {strengthPercent === null
-          ? 'Kraft: ab 4 Einheiten einer Übung in 3 Monaten. '
-          : `Median über ${progress.exerciseCount} ${progress.exerciseCount === 1 ? 'Übung' : 'Übungen'}. `}
-        Vormonat: {workoutsLastMonth} Workouts
-        {diff !== 0 && ` (${diff > 0 ? '+' : '−'}${Math.abs(diff)})`}.
-      </p>
       <Link
         to="/stats"
         className="mt-1 flex min-h-11 items-center gap-0.5 text-sm font-semibold text-primary-text"
@@ -712,7 +725,17 @@ function WeekCard({
   );
   return (
     <Card>
-      <WidgetHeader title={label} aside={count} />
+      <WidgetHeader
+        title={label}
+        aside={count}
+        info={
+          size === 'large' ? (
+            <p>
+              Sätze und Volumen ohne Aufwärmsätze; Stufen und Halteübungen zählen nicht zum Volumen.
+            </p>
+          ) : undefined
+        }
+      />
       <div className="mb-4">
         <GoalBar label="Wochenziel Trainings" value={week.count} goal={target} />
       </div>
@@ -800,9 +823,6 @@ function WeekDetails({
             .join(' · ')}
         </p>
       )}
-      <p className="mt-2 text-sm text-muted">
-        Ohne Aufwärmsätze; Stufen und Halteübungen zählen nicht zum Volumen.
-      </p>
     </>
   );
 }

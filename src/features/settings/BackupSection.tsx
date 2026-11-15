@@ -96,11 +96,19 @@ export function BackupSection({ settings }: { settings: Settings }) {
               label="Fortschrittsfotos einschließen"
               checked={includePhotos}
               onChange={setIncludePhotos}
+              info={{
+                title: 'Fortschrittsfotos',
+                content: (
+                  <p>
+                    Ohne Fotos ist die Datei kleiner. Beim Import einer Sicherung ohne Fotos bleiben
+                    die Fotos auf dem Gerät erhalten.
+                  </p>
+                ),
+              }}
             />
             <p className="text-sm text-muted">
-              {photos.count === 1 ? '1 Foto' : `${photos.count} Fotos`}, die Datei wird etwa{' '}
-              {formatBytes(Math.round(photos.bytes * 1.37))} größer. Ohne Haken bleiben beim Import
-              einer Sicherung die Fotos auf dem Gerät erhalten.
+              {photos.count === 1 ? '1 Foto' : `${photos.count} Fotos`}, etwa{' '}
+              {formatBytes(Math.round(photos.bytes * 1.37))} mehr
             </p>
           </div>
         )}

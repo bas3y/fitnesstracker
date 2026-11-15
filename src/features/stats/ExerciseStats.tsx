@@ -250,12 +250,14 @@ function RestCard({ groups, isTimed }: { groups: SetGroup[]; isTimed: boolean })
   const now = useMemo(() => new Date(), []);
   const analysis = analyzeRest(restPairs(filterByRange(groups, range, now), isTimed));
   return (
-    <Card title="Satzpausen">
+    <Card
+      title="Satzpausen"
+      info={
+        <p>Gemessen von Satzende zu Satzende, enthält also die Ausführung des nächsten Satzes.</p>
+      }
+    >
       <p className="mb-2">{formatRestAdvice(analysis.advice)}</p>
       {analysis.buckets.length > 0 && <RestTable analysis={analysis} />}
-      <p className={`${HINT} mt-2`}>
-        Gemessen von Satzende zu Satzende, enthält also die Ausführung des nächsten Satzes.
-      </p>
     </Card>
   );
 }

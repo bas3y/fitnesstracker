@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFromHere } from '../../components/backNavigation';
 import { ProgressChart, WeeklyBarChart } from '../../components/charts';
-import { Card } from '../../components/Page';
+import { smallButton } from '../../components/buttons';
+import { Card, EmptyState } from '../../components/Page';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Select } from '../../components/Select';
 import {
@@ -56,15 +57,11 @@ export function EnduranceStats() {
   if (!sessions || !settings) return null;
   if (sessions.length === 0) {
     return (
-      <Card>
-        <p className="text-muted">
-          Noch keine Ausdauer-Einheiten. Erfasse oder importiere sie auf der{' '}
-          <Link to={TRAINING_PATH} state={from} className="font-semibold text-primary-text">
-            Trainingsseite
-          </Link>
-          .
-        </p>
-      </Card>
+      <EmptyState text="Noch keine Ausdauer-Einheiten.">
+        <Link to={TRAINING_PATH} state={from} className={smallButton}>
+          Zum Training
+        </Link>
+      </EmptyState>
     );
   }
   return (
@@ -276,22 +273,20 @@ function PaceCard({
   const reversed = lowerIsFaster(sport);
   const format = (value: number) => formatPaceValue(sport, value, unit);
   return (
-    <Card title="Pace-Entwicklung">
+    <Card
+      title="Pace-Entwicklung"
+      info={<p>Je Einheit (Dauer durch Strecke), schneller = weiter oben.</p>}
+    >
       {points.length === 0 ? (
         <p className={HINT}>Keine Einheiten mit Strecke in diesem Zeitraum.</p>
       ) : (
-        <>
-          <ProgressChart
-            label={`Pace-Entwicklung ${ENDURANCE_SPORT_LABELS[sport].name}`}
-            points={points}
-            formatValue={format}
-            formatTick={(value) => format(value).split(' ')[0]!}
-            reversed={reversed}
-          />
-          <p className={`mt-2 ${HINT}`}>
-            Je Einheit (Dauer durch Strecke), schneller = weiter oben.
-          </p>
-        </>
+        <ProgressChart
+          label={`Pace-Entwicklung ${ENDURANCE_SPORT_LABELS[sport].name}`}
+          points={points}
+          formatValue={format}
+          formatTick={(value) => format(value).split(' ')[0]!}
+          reversed={reversed}
+        />
       )}
     </Card>
   );

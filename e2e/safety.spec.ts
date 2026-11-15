@@ -34,7 +34,7 @@ test('Speicher-Info, Hinweise auf Willkommen und Weitergeben (offline)', async (
     .getByRole('link', { name: /App weitergeben/ })
     .click();
   await expect(page.getByRole('main')).toContainText(
-    'Jede Person hat ihre eigenen Daten nur auf ihrem eigenen Handy.',
+    'Deine Daten werden nicht mitgeschickt, die Geräte sind nicht verbunden.',
   );
 });
 

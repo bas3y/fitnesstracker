@@ -125,7 +125,12 @@ test('Trainingsblöcke: Vorlage → Aufbau → Deload mit angepassten Sätzen �
   const adjust = page.getByLabel('Sätze automatisch an den Block anpassen');
   await adjust.click();
   await expect(adjust).not.toBeChecked();
-  await expect(page.getByText('Aus: Der Block wird nur angezeigt')).toBeVisible();
+  // Erklärung steckt seit 22e hinter dem Info-Knopf
+  await page.getByRole('button', { name: 'Info: Sätze anpassen' }).click();
+  const info = page.getByRole('dialog', { name: 'Sätze anpassen' });
+  await expect(info).toContainText('Aus: Der Block wird nur angezeigt');
+  await info.getByRole('button', { name: 'Schließen' }).click();
+  await expect(info).toHaveCount(0);
   await expect(page.getByTestId('block-status')).toContainText(
     'Sätze wie gewohnt (Anpassen ist aus)',
   );

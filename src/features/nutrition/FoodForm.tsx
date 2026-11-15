@@ -114,7 +114,10 @@ export function FoodForm({
         </div>
       </Card>
 
-      <Card title="Nährwerte pro 100 g">
+      <Card
+        title="Nährwerte pro 100 g"
+        info={<p>Kohlenhydrate ohne Ballaststoffe, wie auf deutschen Verpackungen.</p>}
+      >
         <div className="flex flex-col gap-3">
           <Stepper
             label="Brennwert"
@@ -151,12 +154,10 @@ export function FoodForm({
               </button>
             </div>
           )}
-          <p className={HINT}>Kohlenhydrate ohne Ballaststoffe, wie auf deutschen Verpackungen.</p>
         </div>
       </Card>
 
       <Card title="Portionen">
-        <p className={`mb-3 ${HINT}`}>Optional, z. B. „1 Riegel“ = 45 g.</p>
         <ol aria-label="Portionen" className="flex flex-col gap-3">
           {input.portions.map((portion, index) => (
             <PortionFields

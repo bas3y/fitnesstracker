@@ -12,8 +12,7 @@ export function StatsExportCard({
   csv: () => Promise<File | null>;
 }) {
   return (
-    <Card title="Exportieren">
-      <p className="mb-3 text-sm text-muted">{hint}</p>
+    <Card title="Exportieren" info={<p>{hint}</p>}>
       <div className="flex flex-col gap-2">
         <ExportButton label="Als PDF" success="PDF wurde erstellt" create={pdf} />
         <ExportButton label="Als CSV (Tabelle)" success="CSV-Datei wurde erstellt" create={csv} />

@@ -76,7 +76,7 @@ export function GoalsWidget({
   return (
     <Card title={DASHBOARD_WIDGET_LABELS.goals.name}>
       {active.length === 0 ? (
-        <p className="mb-2 text-sm text-muted">Keine offenen Ziele – Zeit für ein neues?</p>
+        <p className="mb-2 text-sm text-muted">Keine offenen Ziele.</p>
       ) : (
         <div data-testid="goals-widget">
           {active.slice(0, SHOWN_GOALS).map(({ goal, progress }) => (

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ChevronRightIcon } from '../../components/icons';
+import { InfoButton } from '../../components/InfoButton';
 import { Page } from '../../components/Page';
 import { PLAN_TEMPLATES } from '../../data/planTemplates';
 import { createPlan, createPlanFromTemplate } from '../../db/plans';
@@ -44,10 +45,12 @@ export function PlanNewPage() {
         hint="Trainings und Übungen selbst zusammenstellen"
         onClick={() => void open(createPlan())}
       />
-      <h2 className="mt-6 mb-1 text-lg font-semibold">Vorlagen</h2>
-      <p className="mb-3 text-sm text-muted">
-        Eine Vorlage wird als eigener Plan angelegt, den du frei ändern kannst.
-      </p>
+      <div className="mt-6 mb-2 flex items-center">
+        <h2 className="text-lg font-semibold">Vorlagen</h2>
+        <InfoButton title="Vorlagen" className="-my-2.5">
+          <p>Eine Vorlage wird als eigener Plan angelegt, den du frei ändern kannst.</p>
+        </InfoButton>
+      </div>
       {PLAN_TEMPLATES.map((template) => (
         <ChoiceButton
           key={template.key}

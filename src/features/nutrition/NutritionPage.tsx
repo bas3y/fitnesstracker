@@ -24,13 +24,17 @@ export function NutritionPage() {
       {settings && data && <NutritionSummary data={data} settings={settings} title="Übersicht" />}
       {data && proteinOnly && (
         <>
-          <Card title="Protein eintragen">
+          <Card
+            title="Protein eintragen"
+            info={
+              <p>
+                Du erfasst nur Protein. Mahlzeiten mit Kalorien und Lebensmitteln schaltest du unter
+                Einstellungen → Ernährung wieder ein.
+              </p>
+            }
+          >
             <ProteinQuickAdd key={date} date={date} grams={data.quickProteinGrams} />
           </Card>
-          <p className="mb-4 text-sm text-muted">
-            Du erfasst nur Protein. Mahlzeiten mit Kalorien und Lebensmitteln schaltest du unter
-            Einstellungen → Ernährung wieder ein.
-          </p>
         </>
       )}
       {data &&
@@ -47,10 +51,15 @@ export function NutritionPage() {
           />
         ))}
       {data && settings && !proteinOnly && (
-        <Card title="Protein schnell eintragen">
-          <p className="mb-3 text-sm text-muted">
-            Ohne Lebensmittel, z. B. ein Shake: zählt zum Protein des Tages, nicht zu den Kalorien.
-          </p>
+        <Card
+          title="Protein schnell eintragen"
+          info={
+            <p>
+              Ohne Lebensmittel, z. B. ein Shake: zählt zum Protein des Tages, nicht zu den
+              Kalorien.
+            </p>
+          }
+        >
           <ProteinQuickAdd key={date} date={date} grams={data.quickProteinGrams} />
         </Card>
       )}

@@ -171,9 +171,7 @@ export function QuickActions({ settings, today }: { settings: Settings; today: D
   return (
     <Card title={DASHBOARD_WIDGET_LABELS.quickActions.name}>
       {settings.quickActions.length === 0 ? (
-        <p className="text-sm text-muted">
-          Keine Buttons gewählt. Über „Anpassen“ wählst du sie aus.
-        </p>
+        <p className="text-sm text-muted">Keine Buttons gewählt.</p>
       ) : (
         <ul aria-label="Schnellzugriff" className="grid grid-cols-3 gap-2">
           {settings.quickActions.map((action) => (
