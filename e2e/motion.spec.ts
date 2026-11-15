@@ -16,21 +16,27 @@ test('Kacheln, Wasser, To-dos animieren; Schalter „Animationen“ schaltet ab 
   await start(page);
   await goOffline(page, context);
 
-  // Widgets erscheinen nacheinander, im Anpassen-Modus wackeln sie
+  // Widgets erscheinen nacheinander; im Anpassen-Modus stehen sie still (Wackeln seit 22f entfernt)
   await expect(page.locator('.anim-stagger > [data-widget]').first()).toBeVisible();
   await page.getByRole('button', { name: 'Anpassen' }).click();
-  await expect(page.locator('li.anim-wiggle').first()).toBeVisible();
   await page.getByRole('button', { name: 'Wasser hinzufügen' }).click();
-  // Wackelnde Kacheln sind für Playwright nie „stabil“ (für den Finger sind ±0,6° kein Problem)
+  await expect(page.locator('li[data-sort-id]').first()).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator('li[data-sort-id]')
+        .first()
+        .evaluate((element) => getComputedStyle(element).animationName),
+    )
+    .toBe('none');
   await page
     .getByRole('group', { name: 'Größe: Wasser' })
     .getByRole('button', { name: 'Groß' })
-    .click({ force: true });
+    .click();
   await expect(
     page.getByRole('group', { name: 'Größe: Wasser' }).getByRole('button', { name: 'Groß' }),
   ).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Fertig' }).click();
-  await expect(page.locator('li.anim-wiggle')).toHaveCount(0);
 
   // +250 ml: Betrag schwebt auf, Wert zählt hoch, Balken bekommt eine Welle
   const widget = page.locator('[data-widget="water"]');

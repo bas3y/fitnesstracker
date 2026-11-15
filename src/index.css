@@ -284,7 +284,7 @@
  *  - `anim-draw`: Haken zeichnet sich (Symbol `check`), `anim-flash`: Zeile leuchtet kurz
  *  - `anim-leave`/`anim-slide-in`/`anim-rise`/`anim-bump`: Listen (wegrutschen, neu, aufklappen, Zahl)
  *  - `anim-pop-late`/`anim-badge`/`anim-shine`/`anim-flicker`: Rekord, Abzeichen, Serien-Flamme
- *  - `anim-wiggle`/`anim-lift`: Anpassen-Modus, `anim-sheet`: Auswahl gleitet von unten
+ *  - `anim-lift`: gezogene Kachel (Anpassen-Modus; Wackeln seit 22f entfernt), `anim-sheet`: Auswahl gleitet von unten
  * Schalter „Animationen“ aus (`data-motion="off"`) wirkt wie „Bewegung reduzieren“.
  */
 @media (prefers-reduced-motion: no-preference) {
@@ -384,19 +384,6 @@
   }
   .anim-flicker {
     animation: anim-flicker 0.6s ease-in-out;
-  }
-  .anim-wiggle {
-    animation: anim-wiggle 0.28s ease-in-out infinite alternate;
-  }
-  .anim-wiggle:nth-child(2n) {
-    animation-direction: alternate-reverse;
-    animation-delay: -0.14s;
-  }
-  /* Unter dem Finger/Zeiger und beim Bedienen still, damit Knöpfe (Größe, Entfernen) gut treffen */
-  .anim-wiggle:hover,
-  .anim-wiggle:focus-within,
-  .anim-wiggle:active {
-    animation-play-state: paused;
   }
   .anim-lift {
     scale: 1.03;
@@ -512,14 +499,6 @@
     transform: scale(0.95) rotate(5deg);
   }
 }
-@keyframes anim-wiggle {
-  from {
-    rotate: -0.6deg;
-  }
-  to {
-    rotate: 0.6deg;
-  }
-}
 @keyframes anim-sheet {
   from {
     opacity: 0;
@@ -595,6 +574,19 @@
   #root {
     height: 100%;
     overflow: hidden;
+  }
+
+  /*
+   * iOS 26, installierte App (seit 22f): Mit `viewport-fit=cover` + durchsichtiger Statusleiste
+   * ist der Viewport um die Statusleiste zu kurz, solange das Dokument nicht bildschirmhoch ist
+   * (WebKit-Fehler 301108) – Leiste und Blätter unten endeten über einem leeren Streifen. Ist
+   * `html` um die Statusleiste höher, gibt iOS die volle Höhe frei; `min(100lvh, …)` begrenzt auf
+   * den Bildschirm, damit nichts scrollt. Ohne Statusleisten-Abstand (Android) ändert sich nichts.
+   */
+  @media (display-mode: standalone) {
+    html {
+      min-height: min(100lvh, calc(100% + env(safe-area-inset-top)));
+    }
   }
 }
 

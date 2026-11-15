@@ -406,7 +406,6 @@ function WidgetEditor({ data }: { data: WidgetData }) {
       {/* Raster wie auf der Startseite: kleine Widgets stehen nebeneinander, auch beim Ziehen */}
       <SortableList
         label="Widgets"
-        wiggle
         grid={{
           columns: WIDGET_GRID,
           span: ({ id }) => WIDGET_SPAN[widgetSize(id as DashboardWidget, widgetSizes)],

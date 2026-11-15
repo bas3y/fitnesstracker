@@ -51,8 +51,9 @@ export function Layout() {
   const reminder = settings ? getBackupReminder(settings, new Date()) : null;
 
   return (
-    // Ab `xl` nebeneinander: Seitenleiste links (`order-first` in `BottomNav`), Inhalt rechts
-    <div className="flex h-dvh flex-col xl:flex-row">
+    // Ab `xl` nebeneinander: Seitenleiste links (`order-first` in `BottomNav`), Inhalt rechts.
+    // `h-full` (Höhe von `html`) statt `h-dvh`: folgt der iOS-Korrektur in `index.css`.
+    <div className="flex h-full flex-col xl:flex-row">
       <div
         {...scrollRootProps}
         // Keine eigene Stapelebene (kein `isolate`/`z-*`): Vollbild-Fenster der Seiten müssen über
