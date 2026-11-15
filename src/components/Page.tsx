@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { CompactHeader } from './CompactHeader';
 import { InfoButton } from './InfoButton';
@@ -146,12 +146,39 @@ export function MoreLink({
 }
 
 /**
- * Kopf-Aktion an ihrem Platz; während der mitlaufende Kopf sie zeigt, ist sie hier nicht bedienbar
- * (sonst gäbe es den Button doppelt)
+ * Element am ursprünglichen Platz (Kopf-Aktion, „Zurück“); während der mitlaufende Kopf es zeigt,
+ * steht hier nur ein gleich großer Platzhalter. So gibt es den Button nie doppelt und auch kein
+ * `inert`-Element, auf das Tests (Playwright ab 1.65) beim Erscheinen des Kopfs warten würden.
  */
-export function HeaderAction({ hidden, children }: { hidden: boolean; children: ReactNode }) {
+export function HeaderAction({
+  hidden,
+  className = 'flex shrink-0',
+  children,
+}: {
+  hidden: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
+  useLayoutEffect(() => {
+    if (hidden || !box.current) return;
+    const { offsetWidth: width, offsetHeight: height } = box.current;
+    setSize((current) =>
+      current?.width === width && current.height === height ? current : { width, height },
+    );
+  });
+  if (hidden) {
+    return (
+      <div
+        aria-hidden="true"
+        className={className}
+        style={{ width: size?.width ?? 44, height: size?.height ?? 44 }}
+      />
+    );
+  }
   return (
-    <div className="contents" inert={hidden} aria-hidden={hidden || undefined}>
+    <div ref={box} className={className}>
       {children}
     </div>
   );
@@ -194,16 +221,16 @@ export function Page({
         />
       )}
       {backTo && (
-        <Link
-          to={backTo}
-          state={backState}
-          inert={compact}
-          aria-hidden={compact || undefined}
-          className="-ml-3 inline-flex min-h-11 items-center gap-0.5 px-2 text-[0.9375rem] font-medium text-primary-text"
-        >
-          <ChevronLeftIcon className="h-5 w-5" />
-          Zurück
-        </Link>
+        <HeaderAction hidden={compact} className="flex">
+          <Link
+            to={backTo}
+            state={backState}
+            className="-ml-3 inline-flex min-h-11 items-center gap-0.5 px-2 text-[0.9375rem] font-medium text-primary-text"
+          >
+            <ChevronLeftIcon className="h-5 w-5" />
+            Zurück
+          </Link>
+        </HeaderAction>
       )}
       {/* Platz des „Zurück“ neben der Liste: Überschriften auf einer Höhe, Kopf erscheint erst beim Scrollen */}
       {pane === 'detail' && backLink && <div aria-hidden="true" className="min-h-11" />}

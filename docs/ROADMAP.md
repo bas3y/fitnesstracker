@@ -46,6 +46,7 @@ Nach Abschluss: Checkbox abhaken und Notizen ausfüllen.
 - [x] Schritt 22c – Desktop, Tablet & Querformat
 - [x] Schritt 22d – Animationen für Kacheln & Inhalte
 - [x] Schritt 22e – Texte aufräumen, Erklärungen hinter Info-Button
+- [ ] Schritt 22f – Hauptversionen: TypeScript 7, jsdom 31 (vor oder nach 23)
 - [ ] Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 - [ ] Schritt 24 – Admin-Bereich & Nutzerverwaltung
 - [ ] Schritt 24b – Gym-Bereich (LocalGym): eigene Oberfläche & Verwaltung
@@ -1516,7 +1517,16 @@ Gilt zusätzlich zur Definition of Done. Beim Start des jeweiligen Schritts abar
   - **Handytest:** Info-Blatt mit dem Daumen (iPhone mit Home-Indikator unten, Android-Zurück), lange Texte im Blatt, Info-Knopf neben Schaltern auf schmalen Handys.
   - Vitest: `activity.test.ts` („vereinfacht lange Strecken“) lief im vollen Lauf parallel zum Build einmal über die Zeit; einzeln und im zweiten vollen Lauf grün.
   - **Nachtrag Push (15.11.2026):** Erster Semgrep-Lauf in der CI (`security.yml` seit 21) meldete 21 Funde, behoben: Dependabot `cooldown: default-days: 7` (npm + Actions), alle Actions in `deploy.yml`/`security.yml` per Commit-SHA gepinnt (`@<sha> # vX.Y.Z`, Dependabot hebt beides an), E2E-Regex nur noch über `startsWith`/`containing` aus `e2e/helpers.ts` (escaped, einziges `nosemgrep`; vorher Fehlalarm ReDoS bei festen Testtexten).
+  - **Nachtrag Abhängigkeiten (15.11.2026):** Dependabot #8 (12 kleine Updates, u. a. Playwright 1.65, Vite 8.3.6, Vitest 5.1, `@zxing/library` 0.23) eingespielt; `actions/checkout` 7.0.1 und `actions/setup-node` 7.1.0 selbst per SHA gepinnt (statt #6/#7). Playwright 1.65 klickt keine `inert`-Elemente mehr und sucht dann nicht neu → 13 E2E hingen am Knopf, der beim Erscheinen des mitlaufenden Kopfs `inert` wurde. Lösung in der App: `HeaderAction` (`Page.tsx`) ersetzt Kopf-Aktion und „Zurück“ am alten Platz durch einen gleich großen Platzhalter (kein Doppel-Button, kein `inert`). TypeScript 7 und jsdom 31 → Schritt 22f.
   - Ideen: Info-Blatt per Android-Zurück schließen (für alle Fenster gemeinsam lösen); `CatalogSearch` („x … offline verfügbar“) wird nirgends mehr verwendet – bei Gelegenheit entfernen.
+
+### Schritt 22f – Hauptversionen: TypeScript 7, jsdom 31
+**Ziel:** Die zwei großen Versionssprünge aus Dependabot getrennt vom übrigen Code einspielen, damit klar ist, was sie kaputt machen (Entscheidung 15.11.2026). Kann vor oder nach Schritt 23 laufen.
+- **TypeScript 6 → 7** (Dependabot-PR #5): neuer Compiler – `tsconfig*.json`, `tsc -b`, `typescript-eslint` und `vite`/`vitest` auf Kompatibilität prüfen, neue Typfehler beheben.
+- **jsdom 30 → 31** (Dependabot-PR #4): betrifft nur Vitest – Änderungen lesen, Unit-Tests anpassen.
+- Je Paket einzeln: einspielen, Definition of Done (Lint, Typecheck, Vitest, E2E, Build), Commit, danach den PR schließen bzw. von Dependabot schließen lassen.
+
+**Notizen:**
 
 ### Schritt 23 – Server-Grundlage, Anmeldung & Umzug
 **Ziel:** Nur angemeldete Personen mit gültiger Lizenz nutzen die App; sie läuft auf neuer, geschützter Adresse.
